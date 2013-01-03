@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>Migrate.py</StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>Migrate</Name>
+    <RootNamespace>Migrate</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="AdjustedBackupSource.py" />
+    <Compile Include="BackupAdjust.py" />
+    <Compile Include="BackupSource.py" />
+    <Compile Include="Migrate.py" />
+    <Compile Include="Windows\WindowsBackupSource.py" />
+    <Compile Include="Windows\WindowsVolume.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Windows" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="MODULES.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
+</Project>
