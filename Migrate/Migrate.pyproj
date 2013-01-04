@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Migrate.py</StartupFile>
+    <StartupFile>Windows\WindowsVolumeTransferTarget_test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,12 +22,21 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AdjusteBackupSource_test.py" />
     <Compile Include="AdjustedBackupSource.py" />
     <Compile Include="BackupAdjust.py" />
     <Compile Include="BackupSource.py" />
+    <Compile Include="DataExtent.py" />
+    <Compile Include="MigrateExceptions.py" />
+    <Compile Include="FileToBackup.py" />
     <Compile Include="Migrate.py" />
+    <Compile Include="TransferTarget.py" />
     <Compile Include="Windows\WindowsBackupSource.py" />
+    <Compile Include="Windows\WindowsFileToBackup.py" />
     <Compile Include="Windows\WindowsVolume.py" />
+    <Compile Include="Windows\WindowsVolumeTransferTarget.py" />
+    <Compile Include="Windows\WindowsVolumeTransferTarget_test.py" />
+    <Compile Include="Windows\WindowsVolume_test.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Windows" />

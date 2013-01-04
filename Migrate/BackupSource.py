@@ -1,22 +1,26 @@
 
 class BackupSource(object):
-    """Class representing Backup source"""
+    """Class representing abstract Backup source"""
 
     # gets files enumerator
-    def getFileEnum():
+    # iterable of FileToBackup objects
+    def getFileEnum(self):
         return
 
     # gets block range for range of files
-    # backupOptions - options incl file excludes, etc
-    def getFilesBlockRange(backupOptions):
+    def getFilesBlockRange(self):
+        return
+
+    # gets block range for file specified
+    def getFileBlockRange(self, filename):
         return
 
     # sets the data source
-    def setBackupDataSource(dataSource):
+    def setBackupDataSource(self , dataSource):
         return
 
     # gets the data source
-    def getBackupDataSource():
+    def getBackupDataSource(self):
         return 
 
     #TODO: adds metadata blocks also

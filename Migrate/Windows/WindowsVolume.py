@@ -12,6 +12,8 @@ import struct
 import ntsecuritycon
 from collections import namedtuple
 
+from DataExtent import DataExtent
+
 class AllFilesIterator(object):
     """Iterator for looping over a sequence backwards."""
 
@@ -50,22 +52,7 @@ class AllFilesIterator(object):
             #data[8] == filename
             return self.__RootPath+'\\'+data[8]
 
-#
-class VolumeExtent(object):
-    # members:
-   # __startInBytes = long(0)
-   # __sizeInBytes = long(0)
-    def __init__(self, start , size):
-        self.__startInBytes = start
-        self.__sizeInBytes = size
 
-    def getSize(self):
-        return self.__sizeInBytes
-    def getStart(self):
-        return self.__startInBytes
-
-    def __str__(self):
-        return "["+str(self.__startInBytes)+str(self.__startInBytes+self.__sizeInBytes)+")"
 
 #
 #
@@ -83,8 +70,9 @@ class WindowsVolume(object):
         secur_att = win32security.SECURITY_ATTRIBUTES()
         secur_att.Initialize()
         
-        self.__hfile = win32file.CreateFile( volumeName, win32con.GENERIC_READ | ntsecuritycon.FILE_READ_ATTRIBUTES | ntsecuritycon.FILE_WRITE_ATTRIBUTES, win32con. FILE_SHARE_READ|win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_ALWAYS, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
-        self.__volumeName = volumeName
+        self.__volumeName = volumeName.lower()
+        self.__hfile = win32file.CreateFile( self.__volumeName, win32con.GENERIC_READ|  win32con.GENERIC_WRITE | ntsecuritycon.FILE_READ_ATTRIBUTES | ntsecuritycon.FILE_WRITE_ATTRIBUTES, win32con. FILE_SHARE_READ|win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_ALWAYS, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
+        #TODO: impersonate with backup priveleges
         
 
         output_buffer_size = 256;
@@ -128,11 +116,14 @@ class WindowsVolume(object):
     def getFileEnumerator(self):
         return AllFilesIterator(win32file.FindFilesIterator(self.__volumeName+'\\*', None ) , self.__volumeName)
 
+    def getVolumeName(self):
+        return self.__volumeName
     
-    # returns iterable of VolumeExtent structs
+    # returns iterable of DataExtent structs
     def getFileDataBlocks(self, fileName):
         secur_att = win32security.SECURITY_ATTRIBUTES()
         secur_att.Initialize()
+
         hFile = win32file.CreateFile( self.__volumeName+"\\"+fileName,ntsecuritycon.FILE_READ_ATTRIBUTES, win32con.FILE_SHARE_READ|win32con.FILE_SHARE_WRITE|win32con.FILE_SHARE_DELETE, secur_att,   win32con.OPEN_ALWAYS, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
 
         # input
@@ -172,13 +163,13 @@ class WindowsVolume(object):
             
             extent = extenttuple._make(struct.unpack_from("@qq", outbuffer[buffer_offset:buffer_offset+struct.calcsize("@qq")]))
            
-            volextent = VolumeExtent(extent.Lcn * self.__bytesPerCluster, (extent.NextVcn - current_file_vcn) * self.__bytesPerCluster )
+            volextent = DataExtent(extent.Lcn * self.__bytesPerCluster, (extent.NextVcn - current_file_vcn) * self.__bytesPerCluster )
             volextents.append(volextent)
 
             buffer_offset = buffer_offset + struct.calcsize("@qq")
             extent_count = extent_count + 1
 
-        #TODO: maybe to make kinda dynamic list requesting each next vacb when iterated?
+        #NOTE: maybe to make kinda dynamic list requesting each next vacb when iterated?
         return volextents
 
     #gets filesystem string 
@@ -215,9 +206,8 @@ class WindowsVolume(object):
         last_start = long(0);
         last_size = long(0);
         volextents = list()
-        
         while bits_left > 0:
-            byte = struct.unpack_from("=B", outbuffer[buffer_offset:buffer_offset+1])
+            byte = ord(outbuffer[buffer_offset])
             # our granularity is 8 clusters, mark all used even if one of 8 is used
             if byte > 0: 
                 if last_size == 0:
@@ -225,7 +215,7 @@ class WindowsVolume(object):
                 last_size = last_size + 8 * self.__bytesPerCluster;    
             else: 
                 if last_size:
-                    volextent = VolumeExtent(last_start, last_size)
+                    volextent = DataExtent(last_start, last_size)
                     volextents.append(volextent)
                 last_size = 0;
                 last_start = 0;
@@ -235,7 +225,7 @@ class WindowsVolume(object):
             current_start += 8*self.__bytesPerCluster;
         
         if last_size:
-            volextent = VolumeExtent(last_start, last_size)
+            volextent = DataExtent(last_start, last_size)
             volextents.append(volextent)
         
 
@@ -246,5 +236,9 @@ class WindowsVolume(object):
         win32file.SetFilePointer(self.__hfile, volextent.getStart(), win32con.FILE_BEGIN)
         (result , output) = win32file.ReadFile(self.__hfile,volextent.getSize(),None)
         return output
+
+    def lock(self):
+        outbuffer = win32file.DeviceIoControl(self.__hfile,  winioctlcon.FSCTL_LOCK_VOLUME,  None, None, None )
+    
 
     

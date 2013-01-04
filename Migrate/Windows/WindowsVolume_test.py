@@ -1,3 +1,7 @@
+import sys
+
+sys.path.append('.\Windows')
+
 import WindowsVolume
 import unittest
 

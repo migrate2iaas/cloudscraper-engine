@@ -8,31 +8,45 @@ import win32security
 import win32api
 import pywintypes
 
+import MigrateExceptions
+import BackupSource
+import WindowsFileToBackup
 
-class WindowsBackupSource(BackupSource):
+class WindowsBackupSource(BackupSource.BackupSource):
     """Backup source in Windows OS"""
 
+    #
+    #__volumeDataSource = null
 
-    __volumeDataSource = null
-
-    # gets files enumerator
-    def getFileEnum():
-        __volumeDataSource
+    def __init__ (self):
+        self.__volumeDataSource = None
         return
 
-    # gets block range for range of files
-    # backupOptions - options incl file excludes, etc
-    def getFilesBlockRange(backupOptions):
-        
-        return
+    # gets enumerator of FilesToBackup type
+    def getFileEnum(self):
+        if self.__volumeDataSource == None:
+            raise PropertyNotInitialized("self.__volumeDataSource", " Use setBackupDataSource() to init it")
+        return WindowsFileToBackup.WindowsFileIterator(self.__volumeDataSource.getFileEnumerator() , self)
+
+    # gets block range list for all the filees. Note: it should be ordered
+    def getFilesBlockRange(self):
+        if self.__volumeDataSource == None:
+            raise PropertyNotInitialized("self.__volumeDataSource", " Use setBackupDataSource() to init it")
+        # in case we use all the volume and then make the excludes
+        return self.__volumeDataSource.getFilledVolumeBitmap()
 
     # sets the data source, should be Win32 Volume
-    def setBackupDataSource(dataSource):
-        __volumeDataSource = dataSource
+    def setBackupDataSource(self, dataSource):
+        self.__volumeDataSource = dataSource
         return
 
     # gets the data source
-    def getBackupDataSource():
-        return __volumeDataSource
+    def getBackupDataSource(self):
+        return self.__volumeDataSource
+
+    #returns iterable of block ranges
+    def getFileBlockRange(self,filename):
+        #TODO: return empty list on error
+        return self.__volumeDataSource.getFileDataBlocks(filename)
 
     #TODO: adds metadata blocks also
