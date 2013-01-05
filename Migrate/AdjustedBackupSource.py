@@ -133,8 +133,13 @@ class AdjustedBackupSource(BackupSource.BackupSource):
             removedfile = removed
             volname = self.__backupSource.getBackupDataSource().getVolumeName()
             if removedfile.startswith(volname):
-                removedfile = removedfile.replace(volname , "" , 1)
-            removedrange = self.__backupSource.getFileBlockRange(removedfile)
+                removedfile = removedfile.replace(volname + "\\" , "" , 1)
+            try:
+                removedrange = self.__backupSource.getFileBlockRange(removedfile)
+            except:
+                #todo: logging spport here
+                print("Cannot get blocks for removed file " + removedfile)
+                continue
             #NOTE: it may work faster if it's sorted, ugly code by the way
             for removedextent in removedrange:
                 for block in blocksrange:

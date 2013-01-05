@@ -73,7 +73,7 @@ class WindowsFileToBackup(FileToBackup.FileToBackup):
     #reopens source file if needed
     def __reopen(self):
         if self.__hFile == None:
-            self.__hFile = win32file.CreateFile( self.getSourcePath(), win32con.GENERIC_READ | ntsecuritycon.FILE_READ_ATTRIBUTES | ntsecuritycon.FILE_WRITE_ATTRIBUTES, win32con. FILE_SHARE_READ|win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_ALWAYS, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
+            self.__hFile = win32file.CreateFile( self.getSourcePath(), win32con.GENERIC_READ | win32con.READ_CONTROL | ntsecuritycon.FILE_READ_ATTRIBUTES | ntsecuritycon.FILE_WRITE_ATTRIBUTES, win32con. FILE_SHARE_READ|win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_ALWAYS, win32con.FILE_ATTRIBUTE_NORMAL|win32con. FILE_FLAG_BACKUP_SEMANTICS , 0 )
     
     def __close(self):
         if self.__hFile != None:

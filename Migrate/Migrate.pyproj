@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Windows\WindowsVolumeTransferTarget_test.py</StartupFile>
+    <StartupFile>Migrate.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -30,7 +30,13 @@
     <Compile Include="MigrateExceptions.py" />
     <Compile Include="FileToBackup.py" />
     <Compile Include="Migrate.py" />
+    <Compile Include="TransferBackingContainer.py" />
     <Compile Include="TransferTarget.py" />
+    <Compile Include="Windows\VSS.py" />
+    <Compile Include="Windows\VSSthruVscsc.py" />
+    <Compile Include="Windows\VssThruVshadow.py" />
+    <Compile Include="Windows\VSS_test.py" />
+    <Compile Include="Windows\WindoowsDiskContainer.py" />
     <Compile Include="Windows\WindowsBackupSource.py" />
     <Compile Include="Windows\WindowsFileToBackup.py" />
     <Compile Include="Windows\WindowsVolume.py" />

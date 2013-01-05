@@ -9,6 +9,8 @@ class DataExtent(object):
         self.__startInBytes = start
         self.__sizeInBytes = size
         self.__data = None
+        #make it pseudo iterable
+        self.__iterated = None
 
     def getSize(self):
         return self.__sizeInBytes
@@ -20,6 +22,16 @@ class DataExtent(object):
     # the data might be defered, it's stringizing (__str__) method should read the data
     def setData(self, data):
         self.__data = data
+
+    def __iter__(self):
+        self.__iterated = True
+        return self
+
+    def next(self):
+        if self.__iterated:
+            self.__iterated = None
+            return self
+        raise StopIteration
 
     def __str__(self):
         return "["+str(self.__startInBytes)+str(self.__startInBytes+self.__sizeInBytes)+")"

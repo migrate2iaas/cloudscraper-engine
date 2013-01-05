@@ -25,7 +25,7 @@ class WindowsVolumeTransferTarget_test(unittest.TestCase):
         #self.__WinVol.lock()
         extents = self.__WinBackupSource.getFilesBlockRange()
         for extent in extents:
-            extent.setData(self.__WinVol.readExtent(extent))
+            extent.setData(WindowsVolume.DeferedReader(extent, self.__WinVol))
         self.__WinTargetVol.TransferRawData(extents)
 
 if __name__ == '__main__':

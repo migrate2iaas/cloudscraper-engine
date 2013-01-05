@@ -20,7 +20,7 @@ class TransferTarget(object):
         raise NotImplementedError
 
     #deletes file transfered
-    def DeleteFileTransfer(self):
+    def DeleteFileTransfer(self , filename):
         raise NotImplementedError
 
     # TODO: think of better implementation

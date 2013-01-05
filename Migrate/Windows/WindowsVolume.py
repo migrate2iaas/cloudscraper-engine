@@ -1,4 +1,5 @@
-
+import sys
+sys.path.append(sys.path[0]+'\\..')
 
 import win32file
 import win32event
@@ -13,6 +14,15 @@ import ntsecuritycon
 from collections import namedtuple
 
 from DataExtent import DataExtent
+
+class DeferedReader(object):
+    """Defers reading extent from the volume extent"""
+    def __init__(self, volExtent, volume):
+        self.__volExtent = volExtent
+        self.__volume = volume
+    def __str__(self):
+        return self.__volume.readExtent(self.__volExtent)
+
 
 class AllFilesIterator(object):
     """Iterator for looping over a sequence backwards."""
@@ -124,7 +134,7 @@ class WindowsVolume(object):
         secur_att = win32security.SECURITY_ATTRIBUTES()
         secur_att.Initialize()
 
-        hFile = win32file.CreateFile( self.__volumeName+"\\"+fileName,ntsecuritycon.FILE_READ_ATTRIBUTES, win32con.FILE_SHARE_READ|win32con.FILE_SHARE_WRITE|win32con.FILE_SHARE_DELETE, secur_att,   win32con.OPEN_ALWAYS, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
+        hFile = win32file.CreateFile( self.__volumeName+"\\"+fileName,ntsecuritycon.FILE_READ_ATTRIBUTES, win32con.FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
 
         # input
         # STARTING_VCN_INPUT_BUFFER
@@ -219,6 +229,15 @@ class WindowsVolume(object):
                     volextents.append(volextent)
                 last_size = 0;
                 last_start = 0;
+            
+            #Here we decide what extent size is treated as max
+            #TODO: move it somewhere else. Bad to see it here
+            if last_size >= 64*1024*1024:
+                volextent = DataExtent(last_start, last_size)
+                volextents.append(volextent)
+                last_size = 0;
+                last_start = 0;
+
 
             bits_left = bits_left - 8;
             buffer_offset = buffer_offset + 1
