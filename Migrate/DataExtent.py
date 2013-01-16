@@ -1,5 +1,6 @@
 
 
+
 class DataExtent(object):
     """one linear data interval"""
     # members:
@@ -33,8 +34,13 @@ class DataExtent(object):
             return self
         raise StopIteration
 
+    def __getitem__(self, index):
+        if index == 0:
+            return self
+        raise IndexError
+
     def __str__(self):
-        return "["+str(self.__startInBytes)+str(self.__startInBytes+self.__sizeInBytes)+")"
+        return "["+str(self.__startInBytes)+";"+str(self.__startInBytes+self.__sizeInBytes)+")"
 
     def __contains__(self,other):
         if self.getStart() <= other.getStart() and other.getStart() + other.getSize() <= self.getSize() + self.getStart():
@@ -64,10 +70,27 @@ class DataExtent(object):
             return pieces
         
         if other.getStart() - self.getStart() > 0:
-            pieces.append(DataExtent(self.getStart(), other.getStart() - self.getStart() ) )
+            pieces.append(SplittedDataExtent(self.getStart(), other.getStart() - self.getStart() , self) )
         if other.getStart() + other.getSize() < self.getStart() + self.getSize():
-            pieces.append(DataExtent( other.getStart() + other.getSize() , self.getStart() + self.getSize() - (other.getStart() + other.getSize()) ) )
+            pieces.append(SplittedDataExtent( other.getStart() + other.getSize() , self.getStart() + self.getSize() - (other.getStart() + other.getSize()) , self ) )
         return pieces
-            
+    
+    # split onto two pieces starting from the splitstart returns tuple ( [start;splitstart);[splitstart;start+size) )
+    def split(self, splitstart):
+        if (splitstart < self.__startInBytes or splitstart > self.__sizeInBytes + self.__startInBytes):
+            return
+        pieces = self.substract(DataExtent(splitstart, 0))
+        return (pieces[0], pieces[1])
         
+
+class SplittedDataExtent(DataExtent):
+
+    def __init__(self, start, size, originalext):
+        self.__originalExt = originalext
+        return super(SplittedDataExtent, self).__init__(start, size)
          
+    def getData(self):
+        if self._DataExtent__data:
+           return super(SplittedDataExtent, self).getData()
+        data = self.__originalExt.getData()
+        return data[self.getStart() -  self.__originalExt.getStart():self.getStart() - self.__originalExt.getStart() + self.getSize()]

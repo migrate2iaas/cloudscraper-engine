@@ -13,6 +13,7 @@ import ctypes
 import winioctlcon
 import struct
 import ntsecuritycon
+import logging
 
 class WindowsVolumeTransferTarget(TransferTarget.TransferTarget):
     """Transfer target represented as Windows (NTFS) volume"""
@@ -32,7 +33,7 @@ class WindowsVolumeTransferTarget(TransferTarget.TransferTarget):
         # But only data backed by BackupRead could be used for BackupWrite
 
         # The SE_BACKUP_NAME and SE_RESTORE_NAME access privileges were specifically created to provide this ability to backup applications. 
-
+        logging.debug("Open file %s" , self.__volumeName + "\\" + fileName)
         secur_att = win32security.SECURITY_ATTRIBUTES()
         secur_att.Initialize()
         hfile = win32file.CreateFile( self.__volumeName + "\\" + fileName, win32con.GENERIC_READ | win32con.GENERIC_WRITE | ntsecuritycon.FILE_READ_ATTRIBUTES | ntsecuritycon.FILE_WRITE_ATTRIBUTES, win32con. FILE_SHARE_READ|win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_ALWAYS, win32con.FILE_ATTRIBUTE_NORMAL | win32con.FILE_FLAG_BACKUP_SEMANTICS , 0 )
@@ -49,12 +50,28 @@ class WindowsVolumeTransferTarget(TransferTarget.TransferTarget):
         # open as raw
         secur_att = win32security.SECURITY_ATTRIBUTES()
         secur_att.Initialize()
-        hfile = win32file.CreateFile( self.__volumeName, win32con.GENERIC_READ | win32con.GENERIC_WRITE | ntsecuritycon.FILE_READ_ATTRIBUTES | ntsecuritycon.FILE_WRITE_ATTRIBUTES, win32con. FILE_SHARE_READ|win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_ALWAYS, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
+        logging.debug("Open file %s" , self.__volumeName)
+        hfile = win32file.CreateFile( self.__volumeName, win32con.GENERIC_READ | win32con.GENERIC_WRITE | ntsecuritycon.FILE_READ_ATTRIBUTES | ntsecuritycon.FILE_WRITE_ATTRIBUTES, win32con. FILE_SHARE_READ|win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
         # lock it
         outbuffer = win32file.DeviceIoControl(hfile,  winioctlcon.FSCTL_LOCK_VOLUME,  None, None, None )
         # writing data
         # note: maybe to use multithreading in here, dunno
+
+        # NOTE: we substract the $boot file from the metadata here
+        # later, some better adjusts should be found too...
+        bootfile = DataExtent.DataExtent(0,4096)
+
         for volextent in volumeDataExtents:
+            #special handling for a boot options
+            if bootfile in volextent:
+                logging.debug("Skipping $boot extent in " + str(volextent) )
+                for bootextent in volextent.substract(bootfile):
+                    logging.debug("Write boot extent "+ str(bootextent) )
+                    win32file.SetFilePointer(hfile, bootextent.getStart(), win32con.FILE_BEGIN)
+                    win32file.WriteFile(hfile,bootextent.getData(),None)
+                continue
+
+            logging.debug("Write extent "+ str(volextent) )
             win32file.SetFilePointer(hfile, volextent.getStart(), win32con.FILE_BEGIN)
             win32file.WriteFile(hfile,volextent.getData(),None)
           
@@ -67,3 +84,8 @@ class WindowsVolumeTransferTarget(TransferTarget.TransferTarget):
 
     def DeleteFileTransfer(self , fileName):
         win32file.DeleteFile(self.__volumeName+"\\"+fileName)
+
+
+    def cancelTransfer(self):
+        #to get parser and discard me
+        return

@@ -1,6 +1,7 @@
 import FileToBackup
 import BackupAdjust
 import BackupSource
+import MigrateExceptions
 
 #for nner use only
 # it uses simple file io to read files
@@ -149,6 +150,40 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                         pieces = block.substract(removedextent)
                         for piece in pieces:
                              blocksrange.insert(blockindex+pieces.index(piece), piece)
+                        break
+
+        for (removed,replacement) in self.__adjustOption.getReplacedFilesEnum():
+            replacedfile = removed
+            volname = self.__backupSource.getBackupDataSource().getVolumeName()
+            if replacedfile.startswith(volname):
+                replacedfile = replacedfile.replace(volname + "\\" , "" , 1)
+            try:
+                replacedrange = self.__backupSource.getFileBlockRange(replacedfile)
+            except:
+                #todo: logging spport here
+                print("Cannot get blocks for removed file " + replacedfile)
+                continue
+            replacedoffset = 0
+            for replacedext in replacedrange:
+                for block in blocksrange:
+                    if replacedext.intersect(block):
+                        blockindex = blocksrange.index(block)
+                        blocksrange.remove(block)
+                        pieces = block.substract(replacedext)
+                        #TODO: checks and loggig here
+
+                        filereplacement = open(replacement, "rb")
+                        filereplacement.seek(replacedoffset)
+                        replacedext.setData(filereplacement.read(replacedext.getSize())) 
+                        replacedoffset = replacedoffset + replacedext.getSize()
+                        filereplacement.close()
+
+                        pieces.append(replacedext)
+                        # TODO: unittest for data extent with more than stupids asserts
+                        pieces = sorted(pieces)
+                        for piece in pieces:
+                            blocksrange.insert(blockindex+pieces.index(piece), piece)
+                        break
 
         return blocksrange
                        
@@ -163,6 +198,18 @@ class AdjustedBackupSource(BackupSource.BackupSource):
         
         if self.__adjustOption.isFileRemoved(filename):
             return list()
+        if self.__adjustOption.isFileReplaced(filename):
+            replacement = self.__adjustOption.fileReplacement(filename)
+            replacedrange = self.__backupSource.getFileBlockRange(filename)
+            replacedoffset = 0
+            for replacedext in replacedrange:
+                filereplacement = open(replacement, "rb")
+                filereplacement.seek(replacedoffset)
+                replacedext.setData(filereplacement.read(replacedext.getSize())) 
+                replacedoffset = replacedoffset + replacedext.getSize()
+                filereplacement.close()
+            return replacedrange
+
         return self.__backupSource.getFileBlockRange(filename)
 
 

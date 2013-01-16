@@ -68,7 +68,38 @@ class AdjusteBackupSource_test(unittest.TestCase):
         for block in self.__AdjustedBackupSource.getFilesBlockRange():
             overallsize = overallsize + block.getSize()
         print ("Overall data size after block removal: " + str(overallsize))
-       
+        
+    def test_blockreplacefile(self):
+        adjust = BackupAdjust.BackupAdjust()
+        #adjust.replaceFile("log.txt", "\\\\.\\c:\\log.txt")
+        self.__AdjustedBackupSource.setAdjustOption(adjust)
+        blocks = self.__AdjustedBackupSource.getFileBlockRange("log.txt")
+        data = blocks[0].getData()
+        self.assertTrue("F\x00R\x00O\x00M\x00D\x00I\x00S\x00K" in data);
+
+        adjust = BackupAdjust.BackupAdjust()
+        adjust.replaceFile("log.txt", "\\\\.\\c:\\log.txt")
+        self.__AdjustedBackupSource.setAdjustOption(adjust)
+        blocks = self.__AdjustedBackupSource.getFileBlockRange("log.txt")
+        data = blocks[0].getData()
+        self.assertFalse("F\x00R\x00O\x00M\x00D\x00I\x00S\x00K" in data);
+        #print (blocks[0].getData())
+        
+    def test_blockreplacefiles(self):
+        adjust = BackupAdjust.BackupAdjust()
+        self.__AdjustedBackupSource.setAdjustOption(adjust)
+        fileblocks = self.__AdjustedBackupSource.getFileBlockRange("log.txt")
+
+        adjust.replaceFile("log.txt", "\\\\.\\c:\\log.txt")
+        self.__AdjustedBackupSource.setAdjustOption(adjust)
+        
+        blockfound = False
+        for block in self.__AdjustedBackupSource.getFilesBlockRange():
+            if fileblocks[0] in block:
+                self.assertFalse("F\x00R\x00O\x00M\x00D\x00I\x00S\x00K" in block.getData());
+                self.assertTrue("F\x00R\x00O\x00M\x00D\x00I\x00S\x00K" in fileblocks[0].getData());
+                blockfound = True
+        self.assertTrue(blockfound)
 
 if __name__ == '__main__':
     unittest.main()

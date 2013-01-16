@@ -4,6 +4,7 @@ class BackupAdjust(object):
     def __init__(self):
         self.__extraFiles = dict()
         self.__removedFiles = set()
+        self.__replacedFiles = dict()
         return
 
     # adds source file (filename or file handle) to dest file path
@@ -27,3 +28,17 @@ class BackupAdjust(object):
      # sourcefiles iterable
     def getRemovedFilesEnum(self):
         return self.__removedFiles.__iter__()
+
+    def isFileReplaced(self, original):
+        return original in self.__replacedFiles.keys()
+
+    def replaceFile(self, original , replacement):
+        self.__replacedFiles[original] = replacement
+        return
+
+    def fileReplacement(self, original):
+        return self.__replacedFiles[original]
+
+     # sourcefiles iterable
+    def getReplacedFilesEnum(self):
+        return self.__replacedFiles.iteritems()

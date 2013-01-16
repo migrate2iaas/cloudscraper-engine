@@ -7,6 +7,8 @@ import MigrateExceptions
 import subprocess
 import re
 
+import logging
+
 #NOt used. see VSSthruVshadow
 class VssThruVshadow(VSS.VSS):
     """Mnaages VSS thru vshadow.exe CLI"""
@@ -43,17 +45,22 @@ class VssThruVshadow(VSS.VSS):
 
     #returns snapshot name in a way it could be opened by an any system call
     def createSnapshot(self, volumeName):
-      
-        output = subprocess.check_output(self.__binPath + " -p " + volumeName , shell=True);
+        
+        try:
+            output = subprocess.check_output(self.__binPath + " -p " + volumeName , shell=True);
+        except subprocess.CalledProcessError as ex:
+            logging.error("vshadow failed" + ex.output)
+            raise
+
         match = re.search('Shadow copy device name: ([\\\\][^\r\n ]+)',output)
         if match == None:
-            #TODO: log
+            logging.error("Bad vhsadow output! Cannot find shadow copy device name! Output %s" , output)
             raise IOError
         devname = match.group(1)
         
         match = re.search('SNAPSHOT ID = ([{][^\n\r ]+)',output)
         if match == None:
-            #TODO: log
+            logging.error("Bad vhsadow output! Cannot find snapshot id! Output %s" , output)
             raise IOError
         snapname = match.group(1)
         # make it openable
@@ -70,8 +77,12 @@ class VssThruVshadow(VSS.VSS):
 
         if snapname == None:
             raise KeyError;
-
-        output = subprocess.check_output(self.__binPath + " -ds=" + snapname , shell=True);
+        
+        try:
+            output = subprocess.check_output(self.__binPath + " -ds=" + snapname , shell=True);
+        except subprocess.CalledProcessError as ex:
+            logging.error("vshadow failed" + ex.output)
+            raise
 
         self.__snapshots[devName] = None
 

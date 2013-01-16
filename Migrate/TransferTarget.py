@@ -2,6 +2,8 @@
 class TransferTarget(object):
     """Abstract class representing backup transfer target"""
 
+    # TODO: change coding styles
+
     # writes the file
     # need file metadata\permissions too
     def TransferFile(self , fileToBackup):
@@ -21,6 +23,10 @@ class TransferTarget(object):
 
     #deletes file transfered
     def DeleteFileTransfer(self , filename):
+        raise NotImplementedError
+
+    #cancels the transfer and deletes the transfer target
+    def cancelTransfer(self):
         raise NotImplementedError
 
     # TODO: think of better implementation

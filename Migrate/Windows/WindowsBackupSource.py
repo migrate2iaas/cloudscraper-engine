@@ -44,7 +44,7 @@ class WindowsBackupSource(BackupSource.BackupSource):
     def getBackupDataSource(self):
         return self.__volumeDataSource
 
-    #returns iterable of block ranges
+    #returns iterable of block ranges, sorted from the file logical begining to the end
     def getFileBlockRange(self,filename):
         #TODO: return empty list on error
         return self.__volumeDataSource.getFileDataBlocks(filename)
