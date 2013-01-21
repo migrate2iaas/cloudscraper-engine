@@ -6,6 +6,7 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
      """special Windows options"""
      
      def __init__(self):
+         super(WindowsSystemAdjustOptions,self).__init__()
          random.seed()
          self.__systemPartStart = long(0x0100000);
          self.__newMbr = int(random.randint(1, 0x0FFFFFFF))

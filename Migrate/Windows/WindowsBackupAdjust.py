@@ -61,8 +61,18 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
         logging.debug("Current Control Set is " + str(currentcontrolset));
 
+        
+        #let's turn all of them by default
         diskSCSI = True
-        diskIDE = False
+        diskIDE = True
+
+        if self.__adjustConfig.getSysDiskType() == self.__adjustConfig.diskScsi:
+            diskSCSI = True
+            diskIDE = False
+        if self.__adjustConfig.getSysDiskType() == self.__adjustConfig.diskAta:
+            diskSCSI = False
+            diskIDE = True
+        
 
         if diskSCSI:
             logging.info("Setting the SCSI driver as default");
@@ -95,6 +105,46 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             atapikey.close()
 
 
+        turnRDP = True
+    
+        if turnRDP:
+            logging.info("Turning on RDP");
+
+            #NOTE: checked on 6.1 only! 
+            #TODO: Should recheck on other versions!
+            # 2d) add turn on rdp feature
+            firewarllruleskeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\FirewallRules"
+            logging.debug("Openning key" + firewarllruleskeypath);
+            firewallkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, firewarllruleskeypath , 0 , win32con.KEY_ALL_ACCESS )
+
+            remotedesk_value = "RemoteDesktop-In-TCP"
+            (oldvalue,valtype) = win32api.RegQueryValueEx(firewallkey, remotedesk_value)
+            logging.debug("Got " + remotedesk_value + " = " + str(oldvalue));
+            newvalue1 = str(oldvalue).replace("Active=FALSE", "Active=TRUE");
+            newvalue2 = newvalue1.replace("Action=Block", "Action=Allow")
+            logging.debug("Changing to  " + newvalue2)
+            win32api.RegSetValueEx(firewallkey, remotedesk_value , 0 , win32con.REG_SZ, newvalue1)
+            firewallkey.close()
+
+            #2e) setting the rdp setting to ones needed
+            #TODO: make kinda wrapper function!
+            terminalkeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Control\\Terminal Server\\WinStations\\RDP-TCP"
+            logging.debug("Openning key" + terminalkeypath);
+            terminalkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, terminalkeypath , 0 , win32con.KEY_ALL_ACCESS )
+            win32api.RegSetValueEx(terminalkey, "UserAuthentication" , 0, win32con.REG_DWORD, 1)
+            win32api.RegSetValueEx(terminalkey, "SecurityLayer" , 0, win32con.REG_DWORD, 1)
+            win32api.RegSetValueEx(terminalkey, "fAllowSecProtocolNegotiation" , 0, win32con.REG_DWORD, 1)
+            terminalkey.close()
+
+        turnHyperV = True
+    
+        if turnHyperV:
+            logging.info("Turning on HyperV bus");
+
+            #Note: it is good for 6.0+ only
+            idekey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\vmbus" , 0 , win32con.KEY_ALL_ACCESS )
+            win32api.RegSetValueEx(idekey, "Start" , 0, win32con.REG_DWORD, 0)
+            idekey.close()
         #Do operations
         #for operation in self.__adjustConfig.getSystemHiveOperations():
         #    operation.Do(rootRegKey)

@@ -12,17 +12,7 @@ class VSSthruVscsc(VSS.VSS):
 
     def __init__(self):
         # locate arch, move to some common Win code
-        machine_arch = None
-        if os.environ.get("PROCESSOR_ARCHITECTURE") == "AMD64" or os.environ.get("PROCESSOR_ARCHITEW6432") == "AMD64":
-            machine_arch = "x86_64"
-        else:
-            if os.environ.get("PROCESSOR_ARCHITECTURE")=="x86" and os.environ.get("PROCESSOR_ARCHITEW6432") == None:
-                machine_arch = "i386"
-
-        self.__machineArch = machine_arch
-        (major, minor , build, platform , version) = win32api.GetVersionEx()
-        self.__winMajor = major
-        self.__winMinor = minor
+        
         
         if self.__machineArch != i386:
             path = ".\\Windows\\vscs\\bin"+self.__machineArch+"\\6.0";

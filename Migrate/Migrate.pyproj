@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Migrate.py</StartupFile>
+    <StartupFile>Migrator_test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -27,19 +27,33 @@
     <Compile Include="BackupAdjust.py" />
     <Compile Include="BackupSource.py" />
     <Compile Include="DataExtent.py" />
+    <Compile Include="DataTransferProto.py" />
     <Compile Include="MigrateExceptions.py" />
     <Compile Include="FileToBackup.py" />
-    <Compile Include="Migrate.py" />
-    <Compile Include="TransferBackingContainer.py" />
+    <Compile Include="Migrate_modtest.py" />
+    <Compile Include="Migrator.py" />
+    <Compile Include="Migrator_test.py" />
+    <Compile Include="SystemAdjustOptions.py" />
+    <Compile Include="SystemInfo.py" />
     <Compile Include="TransferTarget.py" />
+    <Compile Include="VolumeInfo.py" />
     <Compile Include="Windows\VSS.py" />
     <Compile Include="Windows\VSSthruVscsc.py" />
     <Compile Include="Windows\VssThruVshadow.py" />
     <Compile Include="Windows\VSS_test.py" />
-    <Compile Include="Windows\WindoowsDiskContainer.py" />
+    <Compile Include="Windows\Windows.py" />
+    <Compile Include="Windows\WindowsBackupAdjust.py" />
+    <Compile Include="Windows\WindowsBackupAdjust_test.py" />
+    <Compile Include="Windows\WindowsDeviceDataTransferProto.py" />
     <Compile Include="Windows\WindowsBackupSource.py" />
+    <Compile Include="Windows\WindowsDiskParser.py" />
+    <Compile Include="Windows\WindowsDiskParser_test.py" />
     <Compile Include="Windows\WindowsFileToBackup.py" />
+    <Compile Include="Windows\WindowsSystemAdjustOptions.py" />
+    <Compile Include="Windows\WindowsSystemInfo.py" />
+    <Compile Include="Windows\WindowsVhdMedia.py" />
     <Compile Include="Windows\WindowsVolume.py" />
+    <Compile Include="Windows\WindowsVolumeInfo.py" />
     <Compile Include="Windows\WindowsVolumeTransferTarget.py" />
     <Compile Include="Windows\WindowsVolumeTransferTarget_test.py" />
     <Compile Include="Windows\WindowsVolume_test.py" />

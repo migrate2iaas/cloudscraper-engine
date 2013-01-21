@@ -9,14 +9,19 @@ import WindowsBackupSource
 import AdjustedBackupSource
 import BackupAdjust
 import Migrator
+import SystemAdjustOptions
+
+import Windows
 
 import logging
 
 
 class TestMigrateOptions(object):
-    def __init__(self , vhdpath, sysimagesize):
+    
+    def __init__(self , vhdpath, sysimagesize, disktype):
         self.__vhdPath = vhdpath
         self.__systemImageSize = sysimagesize
+        self.__diskType = disktype
         return
 
     def getHostOs(self):
@@ -37,11 +42,15 @@ class TestMigrateOptions(object):
     def getSystemConfig(self):
         return None
 
+    def getSystemDiskType(self):
+        return self.__diskType
+
 class Migrator_test(unittest.TestCase):
     """Migrator tests"""
     
     def setUp(self):
-        options = TestMigrateOptions("E:\\" , 79607885824) #must be the same as c:
+        size = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize()
+        options = TestMigrateOptions("E:\\" , size , SystemAdjustOptions.SystemAdjustOptions.diskUnknown) 
         self.__migrator = Migrator.Migrator(options)
 
         logging.basicConfig(format='%(asctime)s %(message)s' , filename='migrator.log',level=logging.DEBUG)

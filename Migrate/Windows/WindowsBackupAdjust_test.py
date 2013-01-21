@@ -14,6 +14,9 @@ import WindowsBackupAdjust
 
 class AdjustOptionTest(object):
     
+    diskScsi = 1
+    diskAta = 2
+
     def getPregeneratedBcdHivePath(self):
         return "F:\\cloudscraper\\migrate\\Migrate\\resources\\boot\\win\\BCD_MBR"
 
@@ -23,6 +26,8 @@ class AdjustOptionTest(object):
     def getNewSysPartStart(self):
         return 0x0100000
 
+    def getSysDiskType(self):
+        return diskScsi
 
 class WindowsBackupAdjust_test(unittest.TestCase):
      #TODO: make more sophisticated config\test reading data from some config. dunno

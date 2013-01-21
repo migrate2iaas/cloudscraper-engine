@@ -14,7 +14,7 @@ class Migrator(object):
         self.__transferTarget = None
         self.__systemAdjustOptions = None
         
-        self.__runOnWindows = True
+        self.__runOnWindows = False
 
         if self.__migrateOptions.getHostOs() == "Windows":
             import Windows
@@ -102,7 +102,13 @@ class Migrator(object):
 
 
     def checkSystemCompatibility(self):
-        return
+        if self.__runOnWindows:
+            SysInfo = self.__windows.getSystemInfo()
+            if SysInfo.getSystemArcheticture() == SysInfo.Archx8664 and SysInfo.getKernelVersion() == SysInfo.Win2008R2:
+                return True
+            logging.error("The configuration is not supported " + SysInfo.getSystemVersionString() + " arch:" + hex(SysInfo.getSystemArcheticture()));
+        logging.error("Non-Windows configs are not supported for now")
+        return False
 
     #reads the config and generates appropriate handlers for the each step
     def generateStepHandlers(self):
@@ -136,12 +142,15 @@ class Migrator(object):
         
         if self.__runOnWindows:
             self.__systemAdjustOptions = self.__windows.createSystemAdjustOptions()
+            self.__systemAdjustOptions.setSysDiskType(self.__migrateOptions.getSystemDiskType())
             self.__systemAdjustOptions.loadConfig(self.__migrateOptions.getSystemConfig())
+            
 
-            if self.__migrateOptions.getImageType() == "vhd" and self.__migrateOptions.getImagePlacement() == "local" and self.__windows.getVersion() >= self.__windows.Win2008R2:
+            if self.__migrateOptions.getImageType() == "vhd" and self.__migrateOptions.getImagePlacement() == "local" and self.__windows.getVersion() >= self.__windows.getSystemInfo().Win2008R2:
                self.__transferTarget = self.__windows.createVhdTransferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__systemAdjustOptions)
             else:
-                #TODO: log
+                #TODO: be more discriptive
+                logging.error("Bad options!");
                 return False
         return True
 
@@ -152,11 +161,13 @@ class Migrator(object):
     def startSystemBackup(self):
 
         #TODO: log and profile
-
+        logging.info("Started the system backup");
+        
         #get data
         extents = self.__adjustedBackupSource.getFilesBlockRange()
         #write 
         self.__transferTarget.TransferRawData(extents)
+
 
         return True
 
