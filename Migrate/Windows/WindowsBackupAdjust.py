@@ -11,6 +11,7 @@ import win32file
 import struct
 
 import logging
+import time
 
 class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
     """Backupa adjust for Windows OS"""
@@ -28,7 +29,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         windrive = originalwindir.split("\\")[0] #get C: substring
 
         # 1) mount hive from path
-        hivekeyname = "MigrationSys"
+        hivekeyname = "MigrationSys"+str(int(time.mktime(time.localtime())))
         
         # A call to RegLoadKey fails if the calling process does not have the SE_RESTORE_PRIVILEGE privilege.
         token = win32security.OpenProcessToken(-1, win32con.TOKEN_ALL_ACCESS )
@@ -104,8 +105,15 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             win32api.RegSetValueEx(atapikey, "Start" , 0, win32con.REG_DWORD, 0)
             atapikey.close()
 
+        if self.__adjustConfig.fixRDP():
+            turnRDP = True
 
-        turnRDP = True
+        rdpport=3389 #default port
+        if self.__adjustConfig.rdpPort():
+            rdpport = self.__adjustConfig.rdpPort()
+
+
+        
     
         if turnRDP:
             logging.info("Turning on RDP");
@@ -117,13 +125,26 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             logging.debug("Openning key" + firewarllruleskeypath);
             firewallkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, firewarllruleskeypath , 0 , win32con.KEY_ALL_ACCESS )
 
-            remotedesk_value = "RemoteDesktop-In-TCP"
-            (oldvalue,valtype) = win32api.RegQueryValueEx(firewallkey, remotedesk_value)
+            try:
+                remotedesk_value = "RemoteDesktop-In-TCP"
+                (oldvalue,valtype) = win32api.RegQueryValueEx(firewallkey, remotedesk_value)
+            except Exception as ex: 
+                logging.debug("failed to find " + remotedesk_value + "in firewall settings. Possibly 2012 Server, trying RemoteDesktop-UserMode-In-TCP");
+                #TODO: ugly , should depend on win version
+                remotedesk_value = "RemoteDesktop-UserMode-In-TCP"
+                (oldvalue,valtype) = win32api.RegQueryValueEx(firewallkey, remotedesk_value)
+
             logging.debug("Got " + remotedesk_value + " = " + str(oldvalue));
-            newvalue1 = str(oldvalue).replace("Active=FALSE", "Active=TRUE");
-            newvalue2 = newvalue1.replace("Action=Block", "Action=Allow")
-            logging.debug("Changing to  " + newvalue2)
-            win32api.RegSetValueEx(firewallkey, remotedesk_value , 0 , win32con.REG_SZ, newvalue1)
+            newvalue = str(oldvalue).replace("Active=FALSE", "Active=TRUE");
+            newvalue = newvalue.replace("Action=Block", "Action=Allow")
+            
+            portstart = newvalue.find("LPort=")
+            portend = newvalue[newvalue.find("LPort="):].find("|")
+            portentry = newvalue[portstart:portstart+portend]
+            newvalue = newvalue.replace(portentry, "LPort="+str(rdpport))
+
+            logging.debug("Changing to  " + newvalue)
+            win32api.RegSetValueEx(firewallkey, remotedesk_value , 0 , win32con.REG_SZ, newvalue)
             firewallkey.close()
 
             #2e) setting the rdp setting to ones needed
@@ -134,6 +155,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             win32api.RegSetValueEx(terminalkey, "UserAuthentication" , 0, win32con.REG_DWORD, 1)
             win32api.RegSetValueEx(terminalkey, "SecurityLayer" , 0, win32con.REG_DWORD, 1)
             win32api.RegSetValueEx(terminalkey, "fAllowSecProtocolNegotiation" , 0, win32con.REG_DWORD, 1)
+            win32api.RegSetValueEx(terminalkey, "PortNumber" , 0 ,  win32con.REG_DWORD , rdpport)
             terminalkey.close()
 
         turnHyperV = True
@@ -180,7 +202,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
     def generateBcd(self, backupSource):
         # we use pregenerated hive which we alter a bit in here
         originalhivepath = self.__adjustConfig.getPregeneratedBcdHivePath()
-        hivepath = os.environ['TEMP']+"\\tempbcdhive"
+        hivepath = os.environ['TEMP']+"\\tempbcdhive"+str(int(time.mktime(time.localtime())))
         shutil.copy2(originalhivepath , hivepath)
         #TODO: copy hive to sorta temp dir
         bcdkeyname = "MigrationBCD"
@@ -279,7 +301,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         windir = originalwindir.split(":\\")[-1] #get substring after X:\
         tmphiveroot = os.environ['TEMP']
         #TODO: more logs here
-        sys_hive_path = tmphiveroot+"\\syshive";
+        sys_hive_path = tmphiveroot+"\\syshive"+str(int(time.mktime(time.localtime())));
         sysHiveTmp = open(sys_hive_path, "wb")
         extentsSysHive = backupSource.getFileBlockRange(windir+"\\system32\\config\\system")
         for extent in extentsSysHive:
@@ -292,7 +314,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         self.adjustSystemHive(sys_hive_path)
 
         extentsSoftHive = backupSource.getFileBlockRange(windir+"\\system32\\config\\software")
-        soft_hive_path = tmphiveroot+"\\softhive";
+        soft_hive_path = tmphiveroot+"\\softhive"+str(int(time.mktime(time.localtime())));
         softHiveTmp = open(soft_hive_path, "wb")
         for extent in extentsSoftHive:
             data_read = extent.getData()

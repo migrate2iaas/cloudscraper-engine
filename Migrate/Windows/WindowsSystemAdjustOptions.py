@@ -42,3 +42,9 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
      # gets new mount points
      def getMountPoints():
          return
+
+     def fixRDP(self):
+         return True
+
+     def rdpPort(self):
+         return 3389

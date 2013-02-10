@@ -1,3 +1,0 @@
-Extra Python modules used:
-*Azure
-*PyWin32

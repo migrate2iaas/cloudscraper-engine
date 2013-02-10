@@ -64,12 +64,12 @@ class WindowsSystemInfo(SystemInfo.SystemInfo):
     def getSystemVersionString(self):
         suite = ""
         ostype = "Unknown"
-        if self.__winOsType == win32con.VER_NT_WORKSTATION:
+        if self.__winOsType == 1: #VER_NT_WORKSTATION:
             ostype = "Desktop";
-        if self.__winOsType == win32con.VER_NT_SERVER:
+        if self.__winOsType == 3: #VER_NT_SERVER:
             ostype = "Server"
         # What to do in this case?
-        if self.__winOsType == win32con.VER_NT_DOMAIN_CONTROLLER:
+        if self.__winOsType == 2: #VER_NT_DOMAIN_CONTROLLER:
             ostype = "Domain Controller"
         #TODO: convert self.__winSuite to text according to _OSVERSIONINFOEX
         return "Windows "+ ostype + str()+"."+str(self.__winMinor)+"."+str(self.__winBuild)+" SP:"+str(self.__winServicePackMajor)+"."+str(self.__winServicePackMinor)+" \"" + self.__winVersionExtraString +"\" Suite mask:" +  hex(self.__winSuite)

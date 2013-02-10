@@ -2,6 +2,7 @@
 import sys
 
 sys.path.append('.\Windows')
+sys.path.append('.\Amazon')
 
 import unittest
 import WindowsVolume
@@ -28,7 +29,7 @@ class TestMigrateOptions(object):
         return "Windows"
 
     def getImageType(self):
-        return "vhd"
+        return "VHD"
     
     def getImagePlacement(self):
         return "local"
@@ -44,6 +45,34 @@ class TestMigrateOptions(object):
 
     def getSystemDiskType(self):
         return self.__diskType
+
+    def getCloudStorage(self):
+        return "feofftestfullmigrate123uswest"
+
+    def getCloudUser(self):
+        return 'AKIAIY2X62QVIHOPEFEQ'
+    
+    def getCloudPass(self):
+        return 'fD2ZMGUPTkCdIb8BusZsSp5saB9kNQxuG0ITA8YB'
+    
+    def getNewSystemSize(self):
+        return self.__systemImageSize
+
+    def getTargetCloud(self):
+        return "EC2"
+
+    def getArch(self):
+        return "x86_64"
+
+    def getZone(self):
+        return "us-west-1a"
+
+    def getRegion(self):
+        return "us-west-1"
+
+    def getLocalDiskFile(self):
+        return self.getSystemImagePath()
+
 
 class Migrator_test(unittest.TestCase):
     """Migrator tests"""

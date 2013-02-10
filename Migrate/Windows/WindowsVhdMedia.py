@@ -3,10 +3,12 @@ import re
 
 import logging
 
+# TODO: make media base class
 class WindowsVhdMedia(object):
     """VHD disk created and managed by Win2008R2+ systems"""
 
     #it should generate RW-access (protocol to write data) so it could be accessed from elsewhere
+
 
     # 
     def __init__(self, filename, maxInBytes):
@@ -63,8 +65,8 @@ class WindowsVhdMedia(object):
         scriptpath = "diskpart_close.tmp"
         scrfile = open(scriptpath, "w+")
         script = "select vdisk file=\""+self.__fileName+"\"";
-        script.append("\ndetach vdisk");
-        srcfile.write(script);
+        script = script + "\ndetach vdisk";
+        scrfile.write(script);
         scrfile.close()
 
         logging.debug("Executing diskpart close script %s" , script);
@@ -79,6 +81,7 @@ class WindowsVhdMedia(object):
     def flush(self):
         return
         
+
     #override for WindowsMedia
     # returns path good for opening windows devices
     def getWindowsDevicePath(self):
@@ -86,3 +89,7 @@ class WindowsVhdMedia(object):
 
     def getWindowsDiskNumber(self):
         return self.__diskNo
+
+    #sets the channel so the data may be sent whenever data changes
+    def setChannel(self):
+        return

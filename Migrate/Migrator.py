@@ -2,15 +2,24 @@ import AdjustedBackupSource
 import logging
 import traceback
 import sys
+import os
+import stat
+import DataExtent
+
+import MigrateConfig
+import CloudConfig
+import SystemAdjustOptions
 
 class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT"""
 
-    def __init__(self , userOptions):
+
+    def __init__2(self , migrateOptions):
         self.__adjustedBackupSource = None
         self.__backupSource = None
         self.__adjustOption = None
-        self.__migrateOptions = userOptions
+        self.__migrateOptions = migrateOptions
+        self.__cloudOptions = migrateOptions
         self.__transferTarget = None
         self.__systemAdjustOptions = None
         
@@ -20,16 +29,40 @@ class Migrator(object):
             import Windows
             self.__windows = Windows.Windows()
             self.__runOnWindows = True
+        if self.__cloudOptions.getTargetCloud() == "EC2":
+            import S3UploadChannel
+            self.__cloudName = self.__migrateOptions.getTargetCloud()
+
+    def __init__(self , cloudOptions , migrateOptions, sysAdjustOptions):
+        self.__adjustedBackupSource = None
+        self.__backupSource = None
+        self.__adjustOption = None
+        self.__migrateOptions = migrateOptions
+        self.__cloudOptions = cloudOptions
+        self.__transferTarget = None
+        self.__systemAdjustOptions = sysAdjustOptions
+        
+        self.__runOnWindows = False
+
+        #TODO: analyze both host and source systems
+        if self.__migrateOptions.getHostOs() == "Windows":
+            import Windows
+            self.__windows = Windows.Windows()
+            self.__runOnWindows = True
+            self.__winSystemAdjustOptions = None
+        if self.__cloudOptions.getTargetCloud() == "EC2":
+            import S3UploadChannel
+            self.__cloudName = self.__cloudOptions.getTargetCloud()
 
     # runs full scenario from the start to the upload
     def runFullScenario(self):
 
         try:
-            logging.info("GeneratingmMigration process step handlers")
+            logging.info("Generating migration process step handlers...")
             # 0) check the input action config: what to do
             self.generateStepHandlers()
         
-            logging.info("Checking system compatibility")
+            logging.info("Checking system compatibility...")
             # 1) test the system on compatibility
             if self.checkSystemCompatibility() == False:
                 logging.info("Compatipility check failed")
@@ -86,6 +119,7 @@ class Migrator(object):
             logging.error(ex)
             logging.error(traceback.format_exc())
             
+         
             
             
 
@@ -104,7 +138,7 @@ class Migrator(object):
     def checkSystemCompatibility(self):
         if self.__runOnWindows:
             SysInfo = self.__windows.getSystemInfo()
-            if SysInfo.getSystemArcheticture() == SysInfo.Archx8664 and SysInfo.getKernelVersion() == SysInfo.Win2008R2:
+            if SysInfo.getSystemArcheticture() == SysInfo.Archx8664 and SysInfo.getKernelVersion() >= SysInfo.Win2008R2:
                 return True
             logging.error("The configuration is not supported " + SysInfo.getSystemVersionString() + " arch:" + hex(SysInfo.getSystemArcheticture()));
         logging.error("Non-Windows configs are not supported for now")
@@ -123,7 +157,7 @@ class Migrator(object):
             import WindowsBackupSource
             import WindowsBackupAdjust
             self.__backupSource = WindowsBackupSource.WindowsBackupSource()
-            self.__adjustOption = WindowsBackupAdjust.WindowsBackupAdjust(self.__systemAdjustOptions)
+            self.__adjustOption = WindowsBackupAdjust.WindowsBackupAdjust(self.__winSystemAdjustOptions)
 
         self.__backupSource.setBackupDataSource(self.generateSystemDataBackupSource())
         return True
@@ -141,17 +175,26 @@ class Migrator(object):
     def createSystemTransferTarget(self):
         
         if self.__runOnWindows:
-            self.__systemAdjustOptions = self.__windows.createSystemAdjustOptions()
-            self.__systemAdjustOptions.setSysDiskType(self.__migrateOptions.getSystemDiskType())
-            self.__systemAdjustOptions.loadConfig(self.__migrateOptions.getSystemConfig())
+            #TODO: need kinda redisign the stuff related to system adjusts!
+            self.__winSystemAdjustOptions = self.__windows.createSystemAdjustOptions()
+            self.__winSystemAdjustOptions.setSysDiskType(self.__systemAdjustOptions.getSysDiskType())
+            #self.__systemAdjustOptions.loadConfig(self.__migrateOptions.getSystemConfig())
             
 
-            if self.__migrateOptions.getImageType() == "vhd" and self.__migrateOptions.getImagePlacement() == "local" and self.__windows.getVersion() >= self.__windows.getSystemInfo().Win2008R2:
-               self.__transferTarget = self.__windows.createVhdTransferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__systemAdjustOptions)
+            if self.__migrateOptions.getImageType() == "VHD" and self.__migrateOptions.getImagePlacement() == "local" and self.__windows.getVersion() >= self.__windows.getSystemInfo().Win2008R2:
+               #TODO: create max VHD size parm also
+               self.__transferTarget = self.__windows.createVhdTransferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
             else:
                 #TODO: be more discriptive
                 logging.error("Bad options!");
                 return False
+        if self.__cloudName == "EC2":
+            bucket = self.__cloudOptions.getCloudStorage()
+            awskey = self.__cloudOptions.getCloudUser()
+            awssecret = self.__cloudOptions.getCloudPass()
+            import S3UploadChannel
+            self.__transferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__migrateOptions.getSystemImageSize() , self.__cloudOptions.getRegion() , None , self.__migrateOptions.getImageType())
+
         return True
 
     def adjustSystemBackupTarget(self):
@@ -161,15 +204,67 @@ class Migrator(object):
     def startSystemBackup(self):
 
         #TODO: log and profile
-        logging.info("Started the system backup");
+        logging.info("\n>>>>>>>>>>>>>>>>> Started the system imaging\n");
         
         #get data
         extents = self.__adjustedBackupSource.getFilesBlockRange()
-        #write 
+        
+        #TODO: create kinda callbacks for transfers to monitor them
+        #write,
         self.__transferTarget.TransferRawData(extents)
 
+        #TODO: quick and dirty workaround, choose something better!
+        if self.__runOnWindows:
+           self.__windows.closeMedia()
+
+        filesize = os.stat(self.__migrateOptions.getSystemImagePath()).st_size
+        #TODO: should be 10 in amazon impl
+        file = open(self.__migrateOptions.getSystemImagePath() , "rb")
+       
+        datasize = 10*1024*1024 #mb
+        dataplace = 0
+        datasent = 0
+        while 1:
+            try:
+                data = file.read(datasize)
+            except EOFError:
+                break
+            if len(data) == 0:
+                break
+            dataext = DataExtent.DataExtent(dataplace , len(data))
+            dataplace = dataplace + len(data)
+            dataext.setData(data)
+            self.__transferChannel.uploadData(dataext)
+            datasent = datasent + 1
+            if (datasent % 100 == 0):
+                logging.info(str(datasent*datasize/1024/1024)+ "MB of "+ str(int(filesize/1024/1024)) + " MB sent to " + self.__cloudName)
+
+        
+        self.__transferChannel.waitTillUploadComplete()
+        logging.info("Preparing the image uploaded for cloud use")
+        imageid = self.__transferChannel.confirm()
+        #TODO: we need to get the config somehow for the migration to take place
+
+        logging.info("Creating VM from the image...")
+        self.generateInstance(imageid)
 
         return True
 
     def checkInputParams(self):
+        return True
+
+    def generateInstance(self , imageid):
+        if self.__cloudName == "EC2":
+            import EC2InstanceGenerator
+            import EC2Instance
+            awskey = self.__cloudOptions.getCloudUser()
+            awssecret = self.__cloudOptions.getCloudPass()
+            generator = EC2InstanceGenerator.EC2InstanceGenerator(self.__cloudOptions.getRegion())
+            instance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , awskey, awssecret , self.__migrateOptions.getSystemImagePath())
+            
+            #TODO: the config for the import is really needed!
+            #TODO: config for a) cloud b) os c) image type d) image options
+            #TODO: 
+            #TODO: system validity checks (constraints)
+
         return True

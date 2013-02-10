@@ -60,6 +60,7 @@ class WindowsVolumeTransferTarget(TransferTarget.TransferTarget):
         # NOTE: we substract the $boot file from the metadata here
         # later, some better adjusts should be found too...
         bootfile = DataExtent.DataExtent(0,4096)
+        extentswritten = 0
 
         for volextent in volumeDataExtents:
             #special handling for a boot options
@@ -71,9 +72,12 @@ class WindowsVolumeTransferTarget(TransferTarget.TransferTarget):
                     win32file.WriteFile(hfile,bootextent.getData(),None)
                 continue
 
-            logging.debug("Write extent "+ str(volextent) )
+            logging.debug("Write extent " + str(volextent) )
             win32file.SetFilePointer(hfile, volextent.getStart(), win32con.FILE_BEGIN)
             win32file.WriteFile(hfile,volextent.getData(),None)
+            extentswritten = extentswritten + 1
+            if ( extentswritten  % 100 == 0):
+                logging.info(str(extentswritten) + " of " + str(len(volumeDataExtents)) + " original disk extents copied ("+ str(extentswritten*100/len(volumeDataExtents)) +"%)" )
           
         win32file.CloseHandle(hfile)
 

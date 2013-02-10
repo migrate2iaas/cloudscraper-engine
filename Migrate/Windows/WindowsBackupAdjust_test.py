@@ -10,12 +10,15 @@ import AdjustedBackupSource
 import BackupAdjust
 import WindowsVolumeTransferTarget
 import WindowsBackupAdjust
+import SystemAdjustOptions
 
-
-class AdjustOptionTest(object):
+class AdjustOptionTest(SystemAdjustOptions.SystemAdjustOptions):
     
     diskScsi = 1
     diskAta = 2
+
+    def __init__(self):
+        super(AdjustOptionTest,self).__init__()
 
     def getPregeneratedBcdHivePath(self):
         return "F:\\cloudscraper\\migrate\\Migrate\\resources\\boot\\win\\BCD_MBR"
@@ -27,7 +30,13 @@ class AdjustOptionTest(object):
         return 0x0100000
 
     def getSysDiskType(self):
-        return diskScsi
+        return self.diskScsi
+
+    def rdpPort(self):
+        return 15500
+
+    def fixRDP(self):
+        return True
 
 class WindowsBackupAdjust_test(unittest.TestCase):
      #TODO: make more sophisticated config\test reading data from some config. dunno

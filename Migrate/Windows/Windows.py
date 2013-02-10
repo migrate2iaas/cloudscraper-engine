@@ -106,3 +106,6 @@ class Windows(object):
 
     def getSystemInfo(self):
         return WindowsSystemInfo.WindowsSystemInfo()
+
+    def closeMedia(self):
+        self.__vhd.close()

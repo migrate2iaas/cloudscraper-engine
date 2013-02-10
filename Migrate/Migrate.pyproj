@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Migrator_test.py</StartupFile>
+    <StartupFile>Windows\WindowsBackupAdjust_test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -24,14 +24,24 @@
   <ItemGroup>
     <Compile Include="AdjusteBackupSource_test.py" />
     <Compile Include="AdjustedBackupSource.py" />
+    <Compile Include="Amazon\AmazonConfigs.py" />
+    <Compile Include="Amazon\EC2Instance.py" />
+    <Compile Include="Amazon\EC2InstanceGenerator.py" />
+    <Compile Include="Amazon\EC2Instance_test.py" />
+    <Compile Include="Amazon\S3UploadChannel.py" />
+    <Compile Include="Amazon\S3UploadChannel_test.py" />
     <Compile Include="BackupAdjust.py" />
     <Compile Include="BackupSource.py" />
+    <Compile Include="CloudConfig.py" />
     <Compile Include="DataExtent.py" />
     <Compile Include="DataTransferProto.py" />
+    <Compile Include="Migrate.py" />
+    <Compile Include="MigrateConfig.py" />
     <Compile Include="MigrateExceptions.py" />
     <Compile Include="FileToBackup.py" />
     <Compile Include="Migrate_modtest.py" />
     <Compile Include="Migrator.py" />
+    <Compile Include="MigratorConfigurer.py" />
     <Compile Include="Migrator_test.py" />
     <Compile Include="SystemAdjustOptions.py" />
     <Compile Include="SystemInfo.py" />
@@ -59,9 +69,14 @@
     <Compile Include="Windows\WindowsVolume_test.py" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Amazon\" />
+    <Folder Include="ElasticHosts\" />
+    <Folder Include="Azure\" />
     <Folder Include="Windows" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Amazon\import_vm.bat" />
+    <Content Include="Amazon\set_amazon_env.bat" />
     <Content Include="MODULES.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
