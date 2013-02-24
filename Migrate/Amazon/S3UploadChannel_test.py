@@ -17,6 +17,7 @@ import WindowsDeviceDataTransferProto
 import S3UploadChannel
 import time
 import DataExtent
+import logging
 
 class S3UploadChannel_test(unittest.TestCase):
     
@@ -24,6 +25,7 @@ class S3UploadChannel_test(unittest.TestCase):
         #TODO: make test account!
         self.__key = 'AKIAIY2X62QVIHOPEFEQ'
         self.__secret = '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'
+        logging.basicConfig(format='%(asctime)s %(message)s' , filename='s3channel.log',level=logging.DEBUG)
         return
         
 
@@ -43,6 +45,7 @@ class S3UploadChannel_test(unittest.TestCase):
         
 
     def test_file_euro(self):
+        
         size = 1024*1024*1024
         bucket = 'feoffuseastfiletest.s3-eu-west-1a'
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size , 'eu-west-1')
@@ -81,6 +84,57 @@ class S3UploadChannel_test(unittest.TestCase):
 
         channel.waitTillUploadComplete()
         channel.confirm()
+
+    def resumeUpload(self , region , bucket, filename , size):
+        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size, region, None , True)
+        
+        #TODO: make more different sizes
+        #TODO: test on file changes 
+        #TODO: test on different chunks
+        file = open(filename , "rb")
+        datasize = 10*1024*1024 #mb
+        sizeiteration = 0
+        while 1:
+            dataplace = 0
+            fileend = False
+            sizeiteration = sizeiteration + 1
+            datatotransfer = sizeiteration*1024*1024*1024 # gb
+            while 1:
+                try:
+                    data = file.read(datasize)
+                except EOFError:
+                    fileend = True
+                    break
+                if len(data) == 0:
+                    fileend = True
+                    break
+                dataext = DataExtent.DataExtent(dataplace , len(data))
+                dataplace = dataplace + len(data)
+                dataext.setData(data)
+                channel.uploadData(dataext)
+                if dataplace > datatotransfer:
+                    break
+
+            channel.waitTillUploadComplete()
+            if fileend == True:
+                break
+        
+        channel.confirm()
+
+    def test_resumeupload_useast(self):
+        filename = 'E:\\vms\\2003r2\\win2003r2_32.vhd'
+        size = 20*1024*1024*1024
+        bucket = 'feoffuseastfiletestvhd'
+        region = ''
+        self.resumeUpload(region, bucket , filename , size)
+        #NOTE: somehow we should check the performance of this upload is the same as 
+    def test_resumeupload_euro(self):
+        bucket = 'feoffuseastfiletestvhdeuro'
+        region = 'eu-west-1'
+        filename = 'E:\\vms\\2003r2\\win2003r2_32.vhd'
+        size = 20*1024*1024*1024
+        self.resumeUpload(region, bucket , filename , size)
+
 
 if __name__ == '__main__':
     unittest.main()

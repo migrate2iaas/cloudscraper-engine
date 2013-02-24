@@ -33,7 +33,7 @@ class Migrator(object):
             import S3UploadChannel
             self.__cloudName = self.__migrateOptions.getTargetCloud()
 
-    def __init__(self , cloudOptions , migrateOptions, sysAdjustOptions):
+    def __init__(self , cloudOptions , migrateOptions, sysAdjustOptions , skipImaging=False, skipUpload=False, resumeUpload=False):
         self.__adjustedBackupSource = None
         self.__backupSource = None
         self.__adjustOption = None
@@ -43,6 +43,10 @@ class Migrator(object):
         self.__systemAdjustOptions = sysAdjustOptions
         
         self.__runOnWindows = False
+
+        self.__skipImaging = skipImaging
+        self.__skipUpload = skipUpload
+        self.__resumeUpload = resumeUpload
 
         #TODO: analyze both host and source systems
         if self.__migrateOptions.getHostOs() == "Windows":
@@ -153,6 +157,8 @@ class Migrator(object):
             return self.__windows.getSystemDataBackupSource()
 
     def createSystemBackupSource(self):
+        if self.__skipImaging:
+            return True
         if self.__runOnWindows:
             import WindowsBackupSource
             import WindowsBackupAdjust
@@ -181,7 +187,7 @@ class Migrator(object):
             #self.__systemAdjustOptions.loadConfig(self.__migrateOptions.getSystemConfig())
             
 
-            if self.__migrateOptions.getImageType() == "VHD" and self.__migrateOptions.getImagePlacement() == "local" and self.__windows.getVersion() >= self.__windows.getSystemInfo().Win2008R2:
+            if self.__migrateOptions.getImageType() == "VHD" and self.__migrateOptions.getImagePlacement() == "local" and self.__windows.getVersion() >= self.__windows.getSystemInfo().Win2008R2 and self.__skipImaging == False:
                #TODO: create max VHD size parm also
                self.__transferTarget = self.__windows.createVhdTransferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
             else:
@@ -203,24 +209,29 @@ class Migrator(object):
 
     def startSystemBackup(self):
 
-        #TODO: log and profile
-        logging.info("\n>>>>>>>>>>>>>>>>> Started the system imaging\n");
+        if self.__skipImaging:
+            logging.info("\n>>>>>>>>>>>>>>>>> Skipping the system imaging\n");
+        else:
+            #TODO: log and profile
+            logging.info("\n>>>>>>>>>>>>>>>>> Started the system imaging\n");
         
-        #get data
-        extents = self.__adjustedBackupSource.getFilesBlockRange()
+            #get data
+            extents = self.__adjustedBackupSource.getFilesBlockRange()
         
-        #TODO: create kinda callbacks for transfers to monitor them
-        #write,
-        self.__transferTarget.TransferRawData(extents)
+            #TODO: create kinda callbacks for transfers to monitor them
+            #write,
+            self.__transferTarget.TransferRawData(extents)
 
-        #TODO: quick and dirty workaround, choose something better!
-        if self.__runOnWindows:
-           self.__windows.closeMedia()
+            #TODO: quick and dirty workaround, choose something better!
+            if self.__runOnWindows:
+               self.__windows.closeMedia()
 
         filesize = os.stat(self.__migrateOptions.getSystemImagePath()).st_size
-        #TODO: should be 10 in amazon impl
+        #TODO: should be 10  mb in amazon impl
         file = open(self.__migrateOptions.getSystemImagePath() , "rb")
-       
+        
+        logging.info("\n>>>>>>>>>>>>>>>>> Started the system image upload\n");
+
         datasize = 10*1024*1024 #mb
         dataplace = 0
         datasent = 0
@@ -236,7 +247,7 @@ class Migrator(object):
             dataext.setData(data)
             self.__transferChannel.uploadData(dataext)
             datasent = datasent + 1
-            if (datasent % 100 == 0):
+            if (datasent % 100 == 10):
                 logging.info(str(datasent*datasize/1024/1024)+ "MB of "+ str(int(filesize/1024/1024)) + " MB sent to " + self.__cloudName)
 
         

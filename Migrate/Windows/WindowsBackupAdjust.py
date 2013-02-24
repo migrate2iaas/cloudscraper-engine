@@ -74,15 +74,13 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             diskSCSI = False
             diskIDE = True
         
+        controlsetkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Control" , 0 , win32con.KEY_ALL_ACCESS )
+        win32api.RegSetValueEx(controlsetkey, "SystemBootDevice" , 0, win32con.REG_SZ, "multi(0)disk(0)rdisk(0)partition(1)")
+        win32api.RegSetValueEx(controlsetkey, "FirmwareBootDevice" , 0, win32con.REG_SZ, "multi(0)disk(0)rdisk(0)partition(1)")
+        controlsetkey.close()
 
         if diskSCSI:
             logging.info("Setting the SCSI driver as default");
-
-            controlsetkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Control" , 0 , win32con.KEY_ALL_ACCESS )
-            win32api.RegSetValueEx(controlsetkey, "SystemBootDevice" , 0, win32con.REG_SZ, "scsi(0)disk(0)rdisk(0)partition(1)")
-            win32api.RegSetValueEx(controlsetkey, "FirmwareBootDevice" , 0, win32con.REG_SZ, "scsi(0)disk(0)rdisk(0)partition(1)")
-            controlsetkey.close()
-
             # 2c) add lsiscsi to load on start
             lsikey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\LSI_SCSI" , 0 , win32con.KEY_ALL_ACCESS )
             win32api.RegSetValueEx(lsikey, "Start" , 0, win32con.REG_DWORD, 0)
@@ -90,12 +88,6 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         
         if diskIDE:
             logging.info("Setting the IDE driver as default");
-
-            controlsetkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Control" , 0 , win32con.KEY_ALL_ACCESS )
-            win32api.RegSetValueEx(controlsetkey, "SystemBootDevice" , 0, win32con.REG_SZ, "multi(0)disk(0)rdisk(0)partition(1)")
-            win32api.RegSetValueEx(controlsetkey, "FirmwareBootDevice" , 0, win32con.REG_SZ, "multi(0)disk(0)rdisk(0)partition(1)")
-            controlsetkey.close()
-
             # 2c) add intelide\atapi to load on start
             idekey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\intelide" , 0 , win32con.KEY_ALL_ACCESS )
             win32api.RegSetValueEx(idekey, "Start" , 0, win32con.REG_DWORD, 0)
@@ -246,18 +238,26 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
       
     # creates and adjusts 
     def adjustBcd(self, backupSource):
-        originalwindir = os.environ['windir']
-        windrive = originalwindir.split("\\")[0] #get C: substring
-        bootdir = windrive+"\\Boot"
+        
+        bootdir = "\\Boot"
         
         newbcd = self.generateBcd(backupSource)
+        # check if bcd exists on backup source (vss snapshot)
+        bcd_exists = True
+        bcd_size = 0
+        try:
+            blocks = backupSource.getFileBlockRange(bootdir+"\\BCD")
+            for block in blocks:
+                bcd_size = bcd_size + block.getSize()
+        except:
+            bcd_exists = False
 
         #TODO: note we may need some cleanup management after all theese copies
         logging.info("Adjusting BCD settings");
-        if (os.path.exists(bootdir) and os.path.exists(bootdir+"\\BCD")):
+        if ( bcd_exists ) :
             #found it on system drive, we should alter it somehow, easy
             logging.debug("BCD found, making replacement for it");
-            sizedelta = int(os.path.getsize(bootdir+"\\BCD") - os.path.getsize(newbcd))
+            sizedelta = int(bcd_size - os.path.getsize(newbcd))
             if sizedelta > 0:
                 logging.debug("New bcd is larger " + str(sizedelta) + " bytes than the new generated one");
                 logging.debug("Appending nulls");

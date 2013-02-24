@@ -11,7 +11,8 @@ class AmazonAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
 
     def __init__(self):
         super(AmazonAdjustOptions, self).__init__()
-        self.__diskType = SystemAdjustOptions.SystemAdjustOptions.diskScsi
+        # we emulate hyper-v import so the disk should be ata-based
+        self.setSysDiskType(SystemAdjustOptions.SystemAdjustOptions.diskAta)
         #TODO: improve the adjust class: we need more on rdp and stuff
 
 

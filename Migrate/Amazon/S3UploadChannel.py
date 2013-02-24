@@ -24,6 +24,12 @@ import re
 
 import logging
 
+import base64
+import math
+try:
+    from hashlib import md5
+except ImportError:
+    from md5 import md5
 
 class S3ManfiestBuilder:
 
@@ -89,10 +95,11 @@ class S3ManfiestBuilder:
 
 class S3UploadThread(threading.Thread):
     """thread making all uploading works"""
-    def __init__(self , queue , threadId):
+    def __init__(self , queue , threadId , skipExisting = False):
         self.__uploadQueue = queue
         #thread id , for troubleshooting purposes
         self.__threadId = threadId
+        self.__skipExisting = skipExisting
         return super(S3UploadThread,self).__init__()
 
     def run(self):
@@ -100,20 +107,42 @@ class S3UploadThread(threading.Thread):
 
             (bucket , keyname, size, data_getter) = self.__uploadQueue.get()
 
-            #TODO: catch all the exceptions here, notify on them, retry.
-            #TODO: we should handle the reuploading
+            #NOTE: consider to use multi-upload in case of large chunk sizes
+            
+            #NOTE: kinda dedup could be added here!
+            #NOTE: we should able to change the initial keyname here so the data'll be redirected 
 
             try:
-            # s3 key means file in the bucket (directory)
-                s3key = Key(bucket , keyname)
-            # we upload the contents
+            # s3 key is kinda file in the bucket (directory)
+                
+                data = str(data_getter)[0:size]
+                upload = True
+                s3key = bucket.get_key(keyname)
+                if s3key == None:
+                    s3key = Key(bucket , keyname)    
+                else: 
+                    if self.__skipExisting:
+                        # check the size and checksums in order to skip upload
+                        existing_length = s3key.get_metadata('Content-Length') 
+                        if existing_length == size:
+                            existing_md5_code64 = s3key.get_metadata('Content-MD5')
+                            md5encoder = md5()
+                            md5encoder.update(data)
+                            md5_hexdigest = md5encoder.digest()
+                            md5, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest) 
+                            if base64md5 == existing_md5_code64:
+                                logging.debug("key with same md5 and length already exisits, skip uploading");
+                                upload = False
 
-                s3key.set_contents_from_string(str(data_getter)[0:size], replace=True, policy=None, md5=None, reduced_redundancy=False, encrypt_key=False)
+                if upload:
+                    s3key.set_contents_from_string(data, replace=True, policy=None, md5=None, reduced_redundancy=False, encrypt_key=False)
+                else:
+                    logging.debug("Skipped the data upload: %s/%s " , str(bucket), keyname);
                 s3key.close()
             except Exception as e:
                 #reput the task into the queue
                 self.__uploadQueue.put( (bucket , keyname, size, data_getter) )
-                logging.warning("Failed to upload data: %s/%s ", str(bucket), keyname )
+                logging.warning("Failed to upload data: %s/%s , making a retry...", str(bucket), keyname )
             self.__uploadQueue.task_done()
         
 
@@ -122,8 +151,8 @@ class S3UploadThread(threading.Thread):
 class S3UploadChannel(object):
     """channel for s3 uploading"""
 
-
-    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , uploadThreads=4 , queueSize=16):
+    #TODO: need kinda doc
+    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resumeUpload = False  , uploadThreads=4 , queueSize=16):
         self.__uploadQueue = Queue.Queue(queueSize)
         
         boto.set_file_logger("boto", "..\\..\\logs\\boto.log", level=logging.DEBUG)
@@ -138,12 +167,11 @@ class S3UploadChannel(object):
             hostname = 's3-'+awsregion+'.amazonaws.com'
         self.__S3 = S3Connection(awskey, awssercret, is_secure=True, host=hostname)
         
-        #TODO: check it is available, check the zone also
         self.__bucketName = bucket
         try:
             self.__bucket = self.__S3.get_bucket(self.__bucketName)
         except Exception as ex:
-            logging.warning("Cannot find the bucket. Creating a new one");
+            logging.warning("Cannot find the bucket. Creating a new one: " + self.__bucketName);
             try:
                 self.__bucket = self.__S3.create_bucket(self.__bucketName , location=awsregion)
             except:
@@ -155,6 +183,7 @@ class S3UploadChannel(object):
         self.__region = awsregion
 
         self.__diskType = diskType
+        self.__resumeUpload = resumeUpload
 
         self.__uploadedSize = 0
         self.__xmlKey = None
@@ -176,7 +205,7 @@ class S3UploadChannel(object):
         self.__workThreads = list()
         i = 0
         while i < uploadThreads:
-            thread = S3UploadThread(self.__uploadQueue , i)
+            thread = S3UploadThread(self.__uploadQueue , i , self.__resumeUpload)
             thread.start()
             self.__workThreads.append(thread )
             i = i + 1

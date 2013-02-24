@@ -22,6 +22,10 @@ import MigratorConfigurer
 import datetime
 
 
+MigrateVerisonHigh = 0
+MigrateVersionLow = 1
+
+
 #TODO: make versioning and expiration time!!
 
 if __name__ == '__main__':
@@ -33,7 +37,7 @@ if __name__ == '__main__':
     
     # TODO: move all amazon configuration prompts to the interactive Configurer class
 
-    logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Migration Process:\n")
+    logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Migration Process (v " + str(MigrateVerisonHigh)+ "." + str(MigrateVersionLow) +  "):\n")
 
     config = MigratorConfigurer.MigratorConfigurer()
 

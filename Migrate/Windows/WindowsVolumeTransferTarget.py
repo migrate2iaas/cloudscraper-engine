@@ -62,6 +62,8 @@ class WindowsVolumeTransferTarget(TransferTarget.TransferTarget):
         bootfile = DataExtent.DataExtent(0,4096)
         extentswritten = 0
 
+        logging.info("Data transfer to the virtual disk image has started!")
+
         for volextent in volumeDataExtents:
             #special handling for a boot options
             if bootfile in volextent:
@@ -76,8 +78,8 @@ class WindowsVolumeTransferTarget(TransferTarget.TransferTarget):
             win32file.SetFilePointer(hfile, volextent.getStart(), win32con.FILE_BEGIN)
             win32file.WriteFile(hfile,volextent.getData(),None)
             extentswritten = extentswritten + 1
-            if ( extentswritten  % 100 == 0):
-                logging.info(str(extentswritten) + " of " + str(len(volumeDataExtents)) + " original disk extents copied ("+ str(extentswritten*100/len(volumeDataExtents)) +"%)" )
+            if ( extentswritten  % 100 == 1):
+                logging.info(str(extentswritten) + " of " + str(len(volumeDataExtents)) + " original disk extents have been transfered ("+ str(extentswritten*100/len(volumeDataExtents)) +"%)" )
           
         win32file.CloseHandle(hfile)
 
