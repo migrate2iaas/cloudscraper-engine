@@ -2,6 +2,10 @@
 import sys
 
 
+sys.path.append('.\..')
+sys.path.append('.\..\Amazon')
+sys.path.append('.\..\Windows')
+
 sys.path.append('.\Windows')
 sys.path.append('.\Amazon')
 

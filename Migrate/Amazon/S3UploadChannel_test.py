@@ -1,6 +1,9 @@
 
 import sys
 
+sys.path.append('.\..')
+sys.path.append('.\..\Amazon')
+sys.path.append('.\..\Windows')
 
 sys.path.append('.\Windows')
 sys.path.append('.\Amazon')
@@ -30,6 +33,7 @@ class S3UploadChannel_test(unittest.TestCase):
         
 
     def test_file_useast(self):
+        return
         size = 1024*1024*1024
         bucket = 'feoffuseastfiletest'
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size)
@@ -45,7 +49,7 @@ class S3UploadChannel_test(unittest.TestCase):
         
 
     def test_file_euro(self):
-        
+        return
         size = 1024*1024*1024
         bucket = 'feoffuseastfiletest.s3-eu-west-1a'
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size , 'eu-west-1')
@@ -86,12 +90,12 @@ class S3UploadChannel_test(unittest.TestCase):
         channel.confirm()
 
     def resumeUpload(self , region , bucket, filename , size):
-        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size, region, None , True)
+        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size, region, None , 'VHD', True)
         
         #TODO: make more different sizes
         #TODO: test on file changes 
         #TODO: test on different chunks
-        file = open(filename , "rb")
+        
         datasize = 10*1024*1024 #mb
         sizeiteration = 0
         while 1:
@@ -99,6 +103,7 @@ class S3UploadChannel_test(unittest.TestCase):
             fileend = False
             sizeiteration = sizeiteration + 1
             datatotransfer = sizeiteration*1024*1024*1024 # gb
+            file = open(filename , "rb")
             while 1:
                 try:
                     data = file.read(datasize)
@@ -115,6 +120,7 @@ class S3UploadChannel_test(unittest.TestCase):
                 if dataplace > datatotransfer:
                     break
 
+            file.close()
             channel.waitTillUploadComplete()
             if fileend == True:
                 break

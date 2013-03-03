@@ -118,24 +118,30 @@ class S3UploadThread(threading.Thread):
                 data = str(data_getter)[0:size]
                 upload = True
                 s3key = bucket.get_key(keyname)
+
+                md5encoder = md5()
+                md5encoder.update(data)
+                md5_hexdigest = md5encoder.hexdigest()
+                
+
                 if s3key == None:
                     s3key = Key(bucket , keyname)    
                 else: 
                     if self.__skipExisting:
                         # check the size and checksums in order to skip upload
-                        existing_length = s3key.get_metadata('Content-Length') 
-                        if existing_length == size:
-                            existing_md5_code64 = s3key.get_metadata('Content-MD5')
-                            md5encoder = md5()
-                            md5encoder.update(data)
-                            md5_hexdigest = md5encoder.digest()
-                            md5, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest) 
-                            if base64md5 == existing_md5_code64:
+                        #TODO: metadata is empty! should recheck the upload
+                        # TODO: make metadata upload!
+                        existing_length = s3key.size #s3key.get_metadata('Content-Length') 
+                        if int(existing_length) == size:
+                            existing_md5 = s3key.etag
+                            #md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest) 
+                            if '"'+str(md5_hexdigest)+'"' == existing_md5:
                                 logging.debug("key with same md5 and length already exisits, skip uploading");
                                 upload = False
 
                 if upload:
-                    s3key.set_contents_from_string(data, replace=True, policy=None, md5=None, reduced_redundancy=False, encrypt_key=False)
+                    md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest) 
+                    s3key.set_contents_from_string(data, replace=True, policy=None, md5=(md5digest, base64md5), reduced_redundancy=False, encrypt_key=False)
                 else:
                     logging.debug("Skipped the data upload: %s/%s " , str(bucket), keyname);
                 s3key.close()
