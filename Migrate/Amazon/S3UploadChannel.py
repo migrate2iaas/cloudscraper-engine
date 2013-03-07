@@ -148,7 +148,7 @@ class S3UploadThread(threading.Thread):
             except Exception as e:
                 #reput the task into the queue
                 self.__uploadQueue.put( (bucket , keyname, size, data_getter) )
-                logging.warning("Failed to upload data: %s/%s , making a retry...", str(bucket), keyname )
+                logging.warning("!Failed to upload data: %s/%s , making a retry...", str(bucket), keyname )
             self.__uploadQueue.task_done()
         
 
@@ -181,7 +181,7 @@ class S3UploadChannel(object):
             try:
                 self.__bucket = self.__S3.create_bucket(self.__bucketName , location=awsregion)
             except:
-                logging.error("Couldn't both find and create the bucket " + self.__bucketName + " in a region " + location + "." + "It's possible the bucket with the same name exists but in another region. Try to specify different bucekt name for the upload")
+                logging.error("!!!ERROR: Couldn't both find and create the bucket " + self.__bucketName + " in a region " + location + "." + "It's possible the bucket with the same name exists but in another region. Try to specify different bucekt name for the upload")
                 #TODO: make kinda better exception
                 raise BaseException
     

@@ -41,11 +41,13 @@ class WindowsVhdMedia(object):
         try:
             output = subprocess.check_output("diskpart /s \"" + scriptpath +"\"" , shell=True);
         except subprocess.CalledProcessError as ex:
+            logging.error("!!!ERROR: Cannot create new VHD disk. Try to specify another disk image path")
             logging.error("Diskpart failed" + ex.output)
             raise
 
         match = re.search('Associated disk[#][:] ([0-9]+)',output)
         if match == None:
+            logging.error("!!!ERROR: Cannot create new VHD disk.");
             logging.error("Diskpart bad output, cannot find disk associated. Output: %s", output)
             raise EnvironmentError
         diskno = int(match.group(1))
@@ -74,6 +76,7 @@ class WindowsVhdMedia(object):
         try:
             output = subprocess.check_output("diskpart /s \"" + scriptpath +"\"" , shell=True);
         except subprocess.CalledProcessError as ex:
+            logging.error("!!!ERROR: Cannot release VHD image disk in order to upload it. Try to detach it manually and restart program with upload-only option.");
             logging.error("Diskpart failed" + ex.output)
             raise
         return True

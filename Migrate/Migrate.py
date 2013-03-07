@@ -20,7 +20,9 @@ import Windows
 import logging
 import MigratorConfigurer
 import datetime
-
+import traceback
+import argparse
+import sysconfig
 
 MigrateVerisonHigh = 0
 MigrateVersionLow = 1
@@ -30,37 +32,47 @@ MigrateVersionLow = 1
 
 if __name__ == '__main__':
 
+    
+    #parsing extra option
+    parser = argparse.ArgumentParser(description="This script performs creation of virtualized images from the local server, uploading them to S3, converting them to EC2 instances. See README for more details.")
+    parser.add_argument('-k', '--amazonkey', help="Your AWS secret key. If not specified you will be prompted at the script start")
+    parser.add_argument('-c', '--config', help="Path to server cloud copy config file")
+    parser.add_argument('-o', '--output', help="Path to extra file for non-detalized output")                   
+
+    #Turning on the logging
     logging.basicConfig(format='%(asctime)s %(message)s' , filename='..\\..\\logs\\migrate.log',level=logging.DEBUG)    
     handler = logging.StreamHandler()
     handler.setLevel(logging.INFO)
     logging.getLogger().addHandler(handler)
     
-    # TODO: move all amazon configuration prompts to the interactive Configurer class
-
+    if parser.parse_args().output:
+        outhandler = logging.FileHandler(parser.parse_args().output , "w" )
+        outhandler.setLevel(logging.INFO)
+        logging.getLogger().addHandler()
+    
     logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Migration Process (v " + str(MigrateVerisonHigh)+ "." + str(MigrateVersionLow) +  "):\n")
 
     config = MigratorConfigurer.MigratorConfigurer()
-
-    logging.info("\n>>>>>>>>>>>>>>>>> Your Amazon EC2 Account:")
     
-    s3owner = raw_input("Your Access Key ID:")
-    s3key = getpass.getpass("Secret Access Key:")
+    if parser.parse_args().config:
+        config = parser.parse_args().config
+        s3owner = ''
+        imagepath = ''
+        region = ''
+    else:
+        config = "..\\..\\cfg\\amazon.ini"
+        s3owner = raw_input("Your Access Key ID:")
+        imagepath = raw_input("Enter file path to store the server image:")
+        region = ''
 
-    logging.info("\n>>>>>>>>>>>>>>>>> Imaging options")
+    if parser.parse_args().amazonkey:
+        s3key = parser.parse_args().amazonkey    
+    else:
+        s3key = getpass.getpass("AWS Secret Access Key:")
 
-    imagepath = raw_input("Enter file path to store the server image:")
-
-    #TODO: Make parm checks in migrator
-    region = ''
-
-    (image,adjust,cloud) = config.configAmazon("..\\..\\cfg\\amazon.ini" , s3owner , s3key , region , imagepath)
-    #TODO: here we must adjust some of pregenerated values? 
-    #TODO: or just make the other parts know whole the stuff and configs???
-    #TODO: check if the image file is already created. do we need to skip the backup then? 
-    # or what? Think on pre-generated vhds matters...
+    (image,adjust,cloud) = config.configAmazon(config , s3owner , s3key , region , imagepath)
     
     logging.info("\n>>>>>>>>>>>>>>>>> Starting the Migration Process:\n")
-
     __migrator = Migrator.Migrator(cloud,image,adjust)
     logging.info("Migrator test started")
     __migrator.runFullScenario()

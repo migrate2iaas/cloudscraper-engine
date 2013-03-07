@@ -49,17 +49,20 @@ class VssThruVshadow(VSS.VSS):
         try:
             output = subprocess.check_output(self.__binPath + " -p " + volumeName , shell=True);
         except subprocess.CalledProcessError as ex:
+            logging.error("!!!ERROR: Cannot create Windows volume snapshot")
             logging.error("vshadow failed" + ex.output)
             raise
 
         match = re.search('Shadow copy device name: ([\\\\][^\r\n ]+)',output)
         if match == None:
+            logging.error("!!!ERROR: Cannot create Windows volume snapshot")
             logging.error("Bad vhsadow output! Cannot find shadow copy device name! Output %s" , output)
             raise IOError
         devname = match.group(1)
         
         match = re.search('SNAPSHOT ID = ([{][^\n\r ]+)',output)
         if match == None:
+            logging.error("!!!ERROR: Cannot create Windows volume snapshot")
             logging.error("Bad vhsadow output! Cannot find snapshot id! Output %s" , output)
             raise IOError
         snapname = match.group(1)
@@ -81,6 +84,7 @@ class VssThruVshadow(VSS.VSS):
         try:
             output = subprocess.check_output(self.__binPath + " -ds=" + snapname , shell=True);
         except subprocess.CalledProcessError as ex:
+            logging.error("!!!ERROR: Cannot release Windows volume snapshot")
             logging.error("vshadow failed" + ex.output)
             raise
 

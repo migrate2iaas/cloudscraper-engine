@@ -119,7 +119,7 @@ class Migrator(object):
             print ex.args      # arguments stored in .args
             print ex
             traceback.print_exception(sys.exc_info()[0] , sys.exc_info()[1] , sys.exc_info()[2]);
-            logging.error("Unexpected error occured")
+            logging.error("!!!ERROR: Unexpected error occured")
             logging.error(ex)
             logging.error(traceback.format_exc())
             
@@ -144,8 +144,8 @@ class Migrator(object):
             SysInfo = self.__windows.getSystemInfo()
             if SysInfo.getSystemArcheticture() == SysInfo.Archx8664 and SysInfo.getKernelVersion() >= SysInfo.Win2008R2:
                 return True
-            logging.error("The configuration is not supported " + SysInfo.getSystemVersionString() + " arch:" + hex(SysInfo.getSystemArcheticture()));
-        logging.error("Non-Windows configs are not supported for now")
+            logging.error("!!!ERROR: The configuration is not supported " + SysInfo.getSystemVersionString() + " arch:" + hex(SysInfo.getSystemArcheticture()));
+        logging.error("!!!ERROR: Non-Windows configs are not supported for now")
         return False
 
     #reads the config and generates appropriate handlers for the each step
@@ -192,7 +192,7 @@ class Migrator(object):
                self.__transferTarget = self.__windows.createVhdTransferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
             else:
                 #TODO: be more discriptive
-                logging.error("Bad options!");
+                logging.error("!!!ERROR: Bad image options!");
                 return False
         if self.__cloudName == "EC2":
             bucket = self.__cloudOptions.getCloudStorage()
@@ -248,7 +248,7 @@ class Migrator(object):
             self.__transferChannel.uploadData(dataext)
             datasent = datasent + 1
             if (datasent % 100 == 10):
-                logging.info(str(datasent*datasize/1024/1024)+ "MB of "+ str(int(filesize/1024/1024)) + " MB sent to " + self.__cloudName)
+                logging.info("% " + str(datasent*datasize/1024/1024)+ "MB of "+ str(int(filesize/1024/1024)) + " MB sent to " + self.__cloudName)
 
         
         self.__transferChannel.waitTillUploadComplete()

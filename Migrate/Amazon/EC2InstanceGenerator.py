@@ -80,19 +80,19 @@ class EC2InstanceGenerator(object):
 
 
         if stderrdata:
-            logging.error("Error occured while executing the system import process\n");
+            logging.error("!!!ERROR: Error occured while executing the system import process\n");
             logging.error(str(stderrdata))
             if stdoutdata:
                 logging.info("\nstdout:")
                 logging.info(str(stdoutdata))
             return None
         else:
-            logging.info ("System volume has been uploaded, now it's converted by the Amazon EC2 to run as EC2 instance.")
+            logging.info (">>>>>>>>>>>>>>> System volume has been uploaded, now it's converted by the Amazon EC2 to run as EC2 instance.")
             logging.info ("Waiting for system volume conversion to complete")
             #
             while 1:
                 if import_task_id == "":
-                    logging.error("The conversion task number could not be got but import has been successful. Use your AWS console to attach data volumes to the new image manually upon their import and conversion complete");
+                    logging.error("!!!ERROR: The conversion task number could not be got but import has been successful. Use your AWS console to attach data volumes to the new image manually upon their import and conversion complete");
                     return None
                 
                 vms_output = subprocess.check_output([windir+'\\system32\\cmd.exe', '/C', scripts_dir+'\\check_vm.bat' , import_task_id, s3owner , s3key, ec2region])
@@ -105,7 +105,7 @@ class EC2InstanceGenerator(object):
                 if importstatus == "active" or importstatus == "pending":
                     match = re.search('Progress:[ \n\t]*([0-9]+)',vms_output)
                     if match:
-                        logging.info("Conversion Progress: " + match.group(1) + "%");
+                        logging.info("% Conversion Progress: " + match.group(1) + "%");
                     time.sleep(30) #30 sec
                     continue
                 if importstatus == "completed":
@@ -116,12 +116,12 @@ class EC2InstanceGenerator(object):
                         return None
                     instanceid = match.group(1)    
                     logging.info("==========================================================================");
-                    logging.info("The system instance " + instanceid + " has been successfully imported");
-                    logging.info("It could be configured and started via AWS EC2 management console");
+                    logging.info(">>> The system instance " + instanceid + " has been successfully imported");
+                    logging.info(">>> It could be configured and started via AWS EC2 management console");
                     logging.info("==========================================================================");
                     break
                 if importstatus == "cancelled":
-                    logging.error("The import task was cancelled, exiting...");
+                    logging.error("!!!ERROR: The import task was cancelled by AWS, see full report for details...");
                     return None
 
 

@@ -266,13 +266,13 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
                 nulls = bytearray(sizedelta) # is filled with nulls by python
                 bcdfile.write(nulls)
             if sizedelta < 0:
-                logging.error("Cannot insert the new BCD because it's larger than the original one");
+                logging.error("!!!ERROR: Cannot insert the new BCD because it's larger than the original one");
                 return 
 
             self.replaceFile("\\Boot\\BCD" , newbcd)
             return
         else:
-            logging.error("BCD was not found on the original location!");
+            logging.error("!!!ERROR: BCD was not found on the original location!");
             return
             
     def adjustHal(self, backupSource):

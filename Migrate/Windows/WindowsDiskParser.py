@@ -59,9 +59,16 @@ class WindowsDiskParser(object):
         scrfile.write(script);
         scrfile.close()
 
-        output = subprocess.check_output("diskpart /s \"" + scriptpath +"\"" , shell=True);
+        try:
+            output = subprocess.check_output("diskpart /s \"" + scriptpath +"\"" , shell=True);
+        except subprocess.CalledProcessError as ex:
+            logging.error("!!!ERROR: Cannot create target volume")
+            logging.error("diskpart failed" + ex.output)
+            raise
+
         match = re.search('Partition ([0-9])+',output)
         if match == None:
+            logging.error("!!!ERROR: Cannot create target volume");
             logging.error("Bad output from the diskpart utility! Output: " + output);
             raise EnvironmentError
         partno = int(match.group(1))
