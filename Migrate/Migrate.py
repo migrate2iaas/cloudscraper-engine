@@ -48,19 +48,19 @@ if __name__ == '__main__':
     if parser.parse_args().output:
         outhandler = logging.FileHandler(parser.parse_args().output , "w" )
         outhandler.setLevel(logging.INFO)
-        logging.getLogger().addHandler()
+        logging.getLogger().addHandler(outhandler)
     
     logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Migration Process (v " + str(MigrateVerisonHigh)+ "." + str(MigrateVersionLow) +  "):\n")
 
     config = MigratorConfigurer.MigratorConfigurer()
     
     if parser.parse_args().config:
-        config = parser.parse_args().config
+        configpath = parser.parse_args().config
         s3owner = ''
         imagepath = ''
         region = ''
     else:
-        config = "..\\..\\cfg\\amazon.ini"
+        configpath = "..\\..\\cfg\\amazon.ini"
         s3owner = raw_input("Your Access Key ID:")
         imagepath = raw_input("Enter file path to store the server image:")
         region = ''
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     else:
         s3key = getpass.getpass("AWS Secret Access Key:")
 
-    (image,adjust,cloud) = config.configAmazon(config , s3owner , s3key , region , imagepath)
+    (image,adjust,cloud) = config.configAmazon(configpath , s3owner , s3key , region , imagepath)
     
     logging.info("\n>>>>>>>>>>>>>>>>> Starting the Migration Process:\n")
     __migrator = Migrator.Migrator(cloud,image,adjust)

@@ -78,8 +78,8 @@ class WindowsVolumeTransferTarget(TransferTarget.TransferTarget):
             win32file.SetFilePointer(hfile, volextent.getStart(), win32con.FILE_BEGIN)
             win32file.WriteFile(hfile,volextent.getData(),None)
             extentswritten = extentswritten + 1
-            if ( extentswritten  % 100 == 1):
-                logging.info("% " + str(extentswritten) + " of " + str(len(volumeDataExtents)) + " original disk extents have been transfered ("+ str(extentswritten*100/len(volumeDataExtents)) +"%)" )
+            if ( extentswritten  % 100 == 2):
+                logging.info("% " + str(extentswritten) + " of " + str(len(volumeDataExtents)) + " original disk extents have been transferred ("+ str(extentswritten*100/len(volumeDataExtents)) +"%)" )
           
         win32file.CloseHandle(hfile)
 

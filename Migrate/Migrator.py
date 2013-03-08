@@ -248,7 +248,7 @@ class Migrator(object):
             self.__transferChannel.uploadData(dataext)
             datasent = datasent + 1
             if (datasent % 100 == 10):
-                logging.info("% " + str(datasent*datasize/1024/1024)+ "MB of "+ str(int(filesize/1024/1024)) + " MB sent to " + self.__cloudName)
+                logging.info("% " + str(datasent*datasize/1024/1024)+ " of "+ str(int(filesize/1024/1024)) + " MB sent to " + self.__cloudName)
 
         
         self.__transferChannel.waitTillUploadComplete()

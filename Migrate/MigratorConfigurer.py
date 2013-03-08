@@ -49,9 +49,7 @@ class MigratorConfigurer(object):
 
         imagearch = config.get('Image', 'source-arch')
 
-        if imagepath == '':
-            imagepath = config.get('Image', 'image-path')
-        
+
         try:
             imagetype = config.get('Image', 'image-type')
             imagesize = config.getint('Image' , 'image-size')
@@ -61,12 +59,18 @@ class MigratorConfigurer(object):
             logging.info("No image type or size found, using the default ones");
             newsize = imagesize
 
+        if config.has_option('Image', 'image-dir'):
+           imagepath = config.get('Image', 'image-dir') + "\\system." + imagetype; 
+           
+        if imagepath == '':
+           imagepath = config.get('Image', 'image-path')
+
         try:
             bucket = config.get('EC2', 'bucket')
         except ConfigParser.NoOptionError as exception:
             logging.info("No bucket name found, generating a new one")
             #TODO: move to a function
-            bucket = "migrate-" + str(int(time.mktime(time.localtime())))+"-"+region
+            bucket = "cloudscraper-" + str(int(time.mktime(time.localtime())))+"-"+region
              
 
         newsize = imagesize

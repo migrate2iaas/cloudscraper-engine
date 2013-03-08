@@ -177,7 +177,7 @@ class S3UploadChannel(object):
         try:
             self.__bucket = self.__S3.get_bucket(self.__bucketName)
         except Exception as ex:
-            logging.warning("Cannot find the bucket. Creating a new one: " + self.__bucketName);
+            logging.warning("!Cannot find S3 bucket. Creating a new one: " + self.__bucketName);
             try:
                 self.__bucket = self.__S3.create_bucket(self.__bucketName , location=awsregion)
             except:
