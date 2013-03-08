@@ -13,6 +13,8 @@ import winioctlcon
 import struct
 import ntsecuritycon
 
+from MigrateExceptions import FileException
+
 #NOTE: use context manager for cleanups, 'cause there is no good destructors in python 
 #from contextlib import contextmanager
 
@@ -57,15 +59,23 @@ class WindowsFileToBackup(FileToBackup.FileToBackup):
 
     def getChangedExtents(self):
         self.__reopen()
-        size = win32file.GetFileSize(self.__hFile)
+        filename = self.__name
+        try:
+            size = win32file.GetFileSize(self.__hFile)
+        except Exception as ex:
+            raise FileException(filename , ex)
         return DataExtent(0 , size)
 
     #returns data read
     def readData(self,extent):
         self.__reopen()
-
-        win32file.SetFilePointer(self.__hfile, volextent.getStart(), win32con.FILE_BEGIN)
-        (result , output) = win32file.ReadFile(self.__hfile,volextent.getSize(),None)
+        filename = self.__name
+        try:
+            win32file.SetFilePointer(self.__hfile, volextent.getStart(), win32con.FILE_BEGIN)
+            (result , output) = win32file.ReadFile(self.__hfile,volextent.getSize(),None)
+        except Exception as ex:
+            raise FileException(filename , ex)
+        
 
         self.__close()
         return output
@@ -73,11 +83,20 @@ class WindowsFileToBackup(FileToBackup.FileToBackup):
     #reopens source file if needed
     def __reopen(self):
         if self.__hFile == None:
-            self.__hFile = win32file.CreateFile( self.getSourcePath(), win32con.GENERIC_READ | win32con.READ_CONTROL | ntsecuritycon.FILE_READ_ATTRIBUTES | ntsecuritycon.FILE_WRITE_ATTRIBUTES, win32con. FILE_SHARE_READ|win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_ALWAYS, win32con.FILE_ATTRIBUTE_NORMAL|win32con. FILE_FLAG_BACKUP_SEMANTICS , 0 )
+            filename = self.getSourcePath()
+            try:
+                self.__hFile = win32file.CreateFile( filename, win32con.GENERIC_READ | win32con.READ_CONTROL | ntsecuritycon.FILE_READ_ATTRIBUTES | ntsecuritycon.FILE_WRITE_ATTRIBUTES, win32con. FILE_SHARE_READ|win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_ALWAYS, win32con.FILE_ATTRIBUTE_NORMAL|win32con. FILE_FLAG_BACKUP_SEMANTICS , 0 )
+            except Exception as ex:
+                raise FileException(filename , ex)
+            
     
     def __close(self):
         if self.__hFile != None:
-            win32file.CloseHandle(self.__hFile)
+            filename = self.__name
+            try:
+                win32file.CloseHandle(self.__hFile)
+            except Exception as ex:
+                raise FileException(filename , ex)
             self.__hFile = None
 
 

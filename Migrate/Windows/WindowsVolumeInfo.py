@@ -5,7 +5,7 @@ import subprocess
 import re
 
 import WindowsVolumeTransferTarget
-
+from MigrateExceptions import FileException
 
 import win32file
 import win32event
@@ -28,21 +28,32 @@ class WindowsVolumeInfo(VolumeInfo.VolumeInfo):
 
     #gets the size of volume in bytes
     def getSize(self):
-
-        (sectors_per_cluster, bytes_per_sector, free_clusters , total_clusters) = win32file.GetDiskFreeSpace(self.__rootPath)
+        filename = self.__rootPath
+        try:
+            (sectors_per_cluster, bytes_per_sector, free_clusters , total_clusters) = win32file.GetDiskFreeSpace(self.__rootPath)
+        except Exception as ex:
+            raise FileException(filename , ex)
         return long(total_clusters*sectors_per_cluster*bytes_per_sector)
 
     def getUsedSize(self):
         return self.getSize() - self.getFreeSize();
 
     def getFreeSize(self):
-        (sectors_per_cluster, bytes_per_sector, free_clusters , total_clusters) = win32file.GetDiskFreeSpace(self.__rootPath)
+        filename = self.__rootPath
+        try:
+            (sectors_per_cluster, bytes_per_sector, free_clusters , total_clusters) = win32file.GetDiskFreeSpace(self.__rootPath)
+        except Exception as ex:
+            raise FileException(filename , ex)
         return long(free_clusters*sectors_per_cluster*bytes_per_sector)
 
     # gets the iterable of system pathes to fs root of mounted volume
     def getMointPoints(self):
-        unique_name = win32file.GetVolumeNameForVolumeMountPoint(self.__rootPath)
-        return win32file.GetVolumePathNamesForVolumeName(unique_name)
+        filename = self.__rootPath
+        try:
+            unique_name = win32file.GetVolumeNameForVolumeMountPoint(self.__rootPath)
+            return win32file.GetVolumePathNamesForVolumeName(unique_name)
+        except Exception as ex:
+            raise FileException(filename , ex)
 
     # gets the system path of volume block device
     def getDevicePath(self):

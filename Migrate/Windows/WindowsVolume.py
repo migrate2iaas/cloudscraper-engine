@@ -1,5 +1,6 @@
 import sys
 sys.path.append(sys.path[0]+'\\..')
+from MigrateExceptions import FileException
 
 import win32file
 import win32event
@@ -53,7 +54,10 @@ class AllFilesIterator(object):
         # data[0] == attributes
         if (data[0] & win32con.FILE_ATTRIBUTE_DIRECTORY):
             currentpath = self.__RootPath+'\\'+data[8]
-            self.__currentIterator = AllFilesIterator(win32file.FindFilesIterator(currentpath+'\\*', None ) , currentpath)
+            try:
+                self.__currentIterator = AllFilesIterator(win32file.FindFilesIterator(currentpath+'\\*', None ) , currentpath)
+            except Exception as ex:
+                raise FileException(currentpath , ex)
             return self.next()
         else:
             #data[8] == filename
@@ -74,13 +78,19 @@ class WindowsVolume(object):
         self.__volumeName = volumeName.lower()
 
         logging.debug("Openning volume %s" , self.__volumeName);
+        filename = self.__volumeName
+        try:
+            self.__hfile = win32file.CreateFile( filename, win32con.GENERIC_READ|  win32con.GENERIC_WRITE | ntsecuritycon.FILE_READ_ATTRIBUTES | ntsecuritycon.FILE_WRITE_ATTRIBUTES, win32con. FILE_SHARE_READ|win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_ALWAYS, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
+        except Exception as ex:
+            raise FileException(filename , ex)
 
-        self.__hfile = win32file.CreateFile( self.__volumeName, win32con.GENERIC_READ|  win32con.GENERIC_WRITE | ntsecuritycon.FILE_READ_ATTRIBUTES | ntsecuritycon.FILE_WRITE_ATTRIBUTES, win32con. FILE_SHARE_READ|win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_ALWAYS, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
         #TODO: impersonate with backup priveleges
         
-
         output_buffer_size = 256;
-        outbuffer = win32file.DeviceIoControl(self.__hfile,  winioctlcon.FSCTL_GET_NTFS_VOLUME_DATA,  None, output_buffer_size, None )
+        try:
+            outbuffer = win32file.DeviceIoControl(self.__hfile,  winioctlcon.FSCTL_GET_NTFS_VOLUME_DATA,  None, output_buffer_size, None )
+        except Exception as ex:
+            raise FileException(filename , ex)
        
         if outbuffer:
             self.__bytesPerCluster = struct.unpack("@qqqqqIIIIqqqqq",outbuffer[0:96])[6]
@@ -96,12 +106,22 @@ class WindowsVolume(object):
             #} GET_LENGTH_INFORMATION;
         IOCTL_DISK_GET_LENGTH_INFO = 0x7405c
         outbuffersize = 8
-        outbuffer = win32file.DeviceIoControl(self.__hfile, IOCTL_DISK_GET_LENGTH_INFO , None , outbuffersize , None )
+        
+        filename = self.__volumeName
+        try:
+            outbuffer = win32file.DeviceIoControl(self.__hfile, IOCTL_DISK_GET_LENGTH_INFO , None , outbuffersize , None )
+        except Exception as ex:
+            raise FileException(filename , ex)
+
         return struct.unpack("@q" , outbuffer)[0]
 
     # gets the file enumerator (iterable). each of it's elements represent a filename (unicode string)
     def getFileEnumerator(self):
-        return AllFilesIterator(win32file.FindFilesIterator(self.__volumeName+'\\*', None ) , self.__volumeName)
+        filename = self.__volumeName
+        try:
+            return AllFilesIterator(win32file.FindFilesIterator(self.__volumeName+'\\*', None ) , filename)
+        except Exception as ex:
+            raise FileException(filename , ex)
 
     def getVolumeName(self):
         return self.__volumeName
@@ -111,8 +131,13 @@ class WindowsVolume(object):
         secur_att = win32security.SECURITY_ATTRIBUTES()
         secur_att.Initialize()
         logging.debug("Openning " + self.__volumeName+"\\"+fileName)
-        hFile = win32file.CreateFile( self.__volumeName+"\\"+fileName,ntsecuritycon.FILE_READ_ATTRIBUTES, win32con.FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
 
+        filename = self.__volumeName+"\\"+fileName
+        try:
+            hFile = win32file.CreateFile(filename ,ntsecuritycon.FILE_READ_ATTRIBUTES, win32con.FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
+        except Exception as ex:
+            raise FileException(filename , ex)
+       
         # input
         # STARTING_VCN_INPUT_BUFFER
         #typedef struct {
@@ -125,7 +150,10 @@ class WindowsVolume(object):
         vcn_ouput_buffer_size = 64*1024*1024
 
         #TODO: handle if buffer was too small
-        outbuffer = win32file.DeviceIoControl(hFile,  winioctlcon.FSCTL_GET_RETRIEVAL_POINTERS,  vcn_input_buffer, vcn_ouput_buffer_size, None )
+        try:
+            outbuffer = win32file.DeviceIoControl(hFile,  winioctlcon.FSCTL_GET_RETRIEVAL_POINTERS,  vcn_input_buffer, vcn_ouput_buffer_size, None )
+        except Exception as ex:
+            raise FileException(filename , ex)
 
         #typedef struct RETRIEVAL_POINTERS_BUFFER {
         #DWORD         ExtentCount;
@@ -179,7 +207,13 @@ class WindowsVolume(object):
         # should be 0 for the overall bitmap
         vcn_input_buffer = struct.pack('=q',0)
         logging.debug("Getting full volume bitmap")
-        outbuffer = win32file.DeviceIoControl(self.__hfile,  winioctlcon.FSCTL_GET_VOLUME_BITMAP,  vcn_input_buffer, bitmap_out_buffer_size, None )
+        
+        filename = self.__volumeName
+        try:
+            outbuffer = win32file.DeviceIoControl(self.__hfile,  winioctlcon.FSCTL_GET_VOLUME_BITMAP,  vcn_input_buffer, bitmap_out_buffer_size, None )
+        except Exception as ex:
+            raise FileException(filename , ex)
+
         
         #typedef struct {
         #LARGE_INTEGER StartingLcn;
@@ -234,12 +268,20 @@ class WindowsVolume(object):
 
     #returns bytes read
     def readExtent(self, volextent):
-        win32file.SetFilePointer(self.__hfile, volextent.getStart(), win32con.FILE_BEGIN)
-        (result , output) = win32file.ReadFile(self.__hfile,volextent.getSize(),None)
+        filename = self.__volumeName
+        try:
+            win32file.SetFilePointer(self.__hfile, volextent.getStart(), win32con.FILE_BEGIN)
+            (result , output) = win32file.ReadFile(self.__hfile,volextent.getSize(),None)
+        except Exception as ex:
+            raise FileException(filename , ex)
         return output
 
     def lock(self):
-        outbuffer = win32file.DeviceIoControl(self.__hfile,  winioctlcon.FSCTL_LOCK_VOLUME,  None, None, None )
+        filename = self.__volumeName
+        try:
+            outbuffer = win32file.DeviceIoControl(self.__hfile,  winioctlcon.FSCTL_LOCK_VOLUME,  None, None, None )
+        except Exception as ex:
+            raise FileException(filename , ex)
     
 
     

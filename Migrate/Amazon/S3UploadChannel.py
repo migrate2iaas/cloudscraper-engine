@@ -161,7 +161,8 @@ class S3UploadChannel(object):
     def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resumeUpload = False  , uploadThreads=4 , queueSize=16):
         self.__uploadQueue = Queue.Queue(queueSize)
         
-        boto.set_file_logger("boto", "..\\..\\logs\\boto.log", level=logging.DEBUG)
+        #TODO:need to save it in common log directory
+        boto.set_file_logger("boto", "boto.log", level=logging.DEBUG)
 
         awsregion = location
         if location == 'us-east-1':

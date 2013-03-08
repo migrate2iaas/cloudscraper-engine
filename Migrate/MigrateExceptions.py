@@ -9,3 +9,13 @@ class PropertyNotInitialized(Exception):
          return repr("Class property " + self.valuename + " not initialized. " + text)
     def __repr__(self):
         return repr("<Class property " + self.valuename + " not initialized. " + text + " >")
+
+
+
+    
+class FileException(Exception):
+    def __init__(self, filename, exception):
+       self.__filename = filename
+       self.__exception = exception
+    def __str__(self):
+         return "Exception on file \'" + str(self.__filename) + "\' : " + str(self.__exception)
