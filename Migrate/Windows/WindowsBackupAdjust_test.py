@@ -21,7 +21,7 @@ class AdjustOptionTest(SystemAdjustOptions.SystemAdjustOptions):
         super(AdjustOptionTest,self).__init__()
 
     def getPregeneratedBcdHivePath(self):
-        return "F:\\cloudscraper\\migrate\\Migrate\\resources\\boot\\win\\BCD_MBR"
+        return "..\\..\\resources\\boot\\win\\BCD_MBR"
 
     def getNewMbrId(self):
         return 0x02F47846
