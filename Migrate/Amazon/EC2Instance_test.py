@@ -47,6 +47,7 @@ class EC2Instance_test(unittest.TestCase):
         #TODO: make test account!
         self.__key = 'AKIAIY2X62QVIHOPEFEQ'
         self.__secret = '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'
+        self.__channel = None
 
         logging.basicConfig(format='%(asctime)s %(message)s' , filename='ec2instance.log',level=logging.DEBUG)
         return
@@ -57,8 +58,10 @@ class EC2Instance_test(unittest.TestCase):
         filename = 'E:\\vms\\2003r2\\win2003r2_32.vhd'
         size = 20*1024*1024*1024
         bucket = 'feoffuseastconversiontest'
-        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size)
+        self.__channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size)
         
+        channel = self.__channel
+
         #TODO: make more different sizes
         file = open(filename , "rb")
         datasize = 10*1024*1024 #mb
@@ -77,7 +80,7 @@ class EC2Instance_test(unittest.TestCase):
 
         channel.waitTillUploadComplete()
         image_id = channel.confirm()
-        channel.close()
+ 
         generator = EC2InstanceGenerator.EC2InstanceGenerator("us-east-1")
         instance = generator.makeInstanceFromImage(image_id, ConfigTest("i386", "us-east-1a" , filename) , self.__key , self.__secret)
         self.assertIsNotNone(instance)
@@ -88,10 +91,11 @@ class EC2Instance_test(unittest.TestCase):
         filename = 'E:\\vms\\2003r2\\win2003r2_32.vhd'
         size = 20*1024*1024*1024
 
-        # TODO: create bucket in the right region!
+        # TDOO: should be 10 mb-aligned
 
         bucket = 'feoffeuwestconversiontest-new1'
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size , "eu-west-1")
+        self.__channel = channel
         
         #TODO: make more different sizes
         file = open(filename , "rb")
@@ -111,12 +115,15 @@ class EC2Instance_test(unittest.TestCase):
 
         channel.waitTillUploadComplete()
         image_id = channel.confirm()
-        channel.close();
+        
         generator = EC2InstanceGenerator.EC2InstanceGenerator("eu-west-1")
         instance = generator.makeInstanceFromImage(image_id, ConfigTest("i386", "eu-west-1a" , filename) , self.__key , self.__secret)
         self.assertIsNotNone(instance)
 
         return
+
+    def tearDown(self):
+        self.__channel.close()
 
 if __name__ == '__main__':
     unittest.main()

@@ -28,6 +28,7 @@ class S3UploadChannel_test(unittest.TestCase):
         #TODO: make test account!
         self.__key = 'AKIAIY2X62QVIHOPEFEQ'
         self.__secret = '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'
+        self.__channel = None
         logging.basicConfig(format='%(asctime)s %(message)s' , filename='s3channel.log',level=logging.DEBUG)
         return
         
@@ -37,7 +38,8 @@ class S3UploadChannel_test(unittest.TestCase):
         size = 1024*1024*1024
         bucket = 'feoffuseastfiletest'
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size)
-        
+        self.__channel = channel
+
         file = open('D:\\log.txt' , "rb")
         data = file.read()
         dataext = DataExtent.DataExtent(0 , len(data))
@@ -46,7 +48,7 @@ class S3UploadChannel_test(unittest.TestCase):
         channel.uploadData(dataext)
         channel.waitTillUploadComplete()
         channel.confirm()
-        channel.close()
+       
 
     def test_file_euro(self):
         return
@@ -62,7 +64,7 @@ class S3UploadChannel_test(unittest.TestCase):
         channel.uploadData(dataext)
         channel.waitTillUploadComplete()
         channel.confirm()
-        channel.close()
+       
 
     def test_fullvhd(self):
         
@@ -70,7 +72,7 @@ class S3UploadChannel_test(unittest.TestCase):
         size = 20*1024*1024*1024
         bucket = 'feoffuseastfiletestvhd'
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size)
-        
+        self.__channel = channel
         #TODO: make more different sizes
         file = open(filename , "rb")
         datasize = 10*1024*1024 #mb
@@ -89,11 +91,10 @@ class S3UploadChannel_test(unittest.TestCase):
 
         channel.waitTillUploadComplete()
         channel.confirm()
-        channel.close()
 
     def resumeUpload(self , region , bucket, filename , size):
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size, region, None , 'VHD', True)
-        
+        self.__channel = channel
         #TODO: make more different sizes
         #TODO: test on file changes 
         #TODO: test on different chunks
@@ -128,7 +129,7 @@ class S3UploadChannel_test(unittest.TestCase):
                 break
         
         channel.confirm()
-        channel.close()
+        
 
     def test_resumeupload_useast(self):
         filename = 'E:\\vms\\2003r2\\win2003r2_32.vhd'
@@ -143,6 +144,9 @@ class S3UploadChannel_test(unittest.TestCase):
         filename = 'E:\\vms\\2003r2\\win2003r2_32.vhd'
         size = 20*1024*1024*1024
         self.resumeUpload(region, bucket , filename , size)
+
+    def tearDown(self):
+        self.__channel.close()
 
 
 if __name__ == '__main__':
