@@ -77,7 +77,7 @@ class EC2Instance_test(unittest.TestCase):
 
         channel.waitTillUploadComplete()
         image_id = channel.confirm()
-        
+        channel.close()
         generator = EC2InstanceGenerator.EC2InstanceGenerator("us-east-1")
         instance = generator.makeInstanceFromImage(image_id, ConfigTest("i386", "us-east-1a" , filename) , self.__key , self.__secret)
         self.assertIsNotNone(instance)
@@ -111,7 +111,7 @@ class EC2Instance_test(unittest.TestCase):
 
         channel.waitTillUploadComplete()
         image_id = channel.confirm()
-        
+        channel.close();
         generator = EC2InstanceGenerator.EC2InstanceGenerator("eu-west-1")
         instance = generator.makeInstanceFromImage(image_id, ConfigTest("i386", "eu-west-1a" , filename) , self.__key , self.__secret)
         self.assertIsNotNone(instance)
