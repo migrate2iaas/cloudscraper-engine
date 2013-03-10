@@ -76,7 +76,7 @@ if __name__ == '__main__':
     __migrator = Migrator.Migrator(cloud,image,adjust)
     logging.info("Migrator test started")
     __migrator.runFullScenario()
-    logging.info("Migrator test ended")
+    logging.info("\n>>>>>>>>>>>>>>>>> Migration process ended\n")
 
     
 

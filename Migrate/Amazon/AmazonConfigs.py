@@ -6,6 +6,7 @@ import CloudConfig
 import MigrateConfig
 
 import time
+import os
 
 class AmazonAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
 
@@ -56,13 +57,29 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
 
 class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
 
-    def __init__(self, imagepath , imagesize , source_arch ,  imagetype='VHD'):
+    #TODO: make docs
+    # images is list of tuples (volume_device_name:string, volume_image_path:string , image_size:long iin bytes)
+    def __init__(self, images , source_arch ,  imagetype='VHD'):
         super(AmazonMigrateConfig, self).__init__()
         
-        self.__imageType = imagetype
-        self.__imageSize = imagesize
+        self.__dataVolumes = list()
+        self.__imageSize = None
+        self.__imagePath = None
+
+        #TODO: make cross-system
+        for (volume_device_name, volume_image_path , image_size) in images:
+            originalwindir = os.environ['windir']
+            windrive = originalwindir.split("\\")[0] #get C: substring
+            if windrive in volume_device_name:
+                self.__imageSize = image_size
+                self.__imagePath = volume_image_path         
+            else:
+                self.__dataVolumes.append( (volume_device_name, volume_image_path , image_size) )
+
         self.__imageArch = source_arch
-        self.__imagePath = imagepath
+        #do we need few images? dunno...
+        self.__imageType = imagetype
+
 
     def getSourceOs(self):
         return "local"
@@ -89,3 +106,7 @@ class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
     def getSystemConfig(self):
         #TODO: dunno what should be placed here
         return None
+    
+    # gets list of string tuples (volume_device_name, volume_image_path , image_size)
+    def getDataVolumes(self):
+        return self.__dataVolumes

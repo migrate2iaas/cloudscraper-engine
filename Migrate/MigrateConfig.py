@@ -31,6 +31,9 @@ class MigrateConfig(object):
     def getSystemDiskType(self):
         raise NotImplementedError
 
+    # gets list of string tuples (volume_device_name, volume_image_path , image_size)
+    def getDataVolumes(self):
+        raise NotImplementedError
    
 
      

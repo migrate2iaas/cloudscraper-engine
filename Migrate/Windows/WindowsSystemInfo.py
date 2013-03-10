@@ -87,6 +87,10 @@ class WindowsSystemInfo(SystemInfo.SystemInfo):
         windrive = originalwindir.split("\\")[0] #get C: substring
         return WindowsVolumeInfo.WindowsVolumeInfo(windrive)
 
+    #gets the volume info by its path
+    def getVolumeInfo(self , path):
+        return WindowsVolumeInfo.WindowsVolumeInfo(path)
+
     # gets iterable to iterate thru volumes in system
     def getDataVolumesInfo(self):
         #TODO: implement iterator

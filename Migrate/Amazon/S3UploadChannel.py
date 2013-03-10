@@ -107,6 +107,9 @@ class S3UploadThread(threading.Thread):
 
             (bucket , keyname, size, data_getter) = self.__uploadQueue.get()
 
+            # means it's time to exit
+            if bucket == None:
+                return
             #NOTE: consider to use multi-upload in case of large chunk sizes
             
             #NOTE: kinda dedup could be added here!
@@ -157,8 +160,10 @@ class S3UploadThread(threading.Thread):
 class S3UploadChannel(object):
     """channel for s3 uploading"""
 
+    #TODO: we need kinda open method for the channel
     #TODO: need kinda doc
-    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resumeUpload = False  , uploadThreads=4 , queueSize=16):
+    #chunk size means one data element to be uploaded. it waits till all the chunk is transfered to the channel than makes an upload (not fully implemented)
+    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resumeUpload = False  , uploadThreads=4 , queueSize=16, chunksize=10*1024*1024):
         self.__uploadQueue = Queue.Queue(queueSize)
         
         #TODO:need to save it in common log directory
@@ -187,6 +192,7 @@ class S3UploadChannel(object):
                 raise BaseException
     
 
+        self.__chunkSize = chunksize;
         self.__region = awsregion
 
         self.__diskType = diskType
@@ -204,11 +210,11 @@ class S3UploadChannel(object):
             self.__keyBase = keynameBase
         else:
             # migrate + number of seconds since 1980
-            self.__keyBase = "Migrate" +str(long(time.mktime(now)))
+            self.__keyBase = "Migrate" +str(long(time.mktime(now))) + "/image"
 
         #dictionary by the start of the block
         self.__fragmentDictionary = dict()
-        #initializing a number of threads
+        #initializing a number of threads, they are stopping when see None in queue job
         self.__workThreads = list()
         i = 0
         while i < uploadThreads:
@@ -225,7 +231,12 @@ class S3UploadChannel(object):
        #TODO: monitor the queue sizes
        start = extent.getStart()
        size = extent.getSize()
-       keyname =  self.__keyBase+"/temppart"+str(start)
+       keyname =  self.__keyBase+".part"+str(start/self.__chunkSize)
+       
+       #should split the chunk or wait till new data arrives for the same data block
+       if size != self.__chunkSize:
+           logging.error("!!!ERROR: bad chunk size for upload , should be " + str(self.__chunkSize) );
+           raise IOError
 
        self.__uploadQueue.put( (self.__bucket , keyname, size, extent.getData() ) )
        # todo: log
@@ -235,6 +246,10 @@ class S3UploadChannel(object):
        self.__uploadedSize = self.__uploadedSize + size
 
        return 
+
+   # gets the size of one chunk of data transfered by the each request, the data extent is better to be aligned by the integer of chunk sizes
+    def getTransferChunkSize():
+        return self.__chunkSize
 
     def getDataTransferRate():
         #TODO: add transfer rate
@@ -268,9 +283,10 @@ class S3UploadChannel(object):
             warnings.simplefilter("ignore")
             xmltempfile = os.tempnam("s3manifest") + ".xml"
 
-        keyprefix = "result"
-        xmlkey = self.__keyBase+"/"+keyprefix+"manifest.xml"
-        
+        #keyprefix = "result"
+        #NOTE: really we may not build XML, it'd be built by ec2-import-script
+        #but the parts should be named in a right way
+        xmlkey = self.__keyBase+"manifest.xml"
 
         manifest = S3ManfiestBuilder( xmltempfile , xmlkey , self.__bucketName, self.__S3)
 
@@ -282,9 +298,10 @@ class S3UploadChannel(object):
             (keyname , size) = self.__fragmentDictionary[start]
             
             # here we rename the parts to reflect their sequence numbers
-            newkeyname = self.__keyBase+"/"+keyprefix+".part"+str(fragment_index);
-            self.__bucket.copy_key(newkeyname, self.__bucketName, keyname)
-            self.__bucket.delete_key(keyname)
+            # NOTE: it takes to much time. 
+            #newkeyname = self.__keyBase+"/"+keyprefix+".part"+str(fragment_index);
+            #self.__bucket.copy_key(newkeyname, self.__bucketName, keyname)
+            #self.__bucket.delete_key(keyname)
 
             manifest.addUploadedPart(fragment_index, start , start+size , newkeyname)
             fragment_index = fragment_index + 1
@@ -302,6 +319,9 @@ class S3UploadChannel(object):
         
         return self.__xmlKey
 
+    def close(self):
+        for thread in self.__workThreads:
+            self.__uploadQueue.put( (None , None, None, None ) )
    
 
         

@@ -126,6 +126,7 @@ class S3UploadChannel_test(unittest.TestCase):
                 break
         
         channel.confirm()
+        channel.close()
 
     def test_resumeupload_useast(self):
         filename = 'E:\\vms\\2003r2\\win2003r2_32.vhd'

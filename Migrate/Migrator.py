@@ -254,7 +254,7 @@ class Migrator(object):
         self.__transferChannel.waitTillUploadComplete()
         logging.info("Preparing the image uploaded for cloud use")
         imageid = self.__transferChannel.confirm()
-        #TODO: we need to get the config somehow for the migration to take place
+        imageid = self.__transferChannel.close()
 
         logging.info("Creating VM from the image...")
         self.generateInstance(imageid)
@@ -271,11 +271,8 @@ class Migrator(object):
             awskey = self.__cloudOptions.getCloudUser()
             awssecret = self.__cloudOptions.getCloudPass()
             generator = EC2InstanceGenerator.EC2InstanceGenerator(self.__cloudOptions.getRegion())
+
             instance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , awskey, awssecret , self.__migrateOptions.getSystemImagePath())
             
-            #TODO: the config for the import is really needed!
-            #TODO: config for a) cloud b) os c) image type d) image options
-            #TODO: 
-            #TODO: system validity checks (constraints)
-
+            
         return True
