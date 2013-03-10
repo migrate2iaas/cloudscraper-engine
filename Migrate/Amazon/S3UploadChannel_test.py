@@ -46,7 +46,7 @@ class S3UploadChannel_test(unittest.TestCase):
         channel.uploadData(dataext)
         channel.waitTillUploadComplete()
         channel.confirm()
-        
+        channel.close()
 
     def test_file_euro(self):
         return
@@ -62,6 +62,7 @@ class S3UploadChannel_test(unittest.TestCase):
         channel.uploadData(dataext)
         channel.waitTillUploadComplete()
         channel.confirm()
+        channel.close()
 
     def test_fullvhd(self):
         
@@ -88,6 +89,7 @@ class S3UploadChannel_test(unittest.TestCase):
 
         channel.waitTillUploadComplete()
         channel.confirm()
+        channel.close()
 
     def resumeUpload(self , region , bucket, filename , size):
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size, region, None , 'VHD', True)
