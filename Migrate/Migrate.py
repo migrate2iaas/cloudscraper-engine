@@ -38,6 +38,8 @@ if __name__ == '__main__':
     parser.add_argument('-k', '--amazonkey', help="Your AWS secret key. If not specified you will be prompted at the script start")
     parser.add_argument('-c', '--config', help="Path to server cloud copy config file")
     parser.add_argument('-o', '--output', help="Path to extra file for non-detalized output")                   
+    parser.add_argument('-u', '--resumeupload', help="Resumes the upload of image already created", action="store_true")                   
+    parser.add_argument('-s', '--skipupload', help="Skips both imaging and upload. Just start the machine in cloud from the image given", action="store_true")                   
 
     #Turning on the logging
     logging.basicConfig(format='%(asctime)s %(message)s' , filename='..\\..\\logs\\migrate.log',level=logging.DEBUG)    
@@ -70,10 +72,20 @@ if __name__ == '__main__':
     else:
         s3key = getpass.getpass("AWS Secret Access Key:")
 
+    resumeupload = False
+    if parser.parse_args().resumeupload:
+        resumeupload = True
+        
+    skipupload = False
+    if parser.parse_args().skipupload:
+        skipupload = True
+        #NOTE: skip upload is not yet good enough! 
+        # it needs saving of 1) image-id (xml-key) for each volume imported previously 2) instance-id
+
     (image,adjust,cloud) = config.configAmazon(configpath , s3owner , s3key , region , imagepath)
     
     logging.info("\n>>>>>>>>>>>>>>>>> Starting the Migration Process:\n")
-    __migrator = Migrator.Migrator(cloud,image,adjust)
+    __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload)
     logging.info("Migrator test started")
     __migrator.runFullScenario()
     logging.info("\n>>>>>>>>>>>>>>>>> Migration process ended\n")

@@ -58,23 +58,22 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
 class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
 
     #TODO: make docs
-    # images is list of tuples (volume_device_name:string, volume_image_path:string , image_size:long iin bytes)
+    # images is list of VolumeMigrateConfig
     def __init__(self, images , source_arch ,  imagetype='VHD'):
         super(AmazonMigrateConfig, self).__init__()
         
         self.__dataVolumes = list()
-        self.__imageSize = None
-        self.__imagePath = None
+        self.__systemVolumeConfig = None
 
         #TODO: make cross-system
-        for (volume_device_name, volume_image_path , image_size) in images:
+        for config in images:
             originalwindir = os.environ['windir']
             windrive = originalwindir.split("\\")[0] #get C: substring
-            if windrive in volume_device_name:
-                self.__imageSize = image_size
-                self.__imagePath = volume_image_path         
+            if windrive in config.getVolumePath():
+                self.__systemVolumeConfig = config
             else:
-                self.__dataVolumes.append( (volume_device_name, volume_image_path , image_size) )
+                #TODO: make migration config for each volume not to have all this stuff
+                self.__dataVolumes.append( (volume_device_name, volume_image_path , image_size, uploadto , uploaded) )
 
         self.__imageArch = source_arch
         #do we need few images? dunno...
@@ -98,13 +97,16 @@ class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
         return "local"
 
     def getSystemImagePath(self):
-        return self.__imagePath 
+        return self.__systemVolumeConfig.getImagePath()
 
     def getSystemImageSize(self):
-        return self.__imageSize
+        return self.__systemVolumeConfig.getImageSize()
+
+    def getSystemVolumeConfig(self):
+        return self.__systemVolumeConfig
 
     def getSystemConfig(self):
-        #TODO: dunno what should be placed here
+        #TODO: really , dunno what should be palced here. should make some umls to see what needed to be changed
         return None
     
     # gets list of string tuples (volume_device_name, volume_image_path , image_size)

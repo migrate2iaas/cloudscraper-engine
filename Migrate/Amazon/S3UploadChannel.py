@@ -231,18 +231,22 @@ class S3UploadChannel(object):
        #TODO: monitor the queue sizes
        start = extent.getStart()
        size = extent.getSize()
-       keyname =  self.__keyBase+".part"+str(start/self.__chunkSize)
+       keyname =  self.__keyBase+".part"+str(int(start/self.__chunkSize))
        
+       #NOTE: the last one could be less than 10Mb.
+       # there are two options 1) to align the whole file or to make it possible to use the smaller chunks
+
+       #TODO: test the resume upload scenario on these failed tasks
        #should split the chunk or wait till new data arrives for the same data block
+       # the last one could be less than 10Mb
        if size != self.__chunkSize:
-           logging.error("!!!ERROR: bad chunk size for upload , should be " + str(self.__chunkSize) );
-           raise IOError
+           logging.warning("!Warning: bad chunk size for upload , should be " + str(self.__chunkSize) );
 
        self.__uploadQueue.put( (self.__bucket , keyname, size, extent.getData() ) )
        # todo: log
        #TODO: make this tuple more flexible
        self.__fragmentDictionary[start] = (keyname , size)
-       #TODO: add whenever it was really uploaded! Not justa dded to the queue
+       #TODO: add whenever it was really uploaded! Not just added to the queue
        self.__uploadedSize = self.__uploadedSize + size
 
        return 
@@ -303,7 +307,7 @@ class S3UploadChannel(object):
             #self.__bucket.copy_key(newkeyname, self.__bucketName, keyname)
             #self.__bucket.delete_key(keyname)
 
-            manifest.addUploadedPart(fragment_index, start , start+size , newkeyname)
+            manifest.addUploadedPart(fragment_index, start , start+size , keyname)
             fragment_index = fragment_index + 1
         
         manifest.finalize()

@@ -16,7 +16,7 @@ import time
 class EC2InstanceGenerator(object):
     """generator class for ec2 instances"""
 
-    def __init__(self , region, retries):
+    def __init__(self , region, retries=5):
 
         self.__region = region
         self.__retryCount = retries

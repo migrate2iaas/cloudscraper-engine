@@ -1,5 +1,7 @@
 import subprocess
 import re
+import os
+import sys
 
 import logging
 
@@ -27,6 +29,10 @@ class WindowsVhdMedia(object):
 
     #starts the connection
     def open(self):
+        if os.path.exists(self.__fileName):
+            logging.error("!!!ERROR: image file" + self.__fileName + " already exists. Please, specify another one");
+            raise IOError
+
         logging.debug("Initing new VHD disk");
         scriptpath = "diskpart_open.tmp"
         scrfile = open(scriptpath, "w+")

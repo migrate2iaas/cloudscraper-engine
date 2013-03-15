@@ -6,6 +6,109 @@ import EC2Instance
 import ConfigParser
 import logging
 import time
+from MigrateConfig import VolumeMigrateConfig
+
+class VolumeMigrateNoConfig(VolumeMigrateConfig):
+    def __init__(self, volumename, imagepath , imagesize):
+        self.__volumeName = volumename
+        self.__imagePath = imagepath
+        self.__imageSize = imagesize
+        self.__pathToUpload = ''
+        self.__uploadedImageId = ''
+
+    def getImagePath(self):
+        return self.__imagePath
+
+    def getUploadPath(self):
+        return  self.__pathToUpload;
+
+    def getUploadId(self):
+        return self.__uploadedImageId
+
+    def getImageSize(self):
+        return self.__imageSize
+
+    def getVolumePath(self):
+        return self.__volumeName
+
+    def setUploadPath(self, path):
+        self.__pathToUpload = path
+
+    def setUploadId(self , uploadid):
+        self.__uploadedImageId = uploadid
+
+    def setImagePath(self , imagepath):
+        self.__imagePath = imagepath
+
+    def setImageSize(self , size):
+        self.__imageSize = size
+   
+    def saveConfig(self):
+        return
+
+class VolumeMigrateIniConfig(VolumeMigrateConfig):
+    """ volume migration parms got from ini file """
+
+    #NOTE: really , there are just two functions to override: load config and save config
+    # the common code should be moved to base class then
+    def __init__(self, config, configname , section, volumename):
+        self.__config = config
+        self.__section = section
+        self.__configFileName = configname
+        self.__volumeName = volumename
+        self.__imagePath = ''
+        self.__imageSize = 0
+        self.__pathToUpload = ''
+        self.__uploadedImageId = ''
+        if config.has_section(section):
+            if config.has_option(section, 'imagesize'):
+                self.__imageSize = config.getint(section, 'imagesize')
+
+            if config.has_option(section, 'pathuploaded'):
+                self.__pathToUpload = config.get(section, 'pathuploaded')
+
+            if config.has_option(section, 'pathtoupload'):
+                self.__uploadedImageId = config.get(section, 'pathtoupload')
+
+            if config.has_option(section, 'imagepath'):
+                self.__imagePath = config.get(section, 'imagepath')
+        else:
+            #TODO: error!
+            raise LookupError
+
+    #TODO: write config to file then afterwards
+
+    def getImagePath(self):
+        return self.__imagePath
+
+    def getUploadPath(self):
+        return  self.__pathToUpload;
+
+    def getUploadId(self):
+        return self.__uploadedImageId
+
+    def getImageSize(self):
+        return self.__imageSize
+
+    def getVolumePath(self):
+        return self.__volumeName
+
+    def setUploadPath(self, path):
+        self.__pathToUpload = path
+
+    def setUploadId(self , uploadid):
+        self.__uploadedImageId = uploadid
+
+    def setImagePath(self , imagepath):
+        self.__imagePath = imagepath
+   
+    def setImageSize(self , size):
+        self.__imageSize = size
+
+    def saveConfig(self):
+        fconf = file(self.__configFileName, "w")
+        self.__config.write(fconf)
+
 
 class MigratorConfigurer(object):
     """ This class is up to make configs for various cloud migrations"""
@@ -24,10 +127,9 @@ class MigratorConfigurer(object):
         import Windows
         imagesize = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize()
         #TODO: checks OS
-        imagetype = 'VHD'
-      
+        imagetype = 'VHD'      
 
-
+        
         #cloud config
         if user == '':
             user = config.get('EC2', 's3key')
@@ -59,14 +161,19 @@ class MigratorConfigurer(object):
            imagedir = config.get('Image', 'image-dir') 
            
         volumes = list()
-        
+        #TODO: image-dir is obligatory here!
         if config.has_section('Volumes') :
             if config.has_option('Volumes', 'letters'):
                 letters = config.get('Volumes', 'letters');
                 for letter in letters.split(','):
                     devicepath = '\\\\.\\'+letter+':';
                     size = Windows.Windows().getSystemInfo().getVolumeInfo(letter+":").getSize()
-                    volumes.append( (devicepath , imagedir+"\\"+letter+"."+imagetype, size ) )
+                    volume = VolumeMigrateIniConfig(config , configfile , letter , devicepath)
+                    if volume.getImagePath() == '':
+                        volume.setImagePath(imagedir+"\\"+letter+"."+imagetype);
+                    if volume.getImageSize() == 0:
+                        volume.setImageSize(size);
+                    volumes.append( volume )
                     #TODO: better to create suing [Volume_Letter] section + optionsSize here then!
                 
         else:    
@@ -81,7 +188,7 @@ class MigratorConfigurer(object):
             except ConfigParser.NoOptionError as exception:
                 logging.info("No image type or size found, using the default ones");
                 newsize = imagesize
-            volumes.append( (Windows.Windows().getSystemInfo().getSystemVolumeInfo().getDevicePath() , imagepath , imagesize ))
+            volumes.append( VolumeMigrateNoConfig(Windows.Windows().getSystemInfo().getSystemVolumeInfo().getDevicePath() , imagepath , imagesize ))
         
 
 

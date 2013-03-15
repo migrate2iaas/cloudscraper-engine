@@ -33,7 +33,7 @@ class Migrator(object):
             import S3UploadChannel
             self.__cloudName = self.__migrateOptions.getTargetCloud()
 
-    def __init__(self , cloudOptions , migrateOptions, sysAdjustOptions , skipImaging=False, skipUpload=False, resumeUpload=False):
+    def __init__(self , cloudOptions , migrateOptions, sysAdjustOptions , skipImaging=False, resumeUpload=False, skipUpload=False):
         self.__adjustedBackupSource = None
         self.__backupSource = None
         self.__adjustOption = None
@@ -108,6 +108,8 @@ class Migrator(object):
             if self.startSystemBackup() == False:
                 logging.info("System copy failed")
                 return
+
+            # 8) the data volumes are next!
         
         # 8) adjust transfers after all?
         # Tha place of parallelism and asynchronousity is somewhere here
@@ -169,6 +171,10 @@ class Migrator(object):
         return True
 
     def adjustSystemBackupSource(self):
+        
+        if self.__skipImaging:
+            return True
+
         self.__adjustedBackupSource = AdjustedBackupSource.AdjustedBackupSource()
         self.__adjustedBackupSource.setBackupSource(self.__backupSource)
 
@@ -186,20 +192,25 @@ class Migrator(object):
             self.__winSystemAdjustOptions.setSysDiskType(self.__systemAdjustOptions.getSysDiskType())
             #self.__systemAdjustOptions.loadConfig(self.__migrateOptions.getSystemConfig())
             
-
-            if self.__migrateOptions.getImageType() == "VHD" and self.__migrateOptions.getImagePlacement() == "local" and self.__windows.getVersion() >= self.__windows.getSystemInfo().Win2008R2 and self.__skipImaging == False:
-               #TODO: create max VHD size parm also
-               self.__transferTarget = self.__windows.createVhdTransferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
-            else:
-                #TODO: be more discriptive
-                logging.error("!!!ERROR: Bad image options!");
-                return False
+            if self.__skipImaging == False:
+                if self.__migrateOptions.getImageType() == "VHD" and self.__migrateOptions.getImagePlacement() == "local" and self.__windows.getVersion() >= self.__windows.getSystemInfo().Win2008R2:
+                   #TODO: create max VHD size parm also
+                   self.__transferTarget = self.__windows.createVhdTransferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
+                else:
+                    #TODO: be more discriptive
+                    logging.error("!!!ERROR: Bad image options!");
+                    return False
         if self.__cloudName == "EC2":
             bucket = self.__cloudOptions.getCloudStorage()
             awskey = self.__cloudOptions.getCloudUser()
             awssecret = self.__cloudOptions.getCloudPass()
+
+            # here we should get system bucket and the system key from the config
+            # keyname should be associated with the volume by the config program
+
             import S3UploadChannel
-            self.__transferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__migrateOptions.getSystemImageSize() , self.__cloudOptions.getRegion() , None , self.__migrateOptions.getImageType())
+            self.__transferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__migrateOptions.getSystemImageSize() , self.__cloudOptions.getRegion() , "system" , self.__migrateOptions.getImageType() , self.__resumeUpload)
+            
 
         return True
 
@@ -226,36 +237,46 @@ class Migrator(object):
             if self.__runOnWindows:
                self.__windows.closeMedia()
 
+            self.__migrateOptions.getSystemVolumeConfig().saveConfig()
+        
+
         filesize = os.stat(self.__migrateOptions.getSystemImagePath()).st_size
         #TODO: should be 10  mb in amazon impl
         file = open(self.__migrateOptions.getSystemImagePath() , "rb")
+
+        if self.__skipUpload:
+            logging.info("\n>>>>>>>>>>>>>>>>> Skipping the system image upload\n");
+            bucket = self.__cloudOptions.getCloudStorage()
+            imageid = bucket+".xml"
+            #TODO: not working yet
+        else:
+            logging.info("\n>>>>>>>>>>>>>>>>> Started the system image upload\n");
+
+            datasize = 10*1024*1024 #mb
+            dataplace = 0
+            datasent = 0
+            while 1:
+                try:
+                    data = file.read(datasize)
+                except EOFError:
+                    break
+                if len(data) == 0:
+                    break
+                dataext = DataExtent.DataExtent(dataplace , len(data))
+                dataplace = dataplace + len(data)
+                dataext.setData(data)
+                self.__transferChannel.uploadData(dataext)
+                datasent = datasent + 1
+                if (datasent % 100 == 10):
+                    logging.info("% " + str(datasent*datasize/1024/1024)+ " of "+ str(int(filesize/1024/1024)) + " MB sent to " + self.__cloudName)
+
         
-        logging.info("\n>>>>>>>>>>>>>>>>> Started the system image upload\n");
+            self.__transferChannel.waitTillUploadComplete()
+            logging.info("Preparing the image uploaded for cloud use")
+            imageid = self.__transferChannel.confirm()
+            imageid = self.__transferChannel.close()
 
-        datasize = 10*1024*1024 #mb
-        dataplace = 0
-        datasent = 0
-        while 1:
-            try:
-                data = file.read(datasize)
-            except EOFError:
-                break
-            if len(data) == 0:
-                break
-            dataext = DataExtent.DataExtent(dataplace , len(data))
-            dataplace = dataplace + len(data)
-            dataext.setData(data)
-            self.__transferChannel.uploadData(dataext)
-            datasent = datasent + 1
-            if (datasent % 100 == 10):
-                logging.info("% " + str(datasent*datasize/1024/1024)+ " of "+ str(int(filesize/1024/1024)) + " MB sent to " + self.__cloudName)
-
-        
-        self.__transferChannel.waitTillUploadComplete()
-        logging.info("Preparing the image uploaded for cloud use")
-        imageid = self.__transferChannel.confirm()
-        imageid = self.__transferChannel.close()
-
+        #TODO: somehow the image-id should be saved thus it could be loaded in skip upload scenario
         logging.info("Creating VM from the image...")
         self.generateInstance(imageid)
 

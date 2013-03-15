@@ -1,5 +1,52 @@
 
 
+class ConfigAccessor(object):
+    """base class to save the config value"""
+
+    def saveValue(self , valuename , value):
+        return 
+    def getValue(self , valuename , value):
+        return
+
+
+#TODO: implement the config saver
+# add save to config here
+# so the configurer adds 
+class VolumeMigrateConfig(object):
+    """ base class for volume migration parms """
+
+
+    def getImagePath(self):
+        raise NotImplementedError
+
+    def getUploadPath(self):
+        raise NotImplementedError
+
+    def getUploadId(self):
+        raise NotImplementedError
+
+    def getImageSize(self):
+        raise NotImplementedError
+
+    def getVolumePath(self):
+        raise NotImplementedError
+
+    def setUploadPath(self, path):
+        raise NotImplementedError
+
+    def setUploadId(self , uploadid):
+        raise NotImplementedError
+
+    def setImagePath(self , imagepath):
+        raise NotImplementedError
+
+    def setImageSize(self , size):
+        raise NotImplementedError
+   
+    def saveConfig(self):
+        raise NotImplementedError
+
+
 class MigrateConfig(object):
     """ base class for the migration config"""
 
