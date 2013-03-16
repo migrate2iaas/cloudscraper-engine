@@ -65,18 +65,17 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
                 self.__imageSize = config.getint(section, 'imagesize')
 
             if config.has_option(section, 'pathuploaded'):
-                self.__pathToUpload = config.get(section, 'pathuploaded')
+                self.__uploadedImageId = config.get(section, 'pathuploaded')
 
             if config.has_option(section, 'pathtoupload'):
-                self.__uploadedImageId = config.get(section, 'pathtoupload')
+                self.__pathToUpload = config.get(section, 'pathtoupload')
 
             if config.has_option(section, 'imagepath'):
                 self.__imagePath = config.get(section, 'imagepath')
         else:
-            #TODO: error!
+            logging.error("!!!ERROR: bad config file. Section for drive letter cannot be found");
             raise LookupError
 
-    #TODO: write config to file then afterwards
 
     def getImagePath(self):
         return self.__imagePath
@@ -106,6 +105,22 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
         self.__imageSize = size
 
     def saveConfig(self):
+        section = self.__section
+        if self.__config.has_section(section) == False:
+            self.__config.add_section(section)
+        
+        if self.__imageSize:
+            self.__config.set(section, 'imagesize' , str(self.__imageSize))
+
+        if self.__uploadedImageId:
+            self.__config.set(section, 'pathuploaded' , self.__uploadedImageId)
+
+        if self.__pathToUpload:
+            self.__config.set(section, 'pathtoupload' , self.__pathToUpload)
+
+        if self.__imagePath:
+           self.__config.set(section, 'imagepath', self.__imagePath)
+
         fconf = file(self.__configFileName, "w")
         self.__config.write(fconf)
 
@@ -155,10 +170,14 @@ class MigratorConfigurer(object):
         if config.has_option('Image', 'image-type'):
             imagetype = config.get('Image', 'image-type')
         
-
+        #TODO: check for config validity and raise exceptions if it's not good enough
         imagedir = ""
         if config.has_option('Image', 'image-dir'):
            imagedir = config.get('Image', 'image-dir') 
+
+        s3prefix = ""
+        if config.has_option('EC2', 's3prefix'):
+           s3prefix = config.get('EC2', 's3prefix') 
            
         volumes = list()
         #TODO: image-dir is obligatory here!
@@ -173,8 +192,12 @@ class MigratorConfigurer(object):
                         volume.setImagePath(imagedir+"\\"+letter+"."+imagetype);
                     if volume.getImageSize() == 0:
                         volume.setImageSize(size);
+                    s3objkey = letter
+                    if s3prefix:
+                        s3objkey = s3prefix+"\\"+s3objkey
+                    if volume.getUploadPath() == '':
+                        volume.setUploadPath(s3objkey)
                     volumes.append( volume )
-                    #TODO: better to create suing [Volume_Letter] section + optionsSize here then!
                 
         else:    
             #the old default version of initializing

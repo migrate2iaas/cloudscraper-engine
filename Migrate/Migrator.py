@@ -209,7 +209,7 @@ class Migrator(object):
             # keyname should be associated with the volume by the config program
 
             import S3UploadChannel
-            self.__transferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__migrateOptions.getSystemImageSize() , self.__cloudOptions.getRegion() , "system" , self.__migrateOptions.getImageType() , self.__resumeUpload)
+            self.__transferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__migrateOptions.getSystemImageSize() , self.__cloudOptions.getRegion() , self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
             
 
         return True
@@ -237,6 +237,8 @@ class Migrator(object):
             if self.__runOnWindows:
                self.__windows.closeMedia()
 
+            # we save the config to reflect the image generated is ready. 
+            #TODO: add the creation time here? or something alike? snapshot time too?
             self.__migrateOptions.getSystemVolumeConfig().saveConfig()
         
 
@@ -252,7 +254,7 @@ class Migrator(object):
         else:
             logging.info("\n>>>>>>>>>>>>>>>>> Started the system image upload\n");
 
-            datasize = 10*1024*1024 #mb
+            datasize = self.__transferChannel.getTransferChunkSize()#mb
             dataplace = 0
             datasent = 0
             while 1:
@@ -267,18 +269,23 @@ class Migrator(object):
                 dataext.setData(data)
                 self.__transferChannel.uploadData(dataext)
                 datasent = datasent + 1
-                if (datasent % 100 == 10):
-                    logging.info("% " + str(datasent*datasize/1024/1024)+ " of "+ str(int(filesize/1024/1024)) + " MB sent to " + self.__cloudName)
+                if (datasent % 50 == 0):
+                    logmsg = "% " + str(datasent*datasize/1024/1024)+ " of "+ str(int(filesize/1024/1024)) + " MB sent processed. "
+                    if self.__transferChannel.getOverallDataSkipped():
+                        logmsg = logmsg + str(int(self.__transferChannel.getOverallDataSkipped()/1024/1024)) + " MB is already in the cloud. "
+                    logging.info( logmsg + str(int(self.__transferChannel.getOverallDataTransfered()/1024/1024)) + " MB uploaded."  )
 
         
             self.__transferChannel.waitTillUploadComplete()
             logging.info("Preparing the image uploaded for cloud use")
             imageid = self.__transferChannel.confirm()
-            imageid = self.__transferChannel.close()
-
+            self.__transferChannel.close()
+            self.__migrateOptions.getSystemVolumeConfig().setUploadId(imageid)
+            self.__migrateOptions.getSystemVolumeConfig().saveConfig()
         #TODO: somehow the image-id should be saved thus it could be loaded in skip upload scenario
-        logging.info("Creating VM from the image...")
-        self.generateInstance(imageid)
+        #move it somehwere else
+        logging.info("Creating VM from the image stored at " + str(self.__migrateOptions.getSystemVolumeConfig().getUploadId()))
+        self.generateInstance(self.__migrateOptions.getSystemVolumeConfig().getUploadId())
 
         return True
 

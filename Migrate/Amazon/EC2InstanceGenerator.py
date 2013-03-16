@@ -23,6 +23,7 @@ class EC2InstanceGenerator(object):
 
 
      # marks the data uploaded as system disk, should be called(?) after the upload is confirmed
+     # TODO: make direct EC2 calls instead of this crappy java calls
     def makeInstanceFromImage(self , imageid , initialconfig, s3owner, s3key, temp_local_image_path ):
 
         windir = os.environ['windir']
@@ -50,17 +51,17 @@ class EC2InstanceGenerator(object):
                 outdata = proc_import_sys.stdout.readline();
                 # in case that is the progress line
                 if "|--------------------------------------------------| 100" in outdata:
-                    logging.info("The upload of system volume status (this screen will be updated every 2% of image uploaded):");
+                    logging.debug("The upload of system volume status (this screen will be updated every 2% of image uploaded):");
                     #then read by byte and output
                     next_char = ' ';
                     completion = 0;
-                    logging.info(str(completion)+"% uploaded")
+                    logging.debug(str(completion)+"% uploaded")
                     while next_char != '\n' and next_char != '':
                         next_char = proc_import_sys.stdout.read(1)
                         # 2 percents of completion per one = character in output
                         if next_char == '=':
                             completion = completion + 2
-                            logging.info(str(completion)+"% uploaded")
+                            logging.debug(str(completion)+"% uploaded")
                 #
                 logging.debug(str(outdata))
                 match = re.search('(import-i-[a-zA-Z0-9]+)',str(outdata))

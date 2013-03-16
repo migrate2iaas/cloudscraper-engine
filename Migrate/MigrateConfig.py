@@ -75,6 +75,9 @@ class MigrateConfig(object):
     def getSystemConfig(self):
         raise NotImplementedError
 
+    def getSystemVolumeConfig(self):
+        raise NotImplementedError
+
     def getSystemDiskType(self):
         raise NotImplementedError
 

@@ -23,6 +23,8 @@ import subprocess
 import re
 
 import logging
+import threading 
+import datetime
 
 import base64
 import math
@@ -95,11 +97,12 @@ class S3ManfiestBuilder:
 
 class S3UploadThread(threading.Thread):
     """thread making all uploading works"""
-    def __init__(self , queue , threadId , skipExisting = False):
+    def __init__(self , queue , threadId , skipExisting = False , channel = None):
         self.__uploadQueue = queue
         #thread id , for troubleshooting purposes
         self.__threadId = threadId
         self.__skipExisting = skipExisting
+        self.__channel = channel
         return super(S3UploadThread,self).__init__()
 
     def run(self):
@@ -145,8 +148,12 @@ class S3UploadThread(threading.Thread):
                 if upload:
                     md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest) 
                     s3key.set_contents_from_string(data, replace=True, policy=None, md5=(md5digest, base64md5), reduced_redundancy=False, encrypt_key=False)
+                    if self.__channel:
+                        self.__channel.notifyDataTransfered(size)
                 else:
                     logging.debug("Skipped the data upload: %s/%s " , str(bucket), keyname);
+                    if self.__channel:
+                        self.__channel.notifyDataSkipped(size)
                 s3key.close()
             except Exception as e:
                 #reput the task into the queue
@@ -155,17 +162,24 @@ class S3UploadThread(threading.Thread):
             self.__uploadQueue.task_done()
         
 
+
+
 #TODO: inherit from kinda base one
 #TODO: descibe the stack backup source->transfer target->media->channel
 class S3UploadChannel(object):
     """channel for s3 uploading"""
+
+    #TODO: make more reliable statistics
 
     #TODO: we need kinda open method for the channel
     #TODO: need kinda doc
     #chunk size means one data element to be uploaded. it waits till all the chunk is transfered to the channel than makes an upload (not fully implemented)
     def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resumeUpload = False  , uploadThreads=4 , queueSize=16, chunksize=10*1024*1024):
         self.__uploadQueue = Queue.Queue(queueSize)
-        
+        self.__statLock = threading.Lock()
+        self.__prevUploadTime = None 
+        self.__transferRate = 0
+
         #TODO:need to save it in common log directory
         boto.set_file_logger("boto", "boto.log", level=logging.DEBUG)
 
@@ -199,6 +213,7 @@ class S3UploadChannel(object):
         self.__resumeUpload = resumeUpload
 
         self.__uploadedSize = 0
+        self.__uploadSkippedSize = 0
         self.__xmlKey = None
        
         gigabyte = 1024*1024*1024
@@ -218,7 +233,7 @@ class S3UploadChannel(object):
         self.__workThreads = list()
         i = 0
         while i < uploadThreads:
-            thread = S3UploadThread(self.__uploadQueue , i , self.__resumeUpload)
+            thread = S3UploadThread(self.__uploadQueue , i , self.__resumeUpload , self)
             thread.start()
             self.__workThreads.append(thread )
             i = i + 1
@@ -246,21 +261,38 @@ class S3UploadChannel(object):
        # todo: log
        #TODO: make this tuple more flexible
        self.__fragmentDictionary[start] = (keyname , size)
-       #TODO: add whenever it was really uploaded! Not just added to the queue
-       self.__uploadedSize = self.__uploadedSize + size
 
        return 
 
    # gets the size of one chunk of data transfered by the each request, the data extent is better to be aligned by the integer of chunk sizes
-    def getTransferChunkSize():
+    def getTransferChunkSize(self):
         return self.__chunkSize
 
-    def getDataTransferRate():
-        #TODO: add transfer rate
-        return 
+    #returns float: number of bytes transfered in seconds
+    def getDataTransferRate(self):
+        return self.__transferRate
+
+    #  overall data skipped from uploading if resume upload is set
+    def notifyDataSkipped(self , skipped_size):
+        with self.__statLock:
+            self.__uploadSkippedSize = self.__uploadSkippedSize + skipped_size
+
+    # gets overall data skipped from uploading if resume upload is set
+    def getOverallDataSkipped(self):
+        return self.__uploadSkippedSize
+
+    def notifyDataTransfered(self , transfered_size):
+        now = datetime.datetime.now()
+        if self.__prevUploadTime:
+            delta = now - self.__prevUploadTime
+            if delta.seconds():
+                self.__transferRate = transfered_size/delta.seconds()
+        self.__prevUploadTime = now
+        with self.__statLock:
+            self.__uploadedSize = self.__uploadedSize + transfered_size
 
     #gets the overall size of data uploaded
-    def getOverallDataTransfered():
+    def getOverallDataTransfered(self):
         return self.__uploadedSize 
 
     # wait uploaded all needed
