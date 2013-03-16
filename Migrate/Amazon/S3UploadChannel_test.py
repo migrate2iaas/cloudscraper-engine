@@ -55,7 +55,7 @@ class S3UploadChannel_test(unittest.TestCase):
         size = 1024*1024*1024
         bucket = 'feoffuseastfiletest.s3-eu-west-1a'
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size , 'eu-west-1')
-        
+        self.__channel = channel
         file = open('D:\\log.txt' , "rb")
         data = file.read()
         dataext = DataExtent.DataExtent(0 , len(data))

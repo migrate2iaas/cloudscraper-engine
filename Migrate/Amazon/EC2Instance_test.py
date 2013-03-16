@@ -82,7 +82,7 @@ class EC2Instance_test(unittest.TestCase):
         image_id = channel.confirm()
  
         generator = EC2InstanceGenerator.EC2InstanceGenerator("us-east-1")
-        instance = generator.makeInstanceFromImage(image_id, ConfigTest("i386", "us-east-1a" , filename) , self.__key , self.__secret)
+        instance = generator.makeInstanceFromImage(image_id, ConfigTest("i386", "us-east-1a" , filename) , self.__key , self.__secret , filename)
         self.assertIsNotNone(instance)
 
     def test_fullvhdeuro(self):
@@ -117,7 +117,7 @@ class EC2Instance_test(unittest.TestCase):
         image_id = channel.confirm()
         
         generator = EC2InstanceGenerator.EC2InstanceGenerator("eu-west-1")
-        instance = generator.makeInstanceFromImage(image_id, ConfigTest("i386", "eu-west-1a" , filename) , self.__key , self.__secret)
+        instance = generator.makeInstanceFromImage(image_id, ConfigTest("i386", "eu-west-1a" , filename) , self.__key , self.__secret , filename)
         self.assertIsNotNone(instance)
 
         return
