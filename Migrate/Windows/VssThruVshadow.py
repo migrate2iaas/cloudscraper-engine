@@ -46,6 +46,8 @@ class VssThruVshadow(VSS.VSS):
     #returns snapshot name in a way it could be opened by an any system call
     def createSnapshot(self, volumeName):
         
+        #NOTE: Volume should have enough space to create shadow storage on it
+        #Use to add extra storage on another drive for vss snapshot "vssadmin add shadowstorage /for=<ForVolumeSpec> /on=<OnVolumeSpec> [/maxsize=<MaxSizeSpec>]"
         try:
             output = subprocess.check_output(self.__binPath + " -p " + volumeName , shell=True);
         except subprocess.CalledProcessError as ex:

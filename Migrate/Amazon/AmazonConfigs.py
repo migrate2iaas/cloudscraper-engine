@@ -73,7 +73,7 @@ class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
                 self.__systemVolumeConfig = config
             else:
                 #TODO: make migration config for each volume not to have all this stuff
-                self.__dataVolumes.append( (volume_device_name, volume_image_path , image_size, uploadto , uploaded) )
+                self.__dataVolumes.append( config )
 
         self.__imageArch = source_arch
         #do we need few images? dunno...

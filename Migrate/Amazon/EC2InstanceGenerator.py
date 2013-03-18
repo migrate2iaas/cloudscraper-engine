@@ -94,7 +94,7 @@ class EC2InstanceGenerator(object):
                 #retry if failed
                 continue
             else:
-                logging.info (">>>>>>>>>>>>>>> System volume has been uploaded, now it's converted by the Amazon EC2 to run as EC2 instance.")
+                logging.info (">>>>>>>>>>>>>>> System volume has been uploaded, now it's converted by the Amazon EC2 to run as EC2 instance (it may take up to hour, be patient).")
                 logging.info ("Waiting for system volume conversion to complete")
                 #
                 while 1:

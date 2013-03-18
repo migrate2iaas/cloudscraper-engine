@@ -23,6 +23,7 @@ import datetime
 import traceback
 import argparse
 import sysconfig
+import time
 
 MigrateVerisonHigh = 0
 MigrateVersionLow = 1
@@ -31,7 +32,6 @@ MigrateVersionLow = 1
 #TODO: make versioning and expiration time!!
 
 if __name__ == '__main__':
-
     
     #parsing extra option
     parser = argparse.ArgumentParser(description="This script performs creation of virtualized images from the local server, uploading them to S3, converting them to EC2 instances. See README for more details.")
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         outhandler.setLevel(logging.INFO)
         logging.getLogger().addHandler(outhandler)
     
-    logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Migration Process (v " + str(MigrateVerisonHigh)+ "." + str(MigrateVersionLow) +  "):\n")
+    logging.info("\n>>>>>>>>>>>>>>>>> The Server Clonning Process (v " + str(MigrateVerisonHigh)+ "." + str(MigrateVersionLow) +  ") initializing\n")
 
     config = MigratorConfigurer.MigratorConfigurer()
     
@@ -84,11 +84,11 @@ if __name__ == '__main__':
 
     (image,adjust,cloud) = config.configAmazon(configpath , s3owner , s3key , region , imagepath)
     
-    logging.info("\n>>>>>>>>>>>>>>>>> Starting the Migration Process:\n")
+    logging.info("\n>>>>>>>>>>>>>>>>> Starting the Transfer Process:\n")
     __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload)
     logging.info("Migrator test started")
     __migrator.runFullScenario()
-    logging.info("\n>>>>>>>>>>>>>>>>> Migration process ended\n")
+    logging.info("\n>>>>>>>>>>>>>>>>> Transfer process ended\n")
 
     
 

@@ -97,12 +97,13 @@ class S3ManfiestBuilder:
 
 class S3UploadThread(threading.Thread):
     """thread making all uploading works"""
-    def __init__(self , queue , threadId , skipExisting = False , channel = None):
+    def __init__(self , queue , threadId , skipExisting = False , channel = None , retries = 10):
         self.__uploadQueue = queue
         #thread id , for troubleshooting purposes
         self.__threadId = threadId
         self.__skipExisting = skipExisting
         self.__channel = channel
+        self.__maxRetries = retries
         return super(S3UploadThread,self).__init__()
 
     def run(self):
@@ -118,49 +119,61 @@ class S3UploadThread(threading.Thread):
             #NOTE: kinda dedup could be added here!
             #NOTE: we should able to change the initial keyname here so the data'll be redirected 
 
-            try:
-            # s3 key is kinda file in the bucket (directory)
+            failed = True
+            retries = 0
+            while retries < self.__maxRetries:
+                retries = retries + 1
+
+                try:
+                # s3 key is kinda file in the bucket (directory)
                 
-                data = str(data_getter)[0:size]
-                upload = True
-                s3key = bucket.get_key(keyname)
+                    data = str(data_getter)[0:size]
+                    upload = True
+                    s3key = bucket.get_key(keyname)
 
-                md5encoder = md5()
-                md5encoder.update(data)
-                md5_hexdigest = md5encoder.hexdigest()
+                    md5encoder = md5()
+                    md5encoder.update(data)
+                    md5_hexdigest = md5encoder.hexdigest()
                 
 
-                if s3key == None:
-                    s3key = Key(bucket , keyname)    
-                else: 
-                    if self.__skipExisting:
-                        # check the size and checksums in order to skip upload
-                        #TODO: metadata is empty! should recheck the upload
-                        # TODO: make metadata upload!
-                        existing_length = s3key.size #s3key.get_metadata('Content-Length') 
-                        if int(existing_length) == size:
-                            existing_md5 = s3key.etag
-                            #md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest) 
-                            if '"'+str(md5_hexdigest)+'"' == existing_md5:
-                                logging.debug("key with same md5 and length already exisits, skip uploading");
-                                upload = False
+                    if s3key == None:
+                        s3key = Key(bucket , keyname)    
+                    else: 
+                        if self.__skipExisting:
+                            # check the size and checksums in order to skip upload
+                            #TODO: metadata is empty! should recheck the upload
+                            # TODO: make metadata upload!
+                            existing_length = s3key.size #s3key.get_metadata('Content-Length') 
+                            if int(existing_length) == size:
+                                existing_md5 = s3key.etag
+                                #md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest) 
+                                if '"'+str(md5_hexdigest)+'"' == existing_md5:
+                                    logging.debug("key with same md5 and length already exisits, skip uploading");
+                                    upload = False
 
-                if upload:
-                    md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest) 
-                    s3key.set_contents_from_string(data, replace=True, policy=None, md5=(md5digest, base64md5), reduced_redundancy=False, encrypt_key=False)
-                    if self.__channel:
-                        self.__channel.notifyDataTransfered(size)
-                else:
-                    logging.debug("Skipped the data upload: %s/%s " , str(bucket), keyname);
-                    if self.__channel:
-                        self.__channel.notifyDataSkipped(size)
-                s3key.close()
-            except Exception as e:
-                #reput the task into the queue
-                self.__uploadQueue.put( (bucket , keyname, size, data_getter) )
-                logging.warning("!Failed to upload data: %s/%s , making a retry...", str(bucket), keyname )
+                    if upload:
+                        md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest) 
+                        s3key.set_contents_from_string(data, replace=True, policy=None, md5=(md5digest, base64md5), reduced_redundancy=False, encrypt_key=False)
+                        if self.__channel:
+                            self.__channel.notifyDataTransfered(size)
+                    else:
+                        logging.debug("Skipped the data upload: %s/%s " , str(bucket), keyname);
+                        if self.__channel:
+                            self.__channel.notifyDataSkipped(size)
+                    s3key.close()
+                except Exception as e:
+                    #reput the task into the queue
+                    logging.warning("!Failed to upload data: %s/%s , making a retry...", str(bucket), keyname )
+                    logging.warning("Exception = " + str(e));
+                    continue
+                #self.__uploadQueue.put( (bucket , keyname, size, data_getter) )
+                self.__uploadQueue.task_done()
+                failed = False
+
+        #TODO: stop the thread, notify the channel somehow
+        if failed:
+            logging.error("!!! ERROR failed to upload data: %s/%s!", str(bucket), keyname )
             self.__uploadQueue.task_done()
-        
 
 
 
@@ -257,6 +270,7 @@ class S3UploadChannel(object):
        if size != self.__chunkSize:
            logging.warning("!Warning: bad chunk size for upload , should be " + str(self.__chunkSize) );
 
+       #TODO: check threads are working ok
        self.__uploadQueue.put( (self.__bucket , keyname, size, extent.getData() ) )
        # todo: log
        #TODO: make this tuple more flexible
@@ -285,8 +299,8 @@ class S3UploadChannel(object):
         now = datetime.datetime.now()
         if self.__prevUploadTime:
             delta = now - self.__prevUploadTime
-            if delta.seconds():
-                self.__transferRate = transfered_size/delta.seconds()
+            if delta.seconds:
+                self.__transferRate = transfered_size/delta.seconds
         self.__prevUploadTime = now
         with self.__statLock:
             self.__uploadedSize = self.__uploadedSize + transfered_size

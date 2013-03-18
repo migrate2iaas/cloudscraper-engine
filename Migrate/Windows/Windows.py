@@ -32,6 +32,17 @@ class Windows(object):
     def __init__(self):
         self.__filesToDelete = set()
         return
+    
+    # volume should be in "\\.\X:" form
+    def getDataBackupSource(self , volume):
+        Vss = VssThruVshadow.VssThruVshadow()
+        snapname = Vss.createSnapshot(volume)
+      
+        WinVol = WindowsVolume.WindowsVolume(snapname)
+
+        self.rollbackSystemVolumeChanges()
+        return WinVol
+        
 
     def getSystemDataBackupSource(self):
         logging.debug("Getting the system backup source");
