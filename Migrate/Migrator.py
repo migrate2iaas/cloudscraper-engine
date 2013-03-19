@@ -301,6 +301,12 @@ class Migrator(object):
             dataplace = 0
             datasent = 0
             while 1:
+                if (datasent % 50 == 0):
+                    logmsg = "% " + str(datasent*datasize/1024/1024)+ " of "+ str(int(filesize/1024/1024)) + " MB of image data processed. "
+                    if self.__systemTransferChannel.getOverallDataSkipped():
+                        logmsg = logmsg + str(int(self.__systemTransferChannel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
+                    logging.info( logmsg + str(int(self.__systemTransferChannel.getOverallDataTransfered()/1024/1024)) + " MB uploaded."  )
+
                 try:
                     data = file.read(datasize)
                 except EOFError:
@@ -312,15 +318,11 @@ class Migrator(object):
                 dataext.setData(data)
                 self.__systemTransferChannel.uploadData(dataext)
                 datasent = datasent + 1
-                if (datasent % 50 == 0):
-                    logmsg = "% " + str(datasent*datasize/1024/1024)+ " of "+ str(int(filesize/1024/1024)) + " MB of image data processed. "
-                    if self.__systemTransferChannel.getOverallDataSkipped():
-                        logmsg = logmsg + str(int(self.__systemTransferChannel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
-                    logging.info( logmsg + str(int(self.__systemTransferChannel.getOverallDataTransfered()/1024/1024)) + " MB uploaded."  )
+                
 
         
             self.__systemTransferChannel.waitTillUploadComplete()
-            logging.info("Preparing the image uploaded for cloud use")
+            logging.info("\n>>>>>>>>>>>>>>>>> Preparing the image uploaded for cloud use")
             imageid = self.__systemTransferChannel.confirm()
             self.__systemTransferChannel.close()
             self.__migrateOptions.getSystemVolumeConfig().setUploadId(imageid)
@@ -446,6 +448,11 @@ class Migrator(object):
                 dataplace = 0
                 datasent = 0
                 while 1:
+                    if (datasent % 50 == 0):
+                        logmsg = "% " + str(datasent*datasize/1024/1024)+ " of "+ str(int(filesize/1024/1024)) + " MB of image data processed. "
+                        if  channel.getOverallDataSkipped():
+                            logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
+                        logging.info( logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded."  )
                     try:
                         data = file.read(datasize)
                     except EOFError:
@@ -457,15 +464,10 @@ class Migrator(object):
                     dataext.setData(data)
                     channel.uploadData(dataext)
                     datasent = datasent + 1
-                    if (datasent % 50 == 0):
-                        logmsg = "% " + str(datasent*datasize/1024/1024)+ " of "+ str(int(filesize/1024/1024)) + " MB of image data processed. "
-                        if  channel.getOverallDataSkipped():
-                            logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
-                        logging.info( logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded."  )
 
-        
+                
                 channel.waitTillUploadComplete()
-                logging.info("Preparing the image uploaded for cloud use")
+                logging.info("\n>>>>>>>>>>>>>>>>>Preparing the image uploaded for cloud use")
                 imageid =  channel.confirm()
                 channel.close()
                 # TODO: add volumes upload

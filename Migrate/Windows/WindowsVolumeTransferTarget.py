@@ -94,6 +94,7 @@ class WindowsVolumeTransferTarget(TransferTarget.TransferTarget):
                     logging.info("% " + str(extentswritten) + " of " + str(len(volumeDataExtents)) + " original disk extents have been transferred to the image ("+ str(extentswritten*100/len(volumeDataExtents)) +"%)" )
           
             win32file.CloseHandle(hfile)
+            logging.info("%  Disk image has been successfully created (100%)" )
         except Exception as ex:
             raise FileException(filename , ex)
 

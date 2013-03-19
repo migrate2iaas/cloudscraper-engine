@@ -146,7 +146,8 @@ class S3UploadChannel_test(unittest.TestCase):
         self.resumeUpload(region, bucket , filename , size)
 
     def tearDown(self):
-        self.__channel.close()
+        if self.__channel:
+            self.__channel.close()
 
 
 if __name__ == '__main__':
