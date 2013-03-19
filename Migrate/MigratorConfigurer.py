@@ -161,8 +161,8 @@ class MigratorConfigurer(object):
         except ConfigParser.NoOptionError as exception:
             zone = region+"a"
 
-        #TODO: more amazon-specfiic configs needed
         # TODO: what to do with the arch
+        # TODO: security groups handling is needed too
         arch = config.get('EC2', 'target-arch')
 
         imagearch = config.get('Image', 'source-arch')
@@ -214,13 +214,15 @@ class MigratorConfigurer(object):
             volumes.append( VolumeMigrateNoConfig(Windows.Windows().getSystemInfo().getSystemVolumeInfo().getDevicePath() , imagepath , imagesize ))
         
 
-
+        bucket = ''
+        
         try:
             bucket = config.get('EC2', 'bucket')
         except ConfigParser.NoOptionError as exception:
             logging.info("No bucket name found, generating a new one")
-            #TODO: move to a function
-            bucket = "cloudscraper-" + str(int(time.mktime(time.localtime())))+"-"+region
+        
+        if bucket == '':
+            bucket = "cloudscraper-" + str(int(time.mktime(time.localtime())))+"-"+region 
              
 
         newsize = imagesize
