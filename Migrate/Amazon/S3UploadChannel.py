@@ -166,9 +166,10 @@ class S3UploadThread(threading.Thread):
                     logging.warning("!Failed to upload data: %s/%s , making a retry...", str(bucket), keyname )
                     logging.warning("Exception = " + str(e));
                     continue
-                #self.__uploadQueue.put( (bucket , keyname, size, data_getter) )
+
                 self.__uploadQueue.task_done()
                 failed = False
+		break
 
         #TODO: stop the thread, notify the channel somehow
         if failed:
