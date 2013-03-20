@@ -283,9 +283,10 @@ class Migrator(object):
             if self.__runOnWindows:
                self.__windows.closeMedia()
 
-            # we save the config to reflect the image generated is ready. 
-            #TODO: add the creation time here? or something alike? snapshot time too?
-            self.__migrateOptions.getSystemVolumeConfig().saveConfig()
+        
+        # we save the config to reflect the image generated is ready. 
+        #TODO: add the creation time here? or something alike? snapshot time too?
+        self.__migrateOptions.getSystemVolumeConfig().saveConfig()
         
 
         filesize = os.stat(self.__migrateOptions.getSystemImagePath()).st_size
