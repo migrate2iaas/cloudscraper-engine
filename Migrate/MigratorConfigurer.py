@@ -156,13 +156,10 @@ class MigratorConfigurer(object):
         if region == '':
             region = config.get('EC2', 'region')
 
-        try:
-            zone = config.get('EC2', 'zone')
-        except ConfigParser.NoOptionError as exception:
-            zone = region+"a"
+       
 
-        #TODO: more amazon-specfiic configs needed
         # TODO: what to do with the arch
+        # TODO: security groups handling is needed too
         arch = config.get('EC2', 'target-arch')
 
         imagearch = config.get('Image', 'source-arch')
@@ -178,7 +175,27 @@ class MigratorConfigurer(object):
         s3prefix = ""
         if config.has_option('EC2', 's3prefix'):
            s3prefix = config.get('EC2', 's3prefix') 
-           
+       
+        
+        try:
+            zone = config.get('EC2', 'zone')
+        except ConfigParser.NoOptionError as exception:
+            zone = region+"a"
+        
+       
+        bucket = ''
+
+        try:
+            bucket = config.get('EC2', 'bucket')
+        except ConfigParser.NoOptionError as exception:
+            logging.info("No bucket name found, generating a new one")
+       
+        if bucket == '':
+            bucket = "cloudscraper-" + str(int(time.mktime(time.localtime())))+"-"+region 
+            #NOTE: it'll be saved on the next ocassion
+            config.set('EC2', 'bucket' , bucket)
+        #TODO: the next ocassion is? 
+
         volumes = list()
         #TODO: image-dir is obligatory here!
         if config.has_section('Volumes') :
@@ -194,7 +211,7 @@ class MigratorConfigurer(object):
                         volume.setImageSize(size);
                     s3objkey = letter
                     if s3prefix:
-                        s3objkey = s3prefix+"\\"+s3objkey
+                        s3objkey = s3prefix+"/"+s3objkey
                     if volume.getUploadPath() == '':
                         volume.setUploadPath(s3objkey)
                     volumes.append( volume )
@@ -213,15 +230,6 @@ class MigratorConfigurer(object):
                 newsize = imagesize
             volumes.append( VolumeMigrateNoConfig(Windows.Windows().getSystemInfo().getSystemVolumeInfo().getDevicePath() , imagepath , imagesize ))
         
-
-
-        try:
-            bucket = config.get('EC2', 'bucket')
-        except ConfigParser.NoOptionError as exception:
-            logging.info("No bucket name found, generating a new one")
-            #TODO: move to a function
-            bucket = "cloudscraper-" + str(int(time.mktime(time.localtime())))+"-"+region
-             
 
         newsize = imagesize
         adjust = AmazonConfigs.AmazonAdjustOptions()

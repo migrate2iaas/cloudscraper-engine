@@ -49,6 +49,8 @@ class EC2Instance_test(unittest.TestCase):
         self.__secret = 'fD2ZMGUPTkCdIb8BusZsSp5saB9kNQxuG0ITA8YB'
         self.__channel = None
 
+        # TODO: make logging to stderr\stdout!
+
         logging.basicConfig(format='%(asctime)s %(message)s' , filename='ec2instance.log',level=logging.DEBUG)
         return
     
