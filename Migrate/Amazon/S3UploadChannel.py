@@ -362,9 +362,7 @@ class S3UploadChannel(object):
         
         manifest.finalize()
 
-        #TODO: try again with close
-        # now we ignore the xml so ec2import will create it itself but will get the our data
-        
+               
         s3key = Key(self.__bucket , xmlkey)
         s3key.set_contents_from_filename(xmltempfile);
         s3key.close()
