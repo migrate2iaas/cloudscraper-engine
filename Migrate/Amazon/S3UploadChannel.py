@@ -229,6 +229,7 @@ class S3UploadChannel(object):
         self.__uploadedSize = 0
         self.__uploadSkippedSize = 0
         self.__xmlKey = None
+	self.__overallSize = 0
        
         gigabyte = 1024*1024*1024
         self.__volumeToAllocateGb = int((resultDiskSizeBytes+gigabyte-1)/gigabyte)
@@ -276,6 +277,9 @@ class S3UploadChannel(object):
        # todo: log
        #TODO: make this tuple more flexible
        self.__fragmentDictionary[start] = (keyname , size)
+       # treating overall size as maximum size
+       if self.__overallSize < start + size:
+           self.__overallSize = start + size       
 
        return 
 
@@ -339,9 +343,8 @@ class S3UploadChannel(object):
         #but the parts should be named in a right way
         xmlkey = self.__keyBase+"manifest.xml"
 
-        manifest = S3ManfiestBuilder( xmltempfile , xmlkey , self.__bucketName, self.__S3)
-
-        manifest.buildHeader(self.__uploadedSize , self.__volumeToAllocateGb , fragment_count)
+        manifest = S3ManfiestBuilder( xmltempfile , xmlkey , self.__bucketName, self.__S3)	
+        manifest.buildHeader(self.__overallSize , self.__volumeToAllocateGb , fragment_count)
         
 
         #TODO: faster the solution by re-sorting the dictionary or have an another container
