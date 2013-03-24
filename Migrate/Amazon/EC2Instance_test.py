@@ -41,6 +41,9 @@ class ConfigTest(object):
     def getLocalDiskFile(self):
         return self.__tmpLocalFile
 
+    def getNewSystemSize():
+        return 
+
 class EC2Instance_test(unittest.TestCase):
     
     def setUp(self):

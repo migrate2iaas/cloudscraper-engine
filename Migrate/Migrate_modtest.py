@@ -58,7 +58,7 @@ class Migrate_test(unittest.TestCase):
         print ("Overall data size after block removal: " + str(overallsize))
 
         WinTargetVol = WindowsVolumeTransferTarget.WindowsVolumeTransferTarget("\\\\.\\X:")
-        WinTargetVol.TransferRawData(extents)
+        WinTargetVol.transferRawData(extents)
 
         #add file compare to the test
 

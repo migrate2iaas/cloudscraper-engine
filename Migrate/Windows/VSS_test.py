@@ -60,7 +60,7 @@ class VSS_test(unittest.TestCase):
         extents = self.__WinBackupSource.getFilesBlockRange()
         for extent in extents:
             extent.setData(WindowsVolume.DeferedReader(extent, self.__WinVol))
-        self.__WinTargetVol.TransferRawData(extents)
+        self.__WinTargetVol.transferRawData(extents)
 
         self.__Vss.deleteSnapshot(snapname)
 

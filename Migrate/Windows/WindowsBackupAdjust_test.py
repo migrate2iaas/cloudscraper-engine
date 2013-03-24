@@ -58,7 +58,7 @@ class WindowsBackupAdjust_test(unittest.TestCase):
         self.__AdjustedBackupSource.setAdjustOption(adjust)
         
         extents = self.__AdjustedBackupSource.getFilesBlockRange()
-        self.__WinTargetVol.TransferRawData(extents)
+        self.__WinTargetVol.transferRawData(extents)
 
 if __name__ == '__main__':
     unittest.main()
