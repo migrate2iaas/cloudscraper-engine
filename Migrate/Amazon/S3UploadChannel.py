@@ -52,7 +52,7 @@ class S3ManfiestBuilder:
        importerver = '\n\t\t\t <name>ec2-upload-disk-image</name> \n\t\t\t <version>1.0.0</version> \n\t\t\t  <release>2010-11-15</release>'
        self.__file.write(importerver)
        
-       linktimeexp_seconds = 1361188806
+       linktimeexp_seconds = 60*60*24*15 # 15 days
        urldelete = self.__S3.generate_url( linktimeexp_seconds, method='DELETE', bucket=self.__bucket,  key=self.__xmlKey, force_http=False)
        selfdestruct = '\n\t\t </importer> \n\t\t  <self-destruct-url>'+urldelete.replace('&' ,'&amp;')+'</self-destruct-url> '
        self.__file.write(selfdestruct)
@@ -64,7 +64,7 @@ class S3ManfiestBuilder:
 
     def addUploadedPart(self , index , rangeStart , rangeEnd , keyName):
         
-        linktimeexp_seconds = 1361188806
+        linktimeexp_seconds = 60*60*24*15 # 15 days
 
         indexstr = '\n\t\t\t <part index="'+str(index)+'">\n\t\t\t\t '+'<byte-range end="' + str (rangeEnd) + '" start="'+ str(rangeStart) +'" />'
         self.__file.write(indexstr)
