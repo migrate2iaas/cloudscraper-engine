@@ -26,7 +26,9 @@ import EC2Instance
 import EC2InstanceGenerator
 import logging
 
-class ConfigTest(object):
+import CloudConfig
+
+class ConfigTest(CloudConfig.CloudConfig):
     def __init__(self , arch, zone , file):
         self.__machineArch = arch
         self.__ec2Zone = zone
@@ -42,7 +44,7 @@ class ConfigTest(object):
         return self.__tmpLocalFile
 
     def getNewSystemSize():
-        return 
+        return 40
 
 class EC2Instance_test(unittest.TestCase):
     
