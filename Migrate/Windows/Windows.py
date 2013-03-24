@@ -105,7 +105,7 @@ class Windows(object):
         vhd = WindowsVhdMedia.WindowsVhdMedia(path, size+100*1024*1024)
         vhd.open()
           
-        datatransfer = WindowsDeviceDataTransferProto.WindowsDeviceDataTransferProto(self.__vhd.getWindowsDevicePath(), self.__vhd.getWindowsDiskNumber())
+        datatransfer = WindowsDeviceDataTransferProto.WindowsDeviceDataTransferProto(vhd.getWindowsDevicePath(), vhd.getWindowsDiskNumber())
         parser = WindowsDiskParser.WindowsDiskParser(datatransfer , adjustOptions.getNewMbrId())
         return parser.createTransferTarget(size , vhd)
         

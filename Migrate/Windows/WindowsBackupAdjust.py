@@ -103,8 +103,6 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         rdpport=3389 #default port
         if self.__adjustConfig.rdpPort():
             rdpport = self.__adjustConfig.rdpPort()
-
-
         
     
         if turnRDP:
@@ -159,6 +157,26 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             idekey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\vmbus" , 0 , win32con.KEY_ALL_ACCESS )
             win32api.RegSetValueEx(idekey, "Start" , 0, win32con.REG_DWORD, 0)
             idekey.close()
+
+
+        removeCitrix = True
+        removeHyperV = False
+        removeVmware = True
+
+        if removeCitrix:
+            # removing all xen* services
+            xenkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\intelide" , 0 , win32con.KEY_ALL_ACCESS )
+            win32api.RegSetValueEx(xenkey, "Start" , 0, win32con.REG_DWORD, 0)
+            xenkey.close()
+            # removing all xen* class keys?
+            logging.info("Removing Citrix services");
+
+        if removeVmware:
+            logging.info("Removing VmWare services");
+
+        if removeHyperV:
+            logging.info("Removing HyperV services");
+
         #Do operations
         #for operation in self.__adjustConfig.getSystemHiveOperations():
         #    operation.Do(rootRegKey)
