@@ -169,7 +169,7 @@ class S3UploadThread(threading.Thread):
 
                 self.__uploadQueue.task_done()
                 failed = False
-		break
+                break
 
         #TODO: stop the thread, notify the channel somehow
         if failed:
@@ -229,7 +229,7 @@ class S3UploadChannel(object):
         self.__uploadedSize = 0
         self.__uploadSkippedSize = 0
         self.__xmlKey = None
-	self.__overallSize = 0
+        self.__overallSize = 0
        
         gigabyte = 1024*1024*1024
         self.__volumeToAllocateGb = int((resultDiskSizeBytes+gigabyte-1)/gigabyte)

@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Amazon\S3UploadChannel_test.py</StartupFile>
+    <StartupFile>Migrate.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -28,6 +28,7 @@
     <Compile Include="Amazon\EC2Instance.py" />
     <Compile Include="Amazon\EC2InstanceGenerator.py" />
     <Compile Include="Amazon\EC2Instance_test.py" />
+    <Compile Include="Amazon\EC2VolumeGenerator.py" />
     <Compile Include="Amazon\S3UploadChannel.py" />
     <Compile Include="Amazon\S3UploadChannel_test.py" />
     <Compile Include="BackupAdjust.py" />

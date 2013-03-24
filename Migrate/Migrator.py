@@ -254,8 +254,12 @@ class Migrator(object):
             # here we should get system bucket and the system key from the config
             # keyname should be associated with the volume by the config program
 
+            # just a workaround 'cause virtual drive is larger than one volume (so we add extra gb in order it to fit the size)
+            #TODO: remove woraround 100 mbs in self.__windows.createVhdTransferTarget 
+            gigabyte = 1024*1024*1024
+
             import S3UploadChannel
-            self.__systemTransferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__migrateOptions.getSystemImageSize() , self.__cloudOptions.getRegion() , self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
+            self.__systemTransferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__migrateOptions.getSystemImageSize() + gigabyte , self.__cloudOptions.getRegion() , self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
             
 
         return True
@@ -277,11 +281,10 @@ class Migrator(object):
         
             #TODO: create kinda callbacks for transfers to monitor them
             #write,
-            self.__systemTransferTarget.TransferRawData(extents)
+            self.__systemTransferTarget.transferRawData(extents)
 
             #TODO: quick and dirty workaround, choose something better!
-            if self.__runOnWindows:
-               self.__windows.closeMedia()
+            self.__dataTransferTargetList[volinfo.getVolumePath()].close()
 
         
         # we save the config to reflect the image generated is ready. 
@@ -415,18 +418,16 @@ class Migrator(object):
             logging.info("\n>>>>>>>>>>>>>>>>> Skipping the data volume imaging\n");
         else:
             #TODO: log and profile
-            logging.info("\n>>>>>>>>>>>>>>>>> Started the data volune imaging\n");
+            logging.info("\n>>>>>>>>>>>>>>>>> Started the data volume imaging\n");
             for volinfo in self.__migrateOptions.getDataVolumes():
                 #get data
                 extents = self.__dataBackupSourceList[volinfo.getVolumePath()].getFilesBlockRange()
         
                 #TODO: create kinda callbacks for transfers to monitor them
                 #write,
-                self.__dataTransferTargetList[volinfo.getVolumePath()].TransferRawData(extents)
+                self.__dataTransferTargetList[volinfo.getVolumePath()].transferRawData(extents)
 
-                #TODO: quick and dirty workaround, choose something better!
-                if self.__runOnWindows:
-                   self.__windows.closeMedia()
+                self.__dataTransferTargetList[volinfo.getVolumePath()].close()
 
                 # we save the config to reflect the image generated is ready. 
                 #TODO: add the creation time here? or something alike? snapshot time too?

@@ -172,6 +172,10 @@ class MigratorConfigurer(object):
         if config.has_option('Image', 'image-dir'):
            imagedir = config.get('Image', 'image-dir') 
 
+        #TODO: buggy stuff. make the check better
+        if imagedir[-1] == '\\':
+            imagedir = imagedir[0:-2]
+
         s3prefix = ""
         if config.has_option('EC2', 's3prefix'):
            s3prefix = config.get('EC2', 's3prefix') 

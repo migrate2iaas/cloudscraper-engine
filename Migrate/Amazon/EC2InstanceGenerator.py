@@ -24,7 +24,10 @@ class EC2InstanceGenerator(object):
 
      # marks the data uploaded as system disk, should be called(?) after the upload is confirmed
      # TODO: make direct EC2 calls instead of this crappy java calls
-    def makeInstanceFromImage(self , imageid , initialconfig, s3owner, s3key, temp_local_image_path ):
+     
+     #TODO: need extra params like volume size and image size.
+     #TODO: maybe we have all the data in initialconfig
+    def makeInstanceFromImage(self , imageid , initialconfig, s3owner, s3key, temp_local_image_path , image_file_size = 0):
 
         windir = os.environ['windir']
 
@@ -34,6 +37,10 @@ class EC2InstanceGenerator(object):
         ec2region = self.__region
         machine_arch = initialconfig.getArch()
         ec2zone = initialconfig.getZone()
+
+        gb = 1024*1024*1024
+        newvolsize = (initialconfig.getNewSystemSize() + gb - 1) / gb
+
         tmp_vmdk_file = temp_local_image_path
       
         retry = 0

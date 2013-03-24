@@ -4,9 +4,10 @@ import os
 import sys
 
 import logging
+import ImageMedia
 
 # TODO: make media base class
-class WindowsVhdMedia(object):
+class WindowsVhdMedia(ImageMedia.ImageMedia):
     """VHD disk created and managed by Win2008R2+ systems"""
 
     #it should generate RW-access (protocol to write data) so it could be accessed from elsewhere
@@ -91,7 +92,9 @@ class WindowsVhdMedia(object):
 
     def flush(self):
         return
-        
+    
+    def release(self):
+        self.close()
 
     #override for WindowsMedia
     # returns path good for opening windows devices

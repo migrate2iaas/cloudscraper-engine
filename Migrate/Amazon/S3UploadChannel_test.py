@@ -27,7 +27,7 @@ class S3UploadChannel_test(unittest.TestCase):
     def setUp(self):
         #TODO: make test account!
         self.__key = 'AKIAIY2X62QVIHOPEFEQ'
-        self.__secret = ' '
+        self.__secret = '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'
         self.__channel = None
         logging.basicConfig(format='%(asctime)s %(message)s' , filename='s3channel.log',level=logging.DEBUG)
         return

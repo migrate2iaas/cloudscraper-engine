@@ -19,16 +19,18 @@ import logging
 class WindowsVolumeTransferTarget(TransferTarget.TransferTarget):
     """Transfer target represented as Windows (NTFS) volume"""
 
-    def __init__(self, volumeName):    
+    def __init__(self, volumeName, media = None):    
         self.__volumeName = volumeName.lower()
+        # we save the underlying media thus we may free it when we stopped using it
+        self.__media = media
     
     # writes the file
     # what to do with metadata and stuff?
-    def TransferFile(self, fileToBackup):
+    def transferFile(self, fileToBackup):
          return
 
     # transfers file data only, no metadata should be written
-    def TransferFileData(self, fileName, fileExtentsData):
+    def transferFileData(self, fileName, fileExtentsData):
         #TODO: think of metadata and filetypes. 
         # BackupRead and BackupWrite could be used. 
         # But only data backed by BackupRead could be used for BackupWrite
@@ -52,7 +54,7 @@ class WindowsVolumeTransferTarget(TransferTarget.TransferTarget):
         
 
     # transfers file data only
-    def TransferRawData(self, volumeDataExtents):
+    def transferRawData(self, volumeDataExtents):
         # open as raw
         secur_att = win32security.SECURITY_ATTRIBUTES()
         secur_att.Initialize()
@@ -99,17 +101,21 @@ class WindowsVolumeTransferTarget(TransferTarget.TransferTarget):
             raise FileException(filename , ex)
 
     # transfers raw metadata, it should be precached 'cause it's up to change afterwards
-    def TransferRawMetadata(self, volumeDataExtents):
+    def transferRawMetadata(self, volumeDataExtents):
         # the same for now
-        return self.TransferRawData(volumeDataExtents)
+        return self.transferRawData(volumeDataExtents)
 
-    def DeleteFileTransfer(self , fileName):
+    def deleteFileTransfer(self , fileName):
         filename = self.__volumeName+"\\"+fileName
         try:
             win32file.DeleteFile(filename)
         except Exception as ex:
             raise FileException(filename , ex)
 
+    def close():
+        # releases underlying media after the operation is done
+        if self.__media:
+            self.__media.release()
 
     def cancelTransfer(self):
         #to get parser and discard me

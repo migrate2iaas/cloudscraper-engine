@@ -102,12 +102,12 @@ class Windows(object):
 
     def createVhdTransferTarget(self , path , size , adjustOptions):
         logging.debug("Creating VHD transfer target")
-        self.__vhd = WindowsVhdMedia.WindowsVhdMedia(path, size+100*1024*1024)
-        self.__vhd.open()
+        vhd = WindowsVhdMedia.WindowsVhdMedia(path, size+100*1024*1024)
+        vhd.open()
           
         datatransfer = WindowsDeviceDataTransferProto.WindowsDeviceDataTransferProto(self.__vhd.getWindowsDevicePath(), self.__vhd.getWindowsDiskNumber())
         parser = WindowsDiskParser.WindowsDiskParser(datatransfer , adjustOptions.getNewMbrId())
-        return parser.createTransferTarget(size)
+        return parser.createTransferTarget(size , vhd)
         
     def createSystemAdjustOptions(self):
         return WindowsSystemAdjustOptions.WindowsSystemAdjustOptions()
@@ -117,6 +117,3 @@ class Windows(object):
 
     def getSystemInfo(self):
         return WindowsSystemInfo.WindowsSystemInfo()
-
-    def closeMedia(self):
-        self.__vhd.close()
