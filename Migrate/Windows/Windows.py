@@ -31,12 +31,13 @@ class Windows(object):
 
     def __init__(self):
         self.__filesToDelete = set()
+        self.__vss = VssThruVshadow.VssThruVshadow()
         return
     
     # volume should be in "\\.\X:" form
     def getDataBackupSource(self , volume):
-        Vss = VssThruVshadow.VssThruVshadow()
-        snapname = Vss.createSnapshot(volume)
+        
+        snapname = self.__vss.createSnapshot(volume)
       
         WinVol = WindowsVolume.WindowsVolume(snapname)
 
@@ -53,8 +54,7 @@ class Windows(object):
 
         self.makeSystemVolumeBootable()
 
-        Vss = VssThruVshadow.VssThruVshadow()
-        snapname = Vss.createSnapshot(system_vol)
+        snapname = self.__vss.createSnapshot(system_vol)
       
         WinVol = WindowsVolume.WindowsVolume(snapname)
 
@@ -63,9 +63,9 @@ class Windows(object):
 
     #frees the snapshot
     def freeDataBackupSource(self , vol):
-        vss = VssThruVshadow.VssThruVshadow()
+        
         volumename = vol.getVolumeName()
-        vss.deleteSnapshot(volumename)
+        self.__vss.deleteSnapshot(volumename)
 
     def makeSystemVolumeBootable(self):
         originalwindir = os.environ['windir']

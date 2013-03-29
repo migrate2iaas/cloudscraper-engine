@@ -198,7 +198,7 @@ class MigratorConfigurer(object):
             bucket = "cloudscraper-" + str(int(time.mktime(time.localtime())))+"-"+region 
             #NOTE: it'll be saved on the next ocassion
             config.set('EC2', 'bucket' , bucket)
-        #TODO: the next ocassion is? 
+            #TODO: the next ocassion is somewhere after the imaging passed 
 
         volumes = list()
         #TODO: image-dir is obligatory here!

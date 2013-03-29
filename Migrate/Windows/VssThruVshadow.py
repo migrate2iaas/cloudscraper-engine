@@ -71,13 +71,17 @@ class VssThruVshadow(VSS.VSS):
         # make it openable
         devname = devname.replace("\\\\?\\GLOBALROOT\\Device", "\\\\.").lower()
         
+        logging.debug("Saving %s snapshot for device \'%s\'" , snapname , devname);
         self.__snapshots[devname] = snapname
+        logging.debug(str(self.__snapshots));
 
         return devname
 
     #deletes the snapshot
     def deleteSnapshot(self, devName):
       
+        logging.debug("Deleting snapshot for device \'%s\'" , devName);
+        logging.debug(str(self.__snapshots));
         snapname = self.__snapshots[devName]
 
         if snapname == None:

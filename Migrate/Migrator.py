@@ -419,6 +419,7 @@ class Migrator(object):
         if self.__skipImaging:
             logging.info("\n>>>>>>>>>>>>>>>>> Skipping the data volume imaging\n");
         else:
+            #RODO: make kinda generic function. I'm pissed with all this copy-paste bugs
             #TODO: log and profile
             logging.info("\n>>>>>>>>>>>>>>>>> Started the data volume imaging\n");
             for volinfo in self.__migrateOptions.getDataVolumes():
@@ -433,7 +434,7 @@ class Migrator(object):
                 
                 #TODO: move somewhere else
                 if self.__runOnWindows:
-                    self.__windows.freeDataBackupSource(self.__systemBackupSource.getBackupDataSource())
+                    self.__windows.freeDataBackupSource(self.__dataBackupSourceList[volinfo.getVolumePath()].getBackupDataSource())
 
                 # we save the config to reflect the image generated is ready. 
                 #TODO: add the creation time here? or something alike? snapshot time too?
