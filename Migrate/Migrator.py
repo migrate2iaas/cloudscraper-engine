@@ -287,7 +287,7 @@ class Migrator(object):
             self.__systemTransferTarget.close()
             # TODO: better release options are needed
             if self.__runOnWindows:
-                self.__windows.freeDataBackupSouce(self.__systemBackupSource.getBackupDataSource())
+                self.__windows.freeDataBackupSource(self.__systemBackupSource.getBackupDataSource())
         
         # we save the config to reflect the image generated is ready. 
         #TODO: add the creation time here? or something alike? snapshot time too?
@@ -433,7 +433,7 @@ class Migrator(object):
                 
                 #TODO: move somewhere else
                 if self.__runOnWindows:
-                    self.__windows.freeDataBackupSouce(self.__systemBackupSource.getBackupDataSource())
+                    self.__windows.freeDataBackupSource(self.__systemBackupSource.getBackupDataSource())
 
                 # we save the config to reflect the image generated is ready. 
                 #TODO: add the creation time here? or something alike? snapshot time too?
