@@ -61,6 +61,12 @@ class Windows(object):
         self.rollbackSystemVolumeChanges()
         return WinVol
 
+    #frees the snapshot
+    def freeDataBackupSource(self , vol):
+        vss = VssThruVshadow.VssThruVshadow()
+        volumename = vol.getVolumeName()
+        vss.deleteSnapshot(volumename)
+
     def makeSystemVolumeBootable(self):
         originalwindir = os.environ['windir']
         windrive = originalwindir.split("\\")[0] #get C: substring
@@ -102,7 +108,8 @@ class Windows(object):
 
     def createVhdTransferTarget(self , path , size , adjustOptions):
         logging.debug("Creating VHD transfer target")
-        vhd = WindowsVhdMedia.WindowsVhdMedia(path, size+100*1024*1024)
+        gigabyte = 1024*1024*1024
+        vhd = WindowsVhdMedia.WindowsVhdMedia(path, size+gigabyte)
         vhd.open()
           
         datatransfer = WindowsDeviceDataTransferProto.WindowsDeviceDataTransferProto(vhd.getWindowsDevicePath(), vhd.getWindowsDiskNumber())

@@ -168,7 +168,10 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             xenkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\intelide" , 0 , win32con.KEY_ALL_ACCESS )
             win32api.RegSetValueEx(xenkey, "Start" , 0, win32con.REG_DWORD, 0)
             xenkey.close()
-            # removing all xen* class keys?
+            # remove all xen* service keys + scsifilt
+            # and then remove Software Citrix key. Should be enough
+            # and remove this one too HKEY_LOCAL_MACHINE\sys\ControlSet001\Control\Class\{4D36E967-E325-11CE-BFC1-08002BE10318}\scsifilt (todo: check the right name once more)
+
             logging.info("Removing Citrix services");
 
         if removeVmware:

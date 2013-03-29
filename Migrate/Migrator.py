@@ -214,6 +214,7 @@ class Migrator(object):
             self.__adjustOption = WindowsBackupAdjust.WindowsBackupAdjust(self.__winSystemAdjustOptions)
 
         self.__systemBackupSource.setBackupDataSource(self.generateSystemDataBackupSource())
+        
         return True
 
     def adjustSystemBackupSource(self):
@@ -255,7 +256,7 @@ class Migrator(object):
             # keyname should be associated with the volume by the config program
 
             # just a workaround 'cause virtual drive is larger than one volume (so we add extra gb in order it to fit the size)
-            #TODO: remove woraround 100 mbs in self.__windows.createVhdTransferTarget 
+            #TODO: remove woraround 1gb in self.__windows.createVhdTransferTarget 
             gigabyte = 1024*1024*1024
 
             import S3UploadChannel
@@ -283,9 +284,10 @@ class Migrator(object):
             #write,
             self.__systemTransferTarget.transferRawData(extents)
 
-            #TODO: quick and dirty workaround, choose something better!
-            self.__dataTransferTargetList[volinfo.getVolumePath()].close()
-
+            self.__systemTransferTarget.close()
+            # TODO: better release options are needed
+            if self.__runOnWindows:
+                self.__windows.freeDataBackupSouce(self.__systemBackupSource.getBackupDataSource())
         
         # we save the config to reflect the image generated is ready. 
         #TODO: add the creation time here? or something alike? snapshot time too?
@@ -428,6 +430,10 @@ class Migrator(object):
                 self.__dataTransferTargetList[volinfo.getVolumePath()].transferRawData(extents)
 
                 self.__dataTransferTargetList[volinfo.getVolumePath()].close()
+                
+                #TODO: move somewhere else
+                if self.__runOnWindows:
+                    self.__windows.freeDataBackupSouce(self.__systemBackupSource.getBackupDataSource())
 
                 # we save the config to reflect the image generated is ready. 
                 #TODO: add the creation time here? or something alike? snapshot time too?
