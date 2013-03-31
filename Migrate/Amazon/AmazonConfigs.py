@@ -20,7 +20,7 @@ class AmazonAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
 
 class AmazonCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self, bucket , user , password , newsize , arch , zone , region):
+    def __init__(self, bucket , user , password , newsize , arch , zone , region , securityid=''):
         super(AmazonCloudOptions, self).__init__()
         self.__bucket = bucket
         self.__user = user
@@ -29,6 +29,7 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         self.__arch = arch
         self.__zone = zone
         self.__region = region
+        self.__securityGroup = securityid
         #TODO: more amazon-specfiic configs needed
       
     def getCloudStorage(self):
@@ -50,10 +51,13 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         return self.__arch
 
     def getZone(self):
-        return  self.__zone
+        return self.__zone
 
     def getRegion(self):
-        return  self.__region
+        return self.__region
+
+    def getSecurity(self):
+        return self.__securityGroup
 
 class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
 

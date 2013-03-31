@@ -1,5 +1,5 @@
 
-
+#NOTE: not all of these options are implemented for a specific cloud
 class CloudConfig(object):
     """Config of the cloud to migrate"""
     
@@ -28,5 +28,8 @@ class CloudConfig(object):
         raise NotImplementedError
 
     def getRegion(self):
+        raise NotImplementedError
+
+    def getSecurity():
         raise NotImplementedError
 

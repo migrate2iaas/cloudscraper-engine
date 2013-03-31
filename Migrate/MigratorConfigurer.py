@@ -193,12 +193,19 @@ class MigratorConfigurer(object):
             bucket = config.get('EC2', 'bucket')
         except ConfigParser.NoOptionError as exception:
             logging.info("No bucket name found, generating a new one")
-       
+
         if bucket == '':
             bucket = "cloudscraper-" + str(int(time.mktime(time.localtime())))+"-"+region 
             #NOTE: it'll be saved on the next ocassion
             config.set('EC2', 'bucket' , bucket)
             #TODO: the next ocassion is somewhere after the imaging passed 
+
+        
+        security = "default"
+        try:
+            security = config.get('EC2', 'security-group')
+        except ConfigParser.NoOptionError as exception:
+            logging.info("No security group was speicified, using default one. Note it couldn't be changed afterwards.")
 
         volumes = list()
         #TODO: image-dir is obligatory here!
@@ -238,7 +245,7 @@ class MigratorConfigurer(object):
         newsize = imagesize
         adjust = AmazonConfigs.AmazonAdjustOptions()
         image = AmazonConfigs.AmazonMigrateConfig(volumes , imagearch , imagetype)
-        cloud = AmazonConfigs.AmazonCloudOptions(bucket , user , password , newsize , arch , zone , region)
+        cloud = AmazonConfigs.AmazonCloudOptions(bucket , user , password , newsize , arch , zone , regio, securityn)
 
         return (image,adjust,cloud)
 
