@@ -159,15 +159,16 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             idekey.close()
 
 
-        removeCitrix = True
+        #TODO: make remove scripts
+        removeCitrix = False
         removeHyperV = False
-        removeVmware = True
+        removeVmware = False
 
         if removeCitrix:
             # removing all xen* services
-            xenkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\intelide" , 0 , win32con.KEY_ALL_ACCESS )
-            win32api.RegSetValueEx(xenkey, "Start" , 0, win32con.REG_DWORD, 0)
-            xenkey.close()
+            #xenkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\intelide" , 0 , win32con.KEY_ALL_ACCESS )
+            #win32api.RegSetValueEx(xenkey, "Start" , 0, win32con.REG_DWORD, 0)
+            #xenkey.close()
             # remove all xen* service keys + scsifilt
             # and then remove Software Citrix key. Should be enough
             # and remove this one too HKEY_LOCAL_MACHINE\sys\ControlSet001\Control\Class\{4D36E967-E325-11CE-BFC1-08002BE10318}\scsifilt (todo: check the right name once more)
@@ -194,17 +195,39 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
     def adjustSoftwareHive(self ,hiveFilePath):
         
+        logging.info("Adjusting the software hive");
+
+        originalwindir = os.environ['windir']
+        windrive = originalwindir.split("\\")[0] #get C: substring
+
         # 1) mount hive from path
+        hivekeyname = "MigrationSoft"+str(int(time.mktime(time.localtime())))
+        
+        # A call to RegLoadKey fails if the calling process does not have the SE_RESTORE_PRIVILEGE privilege.
+        token = win32security.OpenProcessToken(-1, win32con.TOKEN_ALL_ACCESS )
+        privid = win32security.LookupPrivilegeValue(None, "SeRestorePrivilege" )
+        privilages = win32security.AdjustTokenPrivileges(token, False , [(privid , win32security.SE_PRIVILEGE_ENABLED)])
 
-        # 2) alter it: change keys (they should be in the config: some of keys should be added, some should be deleted)
+        win32api.RegLoadKey(win32con.HKEY_LOCAL_MACHINE, hivekeyname, hiveFilePath)
 
-        #To change: rdp settings, dhcp settings, firewall settings
+        # 2) alter it: delete keys if they exist
 
-        #Do operations
-        #for operation in self.__adjustConfig.getSoftwareHiveOperations():
-        #    operation.Do(rootRegKey)
+        #TODO: add to the adjust options
+        removeCitrix = True
+        removeHyperV = False
+        removeVmware = False
 
+        if removeCitrix:
+            logging.info("Removing Citrix software keys");
+            # NOTE: works under Vista+ only
+            try:
+                mountdevkey = win32api.RegDeleteTree(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\Citrix")
+            except Exception as e:
+                logging.debug("Couldn't delete Citrix keys");
+                logging.debug(str(e))
+      
         # 3) dismount
+        win32api.RegUnLoadKey(win32con.HKEY_LOCAL_MACHINE, hivekeyname)
 
         # 4) check the hive has the same size it was before
 
