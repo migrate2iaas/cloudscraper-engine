@@ -245,7 +245,7 @@ class MigratorConfigurer(object):
         newsize = imagesize
         adjust = AmazonConfigs.AmazonAdjustOptions()
         image = AmazonConfigs.AmazonMigrateConfig(volumes , imagearch , imagetype)
-        cloud = AmazonConfigs.AmazonCloudOptions(bucket , user , password , newsize , arch , zone , regio, securityn)
+        cloud = AmazonConfigs.AmazonCloudOptions(bucket , user , password , newsize , arch , zone , regio, security)
 
         return (image,adjust,cloud)
 

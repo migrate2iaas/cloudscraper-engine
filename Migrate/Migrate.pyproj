@@ -36,6 +36,7 @@
     <Compile Include="CloudConfig.py" />
     <Compile Include="DataExtent.py" />
     <Compile Include="DataTransferProto.py" />
+    <Compile Include="ImageMedia.py" />
     <Compile Include="Migrate.py" />
     <Compile Include="MigrateConfig.py" />
     <Compile Include="MigrateExceptions.py" />
