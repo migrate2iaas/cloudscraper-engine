@@ -365,6 +365,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             data_read_size = len(data_read)
             softHiveTmp.write(data_read)
 
+        softHiveTmp.close()
         self.adjustSoftwareHive(soft_hive_path)
 
         # We replace the file to the file of same size etc
