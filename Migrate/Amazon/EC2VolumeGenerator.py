@@ -28,5 +28,5 @@ class EC2VolumeGenerator(object):
         self.__retryCount = retries
 
     # makes volume from upload id (xml)
-    def makeVolumeFromImage(self, uploadid):
+    #def makeVolumeFromImage(self, uploadid):
 
