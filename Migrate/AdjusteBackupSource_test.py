@@ -7,17 +7,24 @@ import WindowsVolume
 import WindowsBackupSource
 import AdjustedBackupSource
 import BackupAdjust
+import logging
 
 class AdjusteBackupSource_test(unittest.TestCase):
 
     #TODO: make more sophisticated config\test reading data from some config. dunno
 
     def setUp(self):
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        logging.getLogger().addHandler(handler)
+
         self.__WinVol = WindowsVolume.WindowsVolume("\\\\.\\D:")
         self.__WinBackupSource = WindowsBackupSource.WindowsBackupSource()
         self.__WinBackupSource.setBackupDataSource(self.__WinVol)
         self.__AdjustedBackupSource = AdjustedBackupSource.AdjustedBackupSource()
         self.__AdjustedBackupSource.setBackupSource(self.__WinBackupSource)
+
+
 
 
     def test_noadjust(self):

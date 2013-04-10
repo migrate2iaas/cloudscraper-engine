@@ -4,6 +4,7 @@ sys.path.append('.\Windows')
 
 import WindowsVolume
 import unittest
+import logging
 
 class WindowsVolume_test(unittest.TestCase):
 
@@ -11,6 +12,9 @@ class WindowsVolume_test(unittest.TestCase):
 
     def setUp(self):
         self.WinVol = WindowsVolume.WindowsVolume("\\\\.\\D:")
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        logging.getLogger().addHandler(handler)
 
     def test_init(self):
         # make sure the shuffled sequence does not lose any elements

@@ -30,6 +30,9 @@ class S3UploadChannel_test(unittest.TestCase):
         self.__secret = 'fD2ZMGUPTkCdIb8BusZsSp5saB9kNQxuG0ITA8YB'
         self.__channel = None
         logging.basicConfig(format='%(asctime)s %(message)s' , filename='s3channel.log',level=logging.DEBUG)
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        logging.getLogger().addHandler(handler)
         return
         
 

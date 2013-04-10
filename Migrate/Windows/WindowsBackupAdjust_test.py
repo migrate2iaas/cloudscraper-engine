@@ -11,6 +11,7 @@ import BackupAdjust
 import WindowsVolumeTransferTarget
 import WindowsBackupAdjust
 import SystemAdjustOptions
+import logging
 
 class AdjustOptionTest(SystemAdjustOptions.SystemAdjustOptions):
     
@@ -49,6 +50,9 @@ class WindowsBackupAdjust_test(unittest.TestCase):
         self.__WinBackupSource.setBackupDataSource(self.__WinVol)
         self.__AdjustedBackupSource = AdjustedBackupSource.AdjustedBackupSource()
         self.__AdjustedBackupSource.setBackupSource(self.__WinBackupSource)
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        logging.getLogger().addHandler(handler)
         
         
 

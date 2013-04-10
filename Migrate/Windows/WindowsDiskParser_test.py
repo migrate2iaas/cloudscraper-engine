@@ -13,6 +13,7 @@ import WindowsDiskParser
 import WindowsVhdMedia
 import WindowsDeviceDataTransferProto
 import time
+import logging
 
 class WindowsDiskParaser_test(unittest.TestCase):
      #TODO: make more sophisticated config\test reading data from some config. dunno
@@ -20,6 +21,9 @@ class WindowsDiskParaser_test(unittest.TestCase):
     def setUp(self):
         now = time.localtime()
         self.__vhd = WindowsVhdMedia.WindowsVhdMedia("E:\\vhdtest"+str(now)+".vhd", 200*1024*1024)
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        logging.getLogger().addHandler(handler)
         
 
     def test_part(self):

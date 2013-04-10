@@ -139,13 +139,10 @@ class MigratorConfigurer(object):
         config = ConfigParser.RawConfigParser()
         config.read(configfile)
 
-        #NOTE: only the system info is needed here!
         import Windows
         imagesize = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize()
-        #TODO: checks OS
         imagetype = 'VHD'      
 
-        
         #cloud config
         if user == '':
             user = config.get('EC2', 's3key')
@@ -157,26 +154,26 @@ class MigratorConfigurer(object):
         if region == '':
             region = config.get('EC2', 'region')
 
-       
-
-        # TODO: what to do with the arch
-        # TODO: security groups handling is needed too
         arch = config.get('EC2', 'target-arch')
 
         imagearch = config.get('Image', 'source-arch')
 
         if config.has_option('Image', 'image-type'):
             imagetype = config.get('Image', 'image-type')
+        else:
+            imagetype = 'VHD'
+            logging.warning("No image type specified. Default VHD is used.");
         
-        #TODO: check for config validity and raise exceptions if it's not good enough
+
         imagedir = ""
         if config.has_option('Image', 'image-dir'):
            imagedir = config.get('Image', 'image-dir') 
+        else:
+            imagedir = "."
+            logging.warning("No directory for image store is specified. It'll be created in local script execution directory");
 
-        #TODO: buggy stuff. make the check better
         if imagedir[-1] == '\\':
             imagedir = imagedir[0:-1]
-
         if os.path.exists(imagedir) == False:
             logging.debug("Directory " + str(imagedir) + " not found, creating it");
             os.mkdir(imagedir)           
@@ -221,7 +218,6 @@ class MigratorConfigurer(object):
             logging.info("No security group was speicified, using default one. Note it couldn't be changed afterwards.")
 
         volumes = list()
-        #TODO: image-dir is obligatory here!
         if config.has_section('Volumes') :
             if config.has_option('Volumes', 'letters'):
                 letters = config.get('Volumes', 'letters');
@@ -261,5 +257,3 @@ class MigratorConfigurer(object):
         cloud = AmazonConfigs.AmazonCloudOptions(bucket , user , password , newsize , arch , zone , region, security)
 
         return (image,adjust,cloud)
-
-        #TODO: need kinda config validator!

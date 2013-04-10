@@ -9,6 +9,7 @@ import WindowsBackupSource
 import AdjustedBackupSource
 import BackupAdjust
 import WindowsVolumeTransferTarget
+import logging
 
 class WindowsVolumeTransferTarget_test(unittest.TestCase):
      #TODO: make more sophisticated config\test reading data from some config. dunno
@@ -18,6 +19,9 @@ class WindowsVolumeTransferTarget_test(unittest.TestCase):
         self.__WinVol = WindowsVolume.WindowsVolume("\\\\.\\D:")
         self.__WinBackupSource = WindowsBackupSource.WindowsBackupSource()
         self.__WinBackupSource.setBackupDataSource(self.__WinVol)
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        logging.getLogger().addHandler(handler)
         
 
     def test_rawcopy(self):
