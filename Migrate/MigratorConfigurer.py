@@ -2,7 +2,8 @@ import AmazonConfigs
 
 import EC2InstanceGenerator
 import EC2Instance
-
+import os
+import stat
 import ConfigParser
 import logging
 import time
@@ -174,8 +175,19 @@ class MigratorConfigurer(object):
 
         #TODO: buggy stuff. make the check better
         if imagedir[-1] == '\\':
-            imagedir = imagedir[0:-2]
+            imagedir = imagedir[0:-1]
 
+        if os.path.exists(imagedir) == False:
+            logging.debug("Directory " + str(imagedir) + " not found, creating it");
+            os.mkdir(imagedir)           
+        else:
+            dirmode = os.stat(imagedir).st_mode
+            if stat.S_ISDIR(dirmode) == False:
+                #TODO: create wrapper for error messages
+                #TODO: test UNC path
+                logging.error("!!!ERROR Directory given for image storage is not valid!");
+
+            
         s3prefix = ""
         if config.has_option('EC2', 's3prefix'):
            s3prefix = config.get('EC2', 's3prefix') 
@@ -195,6 +207,7 @@ class MigratorConfigurer(object):
             logging.info("No bucket name found, generating a new one")
 
         if bucket == '':
+            #TODO: make another time mark: minutes-seconds-machine-name?
             bucket = "cloudscraper-" + str(int(time.mktime(time.localtime())))+"-"+region 
             #NOTE: it'll be saved on the next ocassion
             config.set('EC2', 'bucket' , bucket)

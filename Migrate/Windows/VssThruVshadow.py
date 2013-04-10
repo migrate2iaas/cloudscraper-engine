@@ -48,8 +48,10 @@ class VssThruVshadow(VSS.VSS):
         
         #NOTE: Volume should have enough space to create shadow storage on it
         #Use to add extra storage on another drive for vss snapshot "vssadmin add shadowstorage /for=<ForVolumeSpec> /on=<OnVolumeSpec> [/maxsize=<MaxSizeSpec>]"
+
+        #TODO: add better retunr. not check output but some subprocess call 
         try:
-            output = subprocess.check_output(self.__binPath + " -p " + volumeName , shell=True);
+            output = subprocess.check_output("\"" + self.__binPath + "\"" + " -p " + volumeName , shell=True);
         except subprocess.CalledProcessError as ex:
             logging.error("!!!ERROR: Cannot create Windows volume snapshot")
             logging.error("vshadow failed" + ex.output)
@@ -88,7 +90,7 @@ class VssThruVshadow(VSS.VSS):
             raise KeyError;
         
         try:
-            output = subprocess.check_output(self.__binPath + " -ds=" + snapname , shell=True);
+            output = subprocess.check_output("\"" + self.__binPath + "\"" + " -ds=" + snapname , shell=True);
         except subprocess.CalledProcessError as ex:
             logging.error("!!!ERROR: Cannot release Windows volume snapshot")
             logging.error("vshadow failed" + ex.output)
