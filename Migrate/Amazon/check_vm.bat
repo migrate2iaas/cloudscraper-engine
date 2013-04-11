@@ -11,7 +11,7 @@ set EC2REGION=%4
 
 call set_amazon_env.bat
 
-@call %EC2_HOME%\bin\ec2-describe-conversion-tasks %1 -O %S3_OWNER% -W %S3_KEY%  --region %EC2REGION% 
+@call "%EC2_HOME%\bin\ec2-describe-conversion-tasks" %1 -O %S3_OWNER% -W %S3_KEY%  --region %EC2REGION% 
 
 
 cd %OLD_CD%
