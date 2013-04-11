@@ -44,15 +44,16 @@ class WindowsBackupAdjust_test(unittest.TestCase):
     """description of class"""
 
     def setUp(self):
+        handler = logging.StreamHandler(stream=sys.stderr)
+        handler.setLevel(logging.DEBUG)
+        logging.getLogger().addHandler(handler)
         self.__WinTargetVol = WindowsVolumeTransferTarget.WindowsVolumeTransferTarget("\\\\.\\X:")
         self.__WinVol = WindowsVolume.WindowsVolume("\\\\.\\D:")
         self.__WinBackupSource = WindowsBackupSource.WindowsBackupSource()
         self.__WinBackupSource.setBackupDataSource(self.__WinVol)
         self.__AdjustedBackupSource = AdjustedBackupSource.AdjustedBackupSource()
         self.__AdjustedBackupSource.setBackupSource(self.__WinBackupSource)
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.DEBUG)
-        logging.getLogger().addHandler(handler)
+       
         
         
 

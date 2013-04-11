@@ -15,13 +15,14 @@ class WindowsVolumeTransferTarget_test(unittest.TestCase):
      #TODO: make more sophisticated config\test reading data from some config. dunno
 
     def setUp(self):
+        handler = logging.StreamHandler(stream=sys.stderr)
+        handler.setLevel(logging.DEBUG)
+        logging.getLogger().addHandler(handler)
+        
         self.__WinTargetVol = WindowsVolumeTransferTarget.WindowsVolumeTransferTarget("\\\\.\\X:")
         self.__WinVol = WindowsVolume.WindowsVolume("\\\\.\\D:")
         self.__WinBackupSource = WindowsBackupSource.WindowsBackupSource()
         self.__WinBackupSource.setBackupDataSource(self.__WinVol)
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.DEBUG)
-        logging.getLogger().addHandler(handler)
         
 
     def test_rawcopy(self):

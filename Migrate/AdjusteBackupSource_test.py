@@ -14,7 +14,7 @@ class AdjusteBackupSource_test(unittest.TestCase):
     #TODO: make more sophisticated config\test reading data from some config. dunno
 
     def setUp(self):
-        handler = logging.StreamHandler()
+        handler = logging.StreamHandler(stream=sys.stderr)
         handler.setLevel(logging.DEBUG)
         logging.getLogger().addHandler(handler)
 

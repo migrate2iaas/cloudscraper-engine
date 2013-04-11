@@ -19,11 +19,12 @@ class WindowsDiskParaser_test(unittest.TestCase):
      #TODO: make more sophisticated config\test reading data from some config. dunno
 
     def setUp(self):
-        now = time.localtime()
-        self.__vhd = WindowsVhdMedia.WindowsVhdMedia("E:\\vhdtest"+str(now)+".vhd", 200*1024*1024)
-        handler = logging.StreamHandler()
+        handler = logging.StreamHandler(stream=sys.stderr)
         handler.setLevel(logging.DEBUG)
         logging.getLogger().addHandler(handler)
+        now = time.localtime()
+        self.__vhd = WindowsVhdMedia.WindowsVhdMedia("E:\\vhdtest"+str(now)+".vhd", 200*1024*1024)
+     
         
 
     def test_part(self):

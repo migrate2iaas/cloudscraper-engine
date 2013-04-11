@@ -57,7 +57,7 @@ class EC2Instance_test(unittest.TestCase):
         # TODO: make logging to stderr\stdout!
 
         logging.basicConfig(format='%(asctime)s %(message)s' , filename='ec2instance.log',level=logging.DEBUG)
-        handler = logging.StreamHandler()
+        handler = logging.StreamHandler(stream=sys.stderr)
         handler.setLevel(logging.DEBUG)
         logging.getLogger().addHandler(handler)
         return

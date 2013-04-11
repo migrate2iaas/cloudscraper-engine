@@ -11,10 +11,11 @@ class WindowsVolume_test(unittest.TestCase):
     #TODO: make more sophisticated config\test reading data from some config. dunno
 
     def setUp(self):
-        self.WinVol = WindowsVolume.WindowsVolume("\\\\.\\D:")
-        handler = logging.StreamHandler()
+        handler = logging.StreamHandler(stream=sys.stderr)
         handler.setLevel(logging.DEBUG)
         logging.getLogger().addHandler(handler)
+        self.WinVol = WindowsVolume.WindowsVolume("\\\\.\\D:")
+       
 
     def test_init(self):
         # make sure the shuffled sequence does not lose any elements
