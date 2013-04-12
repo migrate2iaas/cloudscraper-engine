@@ -1,3 +1,8 @@
+# --------------------------------------------------------
+__author__ = "Vladimir Fedorov"
+__copyright__ = "Copyright (C) 2013 Migrate2Iaas"
+#---------------------------------------------------------
+
 # the base class for all the media to contain a system or data image
 
 class ImageMedia(object):

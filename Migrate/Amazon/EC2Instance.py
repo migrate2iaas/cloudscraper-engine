@@ -1,3 +1,7 @@
+# --------------------------------------------------------
+__author__ = "Vladimir Fedorov"
+__copyright__ = "Copyright (C) 2013 Migrate2Iaas"
+#---------------------------------------------------------
 
 import boto
 from boto.s3.connection import S3Connection

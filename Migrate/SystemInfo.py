@@ -1,4 +1,7 @@
-
+# --------------------------------------------------------
+__author__ = "Vladimir Fedorov"
+__copyright__ = "Copyright (C) 2013 Migrate2Iaas"
+#---------------------------------------------------------
 
 #TODO; inherit from the common system info class
 class SystemInfo(object):

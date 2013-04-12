@@ -1,4 +1,7 @@
-
+# --------------------------------------------------------
+__author__ = "Vladimir Fedorov"
+__copyright__ = "Copyright (C) 2013 Migrate2Iaas"
+#---------------------------------------------------------
 
 class VolumeInfo(object):
     """Description of one FS volume in a system"""

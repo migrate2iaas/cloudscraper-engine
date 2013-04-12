@@ -1,3 +1,8 @@
+# --------------------------------------------------------
+__author__ = "Vladimir Fedorov"
+__copyright__ = "Copyright (C) 2013 Migrate2Iaas"
+#---------------------------------------------------------
+
 import BackupAdjust
 import os
 import sys
@@ -213,7 +218,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         # 2) alter it: delete keys if they exist
 
         #TODO: add to the adjust options
-        removeCitrix = True
+        removeCitrix = False
         removeHyperV = False
         removeVmware = False
 
@@ -221,6 +226,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             logging.info("Removing Citrix software keys");
             # NOTE: works under Vista+ only
             try:
+                # NOTE: seem to damage the hive, should test it more
                 mountdevkey = win32api.RegDeleteTree(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\Citrix")
             except Exception as e:
                 logging.debug("Couldn't delete Citrix keys");

@@ -1,4 +1,7 @@
-
+# --------------------------------------------------------
+__author__ = "Vladimir Fedorov"
+__copyright__ = "Copyright (C) 2013 Migrate2Iaas"
+#---------------------------------------------------------
 
 class ConfigAccessor(object):
     """base class to save the config value"""

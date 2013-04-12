@@ -1,3 +1,8 @@
+# --------------------------------------------------------
+__author__ = "Vladimir Fedorov"
+__copyright__ = "Copyright (C) 2013 Migrate2Iaas"
+#---------------------------------------------------------
+
 import FileToBackup
 import BackupAdjust
 import BackupSource
@@ -138,8 +143,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
             try:
                 removedrange = self.__backupSource.getFileBlockRange(removedfile)
             except:
-                #todo: logging spport here
-                print("Cannot get blocks for removed file " + removedfile)
+                looging.warning("Cannot get blocks for removed file " + removedfile)
                 continue
             #NOTE: it may work faster if it's sorted, ugly code by the way
             for removedextent in removedrange:
@@ -152,6 +156,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                              blocksrange.insert(blockindex+pieces.index(piece), piece)
                         break
 
+        #adding replaced files
         for (removed,replacement) in self.__adjustOption.getReplacedFilesEnum():
             replacedfile = removed
             volname = self.__backupSource.getBackupDataSource().getVolumeName()
@@ -160,8 +165,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
             try:
                 replacedrange = self.__backupSource.getFileBlockRange(replacedfile)
             except:
-                #todo: logging spport here
-                print("Cannot get blocks for removed file " + replacedfile)
+                logging.warning("Cannot get blocks for removed file " + replacedfile)
                 continue
             replacedoffset = 0
             for replacedext in replacedrange:

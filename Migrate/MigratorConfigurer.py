@@ -1,3 +1,8 @@
+# --------------------------------------------------------
+__author__ = "Vladimir Fedorov"
+__copyright__ = "Copyright (C) 2013 Migrate2Iaas"
+#---------------------------------------------------------
+
 import AmazonConfigs
 
 import EC2InstanceGenerator

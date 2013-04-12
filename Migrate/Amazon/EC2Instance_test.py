@@ -1,3 +1,8 @@
+# --------------------------------------------------------
+__author__ = "Vladimir Fedorov"
+__copyright__ = "Copyright (C) 2013 Migrate2Iaas"
+#---------------------------------------------------------
+
 
 import sys
 
@@ -45,6 +50,9 @@ class ConfigTest(CloudConfig.CloudConfig):
 
     def getNewSystemSize():
         return 40
+
+    def getSecurity(self):
+        return "default"
 
 class EC2Instance_test(unittest.TestCase):
     
