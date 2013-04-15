@@ -55,7 +55,7 @@ if __name__ == '__main__':
         outhandler.setLevel(logging.INFO)
         logging.getLogger().addHandler(outhandler)
     
-    logging.info("\n>>>>>>>>>>>>>>>>> The Server Clonning Process (v " + str(MigrateVerisonHigh)+ "." + str(MigrateVersionLow) +  ") initializing\n")
+    logging.info("\n>>>>>>>>>>>>>>>>> The Server Transfer Process (v " + str(MigrateVerisonHigh)+ "." + str(MigrateVersionLow) +  ") is initializing\n")
 
     config = MigratorConfigurer.MigratorConfigurer()
     
@@ -87,7 +87,7 @@ if __name__ == '__main__':
 
     (image,adjust,cloud) = config.configAmazon(configpath , s3owner , s3key , region , imagepath)
     
-    logging.info("\n>>>>>>>>>>>>>>>>> Starting the Transfer Process:\n")
+    logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Transfer Process:\n")
     __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload)
     logging.info("Migrator test started")
     __migrator.runFullScenario()
