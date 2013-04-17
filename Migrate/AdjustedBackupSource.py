@@ -143,7 +143,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
             try:
                 removedrange = self.__backupSource.getFileBlockRange(removedfile)
             except:
-                looging.warning("Cannot get blocks for removed file " + removedfile)
+                logging.warning("Cannot get blocks for removed file " + removedfile)
                 continue
             #NOTE: it may work faster if it's sorted, ugly code by the way
             for removedextent in removedrange:
