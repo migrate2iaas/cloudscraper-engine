@@ -7,6 +7,7 @@ import FileToBackup
 import BackupAdjust
 import BackupSource
 import MigrateExceptions
+import logging
 
 #for nner use only
 # it uses simple file io to read files
