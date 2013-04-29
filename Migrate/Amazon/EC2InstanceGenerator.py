@@ -120,7 +120,7 @@ class EC2InstanceGenerator(object):
                     logging.debug("-----Checked the system volume conversion state" + vms_output);
                     match = re.search('Status[ \n\t]*([a-zA-Z0-9]+)',vms_output)
                     if match == None:
-                        logging.error("Error, couldn't parse the check_vm output: " + vms_output);
+                        logging.error("!!!ERROR: Error, couldn't parse the check_vm output: " + vms_output);
                         return None
                     importstatus = match.group(1)
                     if importstatus == "active" or importstatus == "pending":
@@ -133,7 +133,7 @@ class EC2InstanceGenerator(object):
                         logging.info("Conversion done")
                         match = re.search('InstanceID[ \n\t]*(i-[a-zA-Z0-9]+)',vms_output)
                         if match == None:
-                            logging.error("Error, couldn't parse the check_vm output: " + vms_output);
+                            logging.error("!!!ERROR: Error, couldn't parse the check_vm output: " + vms_output);
                             return None
                         instanceid = match.group(1)    
                         logging.info("==========================================================================");

@@ -27,13 +27,13 @@ import time
 class EC2VolumeGenerator(object):
     """generator class for ec2 volumes"""
 
-    def __init__(self , region, retries=5):
+    def __init__(self , region, retries=1):
 
         self.__region = region
         self.__retryCount = retries
 
     # makes volume from upload id (xml)
-    def makeVolumeFromImage(self, uploadid, initialconfig, s3owner, s3key, temp_local_image_path , image_file_size = 0):
+    def makeVolumeFromImage(self, imageid, initialconfig, s3owner, s3key, temp_local_image_path , image_file_size = 0):
 
         windir = os.environ['windir']
 
@@ -121,7 +121,7 @@ class EC2VolumeGenerator(object):
                     logging.debug("-----Checked the data volume conversion state" + vms_output);
                     match = re.search('Status[ \n\t]*([a-zA-Z0-9]+)',vms_output)
                     if match == None:
-                        logging.error("Error, couldn't parse the check_vm output: " + vms_output);
+                        logging.error("!!!ERROR: Error, couldn't parse the check_vm output: " + vms_output);
                         return None
                     importstatus = match.group(1)
                     if importstatus == "active" or importstatus == "pending":
@@ -132,9 +132,9 @@ class EC2VolumeGenerator(object):
                         continue
                     if importstatus == "completed":
                         logging.info("Conversion done")
-                        match = re.search('VolumeId[ \n\t]*(i-[a-zA-Z0-9]+)',vms_output)
+                        match = re.search('VolumeId[ \n\t]*(vol-[a-zA-Z0-9]+)',vms_output)
                         if match == None:
-                            logging.error("Error, couldn't parse the check_vm output: " + vms_output);
+                            logging.error("!!!ERROR: Error, couldn't parse the check_vm output: " + vms_output);
                             return None
                         instanceid = match.group(1)    
                         logging.info("==========================================================================");

@@ -361,7 +361,7 @@ class Migrator(object):
             
         return True
 
-    def generateVolume(self , imageid):
+    def generateVolume(self , imageid , localimagepath):
         if self.__cloudName == "EC2":
             import EC2VolumeGenerator
             import EC2Instance
@@ -370,7 +370,7 @@ class Migrator(object):
             awssecret = self.__cloudOptions.getCloudPass()
             generator = EC2VolumeGenerator.EC2VolumeGenerator(self.__cloudOptions.getRegion())
 
-            instance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , awskey, awssecret , self.__migrateOptions.getSystemImagePath())
+            instance = generator.makeVolumeFromImage(imageid, self.__cloudOptions , awskey, awssecret , localimagepath)
         
 
         return True
@@ -397,7 +397,10 @@ class Migrator(object):
             # keyname should be associated with the volume by the config program
             import S3UploadChannel 
             for volinfo in self.__migrateOptions.getDataVolumes():
-                self.__dataChannelList[volinfo.getVolumePath()]= S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , volinfo.getImageSize() , self.__cloudOptions.getRegion() , volinfo.getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
+                # just a workaround 'cause virtual drive is larger than one volume (so we add extra gb in order it to fit the size)
+                #TODO: remove woraround 1gb in self.__windows.createVhdTransferTarget 
+                gigabyte = 1024*1024*1024
+                self.__dataChannelList[volinfo.getVolumePath()]= S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , volinfo.getImageSize()+gigabyte , self.__cloudOptions.getRegion() , volinfo.getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
             
 
         return True
@@ -489,8 +492,8 @@ class Migrator(object):
                 volinfo.saveConfig()
             #TODO: somehow the image-id should be saved thus it could be loaded in skip upload scenario
             #move it somehwere else
-            logging.info("Creating volume from the image stored at " + str(self.__migrateOptions.getSystemVolumeConfig().getUploadId()))
-            self.generateVolume(self.__migrateOptions.getSystemVolumeConfig().getUploadId())
+            logging.info("Creating volume from the image stored at " + str(volinfo.getUploadId()))
+            self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath())
 
        
         return True
