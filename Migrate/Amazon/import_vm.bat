@@ -1,4 +1,3 @@
-@echo off
 setlocal
 set OLD_CD= %CD%
 cd /d "%~dp0"

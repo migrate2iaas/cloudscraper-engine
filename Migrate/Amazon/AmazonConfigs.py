@@ -116,6 +116,6 @@ class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
         #TODO: really , dunno what should be palced here. should make some umls to see what needed to be changed
         return None
     
-    # gets list of string tuples (volume_device_name, volume_image_path , image_size)
+    # gets list of VolumeMigrateConfig
     def getDataVolumes(self):
         return self.__dataVolumes
