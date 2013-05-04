@@ -117,6 +117,9 @@ class WindowsVolumeTransferTarget(TransferTarget.TransferTarget):
         except Exception as ex:
             raise FileException(filename , ex)
 
+    def getMedia(self):
+        return self.__media
+
     def close(self):
         # releases underlying media after the operation is done
         if self.__media:

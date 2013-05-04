@@ -27,9 +27,10 @@ from MigrateExceptions import FileException
 class WindowsDeviceDataTransferProto(DataTransferProto.DataTransferProto):
     """The class implements data transfer thru Windows API rw calls"""
 
-    def __init__(self,devPath,devnumber):
+    def __init__(self,devPath,devnumber,media):
         self.__devicePath = devPath
         self.__devNumber = devnumber
+        self.__media = media
         
         secur_att = win32security.SECURITY_ATTRIBUTES()
         secur_att.Initialize()
@@ -40,18 +41,20 @@ class WindowsDeviceDataTransferProto(DataTransferProto.DataTransferProto):
             self.__hFile = win32file.CreateFile( path, win32con.GENERIC_READ | win32con.GENERIC_WRITE| ntsecuritycon.FILE_READ_ATTRIBUTES | ntsecuritycon.FILE_WRITE_ATTRIBUTES, win32con. FILE_SHARE_READ|win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
         except Exception as ex:
             raise FileException(path , ex)
-      
+    
+    def getMedia(self):
+        return self.__media
+
     def writeData(self, dataExtent):
         return writeMetadata(self,dataExtent)
         
-
     def readData(self, dataExtent):
         return readMetadata(self,dataExtent)
 
     def writeMetadata(self, dataExtents):
         path = self.__devicePath
         try:
-            for volextent in dataExtent:
+            for volextent in dataExtents:
                 win32file.SetFilePointer(self.__hFile, volextent.getStart(), win32con.FILE_BEGIN)
                 win32file.WriteFile(self.__hFile,volextent.getData(),None)
         except Exception as ex:

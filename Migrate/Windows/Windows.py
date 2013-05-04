@@ -117,9 +117,10 @@ class Windows(object):
         vhd = WindowsVhdMedia.WindowsVhdMedia(path, size+gigabyte)
         vhd.open()
           
-        datatransfer = WindowsDeviceDataTransferProto.WindowsDeviceDataTransferProto(vhd.getWindowsDevicePath(), vhd.getWindowsDiskNumber())
+        #really this device data transfer proto is not used, it seems to be a connector between raw media and methods to access its contents
+        datatransfer = WindowsDeviceDataTransferProto.WindowsDeviceDataTransferProto(vhd.getWindowsDevicePath(), vhd.getWindowsDiskNumber() , vhd)
         parser = WindowsDiskParser.WindowsDiskParser(datatransfer , adjustOptions.getNewMbrId())
-        return parser.createTransferTarget(size , vhd)
+        return parser.createTransferTarget(size)
         
     def createSystemAdjustOptions(self):
         return WindowsSystemAdjustOptions.WindowsSystemAdjustOptions()

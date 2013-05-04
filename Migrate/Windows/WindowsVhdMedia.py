@@ -8,6 +8,11 @@ import re
 import os
 import sys
 
+sys.path.append('.\..')
+sys.path.append('.\..\Windows')
+sys.path.append('.\Windows')
+
+
 import logging
 import ImageMedia
 
@@ -69,7 +74,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         return True
 
     def getMaxSize(self):
-        return self.__maxSize
+        return self.__maxSizeMb*1024*1024
 
     def reopen(self):
         self.close()
@@ -100,6 +105,29 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
     
     def release(self):
         self.close()
+
+
+     #reads data from image, returns data buffer
+    def readImageData(self , offset , size):
+        diskfile = open(self.__fileName, "rb")
+        diskfile.seek(offset)
+        data = diskfile.read(size)
+        diskfile.close()
+        return data
+
+    #writes data to the container (as it was a disk)
+    def writeDiskData(self, offset, data):
+        #really don't needed cause the writes is issued to volume Windows device on the disk
+        raise NotImplementedError
+
+    #reads data from the container (as it was a disk)
+    def readDiskData(self , offset , size):
+        #really don't needed cause the writes is issued to volume Windows device on the disk
+        raise NotImplementedError
+
+    #gets the overall image size available for writing. Note: it is subject to grow when new data is written
+    def getImageSize(self):
+        return os.stat(self.__fileName).st_size
 
     #override for WindowsMedia
     # returns path good for opening windows devices

@@ -19,11 +19,11 @@ class TransferTarget(object):
         raise NotImplementedError
 
     # transfers file data only
-    def transferRawData(self, volExtent):
+    def transferRawData(self, volExtents):
         raise NotImplementedError
 
     # transfers raw metadata, it should be precached
-    def transferRawMetadata(self, volExtent):
+    def transferRawMetadata(self, volExtents):
         raise NotImplementedError
 
     #deletes file transfered
@@ -34,4 +34,5 @@ class TransferTarget(object):
     def cancelTransfer(self):
         raise NotImplementedError
 
-    # TODO: think of better implementation
+    def getMedia(self):
+        raise NotImplementedError

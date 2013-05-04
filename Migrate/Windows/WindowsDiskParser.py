@@ -41,7 +41,7 @@ class WindowsDiskParser(object):
     #TODO: enum of existing targets\volumes
 
     # the disk is formated and new volume is generated
-    def createTransferTarget(self, size, media = None):
+    def createTransferTarget(self, size):
 
         scriptpath = "diskpart_format.tmp"
         scrfile = open(scriptpath, "w+")
@@ -78,7 +78,7 @@ class WindowsDiskParser(object):
             raise EnvironmentError
         partno = int(match.group(1))
         logging.debug("Openning windows transfer target: %s" , "\\\\?\\GLOBALROOT\\Device\\Harddisk"+str(self.__diskNumber)+"\\Partition"+str(partno));
-        return WindowsVolumeTransferTarget.WindowsVolumeTransferTarget("\\\\?\\GLOBALROOT\\Device\\Harddisk"+str(self.__diskNumber)+"\\Partition"+str(partno) , media)
+        return WindowsVolumeTransferTarget.WindowsVolumeTransferTarget("\\\\?\\GLOBALROOT\\Device\\Harddisk"+str(self.__diskNumber)+"\\Partition"+str(partno) , self.__backingStore.getMedia())
         
     # TODO: move the data\metadata ditinction here    
 

@@ -10,6 +10,11 @@ import sys
 import os
 import stat
 import DataExtent
+import datetime
+
+import RawGzipMedia
+import SimpleDiskParser
+import SimpleDataTransferProto
 
 import MigrateConfig
 import CloudConfig
@@ -238,37 +243,59 @@ class Migrator(object):
 
     def createSystemTransferTarget(self):
         
+        #TODO: make different functions for create system transfer target and transfer channel
+
         if self.__runOnWindows:
             #TODO: need kinda redisign the stuff related to system adjusts!
             self.__winSystemAdjustOptions = self.__windows.createSystemAdjustOptions()
             self.__winSystemAdjustOptions.setSysDiskType(self.__systemAdjustOptions.getSysDiskType())
-            #self.__systemAdjustOptions.loadConfig(self.__migrateOptions.getSystemConfig())
             
             if self.__skipImaging == False:
                 if self.__migrateOptions.getImageType() == "VHD" and self.__migrateOptions.getImagePlacement() == "local" and self.__windows.getVersion() >= self.__windows.getSystemInfo().Win2008R2:
-                   #TODO: create max VHD size parm also
                    self.__systemTransferTarget = self.__windows.createVhdTransferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
                 else:
-                    #TODO: be more discriptive
-                    logging.error("!!!ERROR: Bad image options!");
+                    logging.error("!!!ERROR: Bad image options, local VHDs on Win 2008R2 and higher are supported");
                     return False
+        
         if self.__cloudName == "EC2":
             bucket = self.__cloudOptions.getCloudStorage()
             awskey = self.__cloudOptions.getCloudUser()
             awssecret = self.__cloudOptions.getCloudPass()
-
-            # here we should get system bucket and the system key from the config
-            # keyname should be associated with the volume by the config program
-
-            # just a workaround 'cause virtual drive is larger than one volume (so we add extra gb in order it to fit the size)
-            #TODO: remove woraround 1gb in self.__windows.createVhdTransferTarget 
-            gigabyte = 1024*1024*1024
-
+            awsregion = self.__cloudOptions.getRegion()
             import S3UploadChannel
-            self.__systemTransferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__migrateOptions.getSystemImageSize() + gigabyte , self.__cloudOptions.getRegion() , self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
-            
+            self.__systemTransferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__systemTransferTarget.getMedia().getDiskSize() , awsregion , self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
+
+        # ElasticHosts and other KVM options        
+        if self.__migrateOptions.getImageType() == "raw.gz" and self.__migrateOptions.getImagePlacement() == "local":
+            self.__systemTransferTarget = self.createRawGzipTranferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
+            if self.__cloudName == "ElasticHosts":
+                #create the image first and then upload it
+                import EHUploadChannel
+                drive = self.__cloudOptions.getCloudStorage()
+                userid = self.__cloudOptions.getCloudUser()
+                apisecret = self.__cloudOptions.getCloudPass()
+                region = self.__cloudOptions.getRegion()
+                #Note: get upload path should be set to '' for the new downloads
+                self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , userid , apisecret , self.__systemTransferTarget.getMedia().getDiskSize() , region , "Cloudscraper-Upload-"+str(datetime.date.today()))
+                
+        
+        if self.__migrateOptions.getImageType() == "raw" and self.__migrateOptions.getImagePlacement() == "server":
+            if self.__cloudName == "ElasticHosts":
+                #directly from the snapshot to the server
+                import EHUploadChannel
+                #TODO: make direct uploads
+                #self.__systemTransferChannel = EHUploadChannel.EHUploadChannel()
+                
 
         return True
+
+    #factory to create raw gzip transfer target
+    def createRawGzipTranferTarget(self , imagepath , imagesize, adjustoptions):
+        media = RawGzipMedia.RawGzipMedia(imagepath , imagesize+1024*1024)
+        media.open()
+        parser = SimpleDiskParser.SimpleDiskParser(SimpleDataTransferProto.SimpleDataTransferProto(media) , adjustoptions.getNewMbrId())
+        return parser.createTransferTarget(imagesize)
+
 
     def adjustSystemBackupTarget(self):
         # dunno really what could we do here
@@ -397,10 +424,7 @@ class Migrator(object):
             # keyname should be associated with the volume by the config program
             import S3UploadChannel 
             for volinfo in self.__migrateOptions.getDataVolumes():
-                # just a workaround 'cause virtual drive is larger than one volume (so we add extra gb in order it to fit the size)
-                #TODO: remove woraround 1gb in self.__windows.createVhdTransferTarget 
-                gigabyte = 1024*1024*1024
-                self.__dataChannelList[volinfo.getVolumePath()]= S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , volinfo.getImageSize()+gigabyte , self.__cloudOptions.getRegion() , volinfo.getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
+                self.__dataChannelList[volinfo.getVolumePath()]= S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__dataTransferTargetList[volinfo.getVolumePath()].getMedia().getDiskSize() , self.__cloudOptions.getRegion() , volinfo.getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
             
 
         return True

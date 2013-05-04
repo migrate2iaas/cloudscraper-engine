@@ -4,22 +4,25 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
 class DataTransferProto(object):
-    """Data transfer protocol is abstraction of how the data is passed to the underlying medium"""
+    """Data transfer protocol is abstraction of how the data is passed to the underlying media"""
 
-    def writeData():
-        return
+    def writeData(self , extents):
+        raise NotImplementedError
 
-    def readData():
-        return
+    def readData(self , extent):
+        raise NotImplementedError
 
-    def writeMetadata():
-        return
+    def writeMetadata(self, extents):
+        raise NotImplementedError
 
-    def readMetadata():
-        return
+    def readMetadata(self, extent):
+        raise NotImplementedError
+
+    def getMedia(self):
+        raise NotImplementedError
 
     #returns the overall size of underlying media
-    def getSize():
-        return
+    def getSize(self):
+        raise NotImplementedError
 
 
