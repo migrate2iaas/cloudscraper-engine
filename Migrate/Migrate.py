@@ -40,7 +40,7 @@ if __name__ == '__main__':
     #parsing extra option
     parser = argparse.ArgumentParser(description="This script performs creation of virtualized images from the local server, uploading them to S3, converting them to EC2 instances. See README for more details.")
     parser.add_argument('-k', '--amazonkey', help="Your AWS secret key. If not specified you will be prompted at the script start")
-    parser.add_argument('-k', '--ehkey', help="Your ElasicHosts API secret key. If not specified you will be prompted at the script start")
+    parser.add_argument('-e', '--ehkey', help="Your ElasicHosts API secret key. If not specified you will be prompted at the script start")
     parser.add_argument('-c', '--config', help="Path to server cloud copy config file")
     parser.add_argument('-o', '--output', help="Path to extra file for non-detalized output")                   
     parser.add_argument('-u', '--resumeupload', help="Resumes the upload of image already created", action="store_true")                   
@@ -72,6 +72,8 @@ if __name__ == '__main__':
         imagepath = raw_input("Enter file path to store the server image:")
         region = ''
 
+    s3key=''
+    ehkey=''
     if parser.parse_args().ehkey:
         ehkey = parser.parse_args().ehkey
     else:
@@ -96,7 +98,7 @@ if __name__ == '__main__':
     if s3key:
         (image,adjust,cloud) = config.configAmazon(configpath , s3owner , s3key , region , imagepath)
     if ehkey:
-        (image,adjust,cloud) = config.configElasticHosts(configpath , s3owner , s3key , region , imagepath) 
+        (image,adjust,cloud) = config.configElasticHosts(configpath , '' , ehkey) 
     
     logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Transfer Process:\n")
     __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload)

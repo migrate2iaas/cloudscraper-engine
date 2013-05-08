@@ -24,7 +24,7 @@ class EHAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
 class EHCloudOptions(CloudConfig.CloudConfig):
     
     def __init__(self, user , password , newsize , arch , region ):
-        super(AmazonCloudOptions, self).__init__()
+        super(EHCloudOptions, self).__init__()
         self.__user = user
         self.__pass = password
         self.__newSysSize = newsize
@@ -65,7 +65,7 @@ class EHMigrateConfig(MigrateConfig.MigrateConfig):
     #TODO: make docs
     # images is list of VolumeMigrateConfig
     def __init__(self, images , source_arch , imageplacement = 'local', imagetype='raw.gz'):
-        super(AmazonMigrateConfig, self).__init__()
+        super(EHMigrateConfig, self).__init__()
         
         self.__dataVolumes = list()
         self.__systemVolumeConfig = None

@@ -291,8 +291,6 @@ class MigratorConfigurer(object):
         if region == '':
             region = config.get('ElasticHosts', 'region')
 
-        arch = config.get('EC2', 'target-arch')
-
         #really, it doesn't matter for the EH cloud
         imagearch = config.get('Image', 'source-arch')
 
@@ -324,6 +322,8 @@ class MigratorConfigurer(object):
         image_placement = ""
         if config.has_option('Image', 'image-placement'):
            image_placement = config.get('Image', 'image-placement') 
+        else:
+            image_placement = "local"
 
         volumes = list()
         if config.has_section('Volumes') :
@@ -342,6 +342,6 @@ class MigratorConfigurer(object):
         newsize = imagesize
         adjust = EHConfigs.EHAdjustOptions()
         image = EHConfigs.EHMigrateConfig(volumes , imagearch , image_placement, imagetype)
-        cloud = EHConfigs.EHCloudOptions(bucket , user , password , newsize , arch , region)
+        cloud = EHConfigs.EHCloudOptions( user , password , newsize , imagearch , region)
 
         return (image,adjust,cloud)

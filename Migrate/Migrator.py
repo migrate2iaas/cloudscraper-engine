@@ -24,25 +24,6 @@ class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT"""
 
 
-    def __init__2(self , migrateOptions):
-        self.__adjustedSystemBackupSource = None
-        self.__systemBackupSource = None
-        self.__adjustOption = None
-        self.__migrateOptions = migrateOptions
-        self.__cloudOptions = migrateOptions
-        self.__systemTransferTarget = None
-        self.__systemAdjustOptions = None
-        
-        self.__runOnWindows = False
-
-        if self.__migrateOptions.getHostOs() == "Windows":
-            import Windows
-            self.__windows = Windows.Windows()
-            self.__runOnWindows = True
-        if self.__cloudOptions.getTargetCloud() == "EC2":
-            import S3UploadChannel
-            self.__cloudName = self.__migrateOptions.getTargetCloud()
-
     def __init__(self , cloudOptions , migrateOptions, sysAdjustOptions , skipImaging=False, resumeUpload=False, skipUpload=False):
         self.__adjustedSystemBackupSource = None
         self.__systemBackupSource = None
@@ -65,6 +46,8 @@ class Migrator(object):
         self.__skipUpload = skipUpload
         self.__resumeUpload = resumeUpload
 
+        self.__cloudName = self.__cloudOptions.getTargetCloud()
+        
         #TODO: analyze both host and source systems
         if self.__migrateOptions.getHostOs() == "Windows":
             import Windows
@@ -73,7 +56,8 @@ class Migrator(object):
             self.__winSystemAdjustOptions = None
         if self.__cloudOptions.getTargetCloud() == "EC2":
             import S3UploadChannel
-            self.__cloudName = self.__cloudOptions.getTargetCloud()
+        if self.__cloudOptions.getTargetCloud() == "ElasticHosts":
+            import EHUploadChannel
 
     # runs full scenario from the start to the upload
     def runFullScenario(self):
@@ -253,9 +237,13 @@ class Migrator(object):
             if self.__skipImaging == False:
                 if self.__migrateOptions.getImageType() == "VHD" and self.__migrateOptions.getImagePlacement() == "local" and self.__windows.getVersion() >= self.__windows.getSystemInfo().Win2008R2:
                    self.__systemTransferTarget = self.__windows.createVhdTransferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
-                else:
-                    logging.error("!!!ERROR: Bad image options, local VHDs on Win 2008R2 and higher are supported");
-                    return False
+                if self.__migrateOptions.getImageType() == "raw.gz" and self.__migrateOptions.getImagePlacement() == "local":
+                   self.__systemTransferTarget = self.createRawGzipTranferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
+                
+                if self.__systemTransferTarget == None:
+                   # TODO: be more descriptive
+                   logging.error("!!!ERROR: Unsupported initial image or OS version config")
+                   return False
         
         # move to 
         if self.__cloudName == "EC2":
@@ -264,12 +252,10 @@ class Migrator(object):
             awssecret = self.__cloudOptions.getCloudPass()
             awsregion = self.__cloudOptions.getRegion()
             import S3UploadChannel
-            self.__systemTransferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__systemTransferTarget.getMedia().getDiskSize() , awsregion , self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
+            self.__systemTransferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__systemTransferTarget.getMedia().getMaxSize() , awsregion , self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
 
         # ElasticHosts and other KVM options        
-        if self.__migrateOptions.getImageType() == "raw.gz" and self.__migrateOptions.getImagePlacement() == "local":
-            self.__systemTransferTarget = self.createRawGzipTranferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
-        
+         
         # For the future: ! Note: make a better design here
         #if self.__migrateOptions.getImageType() == "raw" and self.__migrateOptions.getImagePlacement() == "local":
         #    self.__systemTransferTarget = self.createRawTranferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
@@ -294,7 +280,7 @@ class Migrator(object):
             apisecret = self.__cloudOptions.getCloudPass()
             region = self.__cloudOptions.getRegion()
             #Note: get upload path should be set to '' for the new downloads
-            self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , userid , apisecret , self.__systemTransferTarget.getMedia().getDiskSize() , region , "Cloudscraper-Upload-"+str(datetime.date.today()))
+            self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , userid , apisecret , self.__systemTransferTarget.getMedia().getMaxSize() , region , "Cloudscraper-Upload-"+str(datetime.date.today()))
 
         return True
 
@@ -433,7 +419,7 @@ class Migrator(object):
             # keyname should be associated with the volume by the config program
             import S3UploadChannel 
             for volinfo in self.__migrateOptions.getDataVolumes():
-                self.__dataChannelList[volinfo.getVolumePath()]= S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__dataTransferTargetList[volinfo.getVolumePath()].getMedia().getDiskSize() , self.__cloudOptions.getRegion() , volinfo.getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
+                self.__dataChannelList[volinfo.getVolumePath()]= S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__dataTransferTargetList[volinfo.getVolumePath()].getMedia().getMaxSize() , self.__cloudOptions.getRegion() , volinfo.getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
             
 
         return True
