@@ -7,6 +7,7 @@ import sys
 
 sys.path.append('.\Windows')
 sys.path.append('.\Amazon')
+sys.path.append('.\ElasticHosts')
 
 import unittest
 import WindowsVolume
@@ -39,6 +40,7 @@ if __name__ == '__main__':
     #parsing extra option
     parser = argparse.ArgumentParser(description="This script performs creation of virtualized images from the local server, uploading them to S3, converting them to EC2 instances. See README for more details.")
     parser.add_argument('-k', '--amazonkey', help="Your AWS secret key. If not specified you will be prompted at the script start")
+    parser.add_argument('-k', '--ehkey', help="Your ElasicHosts API secret key. If not specified you will be prompted at the script start")
     parser.add_argument('-c', '--config', help="Path to server cloud copy config file")
     parser.add_argument('-o', '--output', help="Path to extra file for non-detalized output")                   
     parser.add_argument('-u', '--resumeupload', help="Resumes the upload of image already created", action="store_true")                   
@@ -70,10 +72,15 @@ if __name__ == '__main__':
         imagepath = raw_input("Enter file path to store the server image:")
         region = ''
 
-    if parser.parse_args().amazonkey:
-        s3key = parser.parse_args().amazonkey    
+    if parser.parse_args().ehkey:
+        ehkey = parser.parse_args().ehkey
     else:
-        s3key = getpass.getpass("AWS Secret Access Key:")
+        if parser.parse_args().amazonkey:
+            s3key = parser.parse_args().amazonkey    
+        else:
+            s3key = getpass.getpass("AWS Secret Access Key:")
+
+
 
     resumeupload = False
     if parser.parse_args().resumeupload:
@@ -85,7 +92,11 @@ if __name__ == '__main__':
         #NOTE: skip upload is not yet good enough! 
         # it needs saving of 1) image-id (xml-key) for each volume imported previously 2) instance-id
 
-    (image,adjust,cloud) = config.configAmazon(configpath , s3owner , s3key , region , imagepath)
+    #thus we use Amazon
+    if s3key:
+        (image,adjust,cloud) = config.configAmazon(configpath , s3owner , s3key , region , imagepath)
+    if ehkey:
+        (image,adjust,cloud) = config.configElasticHosts(configpath , s3owner , s3key , region , imagepath) 
     
     logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Transfer Process:\n")
     __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload)

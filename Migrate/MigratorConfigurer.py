@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
 import AmazonConfigs
+import EHConfigs
 
 import EC2InstanceGenerator
 import EC2Instance
@@ -137,6 +138,15 @@ class MigratorConfigurer(object):
     def __init__(self):
         return
 
+    #automcatically chooses which cloud to generate the config for
+    def configAuto(self , configfile, password = ''):
+        config = ConfigParser.RawConfigParser()
+        config.read(configfile)
+        if config.has_section('EC2'):
+            return configAmazon(configfile , '' , password)
+        if config.has_section('ElasticHosts'):
+            return configElasticHosts(configfile , '' , password)
+        return None
 
     #returns the tuple containing the config info (Image,Fixups,Cloud)
     def configAmazon(self , configfile , user = '' , password = '' , region = '', imagepath = ''):
@@ -260,5 +270,78 @@ class MigratorConfigurer(object):
         adjust = AmazonConfigs.AmazonAdjustOptions()
         image = AmazonConfigs.AmazonMigrateConfig(volumes , imagearch , imagetype)
         cloud = AmazonConfigs.AmazonCloudOptions(bucket , user , password , newsize , arch , zone , region, security)
+
+        return (image,adjust,cloud)
+
+    #note its better
+    def configElasticHosts(self , configfile , user = '' , password = '' , region = '', imagepath = ''):
+        config = ConfigParser.RawConfigParser()
+        config.read(configfile)
+
+        import Windows
+        imagesize = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize()
+        imagetype = 'VHD'      
+
+        #cloud config
+        if user == '':
+            user = config.get('ElasticHosts', 'user-uuid')
+        if password == '':
+            password = config.get('ElasticHosts', 'ehsecret')
+        
+        if region == '':
+            region = config.get('ElasticHosts', 'region')
+
+        arch = config.get('EC2', 'target-arch')
+
+        #really, it doesn't matter for the EH cloud
+        imagearch = config.get('Image', 'source-arch')
+
+        if config.has_option('Image', 'image-type'):
+            imagetype = config.get('Image', 'image-type')
+        else:
+            imagetype = 'raw.gz'
+            logging.warning("No image type specified. Default raw.gz is used.");
+        
+        imagedir = ""
+        if config.has_option('Image', 'image-dir'):
+           imagedir = config.get('Image', 'image-dir') 
+        else:
+            imagedir = "."
+            logging.warning("No directory for image store is specified. It'll be created in local script execution directory");
+
+        if imagedir[-1] == '\\':
+            imagedir = imagedir[0:-1]
+        if os.path.exists(imagedir) == False:
+            logging.debug("Directory " + str(imagedir) + " not found, creating it");
+            os.mkdir(imagedir)           
+        else:
+            dirmode = os.stat(imagedir).st_mode
+            if stat.S_ISDIR(dirmode) == False:
+                #TODO: create wrapper for error messages
+                #TODO: test UNC path
+                logging.error("!!!ERROR Directory given for image storage is not valid!");
+
+        image_placement = ""
+        if config.has_option('Image', 'image-placement'):
+           image_placement = config.get('Image', 'image-placement') 
+
+        volumes = list()
+        if config.has_section('Volumes') :
+            if config.has_option('Volumes', 'letters'):
+                letters = config.get('Volumes', 'letters');
+                for letter in letters.split(','):
+                    devicepath = '\\\\.\\'+letter+':';
+                    size = Windows.Windows().getSystemInfo().getVolumeInfo(letter+":").getSize()
+                    volume = VolumeMigrateIniConfig(config , configfile , letter , devicepath)
+                    if volume.getImagePath() == '':
+                        volume.setImagePath(imagedir+"\\"+letter+"."+imagetype);
+                    if volume.getImageSize() == 0:
+                        volume.setImageSize(size);
+                    volumes.append( volume )
+        
+        newsize = imagesize
+        adjust = EHConfigs.EHAdjustOptions()
+        image = EHConfigs.EHMigrateConfig(volumes , imagearch , image_placement, imagetype)
+        cloud = EHConfigs.EHCloudOptions(bucket , user , password , newsize , arch , region)
 
         return (image,adjust,cloud)

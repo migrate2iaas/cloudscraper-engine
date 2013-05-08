@@ -64,6 +64,8 @@ class EHUploadThread(threading.Thread):
             #NOTE: kinda dedup could be added here!
             #NOTE: we should able to change the initial keyname here so the data'll be redirected 
 
+            #TODO: make md5 map for resume uploads
+
             failed = True
             retries = 0
             while retries < self.__maxRetries:

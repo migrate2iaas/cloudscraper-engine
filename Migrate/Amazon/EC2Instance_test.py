@@ -48,7 +48,7 @@ class ConfigTest(CloudConfig.CloudConfig):
     def getLocalDiskFile(self):
         return self.__tmpLocalFile
 
-    def getNewSystemSize():
+    def getNewSystemSize(self):
         return 40
 
     def getSecurity(self):

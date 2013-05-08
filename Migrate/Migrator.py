@@ -257,6 +257,7 @@ class Migrator(object):
                     logging.error("!!!ERROR: Bad image options, local VHDs on Win 2008R2 and higher are supported");
                     return False
         
+        # move to 
         if self.__cloudName == "EC2":
             bucket = self.__cloudOptions.getCloudStorage()
             awskey = self.__cloudOptions.getCloudUser()
@@ -268,24 +269,32 @@ class Migrator(object):
         # ElasticHosts and other KVM options        
         if self.__migrateOptions.getImageType() == "raw.gz" and self.__migrateOptions.getImagePlacement() == "local":
             self.__systemTransferTarget = self.createRawGzipTranferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
-            if self.__cloudName == "ElasticHosts":
-                #create the image first and then upload it
-                import EHUploadChannel
-                drive = self.__cloudOptions.getCloudStorage()
-                userid = self.__cloudOptions.getCloudUser()
-                apisecret = self.__cloudOptions.getCloudPass()
-                region = self.__cloudOptions.getRegion()
-                #Note: get upload path should be set to '' for the new downloads
-                self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , userid , apisecret , self.__systemTransferTarget.getMedia().getDiskSize() , region , "Cloudscraper-Upload-"+str(datetime.date.today()))
-                
         
-        if self.__migrateOptions.getImageType() == "raw" and self.__migrateOptions.getImagePlacement() == "server":
+        # For the future: ! Note: make a better design here
+        #if self.__migrateOptions.getImageType() == "raw" and self.__migrateOptions.getImagePlacement() == "local":
+        #    self.__systemTransferTarget = self.createRawTranferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
+        #if self.__migrateOptions.getImageType() == "volume" and self.__migrateOptions.getImagePlacement() == "local":
+        #    self.__systemTransferTarget = self.createRawTranferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
+        
+               
+        if self.__migrateOptions.getImageType() == "raw" and self.__migrateOptions.getImagePlacement() == "direct":
             if self.__cloudName == "ElasticHosts":
-                #directly from the snapshot to the server
                 import EHUploadChannel
+                #directly from the snapshot to the server
+                return True
                 #TODO: make direct uploads
                 #self.__systemTransferChannel = EHUploadChannel.EHUploadChannel()
                 
+        
+        if self.__cloudName == "ElasticHosts":
+            #create the image first and then upload it
+            import EHUploadChannel
+            drive = self.__cloudOptions.getCloudStorage()
+            userid = self.__cloudOptions.getCloudUser()
+            apisecret = self.__cloudOptions.getCloudPass()
+            region = self.__cloudOptions.getRegion()
+            #Note: get upload path should be set to '' for the new downloads
+            self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , userid , apisecret , self.__systemTransferTarget.getMedia().getDiskSize() , region , "Cloudscraper-Upload-"+str(datetime.date.today()))
 
         return True
 
