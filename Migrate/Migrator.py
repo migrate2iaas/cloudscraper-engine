@@ -323,6 +323,7 @@ class Migrator(object):
 
         filesize = os.stat(self.__migrateOptions.getSystemImagePath()).st_size
         #TODO: should be 10  mb in amazon impl
+        #TODO: should use media api instead of direct reads from file
         file = open(self.__migrateOptions.getSystemImagePath() , "rb")
 
         if self.__skipUpload:

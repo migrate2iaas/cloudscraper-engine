@@ -39,8 +39,10 @@ class RawGzipMedia(ImageMedia.ImageMedia):
     #starts the connection
     def open(self):
         #Note: it may also be recreated!
+        #TODO: now it just doesn't zip at all
         self.__fileObj = open(self.__filename , "w+b")
-        self.__gzipFile = gzip.GzipFile("tmpgzip", "wb" , 6 , self.__fileObj)
+        self.__gzipFile = self.__fileObj
+        #self.__gzipFile = gzip.GzipFile("tmpgzip", "wb" , 6 , self.__fileObj)
         
 
     def getMaxSize(self):

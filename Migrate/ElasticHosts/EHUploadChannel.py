@@ -126,7 +126,7 @@ class EHUploadChannel(object):
     # since there is no one big storage, location is mandatory
     # driveid could be empty if no drive is already created
     # upload threads should be equal to 1 to avoid collisions
-    def __init__(self, driveid, userid, apisercret , resultDiskSizeBytes , location , drivename , resumeUpload = False  , uploadThreads=1 , queueSize=16):
+    def __init__(self, driveid, userid, apisercret , resultDiskSizeBytes , location , drivename , resumeUpload = False, chunksize = 4096*1024 , uploadThreads=1 , queueSize=16):
         self.__uploadQueue = Queue.Queue(queueSize)
         self.__statLock = threading.Lock()
         self.__prevUploadTime = None 
@@ -146,6 +146,7 @@ class EHUploadChannel(object):
         self.__uploadedSize = 0
         self.__uploadSkippedSize = 0
         self.__overallSize = 0
+        self.__chunkSize = chunksize
        
         self.__volumeToAllocateBytes = resultDiskSizeBytes
 

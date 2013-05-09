@@ -41,3 +41,6 @@ class SimpleTransferTarget(TransferTarget.TransferTarget):
 
     def getMedia(self):
         return self.__mediaProto.getMedia()
+
+    def close(self):
+        return self.__mediaProto.getMedia().release()
