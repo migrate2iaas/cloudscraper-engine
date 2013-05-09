@@ -74,6 +74,7 @@ class RawGzipMedia(ImageMedia.ImageMedia):
     #writes data to the container (as it was a disk)
     def writeDiskData(self, offset, data):
         self.__gzipFile.seek(offset)
+        #Note: it doesn't support non-sequental writes!
         self.__gzipFile.write(data)
         self.flush()
 
