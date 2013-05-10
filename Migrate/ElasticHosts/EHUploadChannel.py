@@ -193,6 +193,9 @@ class EHUploadChannel(object):
        if self.__overallSize < start + size:
            self.__overallSize = start + size       
 
+       # since there are no data skip and only 1 thread writes in a moment it ok to call it from here
+       self.notifyDataTransfered(size)
+
        return 
 
    # gets the size of one chunk of data transfered by the each request, the data extent is better to be aligned by the integer of chunk sizes
@@ -216,6 +219,8 @@ class EHUploadChannel(object):
         now = datetime.datetime.now()
         if self.__prevUploadTime:
             delta = now - self.__prevUploadTime
+            # TODO: bad one, should count number of bytes transfered in a minute
+            # but still it's kinda approximation (in case one transfer is larger than one second)
             if delta.seconds:
                 self.__transferRate = transfered_size/delta.seconds
         self.__prevUploadTime = now

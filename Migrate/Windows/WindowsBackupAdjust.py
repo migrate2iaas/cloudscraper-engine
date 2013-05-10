@@ -153,6 +153,13 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             win32api.RegSetValueEx(terminalkey, "PortNumber" , 0 ,  win32con.REG_DWORD , rdpport)
             terminalkey.close()
 
+            #2f) setting the allow flag
+            terminalkeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Control\\Terminal Server"
+            logging.debug("Openning key" + terminalkeypath);
+            terminalkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, terminalkeypath , 0 , win32con.KEY_ALL_ACCESS )
+            win32api.RegSetValueEx(terminalkey, "fDenyTSConnections" , 0, win32con.REG_DWORD, 0)
+            terminalkey.close()
+
         turnHyperV = True
     
         if turnHyperV:
@@ -182,7 +189,10 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
         if removeVmware:
             logging.info("Removing VmWare services");
-
+            vmwarekey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\vmtools" , 0 , win32con.KEY_ALL_ACCESS )
+            win32api.RegSetValueEx(vmwarekey, "Start" , 0, win32con.REG_DWORD, 4)
+            vmwarekey.close()
+          
         if removeHyperV:
             logging.info("Removing HyperV services");
 

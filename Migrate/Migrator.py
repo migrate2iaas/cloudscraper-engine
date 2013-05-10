@@ -246,13 +246,14 @@ class Migrator(object):
                    return False
         
         # move to 
-        if self.__cloudName == "EC2":
-            bucket = self.__cloudOptions.getCloudStorage()
-            awskey = self.__cloudOptions.getCloudUser()
-            awssecret = self.__cloudOptions.getCloudPass()
-            awsregion = self.__cloudOptions.getRegion()
-            import S3UploadChannel
-            self.__systemTransferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__systemTransferTarget.getMedia().getMaxSize() , awsregion , self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
+        if self.__skipUpload == False:
+            if self.__cloudName == "EC2":
+                bucket = self.__cloudOptions.getCloudStorage()
+                awskey = self.__cloudOptions.getCloudUser()
+                awssecret = self.__cloudOptions.getCloudPass()
+                awsregion = self.__cloudOptions.getRegion()
+                import S3UploadChannel
+                self.__systemTransferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__systemTransferTarget.getMedia().getMaxSize() , awsregion , self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
 
         # ElasticHosts and other KVM options        
          
@@ -411,16 +412,17 @@ class Migrator(object):
                         #TODO: be more discriptive
                         logging.error("!!!ERROR: Bad image options!");
                         return False
-        if self.__cloudName == "EC2":
-            bucket = self.__cloudOptions.getCloudStorage()
-            awskey = self.__cloudOptions.getCloudUser()
-            awssecret = self.__cloudOptions.getCloudPass()
+        if self.__skipUpload == False:
+            if self.__cloudName == "EC2":
+                bucket = self.__cloudOptions.getCloudStorage()
+                awskey = self.__cloudOptions.getCloudUser()
+                awssecret = self.__cloudOptions.getCloudPass()
 
-            # here we should get system bucket and the system key from the config
-            # keyname should be associated with the volume by the config program
-            import S3UploadChannel 
-            for volinfo in self.__migrateOptions.getDataVolumes():
-                self.__dataChannelList[volinfo.getVolumePath()]= S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__dataTransferTargetList[volinfo.getVolumePath()].getMedia().getMaxSize() , self.__cloudOptions.getRegion() , volinfo.getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
+                # here we should get system bucket and the system key from the config
+                # keyname should be associated with the volume by the config program
+                import S3UploadChannel 
+                for volinfo in self.__migrateOptions.getDataVolumes():
+                    self.__dataChannelList[volinfo.getVolumePath()]= S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__dataTransferTargetList[volinfo.getVolumePath()].getMedia().getMaxSize() , self.__cloudOptions.getRegion() , volinfo.getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
             
 
         return True
