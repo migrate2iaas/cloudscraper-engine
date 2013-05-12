@@ -46,10 +46,10 @@ class WindowsDeviceDataTransferProto(DataTransferProto.DataTransferProto):
         return self.__media
 
     def writeData(self, dataExtent):
-        return writeMetadata(self,dataExtent)
+        return self.writeMetadata(dataExtent)
         
     def readData(self, dataExtent):
-        return readMetadata(self,dataExtent)
+        return self.readMetadata(dataExtent)
 
     def writeMetadata(self, dataExtents):
         path = self.__devicePath

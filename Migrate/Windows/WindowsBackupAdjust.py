@@ -285,7 +285,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
                     newvalue_part1 = value[0:0x20] + struct.pack('=q',self.__adjustConfig.getNewSysPartStart()) 
                     newvalue = newvalue_part1 + value[0x28:0x38] + struct.pack('=i',self.__adjustConfig.getNewMbrId()) + value[0x3c:];
                     logging.debug("From " + value + "to " + newvalue);
-                    logging.debug("MBR ID = " + hex(self.__adjustConfig.getNewMbrId()) + " , PartOffset = " + hex(self.__adjustConfig.getNewMbrId()))
+                    logging.debug("MBR ID = " + hex(self.__adjustConfig.getNewMbrId()) + " , PartOffset = " + hex(self.__adjustConfig.getNewSysPartStart()))
                     win32api.RegSetValueEx(valuekey, "Element", 0, valtype, newvalue)
                     valuekey.close()
             elementskey.close()

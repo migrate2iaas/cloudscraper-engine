@@ -41,8 +41,10 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
     #starts the connection
     def open(self):
         if os.path.exists(self.__fileName):
-            logging.error("!!!ERROR: image file" + self.__fileName + " already exists. Please, specify another one");
-            raise IOError
+            #NOTE in this case only readImageData is supported
+            return
+            #logging.error("!!!ERROR: image file" + self.__fileName + " already exists. Please, specify another one");
+            #raise IOError("image file" + self.__fileName + " already exists. Please, specify another one")
 
         logging.debug("Initing new VHD disk");
         scriptpath = "diskpart_open.tmp"

@@ -19,6 +19,7 @@ import SimpleDataTransferProto
 import MigrateConfig
 import CloudConfig
 import SystemAdjustOptions
+import GzipChunkMedia
 
 class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT"""
@@ -31,6 +32,7 @@ class Migrator(object):
         self.__systemAdjustOptions = sysAdjustOptions
         # the channel is underlying connection to transfer the data for system target
         self.__systemTransferChannel = None
+        self.__systemMedia = None
 
         self.__adjustOption = None
         self.__migrateOptions = migrateOptions
@@ -225,74 +227,85 @@ class Migrator(object):
 
         return True
 
+    def createImageMedia(self, imagepath, imagesize):
+        imagemedia = None
+        if self.__runOnWindows:
+            import Windows
+            if self.__migrateOptions.getImageType() == "VHD" and self.__migrateOptions.getImagePlacement() == "local" and self.__windows.getVersion() >= self.__windows.getSystemInfo().Win2008R2:
+                media = self.__windows.createVhdMedia(imagepath, imagesize)
+        else:
+            logging.error("!!!ERROR: VHD images are supported on Windows 2008R2 Server and 2012 Server systems only")    
+        if self.__migrateOptions.getImageType() == "raw.gz" and self.__migrateOptions.getImagePlacement() == "local":
+            media = RawGzipMedia.RawGzipMedia(imagepath , imagesize)
+        if self.__migrateOptions.getImageType() == "raw.tar" and self.__migrateOptions.getImagePlacement() == "local":
+            media = GzipChunkMedia.GzipChunkMedia(imagepath , imagesize , self.__cloudOptions.getUploadChunkSize())
+        media.open()
+        return media
+
+    def createTransferTarget(self , media , size , adjustoptions, newtarget = True):
+        if newtarget:
+            parser = SimpleDiskParser.SimpleDiskParser(SimpleDataTransferProto.SimpleDataTransferProto(media) , adjustoptions.getNewMbrId())
+            return parser.createTransferTarget(size)
+        # I know it's kinda ugly
+        #TODO: refactor
+        return SimpleDiskTransferTarget( 0x200*0x800 , SimpleDataTransferProto.SimpleDataTransferProto(media) )
+        
+
     def createSystemTransferTarget(self):
         
         #TODO: make different functions for create system transfer target and transfer channel
+        if self.__skipImaging == False or self.__skipUpload == False:
+            self.__systemMedia = self.createImageMedia(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize() + 0x800*0x200)          
+            if self.__systemMedia == None:
+                logging.error("!!!ERROR: Cannot create/open intermediate image (media) for an operation")
+            if self.__runOnWindows:
+                #TODO: need kinda redisign the stuff related to system adjusts!
+                self.__winSystemAdjustOptions = self.__windows.createSystemAdjustOptions()
+                self.__winSystemAdjustOptions.setSysDiskType(self.__systemAdjustOptions.getSysDiskType())
+                #NOTE: the medai should be created nevertheless of the imaging done
+                #so , calls are
+                if self.__skipImaging == False:
+                   self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__winSystemAdjustOptions)
+            if self.__resumeUpload == False:
+            # move transfer creation to another function
+                if self.__cloudName == "EC2":
+                    bucket = self.__cloudOptions.getCloudStorage()
+                    awskey = self.__cloudOptions.getCloudUser()
+                    awssecret = self.__cloudOptions.getCloudPass()
+                    awsregion = self.__cloudOptions.getRegion()
+                    import S3UploadChannel
+                    self.__systemTransferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__systemMedia.getMaxSize() , awsregion , self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize() )
 
-        if self.__runOnWindows:
-            #TODO: need kinda redisign the stuff related to system adjusts!
-            self.__winSystemAdjustOptions = self.__windows.createSystemAdjustOptions()
-            self.__winSystemAdjustOptions.setSysDiskType(self.__systemAdjustOptions.getSysDiskType())
-            
-            if self.__skipImaging == False:
-                if self.__migrateOptions.getImageType() == "VHD" and self.__migrateOptions.getImagePlacement() == "local" and self.__windows.getVersion() >= self.__windows.getSystemInfo().Win2008R2:
-                   self.__systemTransferTarget = self.__windows.createVhdTransferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
-                if self.__migrateOptions.getImageType() == "raw.gz" and self.__migrateOptions.getImagePlacement() == "local":
-                   self.__systemTransferTarget = self.createRawGzipTranferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
-                
-                if self.__systemTransferTarget == None:
-                   # TODO: be more descriptive
-                   logging.error("!!!ERROR: Unsupported initial image or OS version config")
-                   return False
-        
-        # move to 
-        if self.__skipUpload == False:
-            if self.__cloudName == "EC2":
-                bucket = self.__cloudOptions.getCloudStorage()
-                awskey = self.__cloudOptions.getCloudUser()
-                awssecret = self.__cloudOptions.getCloudPass()
-                awsregion = self.__cloudOptions.getRegion()
-                import S3UploadChannel
-                self.__systemTransferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__systemTransferTarget.getMedia().getMaxSize() , awsregion , self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
-
-        # ElasticHosts and other KVM options        
+            # ElasticHosts and other KVM options        
          
-        # For the future: ! Note: make a better design here
-        #if self.__migrateOptions.getImageType() == "raw" and self.__migrateOptions.getImagePlacement() == "local":
-        #    self.__systemTransferTarget = self.createRawTranferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
-        #if self.__migrateOptions.getImageType() == "volume" and self.__migrateOptions.getImagePlacement() == "local":
-        #    self.__systemTransferTarget = self.createRawTranferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
+            # For the future: ! Note: make a better design here
+            #if self.__migrateOptions.getImageType() == "raw" and self.__migrateOptions.getImagePlacement() == "local":
+            #    self.__systemTransferTarget = self.createRawTranferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
+            #if self.__migrateOptions.getImageType() == "volume" and self.__migrateOptions.getImagePlacement() == "local":
+            #    self.__systemTransferTarget = self.createRawTranferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
         
                
-        if self.__migrateOptions.getImageType() == "raw" and self.__migrateOptions.getImagePlacement() == "direct":
-            if self.__cloudName == "ElasticHosts":
-                import EHUploadChannel
-                #directly from the snapshot to the server
-                return True
-                #TODO: make direct uploads
-                #self.__systemTransferChannel = EHUploadChannel.EHUploadChannel()
+            if self.__migrateOptions.getImageType() == "raw" and self.__migrateOptions.getImagePlacement() == "direct":
+                if self.__cloudName == "ElasticHosts":
+                    import EHUploadChannel
+                    #directly from the snapshot to the server
+                    return True
+                    #TODO: make direct uploads
+                    #self.__systemTransferChannel = EHUploadChannel.EHUploadChannel()
                 
         
-        if self.__cloudName == "ElasticHosts":
-            #create the image first and then upload it
-            import EHUploadChannel
-            drive = self.__cloudOptions.getCloudStorage()
-            userid = self.__cloudOptions.getCloudUser()
-            apisecret = self.__cloudOptions.getCloudPass()
-            region = self.__cloudOptions.getRegion()
-            #Note: get upload path should be set to '' for the new downloads
-            self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , userid , apisecret , self.__systemTransferTarget.getMedia().getMaxSize() , region , "Cloudscraper-Upload-"+str(datetime.date.today()))
+            if self.__cloudName == "ElasticHosts":
+                #create the image first and then upload it
+                import EHUploadChannel
+                drive = self.__cloudOptions.getCloudStorage()
+                userid = self.__cloudOptions.getCloudUser()
+                apisecret = self.__cloudOptions.getCloudPass()
+                region = self.__cloudOptions.getRegion()
+                #Note: get upload path should be set to '' for the new downloads
+                self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , userid , apisecret , self.__systemMedia.getMaxSize() , region , "Cloudscraper-Upload-"+str(datetime.date.today()) , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
 
         return True
-
-    #factory to create raw gzip transfer target
-    def createRawGzipTranferTarget(self , imagepath , imagesize, adjustoptions):
-        media = RawGzipMedia.RawGzipMedia(imagepath , imagesize+1024*1024)
-        media.open()
-        parser = SimpleDiskParser.SimpleDiskParser(SimpleDataTransferProto.SimpleDataTransferProto(media) , adjustoptions.getNewMbrId())
-        return parser.createTransferTarget(imagesize)
-
-
+        
     def adjustSystemBackupTarget(self):
         # dunno really what could we do here
         return True
@@ -309,7 +322,6 @@ class Migrator(object):
             extents = self.__adjustedSystemBackupSource.getFilesBlockRange()
         
             #TODO: create kinda callbacks for transfers to monitor them
-            #write,
             self.__systemTransferTarget.transferRawData(extents)
 
             self.__systemTransferTarget.close()
@@ -322,49 +334,41 @@ class Migrator(object):
         self.__migrateOptions.getSystemVolumeConfig().saveConfig()
         
 
-        filesize = os.stat(self.__migrateOptions.getSystemImagePath()).st_size
-        #TODO: should be 10  mb in amazon impl
-        #TODO: should use media api instead of direct reads from file
-        file = open(self.__migrateOptions.getSystemImagePath() , "rb")
-
         if self.__skipUpload:
             logging.info("\n>>>>>>>>>>>>>>>>> Skipping the system image upload\n");
         else:
             logging.info("\n>>>>>>>>>>>>>>>>> Started the system image upload\n");
+            channel = self.__systemTransferChannel
+            media = self.__systemMedia
 
-            datasize = self.__systemTransferChannel.getTransferChunkSize()#mb
+            imagesize = media.getImageSize()
+            datasize = channel.getTransferChunkSize()#mb
             dataplace = 0
             datasent = 0
-            while 1:
+            while dataplace < imagesize:
                 if (datasent % 50 == 0):
-                    logmsg = "% " + str(datasent*datasize/1024/1024)+ " of "+ str(int(filesize/1024/1024)) + " MB of image data processed. "
-                    if self.__systemTransferChannel.getOverallDataSkipped():
-                        logmsg = logmsg + str(int(self.__systemTransferChannel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
-                    logging.info( logmsg + str(int(self.__systemTransferChannel.getOverallDataTransfered()/1024/1024)) + " MB uploaded."  )
-
-                try:
-                    data = file.read(datasize)
-                except EOFError:
-                    break
+                    logmsg = "% " + str(datasent*datasize/1024/1024)+ " of "+ str(int(imagesize/1024/1024)) + " MB of image data processed. "
+                    if channel.getOverallDataSkipped():
+                        logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
+                    logging.info( logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded."  )
+                data = media.readImageData(dataplace, datasize)
                 if len(data) == 0:
                     break
                 dataext = DataExtent.DataExtent(dataplace , len(data))
                 dataplace = dataplace + len(data)
                 dataext.setData(data)
-                self.__systemTransferChannel.uploadData(dataext)
+                channel.uploadData(dataext)
                 datasent = datasent + 1
                 
-
-        
-            self.__systemTransferChannel.waitTillUploadComplete()
+            channel.waitTillUploadComplete()
             logging.info("\n>>>>>>>>>>>>>>>>> Preparing the image uploaded for cloud use")
-            imageid = self.__systemTransferChannel.confirm()
-            self.__systemTransferChannel.close()
+            imageid = channel.confirm()
+            channel.close()
             self.__migrateOptions.getSystemVolumeConfig().setUploadId(imageid)
             self.__migrateOptions.getSystemVolumeConfig().saveConfig()
-        #TODO: somehow the image-id should be saved thus it could be loaded in skip upload scenario
-        #move it somehwere else
-        logging.info("Creating VM from the image stored at " + str(self.__migrateOptions.getSystemVolumeConfig().getUploadId()))
+  
+  
+        #creating instance from the uploaded image
         self.generateInstance(self.__migrateOptions.getSystemVolumeConfig().getUploadId())
 
         return True
@@ -374,6 +378,7 @@ class Migrator(object):
 
     def generateInstance(self , imageid):
         if self.__cloudName == "EC2":
+            logging.info("Creating EC2 VM from the image stored at " + str(imageid))
             import EC2InstanceGenerator
             import EC2Instance
             awskey = self.__cloudOptions.getCloudUser()
@@ -381,7 +386,6 @@ class Migrator(object):
             generator = EC2InstanceGenerator.EC2InstanceGenerator(self.__cloudOptions.getRegion())
 
             instance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , awskey, awssecret , self.__migrateOptions.getSystemImagePath())
-            
             
         return True
 

@@ -87,14 +87,17 @@ eb f7 b0 42 e8 80 00 8b \
 '
 
 
-    def __init__(self , backingStore , mbrId):
+    def __init__(self , backingStore , mbrId, defaultOffset = 0x800*0x200):
         self.__backingStore = backingStore
-        #TODO: check if it supports interfaces needed
-
         self.__freeSize = self.__backingStore.getSize()
         self.__wholeSize = self.__backingStore.getSize()
         self.__mbrId = int(mbrId)
+        #NOTE: alternatively, these parms could be re-loaded from backing store
+        #TODO: make the reload
         self.__mbr = bytearray.fromhex(SimpleDiskParser.builtin_mbr_hex_str)
+        self.__defaultOffset = defaultOffset
+        self.__currentOffset = self.__defaultOffset
+        self.__partitionsCreated = 0
 
     #TODO: enum of existing targets\volumes
 
@@ -117,31 +120,41 @@ eb f7 b0 42 e8 80 00 8b \
 
     # the disk is formated and new volume is generated
     def createTransferTarget(self, size):
+        #TODO: test self.__partitionsCreated < 4
         mbr = self.__mbr
+        sectoroffset = self.__currentOffset/0x200
         #set the mbr-id
         mbr[0x1be-6:0x1be-2]=struct.pack('=i',self.__mbrId)
         #part entry offset
-        partentry = 0x1be
+        partentry = 0x1be + self.__partitionsCreated * 0x10
         mbr[partentry] = 0x80 # boot indicator
         # create starting offsets as they default value in Win2008
-        mbr[partentry+1] = 0x2
-        mbr[partentry+2] = 0x3
+        mbr[partentry+1] = 0x20
+        mbr[partentry+2] = 0x21
         mbr[partentry+3] = 0x0
         mbr[partentry+4] = 0x7
         #end for lba-mode
         mbr[partentry+5] = 0xFE
         mbr[partentry+6] = 0xFF
         mbr[partentry+7] = 0xFF
-        #the standeard offset is 0x80 sectors
-        mbr[partentry+8] = 0x80
+        #the standeard offset is 0x0800 sectors (1Mb)
+        mbr[partentry+8:partentry+0xc] = struct.pack('=i',sectoroffset)
         #the size 
         mbr[partentry+0xc:partentry+0x10] = struct.pack('=i',int(size/0x200))
+        
+        #NOTE: nevertheless we track it several volumes on the same disk case was not tested
         
         ext = DataExtent.DataExtent(0 , 0x200)
         ext.setData(mbr)
         self.writeRawMetaData(ext)
+        
         self.__mbr = mbr
-        return SimpleTransferTarget.SimpleTransferTarget(0x80*0x200 , self.__backingStore)
+        self.__currentOffset = self.__currentOffset + size
+        self.__partitionsCreated = self.__partitionsCreated + 1
+
+        return SimpleTransferTarget.SimpleTransferTarget(sectoroffset*0x200 , self.__backingStore)
+
+    
 
     # to write directly the partitioning schemes
     def writeRawMetaData(self, metadataExtents):

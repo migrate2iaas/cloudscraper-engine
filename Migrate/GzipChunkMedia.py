@@ -44,7 +44,7 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
         return
 
     def getMaxSize(self):
-        return self.__disksize
+        return self.__diskSize
 
     def reopen(self):
         self.close()
@@ -62,12 +62,9 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
         self.close()
 
     #reads data from image, returns data buffer
-    # data chunks of variable size
-    # the image is not continous, really but one gz could really be split and merged
+    # Note: we work as we were one big raw file
     def readImageData(self , offset , size):
-        #TODO: implement: the data from different fiels should be merged here. 
-        #since gz file is number of gzip frames, it's headerless so we could merge all the files in one big gz file
-        return
+        return self.readDiskData(offset, size)
 
     # get the next image logical chunk
     # now it returns data only but really it could return 
@@ -78,6 +75,28 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
         chunk = file.read()
         file.close()
         return chunk
+
+    # get the next image logical chunk
+    # now it returns data only but really it could return 
+    # more data including chunk special data
+    def getUnzippedChunk(self , chunknumber):
+        chunkfilename = self.__filename+"offset"+str(chunknumber*self.__chunkSize)+".gz"
+
+        if (os.path.exists(chunkfilename) == False):
+            file = open(chunkfilename, "wb")
+            nullbytes = bytearray(self.__chunkSize)
+            gzipfile = gzip.GzipFile("offset"+str(chunknumber*self.__chunkSize), "w" , 8 , file)
+            gzipfile.write(str(nullbytes))
+            gzipfile.close()
+            file.close()
+
+        file = open(chunkfilename, "rb")
+        gzipfile = gzip.GzipFile("offset"+str(chunknumber*self.__chunkSize), "r" , 8 , file)
+        chunk = gzipfile.read()
+        gzipfile.close()
+        file.close()
+
+        return chunk
     
     #writes data to the container (as it was a disk)
     def writeDiskData(self, offset, data):
@@ -85,22 +104,25 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
         chunkoffset = offset % self.__chunkSize
         firstchunk = int(offset / self.__chunkSize)
         size = len(data)
+        lastchunk = int((offset + size) / self.__chunkSize)
         lastchunkoffset = (offset + size) % self.__chunkSize
         
         if chunkoffset:
             #here we should read a chunk then write a chunk
-            data = self.getImageChunk(firstchunk) + data[(firstchunk+1)*self.__chunkSize:]
+            firstdata = self.getUnzippedChunk(firstchunk)
+            data = firstdata[0:chunkoffset] + data
             offset = firstchunk*self.__chunkSize
         if lastchunkoffset:
-            data = data + self.getImageChunk(firstchunk)[lastchunkoffset:]
+            data = data + self.getUnzippedChunk(lastchunk)[lastchunkoffset:]
 
         offsetindata = 0
-        while offsetindata < len(data):
+        datasize = len(data)
+        while offsetindata < datasize:
             chunkfilename = self.__filename+"offset"+str(offset+offsetindata)+".gz"
             if self.__filesWritten.has_key(chunkfilename):
                 self.__overallSize = self.__overallSize - self.__filesWritten[chunkfilename]
 
-            file = open(chunkfilename, "w")
+            file = open(chunkfilename, "wb")
             gzipfile = gzip.GzipFile("offset"+str(offset+offsetindata), "wb" , 8 , file)
             gzipfile.write(data[offsetindata:offsetindata+self.__chunkSize])
             gzipfile.close()
@@ -109,14 +131,26 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
             # so we should remember somehow was it written at all
             writtenfilesize = os.stat(chunkfilename).st_size
             self.__filesWritten[chunkfilename] = writtenfilesize
-            self.__overallSize = self.__overallSize + writtenfilesize
+        
+        self.__overallSize = max(self.__overallSize , len(data)+offset)
 
 
     #reads data from the container (as it was a disk)
     def readDiskData(self , offset , size):
-        #TODO: implement reading
         # could be done by founding the offset file, gunizp it and read data from it
-        return 
+        chunkoffset = offset % self.__chunkSize
+        firstchunk = int(offset / self.__chunkSize)
+        lastchunkoffset = (offset + size) % self.__chunkSize
+        lastchunk = int( (offset + size) / self.__chunkSize)
+        offset = firstchunk*self.__chunkSize
+
+        currentchunk = firstchunk
+        data = str()
+        while currentchunk <= lastchunk:
+            chunk = self.getUnzippedChunk(currentchunk)
+            data = data + chunk
+            currentchunk = currentchunk + 1
+        return data[chunkoffset:(lastchunk-firstchunk)*self.__chunkSize+lastchunkoffset]
 
     #gets the overall image size available for reading. Note: it is subject to grow when new data is written
     def getImageSize(self):

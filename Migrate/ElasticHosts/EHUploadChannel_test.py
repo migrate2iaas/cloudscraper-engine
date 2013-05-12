@@ -56,6 +56,8 @@ class EHUploadChannel_test(unittest.TestCase):
         logging.getLogger().addHandler(handler)
         return
 
+    def tearDown(self):
+        self.__channel.close()
 
     # just testing their scripts, too much of hardcode really
     def notusedtest_ShScript(self):
@@ -78,6 +80,7 @@ class EHUploadChannel_test(unittest.TestCase):
         self.__channel = EHUploadChannel.EHUploadChannel('' , self.__key, self.__secret, 1024*1024*1024 , 'sat-p' , 'testcreate')
     
     def test_diskUpload(self):
+        return
         diskNo = 4
         secur_att = win32security.SECURITY_ATTRIBUTES()
         secur_att.Initialize()
@@ -102,7 +105,31 @@ class EHUploadChannel_test(unittest.TestCase):
         diskid = self.__channel.confirm()
         logging.info("Disk "+ diskid+ " was uploaded!");
 
+    def test_reuploadHome(self):
+        #quick test to check if the system is up to work after the ntfs was rebuilt
+        # the only thing neede for booting is to fix the ntfs bootsector as it seems to me
+
+        diskNo = 2
+        secur_att = win32security.SECURITY_ATTRIBUTES()
+        secur_att.Initialize()
+        drivename = "\\\\.\\PhysicalDrive" + str(diskNo)
+        hfile = win32file.CreateFile( drivename, win32con.GENERIC_READ| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
+        self.__channel = EHUploadChannel.EHUploadChannel('44110126-f7fd-477e-bd9b-9a95ec88419c' , self.__key, self.__secret, 71*1024*1024*1024 , 'sat-p' , 'testuploadwrk')
+        
+        dataplace = 0
+        mb = 1024*1024*16
+        (result , data) = win32file.ReadFile(hfile,mb,None)
+        dataext = DataExtent.DataExtent(dataplace , len(data))
+        dataext.setData(data)
+        dataplace = dataplace + len(data)
+        self.__channel.uploadData(dataext)
+        
+        self.__channel.waitTillUploadComplete()    
+        diskid = self.__channel.confirm()
+        logging.info("Disk "+ diskid+ " was uploaded!");
+
     def test_workDiskUpload(self):
+        return 
         diskNo = 5
         secur_att = win32security.SECURITY_ATTRIBUTES()
         secur_att.Initialize()

@@ -77,6 +77,10 @@ class WindowsVolumeTransferTarget(TransferTarget.TransferTarget):
 
         # NOTE: we substract the $boot file from the metadata here
         # later, some better adjusts should be found too...
+        # the bootsector could be just sckipped because we use diskpart to pre-format the volume
+        # so bcd created is good for booting
+        # boot also contains pointer to MFT table. It seems to be the same for all volumes of the same
+        # size. But it's better to copy the pointer too in case the disk was created by 3rd party software
         bootfile = DataExtent.DataExtent(0,4096)
         extentswritten = 0
 

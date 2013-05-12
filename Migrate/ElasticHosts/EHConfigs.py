@@ -23,7 +23,7 @@ class EHAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
 
 class EHCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self, user , password , newsize , arch , region ):
+    def __init__(self, user , password , newsize , arch , region , chunksize = 4096*4096):
         super(EHCloudOptions, self).__init__()
         self.__user = user
         self.__pass = password
@@ -32,6 +32,7 @@ class EHCloudOptions(CloudConfig.CloudConfig):
         self.__zone = ''
         self.__region = region
         self.__securityGroup = ''
+        self.__chunkSize = chunksize
       
     def getCloudStorage(self):
         return ''
@@ -59,6 +60,9 @@ class EHCloudOptions(CloudConfig.CloudConfig):
 
     def getSecurity(self):
         return ''
+
+    def getUploadChunkSize(self):
+        return self.__chunkSize
 
 class EHMigrateConfig(MigrateConfig.MigrateConfig):
 

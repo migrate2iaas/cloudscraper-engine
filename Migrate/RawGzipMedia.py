@@ -29,11 +29,13 @@ import ImageMedia
 class RawGzipMedia(ImageMedia.ImageMedia):
     """Base class to represent media based on gzipped raw file"""
 
-    def __init__(self , filename , imagesizeBytes):
+    # zipLevel could be from 0 to 9. If 0 then no zip occursm if zipLevel is more than 1 the writes should be sequental
+    def __init__(self , filename , imagesizeBytes, zipLevel = 0):
         self.__filename = filename
         self.__fileObj = None
         self.__gzipFile = None
         self.__disksize = imagesizeBytes
+        self.__zipLevel = zipLevel
         return 
 
     #starts the connection
@@ -41,8 +43,10 @@ class RawGzipMedia(ImageMedia.ImageMedia):
         #Note: it may also be recreated!
         #TODO: now it just doesn't zip at all
         self.__fileObj = open(self.__filename , "w+b")
-        self.__gzipFile = self.__fileObj
-        #self.__gzipFile = gzip.GzipFile("tmpgzip", "wb" , 6 , self.__fileObj)
+        if self.__zipLevel:
+            self.__gzipFile = gzip.GzipFile("tmpgzip", "wb" , self.__zipLevel , self.__fileObj)
+        else: 
+            self.__gzipFile = self.__fileObj
         
 
     def getMaxSize(self):

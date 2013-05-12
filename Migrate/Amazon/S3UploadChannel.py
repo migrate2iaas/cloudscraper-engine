@@ -193,7 +193,7 @@ class S3UploadChannel(object):
     #TODO: we need kinda open method for the channel
     #TODO: need kinda doc
     #chunk size means one data element to be uploaded. it waits till all the chunk is transfered to the channel than makes an upload (not fully implemented)
-    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resumeUpload = False  , uploadThreads=4 , queueSize=16, chunksize=10*1024*1024):
+    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resumeUpload = False , chunksize=10*1024*1024 , uploadThreads=4 , queueSize=16):
         self.__uploadQueue = Queue.Queue(queueSize)
         self.__statLock = threading.Lock()
         self.__prevUploadTime = None 

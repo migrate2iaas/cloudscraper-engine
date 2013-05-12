@@ -111,10 +111,15 @@ class Windows(object):
             shutil.rmtree(file , True , None)
             #TODO: log failures
 
+
+    def createVhdMedia(self , path , imagesize):
+        vhd = WindowsVhdMedia.WindowsVhdMedia(path, imagesize)
+        return vhd
+
     def createVhdTransferTarget(self , path , size , adjustOptions):
         logging.debug("Creating VHD transfer target")
         gigabyte = 1024*1024*1024
-        vhd = WindowsVhdMedia.WindowsVhdMedia(path, size+gigabyte)
+        vhd = createVhdMedia(path, size+gigabyte)
         vhd.open()
           
         #really this device data transfer proto is not used, it seems to be a connector between raw media and methods to access its contents

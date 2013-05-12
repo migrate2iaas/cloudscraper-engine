@@ -33,7 +33,7 @@ class WindowsBackupSource(BackupSource.BackupSource):
             raise PropertyNotInitialized("self.__volumeDataSource", " Use setBackupDataSource() to init it")
         return WindowsFileToBackup.WindowsFileIterator(self.__volumeDataSource.getFileEnumerator() , self)
 
-    # gets block range list for all the filees. Note: it should be ordered
+    # gets block range list for all the files. Note: it should be ordered
     def getFilesBlockRange(self):
         if self.__volumeDataSource == None:
             raise PropertyNotInitialized("self.__volumeDataSource", " Use setBackupDataSource() to init it")

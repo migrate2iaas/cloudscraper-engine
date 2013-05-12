@@ -12,7 +12,6 @@ import SimpleDiskParser
 import SimpleDataTransferProto
 import time
 
-
 class RawGzipMedia_test(unittest.TestCase):
      #TODO: make more sophisticated config\test reading data from some config. dunno
     """description of class"""
@@ -32,6 +31,8 @@ class RawGzipMedia_test(unittest.TestCase):
         parser = SimpleDiskParser.SimpleDiskParser(SimpleDataTransferProto.SimpleDataTransferProto(media) , 0xeda)
         transfertarget = parser.createTransferTarget(imagesize)
         
+   
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -156,6 +156,10 @@ class EHUploadChannel(object):
         # 
         if driveid:
             response = self.__EH.get(self.__hostname+"/drives/" + driveid + "/info")
+            if response.status_code != 200:
+                logging.warning("!Unexpected status code returned by the ElasticHosts write request: " + str(response) + " " + str(response.text))
+                logging.warning("Headers: %s \n Text length= %s gzipped data" , str(response.request.headers) , str(len(response.request.body))  )
+                response.raise_for_status()
             self.__driveId = response.json()[u'drive']
             # TODO: test whether the disk created is compatible
         else:

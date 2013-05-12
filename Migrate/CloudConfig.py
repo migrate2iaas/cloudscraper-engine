@@ -37,3 +37,6 @@ class CloudConfig(object):
     def getSecurity(self):
         raise NotImplementedError
 
+    def getUploadChunkSize(self):
+        raise NotImplementedError
+
