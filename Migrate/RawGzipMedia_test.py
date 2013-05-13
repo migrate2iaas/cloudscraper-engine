@@ -11,6 +11,7 @@ import RawGzipMedia
 import SimpleDiskParser
 import SimpleDataTransferProto
 import time
+import DataExtent
 
 class RawGzipMedia_test(unittest.TestCase):
      #TODO: make more sophisticated config\test reading data from some config. dunno
@@ -30,7 +31,12 @@ class RawGzipMedia_test(unittest.TestCase):
         media.open()
         parser = SimpleDiskParser.SimpleDiskParser(SimpleDataTransferProto.SimpleDataTransferProto(media) , 0xeda)
         transfertarget = parser.createTransferTarget(imagesize)
-        
+        file = open('C:\\layout.ini', "r")
+        filedata = file.read()
+        file.close()
+        extent = DataExtent.DataExtent(0 , len(filedata))
+        extent.setData(filedata)
+        transfertarget.transferRawData(extent)
    
 
 

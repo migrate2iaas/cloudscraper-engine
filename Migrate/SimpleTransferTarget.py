@@ -32,6 +32,11 @@ class SimpleTransferTarget(TransferTarget.TransferTarget):
         logging.debug("Found the boot sector, altering it a bit")
         for extent in volExtents:
             #special handling for a boot options
+            extentswritten = extentswritten + 1
+            if ( extentswritten  % 100 == 0):
+                #TODO: make better data approximation
+                logging.info("% " + str(extentswritten) + " of " + str(len(volExtents)) + " original disk data have been transferred to the image ("+ str(extentswritten*100/len(volExtents)) +"%)" )
+          
             if bootsector in extent:
                 logging.debug("Altering the $boot extent in " + str(extent) )
                 if extent.getStart() == 0:
@@ -46,6 +51,8 @@ class SimpleTransferTarget(TransferTarget.TransferTarget):
             displaced_ext = DataExtent.DataExtent(extent.getStart() + self.__offset , extent.getSize())
             displaced_ext.setData(extent.getData())
             self.__mediaProto.writeData(displaced_ext) 
+        
+        logging.info("%  Disk image has been successfully created (100%)" )
 
 
     # transfers raw metadata, it should be precached
