@@ -266,15 +266,15 @@ class Migrator(object):
                 #so , calls are
                 if self.__skipImaging == False:
                    self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__winSystemAdjustOptions)
-            if self.__resumeUpload == False:
+            
             # move transfer creation to another function
-                if self.__cloudName == "EC2":
-                    bucket = self.__cloudOptions.getCloudStorage()
-                    awskey = self.__cloudOptions.getCloudUser()
-                    awssecret = self.__cloudOptions.getCloudPass()
-                    awsregion = self.__cloudOptions.getRegion()
-                    import S3UploadChannel
-                    self.__systemTransferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__systemMedia.getMaxSize() , awsregion , self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize() )
+            if self.__cloudName == "EC2":
+                bucket = self.__cloudOptions.getCloudStorage()
+                awskey = self.__cloudOptions.getCloudUser()
+                awssecret = self.__cloudOptions.getCloudPass()
+                awsregion = self.__cloudOptions.getRegion()
+                import S3UploadChannel
+                self.__systemTransferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__systemMedia.getMaxSize() , awsregion , self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize() )
 
             # ElasticHosts and other KVM options        
          

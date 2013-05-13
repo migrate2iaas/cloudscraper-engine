@@ -13,6 +13,18 @@ sys.path.append('.\..\Windows')
 sys.path.append('.\Windows')
 
 
+import win32file
+import win32event
+import win32con
+import win32security
+import win32api
+import pywintypes
+import ctypes
+import winioctlcon
+import struct
+import ntsecuritycon
+import VolumeInfo
+import os
 import logging
 import ImageMedia
 
@@ -35,8 +47,24 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         
         self.__diskNo = diskno = None
         self.__maxSizeMb = sizemb
+        self.__hDrive = None
 
         return 
+
+    #internal function to open drive
+    def opendrive(self):
+        secur_att = win32security.SECURITY_ATTRIBUTES()
+        secur_att.Initialize()
+        drivename = self.getWindowsDevicePath()
+        logging.debug("Openning disk %s" , drivename);
+        filename = drivename
+        try:
+            self.__hDrive = win32file.CreateFile( drivename, win32con.GENERIC_READ | win32con.GENERIC_WRITE| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ | win32con. FILE_SHARE_WRITE, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
+        except Exception as ex:
+            raise FileException(filename , ex)
+
+    def closedrive(self):
+        win32file.CloseHandle(self.__hDrive)
 
     #starts the connection
     def open(self):
@@ -69,9 +97,10 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         if match == None:
             logging.error("!!!ERROR: Cannot create new VHD disk.");
             logging.error("Diskpart bad output, cannot find disk associated. Output: %s", output)
-            raise EnvironmentError
+            raise EnvironmentError("Bad diskpart output")
         diskno = int(match.group(1))
         self.__diskNo = diskno
+        self.opendrive()
 
         return True
 
@@ -84,6 +113,8 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         return
 
     def close(self):
+        self.closedrive()
+
         scriptpath = "diskpart_close.tmp"
         scrfile = open(scriptpath, "w+")
         script = "select vdisk file=\""+self.__fileName+"\"";
@@ -119,13 +150,29 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
 
     #writes data to the container (as it was a disk)
     def writeDiskData(self, offset, data):
-        #really don't needed cause the writes is issued to volume Windows device on the disk
-        raise NotImplementedError
+        if self.__hDrive == None:
+            raise IOError("Use open first to create vhd disk media")
+        filename = self.getWindowsDevicePath()
+        try:
+            win32file.SetFilePointer(self.__hDrive, offset, win32con.FILE_BEGIN)
+            (result , output) = win32file.WriteFile(self.__hDrive,data)
+        except Exception as ex:
+            raise FileException(filename , ex)
+        return output
 
     #reads data from the container (as it was a disk)
     def readDiskData(self , offset , size):
-        #really don't needed cause the writes is issued to volume Windows device on the disk
-        raise NotImplementedError
+        if self.__hDrive == None:
+            raise IOError("Use open first to create vhd disk media")
+        filename = self.getWindowsDevicePath()
+        try:
+            win32file.SetFilePointer(self.__hDrive, offset, win32con.FILE_BEGIN)
+            (result , output) = win32file.ReadFile(self.__hDrive,size,None)
+        except Exception as ex:
+            raise FileException(filename , ex)
+        return output
+       
+        
 
     #gets the overall image size available for writing. Note: it is subject to grow when new data is written
     def getImageSize(self):
