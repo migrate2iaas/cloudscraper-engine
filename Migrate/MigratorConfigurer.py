@@ -155,7 +155,7 @@ class MigratorConfigurer(object):
         config.read(configfile)
 
         import Windows
-        imagesize = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize()
+        imagesize = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize() 
         imagetype = 'VHD'      
 
         #cloud config

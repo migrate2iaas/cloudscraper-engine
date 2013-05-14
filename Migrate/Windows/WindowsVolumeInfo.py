@@ -35,10 +35,12 @@ class WindowsVolumeInfo(VolumeInfo.VolumeInfo):
     def getSize(self):
         filename = self.__rootPath
         try:
+            #TODO: should use IOCTL instead of this function
             (sectors_per_cluster, bytes_per_sector, free_clusters , total_clusters) = win32file.GetDiskFreeSpace(self.__rootPath)
         except Exception as ex:
             raise FileException(filename , ex)
-        return long(total_clusters*sectors_per_cluster*bytes_per_sector)
+        # it seems like 1 extra cluster is needed in order to store extra $bootfile in a partition
+        return long((total_clusters+1)*sectors_per_cluster*bytes_per_sector)
 
     def getUsedSize(self):
         return self.getSize() - self.getFreeSize();
