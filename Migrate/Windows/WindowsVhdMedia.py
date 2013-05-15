@@ -28,6 +28,8 @@ import os
 import logging
 import ImageMedia
 
+from MigrateExceptions import *
+
 # TODO: make media base class
 class WindowsVhdMedia(ImageMedia.ImageMedia):
     """VHD disk created and managed by Win2008R2+ systems"""
