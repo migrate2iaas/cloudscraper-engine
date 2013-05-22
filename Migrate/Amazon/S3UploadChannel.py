@@ -176,11 +176,11 @@ class S3UploadThread(threading.Thread):
                 failed = False
                 break
 
-        #TODO: stop the thread, notify the channel somehow
-        if failed:
-            logging.error("!!! ERROR failed to upload data: %s/%s!", str(bucket), keyname )
-            self.__uploadQueue.task_done()
-
+            #TODO: stop the thread, notify the channel somehow
+            if failed:
+                logging.error("!!! ERROR failed to upload data: %s/%s!", str(bucket), keyname )
+                self.__uploadQueue.task_done()
+            
 
 
 #TODO: inherit from kinda base one

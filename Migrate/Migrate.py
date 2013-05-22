@@ -30,7 +30,7 @@ import sysconfig
 import time
 
 MigrateVerisonHigh = 0
-MigrateVersionLow = 1
+MigrateVersionLow = 2
 
 
 #TODO: make versioning and expiration time!!

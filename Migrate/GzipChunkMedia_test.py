@@ -55,6 +55,9 @@ class GzipChunkMedia_test(unittest.TestCase):
         data = media.readDiskData(0 , len(filedata))
         self.assertEqual(filedata , data)
         #TODO: make some lively backup from the smae snapshot
+
+    def test_frommediatodisk(self):
+
         
         
 
