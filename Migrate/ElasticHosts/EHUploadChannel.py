@@ -41,7 +41,7 @@ except ImportError:
 class EHUploadThread(threading.Thread):
     """thread making all uploading works"""
     #skip existing is ignored right now
-    def __init__(self , queue , threadId , hostname , ehSession , skipExisting = False , retries = 10):
+    def __init__(self , queue , threadId , hostname , ehSession , skipExisting = False , retries = 3):
         self.__uploadQueue = queue
         #thread id , for troubleshooting purposes
         self.__threadId = threadId
@@ -107,9 +107,9 @@ class EHUploadThread(threading.Thread):
                 break
 
         #TODO: stop the thread, notify the channel somehow
-        if failed:
-            logging.error("!!! ERROR failed to upload data: disk %s at offser %s!", str(driveid), str(start) )
-            self.__uploadQueue.task_done()
+            if failed:
+                logging.error("!!! ERROR failed to upload data: disk %s at offser %s, please make a reupload!", str(driveid), str(start) )
+                self.__uploadQueue.task_done()
 
 
 

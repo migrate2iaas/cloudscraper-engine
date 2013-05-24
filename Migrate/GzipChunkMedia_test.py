@@ -42,6 +42,8 @@ class GzipChunkMedia_test(unittest.TestCase):
                 self.assertEqual(filedata[0:datasize] , data)
                 offset = offset + 32
 
+        self.assertEqual(media.getImageSize() , overallsize)
+
         
     def test_mediawhole(self):
         chunksize = 1024
@@ -54,6 +56,7 @@ class GzipChunkMedia_test(unittest.TestCase):
         media.writeDiskData(0 , filedata)
         data = media.readDiskData(0 , len(filedata))
         self.assertEqual(filedata , data)
+        self.assertEqual(media.getImageSize() , overallsize)
         #TODO: make some lively backup from the smae snapshot
 
     def test_frommediatodisk(self):

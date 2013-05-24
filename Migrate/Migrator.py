@@ -364,8 +364,12 @@ class Migrator(object):
             logging.info("\n>>>>>>>>>>>>>>>>> Preparing the image uploaded for cloud use")
             imageid = channel.confirm()
             channel.close()
-            self.__migrateOptions.getSystemVolumeConfig().setUploadId(imageid)
-            self.__migrateOptions.getSystemVolumeConfig().saveConfig()
+            if imageid:
+                self.__migrateOptions.getSystemVolumeConfig().setUploadId(imageid)
+                self.__migrateOptions.getSystemVolumeConfig().saveConfig()
+            else:
+                logging.error("!!!Error: Upload error. Please make a reupload via resume upload")
+                return False
   
   
         #creating instance from the uploaded image

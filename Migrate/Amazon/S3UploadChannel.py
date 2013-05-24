@@ -102,7 +102,7 @@ class S3ManfiestBuilder:
 
 class S3UploadThread(threading.Thread):
     """thread making all uploading works"""
-    def __init__(self , queue , threadId , skipExisting = False , channel = None , retries = 10):
+    def __init__(self , queue , threadId , skipExisting = False , channel = None , retries = 3):
         self.__uploadQueue = queue
         #thread id , for troubleshooting purposes
         self.__threadId = threadId
@@ -180,6 +180,7 @@ class S3UploadThread(threading.Thread):
             if failed:
                 logging.error("!!! ERROR failed to upload data: %s/%s!", str(bucket), keyname )
                 self.__uploadQueue.task_done()
+                self.__channel.notifyTransferError(bucket , keyname, size)
             
 
 
@@ -230,6 +231,7 @@ class S3UploadChannel(object):
 
         self.__diskType = diskType
         self.__resumeUpload = resumeUpload
+        self.__errorUploading = False
 
         self.__uploadedSize = 0
         self.__uploadSkippedSize = 0
@@ -305,6 +307,10 @@ class S3UploadChannel(object):
     def getOverallDataSkipped(self):
         return self.__uploadSkippedSize
 
+    def notifyTransferError(self, bucket , keyname, size):
+        self.__errorUploading = True
+        return
+
     def notifyDataTransfered(self , transfered_size):
         now = datetime.datetime.now()
         if self.__prevUploadTime:
@@ -327,6 +333,10 @@ class S3UploadChannel(object):
     # confirm good upload. uploads resulting xml then, returns the id of the upload done
     def confirm(self):
         # generate the XML file then:
+
+        if self.__errorUploading:
+            logging.error("!!!ERROR: there were upload failures. Please, reupload by choosing resume upload option!");
+            return None
 
         # the default value. means lots of time
         linktimeexp_seconds = 1361188806
