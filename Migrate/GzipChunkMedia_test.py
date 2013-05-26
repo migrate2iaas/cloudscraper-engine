@@ -19,14 +19,17 @@ class GzipChunkMedia_test(unittest.TestCase):
         handler = logging.StreamHandler(stream=sys.stderr)
         handler.setLevel(logging.DEBUG)
         logging.getLogger().addHandler(handler)
+        handler = logging.StreamHandler(stream=sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        logging.getLogger().addHandler(handler)
         now = time.localtime()
         
         
     def test_mediapieces(self):
         chunksize = 1024
         overallsize = 1024*1024
-        media = GzipChunkMedia.GzipChunkMedia("E:\\rawtest.tar", overallsize , chunksize)
-        file = open('C:\\layout.ini', "r")
+        media = GzipChunkMedia.GzipChunkMedia("E:\\rawtest\\arc.tar", overallsize , chunksize)
+        file = open('C:\\procmon.exe', "rb")
         filedata = file.read()
         file.close()
 
@@ -34,13 +37,17 @@ class GzipChunkMedia_test(unittest.TestCase):
         datasize = 64
 
         while datasize < chunksize * 4:
-            offset = 0
-            datasize = datasize + 31
-            while offset + chunksize < overallsize:
-                media.writeDiskData(offset , filedata[0:datasize])
-                data = media.readDiskData(offset , datasize)
-                self.assertEqual(filedata[0:datasize] , data)
-                offset = offset + 32
+            try:
+                offset = 0
+                datasize = datasize + 31
+                while offset + chunksize < overallsize:
+                    media.writeDiskData(offset , filedata[0:datasize])
+                    data = media.readDiskData(offset , datasize)
+                    self.assertEqual(filedata[0:datasize] , data)
+                    offset = offset + 32
+            except Exception as e:
+                print("Error while testng rw data at offset = " + str(offset) + " size = " + str(datasize))
+                raise
 
         self.assertEqual(media.getImageSize() , overallsize)
 
@@ -56,7 +63,7 @@ class GzipChunkMedia_test(unittest.TestCase):
         media.writeDiskData(0 , filedata)
         data = media.readDiskData(0 , len(filedata))
         self.assertEqual(filedata , data)
-        self.assertEqual(media.getImageSize() , overallsize)
+        self.assertTrue(media.getImageSize() <= overallsize)
         #TODO: make some lively backup from the smae snapshot
 
     def test_frommediatodisk(self):

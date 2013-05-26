@@ -167,7 +167,7 @@ class EHUploadChannel(object):
             createdata = "name "+str(drivename)+"\nsize "+str(self.__volumeToAllocateBytes)
             response = self.__EH.post(self.__hostname+"/drives/create" , data=createdata)
             self.__driveId = response.json()[u'drive']
-            logging.info("New ElasticHosts drive "+ str(self.__driveId)+ " created!")
+            logging.info("\n>>>>>>>>>>> New ElasticHosts drive "+ str(self.__driveId)+ " created!")
         
         #dictionary by the start of the block
         self.__fragmentDictionary = dict()

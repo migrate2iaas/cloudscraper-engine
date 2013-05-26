@@ -302,7 +302,8 @@ class Migrator(object):
                 apisecret = self.__cloudOptions.getCloudPass()
                 region = self.__cloudOptions.getRegion()
                 #Note: get upload path should be set to '' for the new downloads
-                self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , userid , apisecret , self.__systemMedia.getMaxSize() , region , "Cloudscraper-Upload-"+str(datetime.date.today()) , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
+                description = os.environ['COMPUTERNAME']+"-"+str(datetime.date.today())
+                self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , userid , apisecret , self.__systemMedia.getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
 
         return True
         
@@ -359,8 +360,14 @@ class Migrator(object):
                 dataext.setData(data)
                 channel.uploadData(dataext)
                 datasent = datasent + 1
-                
+            
             channel.waitTillUploadComplete()
+
+            logmsg = "% The image data has been fully processed. "
+            if channel.getOverallDataSkipped():
+                logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
+            logging.info( logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded."  )
+
             logging.info("\n>>>>>>>>>>>>>>>>> Preparing the image uploaded for cloud use")
             imageid = channel.confirm()
             channel.close()

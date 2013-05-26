@@ -83,9 +83,10 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
         chunkfilename = self.__filename+"offset"+str(chunknumber*self.__chunkSize)+".gz"
 
         if (os.path.exists(chunkfilename) == False):
+            logging.debug(chunkfilename+" created \n")
             file = open(chunkfilename, "wb")
             nullbytes = bytearray(self.__chunkSize)
-            gzipfile = gzip.GzipFile("offset"+str(chunknumber*self.__chunkSize), "w" , 8 , file)
+            gzipfile = gzip.GzipFile("offset"+str(chunknumber*self.__chunkSize), "wb" , 8 , file)
             gzipfile.write(str(nullbytes))
             gzipfile.close()
             file.close()
@@ -125,7 +126,9 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
             file = open(chunkfilename, "wb")
             gzipfile = gzip.GzipFile("offset"+str(offset+offsetindata), "wb" , 8 , file)
             gzipfile.write(data[offsetindata:offsetindata+self.__chunkSize])
+            gzipfile.flush()
             gzipfile.close()
+            file.flush()
             file.close()
             offsetindata = offsetindata + self.__chunkSize
             # so we should remember somehow was it written at all

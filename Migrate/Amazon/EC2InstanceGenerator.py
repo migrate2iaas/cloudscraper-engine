@@ -44,6 +44,7 @@ class EC2InstanceGenerator(object):
         ec2zone = initialconfig.getZone()
 
         securitygroup = initialconfig.getSecurity()
+        instancetype = initialconfig.getInstanceType()
 
         gb = 1024*1024*1024
         newvolsize = (initialconfig.getNewSystemSize() + gb - 1) / gb
@@ -55,7 +56,7 @@ class EC2InstanceGenerator(object):
         while retry < self.__retryCount:
             retry = retry + 1
 
-            proc_import_sys = subprocess.Popen([windir+'\\system32\\cmd.exe', '/C', scripts_dir+'\\import_vm.bat', tmp_vmdk_file, s3owner , s3key , xml, ec2zone , machine_arch , ec2region , securitygroup]
+            proc_import_sys = subprocess.Popen([windir+'\\system32\\cmd.exe', '/C', scripts_dir+'\\import_vm.bat', tmp_vmdk_file, s3owner , s3key , xml, ec2zone , machine_arch , ec2region , securitygroup , instancetype ]
                   , bufsize=1024*1024*128, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
             import_task_id = "";

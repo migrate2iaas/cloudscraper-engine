@@ -164,7 +164,7 @@ class MigratorConfigurer(object):
         if password == '':
             password = config.get('EC2', 's3secret')
         
-        intancetype = config.get('EC2', 'instance-type')
+        instancetype = config.get('EC2', 'instance-type')
 
         if region == '':
             region = config.get('EC2', 'region')
@@ -269,7 +269,7 @@ class MigratorConfigurer(object):
         newsize = imagesize
         adjust = AmazonConfigs.AmazonAdjustOptions()
         image = AmazonConfigs.AmazonMigrateConfig(volumes , imagearch , imagetype)
-        cloud = AmazonConfigs.AmazonCloudOptions(bucket , user , password , newsize , arch , zone , region, security)
+        cloud = AmazonConfigs.AmazonCloudOptions(bucket , user , password , newsize , arch , zone , region, security , instancetype)
 
         return (image,adjust,cloud)
 

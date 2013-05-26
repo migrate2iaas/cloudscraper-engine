@@ -119,7 +119,7 @@ class Windows(object):
     def createVhdTransferTarget(self , path , size , adjustOptions):
         logging.debug("Creating VHD transfer target")
         gigabyte = 1024*1024*1024
-        vhd = createVhdMedia(path, size+gigabyte)
+        vhd = self.createVhdMedia(path, size+gigabyte)
         vhd.open()
           
         #really this device data transfer proto is not used, it seems to be a connector between raw media and methods to access its contents

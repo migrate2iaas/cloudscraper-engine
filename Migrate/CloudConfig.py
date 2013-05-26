@@ -40,3 +40,7 @@ class CloudConfig(object):
     def getUploadChunkSize(self):
         raise NotImplementedError
 
+    # gets intance type: what resources to allocate for a new cloud server. The format of the type is cloud-dependent
+    def getInstanceType(self):
+        raise NotImplementedError
+

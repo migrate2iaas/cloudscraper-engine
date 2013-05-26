@@ -217,7 +217,7 @@ class S3UploadChannel(object):
         try:
             self.__bucket = self.__S3.get_bucket(self.__bucketName)
         except Exception as ex:
-            logging.warning("!Cannot find S3 bucket. Creating a new one: " + self.__bucketName);
+            logging.info(">>>>> Creating a new S3 bucket: " + self.__bucketName);
             try:
                 self.__bucket = self.__S3.create_bucket(self.__bucketName , location=awsregion)
             except:
@@ -277,7 +277,7 @@ class S3UploadChannel(object):
        #should split the chunk or wait till new data arrives for the same data block
        # the last one could be less than 10Mb
        if size != self.__chunkSize:
-           logging.warning("!Warning: bad chunk size for upload , should be " + str(self.__chunkSize) );
+           logging.warning("Bad chunk size for upload , should be " + str(self.__chunkSize) );
 
        #TODO: check threads are working ok
        self.__uploadQueue.put( (self.__bucket , keyname, size, extent.getData() ) )

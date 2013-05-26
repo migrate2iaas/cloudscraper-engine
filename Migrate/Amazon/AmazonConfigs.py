@@ -23,7 +23,7 @@ class AmazonAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
 
 class AmazonCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self, bucket , user , password , newsize , arch , zone , region , securityid='' , chunksize = 10*1024*1024):
+    def __init__(self, bucket , user , password , newsize , arch , zone , region , securityid='' , instancetype='m1.small' , chunksize = 10*1024*1024 ):
         super(AmazonCloudOptions, self).__init__()
         self.__bucket = bucket
         self.__user = user
@@ -34,6 +34,7 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         self.__region = region
         self.__securityGroup = securityid
         self.__chunkSize = chunksize
+        self.__instanceType = instancetype
         #TODO: more amazon-specfiic configs needed
       
     def getCloudStorage(self):
@@ -65,6 +66,9 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
 
     def getUploadChunkSize(self):
         return self.__chunkSize
+
+    def getInstanceType(self):
+        return self.__instanceType
 
 class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
 
