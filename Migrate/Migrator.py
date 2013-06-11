@@ -302,7 +302,7 @@ class Migrator(object):
                 apisecret = self.__cloudOptions.getCloudPass()
                 region = self.__cloudOptions.getRegion()
                 #Note: get upload path should be set to '' for the new downloads
-                description = os.environ['COMPUTERNAME']+"-"+str(datetime.date.today())
+                description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
                 self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , userid , apisecret , self.__systemMedia.getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
 
         return True
@@ -352,6 +352,7 @@ class Migrator(object):
                     if channel.getOverallDataSkipped():
                         logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
                     logging.info( logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded."  )
+
                 data = media.readImageData(dataplace, datasize)
                 if len(data) == 0:
                     break

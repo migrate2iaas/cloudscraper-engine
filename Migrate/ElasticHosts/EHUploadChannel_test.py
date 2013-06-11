@@ -105,7 +105,7 @@ class EHUploadChannel_test(unittest.TestCase):
         diskid = self.__channel.confirm()
         logging.info("Disk "+ diskid+ " was uploaded!");
 
-    def test_reuploadHome(self):
+    def notest_reuploadHome(self):
         #quick test to check if the system is up to work after the ntfs was rebuilt
         # the only thing neede for booting is to fix the ntfs bootsector as it seems to me
 

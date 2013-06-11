@@ -80,6 +80,10 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
     # now it returns data only but really it could return 
     # more data including chunk special data
     def getUnzippedChunk(self , chunknumber):
+
+        if chunknumber*self.__chunkSize >= self.__diskSize:
+            return None
+
         chunkfilename = self.__filename+"offset"+str(chunknumber*self.__chunkSize)+".gz"
 
         if (os.path.exists(chunkfilename) == False):
@@ -142,7 +146,10 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
 
     #reads data from the container (as it was a disk)
     def readDiskData(self , offset , size):
-        # could be done by founding the offset file, gunizp it and read data from it
+        # could be done by founding the offset file, gunzip it and read data from it
+        if offset+size >= self.__diskSize:
+            size = self.__diskSize - offset
+
         chunkoffset = offset % self.__chunkSize
         firstchunk = int(offset / self.__chunkSize)
         lastchunkoffset = (offset + size) % self.__chunkSize
@@ -153,7 +160,10 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
         data = str()
         while currentchunk <= lastchunk:
             chunk = self.getUnzippedChunk(currentchunk)
-            data = data + chunk
+            if len(chunk):
+                data = data + chunk
+            else:
+                break
             currentchunk = currentchunk + 1
         return data[chunkoffset:(lastchunk-firstchunk)*self.__chunkSize+lastchunkoffset]
 
