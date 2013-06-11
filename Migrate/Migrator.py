@@ -49,6 +49,9 @@ class Migrator(object):
         self.__resumeUpload = resumeUpload
 
         self.__cloudName = self.__cloudOptions.getTargetCloud()
+
+        #extra megabyte of additional size to store mbr, etc on the image
+        self.__additionalMediaSize = 0x800*0x200
         
         #TODO: analyze both host and source systems
         if self.__migrateOptions.getHostOs() == "Windows":
@@ -244,20 +247,18 @@ class Migrator(object):
 
     def createTransferTarget(self , media , size , adjustoptions, newtarget = True):
         if newtarget:
-            parser = SimpleDiskParser.SimpleDiskParser(SimpleDataTransferProto.SimpleDataTransferProto(media) , adjustoptions.getNewMbrId())
+            parser = SimpleDiskParser.SimpleDiskParser(SimpleDataTransferProto.SimpleDataTransferProto(media) , adjustoptions.getNewMbrId() , self.__additionalMediaSize)
             return parser.createTransferTarget(size)
-        # I know it's kinda ugly
-        #TODO: refactor
-        return SimpleDiskTransferTarget( 0x200*0x800 , SimpleDataTransferProto.SimpleDataTransferProto(media) )
+        return SimpleDiskTransferTarget( self.__additionalMediaSize , SimpleDataTransferProto.SimpleDataTransferProto(media) )
         
 
     def createSystemTransferTarget(self):
         
-        #TODO: make different functions for create system transfer target and transfer channel
         if self.__skipImaging == False or self.__skipUpload == False:
-            self.__systemMedia = self.createImageMedia(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize() + 0x800*0x200)          
+            self.__systemMedia = self.createImageMedia(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize() + self.__additionalMediaSize)          
             if self.__systemMedia == None:
                 logging.error("!!!ERROR: Cannot create/open intermediate image (media) for an operation")
+                return
             if self.__runOnWindows:
                 #TODO: need kinda redisign the stuff related to system adjusts!
                 self.__winSystemAdjustOptions = self.__windows.createSystemAdjustOptions()
@@ -342,35 +343,8 @@ class Migrator(object):
             channel = self.__systemTransferChannel
             media = self.__systemMedia
 
-            imagesize = media.getImageSize()
-            datasize = channel.getTransferChunkSize()#mb
-            dataplace = 0
-            datasent = 0
-            while dataplace < imagesize:
-                if (datasent % 50 == 0):
-                    logmsg = "% " + str(datasent*datasize/1024/1024)+ " of "+ str(int(imagesize/1024/1024)) + " MB of image data processed. "
-                    if channel.getOverallDataSkipped():
-                        logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
-                    logging.info( logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded."  )
+            imageid = self.uploadImage(media,channel)
 
-                data = media.readImageData(dataplace, datasize)
-                if len(data) == 0:
-                    break
-                dataext = DataExtent.DataExtent(dataplace , len(data))
-                dataplace = dataplace + len(data)
-                dataext.setData(data)
-                channel.uploadData(dataext)
-                datasent = datasent + 1
-            
-            channel.waitTillUploadComplete()
-
-            logmsg = "% The image data has been fully processed. "
-            if channel.getOverallDataSkipped():
-                logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
-            logging.info( logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded."  )
-
-            logging.info("\n>>>>>>>>>>>>>>>>> Preparing the image uploaded for cloud use")
-            imageid = channel.confirm()
             channel.close()
             if imageid:
                 self.__migrateOptions.getSystemVolumeConfig().setUploadId(imageid)
@@ -384,6 +358,38 @@ class Migrator(object):
         self.generateInstance(self.__migrateOptions.getSystemVolumeConfig().getUploadId())
 
         return True
+
+    def uploadImage(self , media, channel):
+        imagesize = media.getImageSize()
+        datasize = channel.getTransferChunkSize()#mb
+        dataplace = 0
+        datasent = 0
+        while dataplace < imagesize:
+            if (datasent % 50 == 0):
+                logmsg = "% " + str(datasent*datasize/1024/1024)+ " of "+ str(int(imagesize/1024/1024)) + " MB of image data processed. "
+                if channel.getOverallDataSkipped():
+                    logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
+                logging.info( logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded."  )
+
+            data = media.readImageData(dataplace, datasize)
+            if len(data) == 0:
+                break
+            dataext = DataExtent.DataExtent(dataplace , len(data))
+            dataplace = dataplace + len(data)
+            dataext.setData(data)
+            channel.uploadData(dataext)
+            datasent = datasent + 1
+            
+        channel.waitTillUploadComplete()
+
+        logmsg = "% The image data has been fully processed. "
+        if channel.getOverallDataSkipped():
+            logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
+        logging.info( logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded."  )
+
+        logging.info("\n>>>>>>>>>>>>>>>>> Preparing the image uploaded for cloud use")
+        imageid = channel.confirm()
+        return imageid
 
     def checkInputParams(self):
         return True
@@ -417,17 +423,22 @@ class Migrator(object):
 
 
     def createDataTransferTargets(self):
-        if self.__runOnWindows:  
-            if self.__skipImaging == False:
-                for volinfo in self.__migrateOptions.getDataVolumes():
-                    if self.__migrateOptions.getImageType() == "VHD" and self.__migrateOptions.getImagePlacement() == "local" and self.__windows.getVersion() >= self.__windows.getSystemInfo().Win2008R2:
-                       #TODO: create max VHD size parm also
-                       #TODO: create adjust options should be moved somewhere else, needs some archeticture
-                       self.__dataTransferTargetList[volinfo.getVolumePath()] = self.__windows.createVhdTransferTarget(volinfo.getImagePath() , volinfo.getImageSize()  , self.__windows.createSystemAdjustOptions())
-                    else:
-                        #TODO: be more discriptive
-                        logging.error("!!!ERROR: Bad image options!");
-                        return False
+
+        if self.__skipImaging == False or self.__skipUpload == False:
+            for volinfo in self.__migrateOptions.getDataVolumes():
+                media = self.createImageMedia(volinfo.getImagePath() , volinfo.getImageSize() + self.__additionalMediaSize)          
+                if media == None:
+                    logging.error("!!!ERROR: Cannot create/open intermediate image (media) for an operation")
+                    return
+                if self.__runOnWindows:
+                    #TODO: need kinda redisign the stuff related to system adjusts!
+                    self.__winSystemAdjustOptions = self.__windows.createSystemAdjustOptions()
+                    self.__winSystemAdjustOptions.setSysDiskType(self.__systemAdjustOptions.getSysDiskType())
+                    #NOTE: the medai should be created nevertheless of the imaging done
+                    #so , calls are
+                    if self.__skipImaging == False:
+                       self.__dataTransferTargetList[volinfo.getVolumePath()] = self.createTransferTarget(media , volinfo.getImageSize(), self.__winSystemAdjustOptions)
+        
         if self.__skipUpload == False:
             if self.__cloudName == "EC2":
                 bucket = self.__cloudOptions.getCloudStorage()
@@ -439,6 +450,29 @@ class Migrator(object):
                 import S3UploadChannel 
                 for volinfo in self.__migrateOptions.getDataVolumes():
                     self.__dataChannelList[volinfo.getVolumePath()]= S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__dataTransferTargetList[volinfo.getVolumePath()].getMedia().getMaxSize() , self.__cloudOptions.getRegion() , volinfo.getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
+
+            # ElasticHosts part
+            if self.__migrateOptions.getImageType() == "raw" and self.__migrateOptions.getImagePlacement() == "direct":
+                if self.__cloudName == "ElasticHosts":
+                    import EHUploadChannel
+                    #directly from the snapshot to the server
+                    return True
+                    #TODO: make direct uploads
+                    #self.__systemTransferChannel = EHUploadChannel.EHUploadChannel()
+                
+        
+            if self.__cloudName == "ElasticHosts":
+                #create the image first and then upload it
+                import EHUploadChannel
+                drive = self.__cloudOptions.getCloudStorage()
+                userid = self.__cloudOptions.getCloudUser()
+                apisecret = self.__cloudOptions.getCloudPass()
+                region = self.__cloudOptions.getRegion()
+                #Note: get upload path should be set to '' for the new downloads
+                description = os.environ['COMPUTERNAME']+"-"+"data"+"-"+str(datetime.date.today())
+                for volinfo in self.__migrateOptions.getDataVolumes():
+                    self.__dataChannelList[volinfo.getVolumePath()]= EHUploadChannel.EHUploadChannel(volinfo.getUploadPath() , userid , apisecret , self.__dataTransferTargetList[volinfo.getVolumePath()].getMedia().getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
+
             
 
         return True
@@ -488,49 +522,26 @@ class Migrator(object):
         
         for volinfo in self.__migrateOptions.getDataVolumes():
 
-            filesize = os.stat(volinfo.getImagePath()).st_size
-            #TODO: should be 10  mb in amazon impl
-            file = open(volinfo.getImagePath() , "rb")
-
+            
             if self.__skipUpload:
                 logging.info("\n>>>>>>>>>>>>>>>>> Skipping the data image upload\n");
             else:
                 logging.info("\n>>>>>>>>>>>>>>>>> Started the data image upload\n");
 
                 channel = self.__dataChannelList[volinfo.getVolumePath()]
-
-                datasize =  channel.getTransferChunkSize()#mb
-                dataplace = 0
-                datasent = 0
-                while 1:
-                    if (datasent % 50 == 0):
-                        logmsg = "% " + str(datasent*datasize/1024/1024)+ " of "+ str(int(filesize/1024/1024)) + " MB of image data processed. "
-                        if  channel.getOverallDataSkipped():
-                            logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
-                        logging.info( logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded."  )
-                    try:
-                        data = file.read(datasize)
-                    except EOFError:
-                        break
-                    if len(data) == 0:
-                        break
-                    dataext = DataExtent.DataExtent(dataplace , len(data))
-                    dataplace = dataplace + len(data)
-                    dataext.setData(data)
-                    channel.uploadData(dataext)
-                    datasent = datasent + 1
-
-                
-                channel.waitTillUploadComplete()
-                logging.info("\n>>>>>>>>>>>>>>>>>Preparing the image uploaded for cloud use")
-                imageid =  channel.confirm()
+                media = self.__dataTransferTargetList[volinfo.getVolumePath()].getMedia()
+                imageid = self.uploadImage(media,channel)
                 channel.close()
-                # TODO: add volumes upload
-                volinfo.setUploadId(imageid)
-                volinfo.saveConfig()
-            #TODO: somehow the image-id should be saved thus it could be loaded in skip upload scenario
-            #move it somehwere else
+                
+                if imageid:
+                    volinfo.setUploadId(imageid)
+                    volinfo.saveConfig()
+                else:
+                    logging.error("!!!Error: Upload error. Please make a reupload via resume upload")
+                    return False
+              
             logging.info("Creating volume from the image stored at " + str(volinfo.getUploadId()))
+            #TODO: implement
             self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath())
 
        
