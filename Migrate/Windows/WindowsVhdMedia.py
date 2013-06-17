@@ -27,6 +27,7 @@ import VolumeInfo
 import os
 import logging
 import ImageMedia
+import codecs
 
 from MigrateExceptions import *
 
@@ -72,13 +73,14 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
     def open(self):
         if os.path.exists(self.__fileName):
             #NOTE in this case only readImageData is supported
-            return
-            #logging.error("!!!ERROR: image file" + self.__fileName + " already exists. Please, specify another one");
+            logging.warning("!Image file" + self.__fileName + " opened to read file data only.");
+            return True
+            
             #raise IOError("image file" + self.__fileName + " already exists. Please, specify another one")
 
         logging.debug("Initing new VHD disk");
         scriptpath = "diskpart_open.tmp"
-        scrfile = open(scriptpath, "w+")
+        scrfile = codecs.open(scriptpath, "w+", "utf16") #open(scriptpath, "w+")
         script = "create vdisk file=\""+self.__fileName+"\" maximum="+str(self.__maxSizeMb) + " type=EXPANDABLE";
         script = script.__add__("\nattach vdisk");
         script = script.__add__("\nconvert mbr");
@@ -86,14 +88,21 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         scrfile.write(script);
         scrfile.close()
 
+        windir = os.environ['windir']
+
+        proc_import_sys = subprocess.Popen([windir+'\\system32\\cmd.exe', '/C', 'diskpart', '/s' , scriptpath ]
+                  , bufsize=1024*1024*128, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
         logging.debug("Executing diskpart open script %s" , script);
-        try:
-            output = subprocess.check_output("diskpart /s \"" + scriptpath +"\"" , shell=True);
-        except subprocess.CalledProcessError as ex:
-            logging.error("!!!ERROR: Cannot create new VHD disk. Try to specify another disk image folder path")
-            logging.error("Diskpart failed" + ex.output)
-            logging.error("Script: \n" + script);
-            raise
+        (stdoutdata, stderrdata) = proc_import_sys.communicate();
+        if proc_import_sys.returncode != 0 or stderrdata:
+            logging.error("!!!ERROR: Cannot create new VHD disk. Try to specify another folder for disk image")
+            logging.error("Diskpart failed \n error: " + stderrdata )
+            logging.error("Diskpart failed \n out: " + stdoutdata )
+            logging.error("Script:" + script);
+            return False
+        
+        output = stdoutdata;    
 
         match = re.search('Associated disk[#][:] ([0-9]+)',output)
         if match == None:
@@ -118,7 +127,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         self.closedrive()
 
         scriptpath = "diskpart_close.tmp"
-        scrfile = open(scriptpath, "w+")
+        scrfile = scrfile = codecs.open(scriptpath, "w+", "utf16")#open(scriptpath, "w+")
         script = "select vdisk file=\""+self.__fileName+"\"";
         script = script + "\ndetach vdisk";
         scrfile.write(script);

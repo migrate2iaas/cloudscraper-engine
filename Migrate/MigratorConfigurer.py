@@ -12,6 +12,7 @@ import os
 import stat
 import ConfigParser
 import logging
+import codecs
 import time
 from MigrateConfig import VolumeMigrateConfig
 
@@ -128,7 +129,7 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
         if self.__imagePath:
            self.__config.set(section, 'imagepath', self.__imagePath)
 
-        fconf = file(self.__configFileName, "w")
+        fconf = codecs.open(self.__configFileName, "w", "utf16")#file(self.__configFileName, "w")
         self.__config.write(fconf)
 
 
@@ -141,7 +142,7 @@ class MigratorConfigurer(object):
     #automcatically chooses which cloud to generate the config for
     def configAuto(self , configfile, password = ''):
         config = ConfigParser.RawConfigParser()
-        config.read(configfile)
+        config.readfp(codecs.open(configfile, "r", "utf16"))
         if config.has_section('EC2'):
             return configAmazon(configfile , '' , password)
         if config.has_section('ElasticHosts'):
@@ -150,9 +151,9 @@ class MigratorConfigurer(object):
 
     #returns the tuple containing the config info (Image,Fixups,Cloud)
     def configAmazon(self , configfile , user = '' , password = '' , region = '', imagepath = ''):
-        
+
         config = ConfigParser.RawConfigParser()
-        config.read(configfile)
+        config.readfp(codecs.open(configfile, "r", "utf16"))
 
         import Windows
         imagesize = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize() 
@@ -276,7 +277,7 @@ class MigratorConfigurer(object):
     #note its better
     def configElasticHosts(self , configfile , user = '' , password = '' , region = '', imagepath = ''):
         config = ConfigParser.RawConfigParser()
-        config.read(configfile)
+        config.readfp(codecs.open(configfile, "r", "utf16"))
 
         import Windows
         imagesize = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize()

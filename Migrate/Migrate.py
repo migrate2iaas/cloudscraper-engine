@@ -95,10 +95,14 @@ if __name__ == '__main__':
         # it needs saving of 1) image-id (xml-key) for each volume imported previously 2) instance-id
 
     #thus we use Amazon
-    if s3key:
-        (image,adjust,cloud) = config.configAmazon(configpath , s3owner , s3key , region , imagepath)
-    if ehkey:
-        (image,adjust,cloud) = config.configElasticHosts(configpath , '' , ehkey) 
+    try:
+        if s3key:
+            (image,adjust,cloud) = config.configAmazon(configpath , s3owner , s3key , region , imagepath)
+        if ehkey:
+            (image,adjust,cloud) = config.configElasticHosts(configpath , '' , ehkey) 
+    except Exception as e:
+        logging.error("\n!!!ERROR: failed to configurate the process! ")
+        logging.error("\n!!!ERROR: " + str(e) )
     
     logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Transfer Process:\n")
     __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload)

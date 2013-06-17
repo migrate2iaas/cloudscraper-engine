@@ -26,6 +26,7 @@ class GzipChunkMedia_test(unittest.TestCase):
         
         
     def test_mediapieces(self):
+        return
         chunksize = 1024
         overallsize = 1024*1024
         media = GzipChunkMedia.GzipChunkMedia("E:\\rawtest\\arc.tar", overallsize , chunksize)
@@ -53,9 +54,39 @@ class GzipChunkMedia_test(unittest.TestCase):
 
         
     def test_mediawhole(self):
+        return
         chunksize = 1024
         overallsize = 1024*1024
         media = GzipChunkMedia.GzipChunkMedia("E:\\rawtest_file.tar", overallsize , chunksize)
+        file = open('C:\\layout.ini', "r")
+        filedata = file.read()
+        file.close()
+
+        media.writeDiskData(0 , filedata)
+        data = media.readDiskData(0 , len(filedata))
+        self.assertEqual(filedata , data)
+        self.assertTrue(media.getImageSize() <= overallsize)
+        #TODO: make some lively backup from the smae snapshot
+
+
+    def test_localshare(self):
+        chunksize = 1024
+        overallsize = 1024*1024
+        media = GzipChunkMedia.GzipChunkMedia("\\\\127.0.0.1\\download\\rawtest\\tar", overallsize , chunksize)
+        file = open('C:\\layout.ini', "r")
+        filedata = file.read()
+        file.close()
+
+        media.writeDiskData(0 , filedata)
+        data = media.readDiskData(0 , len(filedata))
+        self.assertEqual(filedata , data)
+        self.assertTrue(media.getImageSize() <= overallsize)
+        #TODO: make some lively backup from the smae snapshot
+      
+    def test_nonlocalshare(self):
+        chunksize = 1024
+        overallsize = 1024*1024
+        media = GzipChunkMedia.GzipChunkMedia("\\\\FEOFFNOTE\\Downloads\\rawtest\\tar", overallsize , chunksize)
         file = open('C:\\layout.ini', "r")
         filedata = file.read()
         file.close()

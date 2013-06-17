@@ -23,6 +23,7 @@ import WindowsBackupSource
 import SystemAdjustOptions
 import logging
 import DataExtent
+import os
 
 class WindowsVhdMedia_test(unittest.TestCase):
      #TODO: make more sophisticated config\test reading data from some config. dunno
@@ -39,16 +40,24 @@ class WindowsVhdMedia_test(unittest.TestCase):
         imagesize = 512*1024*1024*1024
         imagepath = "E:\\vhdtest2.vhd"
         media = WindowsVhdMedia.WindowsVhdMedia(imagepath , imagesize+1024*1024)
-        media.open()
+        self.assertTrue(media.open())
         datatransfer = WindowsDeviceDataTransferProto.WindowsDeviceDataTransferProto(media.getWindowsDevicePath(), media.getWindowsDiskNumber() , media)
         parser = SimpleDiskParser.SimpleDiskParser(datatransfer , 0xeda)
         transfertarget = parser.createTransferTarget(imagesize)
         #TODO: test media is ok
         #TODO: need kinda automate it in order to reinit
         media.close()
+        os.remove(imagepath)
+    
+    def test_sharedisk(self):
+        imagesize = 512*1024*1024*1024
+        imagepath = "\\\\127.0.0.1\\downloads\\share.vhd"
+        media = WindowsVhdMedia.WindowsVhdMedia(imagepath , imagesize+1024*1024)
+        self.assertFalse(media.open())
         
 
     def test_nonemptydisk(self):
+        return 
         imagesize = 512*1024*1024*1024
         imagepath = "E:\\vhdtest4.vhd"
         media = WindowsVhdMedia.WindowsVhdMedia(imagepath , imagesize+1024*1024)

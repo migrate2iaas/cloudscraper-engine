@@ -160,7 +160,7 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
         data = str()
         while currentchunk <= lastchunk:
             chunk = self.getUnzippedChunk(currentchunk)
-            if len(chunk):
+            if chunk and len(chunk) > 0:
                 data = data + chunk
             else:
                 break
