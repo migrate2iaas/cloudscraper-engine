@@ -27,7 +27,6 @@ import VolumeInfo
 import os
 import logging
 import ImageMedia
-import codecs
 
 from MigrateExceptions import *
 
@@ -80,7 +79,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
 
         logging.debug("Initing new VHD disk");
         scriptpath = "diskpart_open.tmp"
-        scrfile = codecs.open(scriptpath, "w+", "utf16") #open(scriptpath, "w+")
+        scrfile = open(scriptpath, "w+")
         script = "create vdisk file=\""+self.__fileName+"\" maximum="+str(self.__maxSizeMb) + " type=EXPANDABLE";
         script = script.__add__("\nattach vdisk");
         script = script.__add__("\nconvert mbr");
@@ -127,7 +126,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         self.closedrive()
 
         scriptpath = "diskpart_close.tmp"
-        scrfile = scrfile = codecs.open(scriptpath, "w+", "utf16")#open(scriptpath, "w+")
+        scrfile = open(scriptpath, "w+")
         script = "select vdisk file=\""+self.__fileName+"\"";
         script = script + "\ndetach vdisk";
         scrfile.write(script);
