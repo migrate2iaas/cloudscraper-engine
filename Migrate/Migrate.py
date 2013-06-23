@@ -28,6 +28,7 @@ import traceback
 import argparse
 import sysconfig
 import time
+import traceback
 
 MigrateVerisonHigh = 0
 MigrateVersionLow = 3
@@ -103,6 +104,7 @@ if __name__ == '__main__':
     except Exception as e:
         logging.error("\n!!!ERROR: failed to configurate the process! ")
         logging.error("\n!!!ERROR: " + str(e) )
+        logging.error(traceback.format_exc())
         raise
     
     logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Transfer Process:\n")

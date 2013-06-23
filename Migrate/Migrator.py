@@ -41,12 +41,14 @@ class Migrator(object):
         self.__dataBackupSourceList = dict() # the key is data volume device path
         self.__dataTransferTargetList = dict()
         self.__dataChannelList = dict()
+        self.__dataMediaList = dict()
         
         self.__runOnWindows = False
 
         self.__skipImaging = skipImaging
         self.__skipUpload = skipUpload
         self.__resumeUpload = resumeUpload
+       
 
         self.__cloudName = self.__cloudOptions.getTargetCloud()
 
@@ -430,12 +432,11 @@ class Migrator(object):
                 if media == None:
                     logging.error("!!!ERROR: Cannot create/open intermediate image (media) for an operation")
                     return False
+                self.__dataMediaList[volinfo.getVolumePath()]=media
                 if self.__runOnWindows:
                     #TODO: need kinda redisign the stuff related to system adjusts!
                     self.__winSystemAdjustOptions = self.__windows.createSystemAdjustOptions()
                     self.__winSystemAdjustOptions.setSysDiskType(self.__systemAdjustOptions.getSysDiskType())
-                    #NOTE: the medai should be created nevertheless of the imaging done
-                    #so , calls are
                     if self.__skipImaging == False:
                        self.__dataTransferTargetList[volinfo.getVolumePath()] = self.createTransferTarget(media , volinfo.getImageSize(), self.__winSystemAdjustOptions)
         
@@ -449,7 +450,7 @@ class Migrator(object):
                 # keyname should be associated with the volume by the config program
                 import S3UploadChannel 
                 for volinfo in self.__migrateOptions.getDataVolumes():
-                    self.__dataChannelList[volinfo.getVolumePath()]= S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__dataTransferTargetList[volinfo.getVolumePath()].getMedia().getMaxSize() , self.__cloudOptions.getRegion() , volinfo.getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
+                    self.__dataChannelList[volinfo.getVolumePath()] = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , self.__cloudOptions.getRegion() , volinfo.getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
 
             # ElasticHosts part
             if self.__migrateOptions.getImageType() == "raw" and self.__migrateOptions.getImagePlacement() == "direct":
@@ -471,7 +472,7 @@ class Migrator(object):
                 #Note: get upload path should be set to '' for the new downloads
                 description = os.environ['COMPUTERNAME']+"-"+"data"+"-"+str(datetime.date.today())
                 for volinfo in self.__migrateOptions.getDataVolumes():
-                    self.__dataChannelList[volinfo.getVolumePath()]= EHUploadChannel.EHUploadChannel(volinfo.getUploadPath() , userid , apisecret , self.__dataTransferTargetList[volinfo.getVolumePath()].getMedia().getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
+                    self.__dataChannelList[volinfo.getVolumePath()]= EHUploadChannel.EHUploadChannel(volinfo.getUploadPath() , userid , apisecret , self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
 
             
 
@@ -529,7 +530,7 @@ class Migrator(object):
                 logging.info("\n>>>>>>>>>>>>>>>>> Started the data image upload\n");
 
                 channel = self.__dataChannelList[volinfo.getVolumePath()]
-                media = self.__dataTransferTargetList[volinfo.getVolumePath()].getMedia()
+                media = self.__dataMediaList[volinfo.getVolumePath()]
                 imageid = self.uploadImage(media,channel)
                 channel.close()
                 

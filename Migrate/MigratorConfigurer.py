@@ -319,7 +319,7 @@ class MigratorConfigurer(object):
         if imagedir[-1] == '\\':
             imagedir = imagedir[0:-1]
         if os.path.exists(imagedir) == False:
-            logging.debug("Directory " + str(imagedir) + " not found, creating it");
+            logging.debug("Directory " + unicode(imagedir) + " not found, creating it");
             os.mkdir(imagedir)           
         else:
             dirmode = os.stat(imagedir).st_mode
