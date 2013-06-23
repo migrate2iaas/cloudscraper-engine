@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Migrate.py</StartupFile>
+    <StartupFile>Windows\WindowsVhdMedia_test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -28,6 +28,7 @@
     <Compile Include="Amazon\EC2Instance.py" />
     <Compile Include="Amazon\EC2InstanceGenerator.py" />
     <Compile Include="Amazon\EC2Instance_test.py" />
+    <Compile Include="Amazon\EC2Volume.py" />
     <Compile Include="Amazon\EC2VolumeGenerator.py" />
     <Compile Include="Amazon\S3UploadChannel.py" />
     <Compile Include="Amazon\S3UploadChannel_test.py" />
@@ -36,6 +37,11 @@
     <Compile Include="CloudConfig.py" />
     <Compile Include="DataExtent.py" />
     <Compile Include="DataTransferProto.py" />
+    <Compile Include="ElasticHosts\EHConfigs.py" />
+    <Compile Include="ElasticHosts\EHUploadChannel.py" />
+    <Compile Include="ElasticHosts\EHUploadChannel_test.py" />
+    <Compile Include="GzipChunkMedia.py" />
+    <Compile Include="GzipChunkMedia_test.py" />
     <Compile Include="ImageMedia.py" />
     <Compile Include="Migrate.py" />
     <Compile Include="MigrateConfig.py" />
@@ -45,6 +51,11 @@
     <Compile Include="Migrator.py" />
     <Compile Include="MigratorConfigurer.py" />
     <Compile Include="Migrator_test.py" />
+    <Compile Include="RawGzipMedia.py" />
+    <Compile Include="RawGzipMedia_test.py" />
+    <Compile Include="SimpleDataTransferProto.py" />
+    <Compile Include="SimpleDiskParser.py" />
+    <Compile Include="SimpleTransferTarget.py" />
     <Compile Include="SystemAdjustOptions.py" />
     <Compile Include="SystemInfo.py" />
     <Compile Include="TransferTarget.py" />
@@ -64,6 +75,7 @@
     <Compile Include="Windows\WindowsSystemAdjustOptions.py" />
     <Compile Include="Windows\WindowsSystemInfo.py" />
     <Compile Include="Windows\WindowsVhdMedia.py" />
+    <Compile Include="Windows\WindowsVhdMedia_test.py" />
     <Compile Include="Windows\WindowsVolume.py" />
     <Compile Include="Windows\WindowsVolumeInfo.py" />
     <Compile Include="Windows\WindowsVolumeTransferTarget.py" />
@@ -79,6 +91,7 @@
   <ItemGroup>
     <Content Include="Amazon\check_vm.bat" />
     <Content Include="Amazon\import_vm.bat" />
+    <Content Include="Amazon\import_vol.bat" />
     <Content Include="Amazon\set_amazon_env.bat" />
     <Content Include="MODULES.txt" />
   </ItemGroup>
