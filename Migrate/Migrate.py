@@ -103,6 +103,7 @@ if __name__ == '__main__':
     except Exception as e:
         logging.error("\n!!!ERROR: failed to configurate the process! ")
         logging.error("\n!!!ERROR: " + str(e) )
+        raise
     
     logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Transfer Process:\n")
     __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload)

@@ -429,7 +429,7 @@ class Migrator(object):
                 media = self.createImageMedia(volinfo.getImagePath() , volinfo.getImageSize() + self.__additionalMediaSize)          
                 if media == None:
                     logging.error("!!!ERROR: Cannot create/open intermediate image (media) for an operation")
-                    return
+                    return False
                 if self.__runOnWindows:
                     #TODO: need kinda redisign the stuff related to system adjusts!
                     self.__winSystemAdjustOptions = self.__windows.createSystemAdjustOptions()

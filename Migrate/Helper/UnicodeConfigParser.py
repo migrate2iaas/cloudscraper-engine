@@ -11,9 +11,9 @@ import encodings
 class UnicodeConfigParser(ConfigParser.RawConfigParser):
     """Specialized config parser. The main feature is it's unicode support"""
     
-    def __init__(self, encoding = 'utf16', defaults=None, dict_type = collections.OrderedDict, allow_no_value=False):
+    def __init__(self, encoding = 'utf16', defaults=None, dict_type=ConfigParser._default_dict, allow_no_value=False):
         self.__encoding = encoding
-        return super(UnicodeConfigParser, self).__init__(defaults, dict_type, allow_no_value)
+        ConfigParser.RawConfigParser.__init__(self, defaults, dict_type, allow_no_value)
 
     def read(self, filenames):
         if isinstance(filenames, basestring):

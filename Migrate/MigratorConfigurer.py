@@ -22,6 +22,7 @@ import logging
 import codecs
 import time
 from MigrateConfig import VolumeMigrateConfig
+import UnicodeConfigParser
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
     def __init__(self, volumename, imagepath , imagesize):
