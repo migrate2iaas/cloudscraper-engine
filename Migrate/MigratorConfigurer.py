@@ -3,6 +3,13 @@ __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
+import sys
+
+sys.path.append('.\..')
+sys.path.append('.\..\Helper')
+sys.path.append('.\Helper')
+
+
 import AmazonConfigs
 import EHConfigs
 
@@ -141,7 +148,7 @@ class MigratorConfigurer(object):
 
     #automcatically chooses which cloud to generate the config for
     def configAuto(self , configfile, password = ''):
-        config = ConfigParser.RawConfigParser()
+        config = UnicodeConfigParser.UnicodeConfigParser()
         config.readfp(codecs.open(configfile, "r", "utf16"))
         if config.has_section('EC2'):
             return configAmazon(configfile , '' , password)
@@ -152,7 +159,7 @@ class MigratorConfigurer(object):
     #returns the tuple containing the config info (Image,Fixups,Cloud)
     def configAmazon(self , configfile , user = '' , password = '' , region = '', imagepath = ''):
 
-        config = ConfigParser.RawConfigParser()
+        config = UnicodeConfigParser.UnicodeConfigParser()
         config.readfp(codecs.open(configfile, "r", "utf16"))
 
         import Windows
@@ -276,7 +283,7 @@ class MigratorConfigurer(object):
 
     #note its better
     def configElasticHosts(self , configfile , user = '' , password = '' , region = '', imagepath = ''):
-        config = ConfigParser.RawConfigParser()
+        config = UnicodeConfigParser.UnicodeConfigParser()
         config.readfp(codecs.open(configfile, "r", "utf16"))
 
         import Windows
