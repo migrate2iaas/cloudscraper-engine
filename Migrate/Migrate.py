@@ -19,7 +19,6 @@ import SystemAdjustOptions
 
 import getpass
 
-import Windows
 
 import logging
 import MigratorConfigurer
@@ -37,12 +36,16 @@ MigrateVersionLow = 3
 #TODO: make versioning and expiration time!!
 
 if __name__ == '__main__':
-    
+    #converting to unicode, add "CheckWindows" option
+    import Windows
+    sys.argv = Windows.win32_unicode_argv()
+    print sys.argv
+
     #parsing extra option
     parser = argparse.ArgumentParser(description="This script performs creation of virtualized images from the local server, uploading them to S3, converting them to EC2 instances. See README for more details.")
     parser.add_argument('-k', '--amazonkey', help="Your AWS secret key. If not specified you will be prompted at the script start")
     parser.add_argument('-e', '--ehkey', help="Your ElasicHosts API secret key. If not specified you will be prompted at the script start")
-    parser.add_argument('-c', '--config', help="Path to server cloud copy config file")
+    parser.add_argument('-c', '--config', help="Path to copy config file")
     parser.add_argument('-o', '--output', help="Path to extra file for non-detalized output")                   
     parser.add_argument('-u', '--resumeupload', help="Resumes the upload of image already created", action="store_true")                   
     parser.add_argument('-s', '--skipupload', help="Skips both imaging and upload. Just start the machine in cloud from the image given", action="store_true")                   
