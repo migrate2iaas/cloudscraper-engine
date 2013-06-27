@@ -65,7 +65,34 @@ class DataExtent(object):
          if other.getStart() < self.getStart() and other.getStart() +  other.getSize() > self.getStart():
             return True
          return False;
-        
+    
+    # returns block describing the intersection
+    def intersection(self, other):
+        if self.intersect(other) == False:
+            return None
+
+        #TODO: calc the intersection between two intervals
+        #if other.getStart() - self.getStart() > 0:
+        #    pieces.append(SplittedDataExtent(other.getStart(), self.getStart() - self.getStart() , self) )
+        #if other.getStart() + other.getSize() < self.getStart() + self.getSize():
+        #    pieces.append(SplittedDataExtent( other.getStart() + other.getSize() , self.getStart() + self.getSize() - (other.getStart() + other.getSize()) , self ) )
+        # V other        | self
+        #
+        # V-----|+++++++V++++++|
+        # V-----|+++++++|------V
+        # |+++++V-------|------V
+        if other.getStart() > self.getStart():
+            start = other.getStart()
+        else:
+            start = self.getStart()
+        if  other.getStart() + other.getSize() > self.getStart() + self.getSize():
+            end = self.getStart() + self.getSize()
+        else:
+            end = other.getStart() + other.getSize()
+
+        return SplittedDataExtent(start, end-start, self)
+
+         
     # returns list of pieces left after substraction the intersection. The original extent is not affected     
     def substract(self, other):
         pieces = list()

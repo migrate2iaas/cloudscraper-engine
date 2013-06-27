@@ -113,6 +113,7 @@ class AdjusteBackupSource_test(unittest.TestCase):
                 blockfound = True
         self.assertTrue(blockfound)
 
+
 if __name__ == '__main__':
     unittest.main()
 

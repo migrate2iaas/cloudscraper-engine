@@ -26,6 +26,11 @@ import win32api
 import MigrateExceptions
 import subprocess
 import re
+import traceback
+
+import zlib
+import gzip
+import StringIO
 
 import logging
 import threading 
@@ -136,6 +141,18 @@ class S3UploadThread(threading.Thread):
                     upload = True
                     s3key = bucket.get_key(keyname)
 
+
+                    #didn't seem to work
+                  #  headers = dict()
+                 #   headers['Content-Encoding'] = 'gzip'
+                  #  inmemfile = StringIO.StringIO()
+                  #  gzipfile = gzip.GzipFile("tmpgzip", "wb" , 6 , inmemfile)
+                  #  gzipfile.write(data)
+                  #  gzipfile.close()
+                  #  gzip_data = inmemfile.getvalue()
+                  #  inmemfile.close()
+                  #  data = gzip_data
+
                     md5encoder = md5()
                     md5encoder.update(data)
                     md5_hexdigest = md5encoder.hexdigest()
@@ -170,6 +187,7 @@ class S3UploadThread(threading.Thread):
                     #reput the task into the queue
                     logging.warning("!Failed to upload data: %s/%s , making a retry...", str(bucket), keyname )
                     logging.warning("Exception = " + str(e));
+                    logging.error(traceback.format_exc());
                     continue
 
                 self.__uploadQueue.task_done()
@@ -207,23 +225,25 @@ class S3UploadChannel(object):
         if location == 'us-east-1':
            awsregion = ''  
 
+        offline = False # to do some offline testing
         #TODO: catch kinda exception here if not connected. shouldn't last too long
-        hostname = 's3.amazonaws.com'
-        if awsregion:
-            hostname = 's3-'+awsregion+'.amazonaws.com'
-        self.__S3 = S3Connection(awskey, awssercret, is_secure=True, host=hostname)
+        if offline == False:
+            hostname = 's3.amazonaws.com'
+            if awsregion:
+                hostname = 's3-'+awsregion+'.amazonaws.com'
+            self.__S3 = S3Connection(awskey, awssercret, is_secure=True, host=hostname)
         
-        self.__bucketName = bucket
-        try:
-            self.__bucket = self.__S3.get_bucket(self.__bucketName)
-        except Exception as ex:
-            logging.info(">>>>> Creating a new S3 bucket: " + self.__bucketName);
+            self.__bucketName = bucket
             try:
-                self.__bucket = self.__S3.create_bucket(self.__bucketName , location=awsregion)
-            except:
-                logging.error("!!!ERROR: Wasn't able to find or create bucket " + self.__bucketName + " in region " + location + " ." + "It's possible the bucket with the same name exists but in another region. Try to specify another bucket name for the upload")
-                #TODO: make kinda better exception
-                raise BaseException
+                self.__bucket = self.__S3.get_bucket(self.__bucketName)
+            except Exception as ex:
+                logging.info(">>>>> Creating a new S3 bucket: " + self.__bucketName);
+                try:
+                    self.__bucket = self.__S3.create_bucket(self.__bucketName , location=awsregion)
+                except:
+                    logging.error("!!!ERROR: Wasn't able to find or create bucket " + self.__bucketName + " in region " + location + " ." + "It's possible the bucket with the same name exists but in another region. Try to specify another bucket name for the upload")
+                    #TODO: make kinda better exception
+                    raise BaseException
     
 
         self.__chunkSize = chunksize;

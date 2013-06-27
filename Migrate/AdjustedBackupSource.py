@@ -162,6 +162,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
             replacedfile = removed
             volname = self.__backupSource.getBackupDataSource().getVolumeName()
             if replacedfile.startswith(volname):
+                #remove the starting volume path if any
                 replacedfile = replacedfile.replace(volname + "\\" , "" , 1)
             try:
                 replacedrange = self.__backupSource.getFileBlockRange(replacedfile)
@@ -169,28 +170,37 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                 logging.warning("Cannot get blocks for removed file " + replacedfile)
                 continue
             replacedoffset = 0
+            # iterate thru all extents in file to replace, see what blocks it intersects with
             for replacedext in replacedrange:
+                newblocks = list()
+                blockstoremove = list()
                 for block in blocksrange:
-                    if replacedext.intersect(block):
+                    # we devide the big block of filled data onto three parts: after,before replaced file extent, and the extent itself
+                    replacedpart = replacedext.intersection(block)
+                    if replacedpart:
                         blockindex = blocksrange.index(block)
-                        blocksrange.remove(block)
+                        blockstoremove.append(block)
                         pieces = block.substract(replacedext)
-                        #TODO: checks and loggig here
+                        #TODO: checks and logging here
 
+                        logging.debug("Changing block " + str(replacedpart) + " by data from offset " + str(replacedoffset) + " of replacement file " + str(replacement));
                         filereplacement = open(replacement, "rb")
                         filereplacement.seek(replacedoffset)
-                        replacedext.setData(filereplacement.read(replacedext.getSize())) 
-                        replacedoffset = replacedoffset + replacedext.getSize()
+                        replacedpart.setData(filereplacement.read(replacedpart.getSize())) 
+                        replacedoffset = replacedoffset + replacedpart.getSize()
                         filereplacement.close()
 
-                        pieces.append(replacedext)
+                        pieces.append(replacedpart)
                         # TODO: unittest for data extent with more than stupids asserts
-                        pieces = sorted(pieces)
-                        for piece in pieces:
-                            blocksrange.insert(blockindex+pieces.index(piece), piece)
-                        break
+                        # add new blocks to the 
+                        newblocks.extend(pieces)
 
-        return blocksrange
+                        #break - there could be lots of neighboor blocks cause blocks are divided into parts. see WindowsVolume.py line 264
+                for block in blockstoremove:
+                    blocksrange.remove(block)
+                blocksrange.extend(newblocks)
+
+        return sorted(blocksrange)
                        
         
 

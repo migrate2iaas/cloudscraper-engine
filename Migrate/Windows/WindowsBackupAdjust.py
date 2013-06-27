@@ -165,7 +165,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         if turnHyperV:
             logging.info("Turning on HyperV bus");
 
-            #Note: it is good for 6.0+ only
+            #Note: it is good for 6.0+ only. 
             idekey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\vmbus" , 0 , win32con.KEY_ALL_ACCESS )
             win32api.RegSetValueEx(idekey, "Start" , 0, win32con.REG_DWORD, 0)
             idekey.close()
@@ -237,11 +237,30 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             # NOTE: works under Vista+ only
             try:
                 # NOTE: seem to damage the hive, should test it more
-                mountdevkey = win32api.RegDeleteTree(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\Citrix")
+                win32api.RegDeleteTree(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\Citrix")
             except Exception as e:
                 logging.debug("Couldn't delete Citrix keys");
                 logging.debug(str(e))
       
+      
+                  
+        removeAutologon = True
+        if removeAutologon:
+            logging.info("Removing Auto Logon");
+            winlogonkey = None
+            try:
+                # NOTE: seem to damage the hive, should test it more
+                winlogonkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" , 0 , win32con.KEY_ALL_ACCESS )
+                win32api.RegSetValueEx(winlogonkey, "AutoAdminLogon", 0 , win32con.REG_DWORD, 0)
+                win32api.RegDeleteValue(winlogonkey, "DefaultPassword")
+            except Exception as e:
+                logging.debug("Couldn't remove Autologon");
+                logging.debug(str(e))
+            finally:
+                if winlogonkey:
+                    winlogonkey.close()
+      
+
         # 3) dismount
         win32api.RegUnLoadKey(win32con.HKEY_LOCAL_MACHINE, hivekeyname)
 

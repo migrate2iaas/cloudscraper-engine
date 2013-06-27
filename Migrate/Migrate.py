@@ -39,7 +39,7 @@ if __name__ == '__main__':
     #converting to unicode, add "CheckWindows" option
     import Windows
     sys.argv = Windows.win32_unicode_argv()
-    print sys.argv
+    
 
     #parsing extra option
     parser = argparse.ArgumentParser(description="This script performs creation of virtualized images from the local server, uploading them to S3, converting them to EC2 instances. See README for more details.")
