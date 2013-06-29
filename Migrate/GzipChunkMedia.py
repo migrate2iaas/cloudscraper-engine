@@ -124,8 +124,8 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
         datasize = len(data)
         while offsetindata < datasize:
             chunkfilename = self.__filename+"offset"+str(offset+offsetindata)+".gz"
-            if self.__filesWritten.has_key(chunkfilename):
-                self.__overallSize = self.__overallSize - self.__filesWritten[chunkfilename]
+            #if self.__filesWritten.has_key(chunkfilename):
+            #    self.__overallSize = self.__overallSize - self.__filesWritten[chunkfilename]
 
             file = open(chunkfilename, "wb")
             gzipfile = gzip.GzipFile("offset"+str(offset+offsetindata), "wb" , 8 , file)
@@ -136,7 +136,7 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
             file.close()
             offsetindata = offsetindata + self.__chunkSize
             # so we should remember somehow was it written at all
-            writtenfilesize = os.stat(chunkfilename).st_size
+            #writtenfilesize = os.stat(chunkfilename).st_size
             self.__filesWritten[chunkfilename] = writtenfilesize
         
         self.__overallSize = max(self.__overallSize , len(data)+offset)
@@ -172,7 +172,7 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
     def getImageSize(self):
         self.flush()
         # self.__overallSize could be null in case of image created by previous transfer
-        if self.__overallSize:
+        if self.__overallSize > 0:
             return self.__overallSize
         return self.__diskSize
 

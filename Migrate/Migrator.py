@@ -369,7 +369,7 @@ class Migrator(object):
     def uploadImage(self , media, channel):
         imagesize = media.getImageSize()
         datasize = channel.getTransferChunkSize()#mb
-        logging.debug("Upload image of size " + str(imagesize));
+        logging.debug("Upload image of size " + str(imagesize) + " (full source disk data size is " + str(media.getMaxSize()) + " )");
         dataplace = 0
         datasent = 0
         while dataplace < imagesize:
