@@ -105,7 +105,9 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
     
     #writes data to the container (as it was a disk)
     def writeDiskData(self, offset, data):
-        
+        iniitaloffset = offset
+        initialdatalen = len(data)
+
         chunkoffset = offset % self.__chunkSize
         firstchunk = int(offset / self.__chunkSize)
         size = len(data)
@@ -136,10 +138,10 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
             file.close()
             offsetindata = offsetindata + self.__chunkSize
             # so we should remember somehow was it written at all
-            #writtenfilesize = os.stat(chunkfilename).st_size
+            writtenfilesize = os.stat(chunkfilename).st_size
             self.__filesWritten[chunkfilename] = writtenfilesize
         
-        self.__overallSize = max(self.__overallSize , len(data)+offset)
+        self.__overallSize = max(self.__overallSize , initialdatalen+iniitaloffset)
         if self.__overallSize > self.__diskSize:
             logging.warning("!Try to write in gzipped chunks more than allocated")
             logging.debug("Preallocated size is " + str(self.__diskSize) + " . Size of data written is " + str(self.__overallSize) );
