@@ -162,7 +162,7 @@ class EHUploadChannel(UploadChannel.UploadChannel):
                 logging.warning("Headers: %s \n Text length= %s gzipped data" , str(response.request.headers) , str(len(response.request.body))  )
                 response.raise_for_status()
             self.__driveId = response.json()[u'drive']
-            logging.info("\n>>>>>>>>>>> REupload to ElasticHosts drive "+ str(self.__driveId)+ " !")
+            logging.info("\n>>>>>>>>>>> Reupload to ElasticHosts drive "+ str(self.__driveId)+ " !")
             # TODO: test whether the disk created is compatible
         else:
             #NOTE: we skip the resume scenario for now

@@ -79,15 +79,23 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
         if config.has_section(section):
             if config.has_option(section, 'imagesize'):
                 self.__imageSize = config.getint(section, 'imagesize')
+            else:
+                logging.debug("imagesize was not found in the config for volume " + str(self.__volumeName));
 
             if config.has_option(section, 'pathuploaded'):
                 self.__uploadedImageId = config.get(section, 'pathuploaded')
+            else:
+                logging.debug("pathuploaded was not found in the config for volume " + str(self.__volumeName));
 
             if config.has_option(section, 'pathtoupload'):
                 self.__pathToUpload = config.get(section, 'pathtoupload')
+            else:
+                logging.debug("pathtoupload was not found in the config for volume " + str(self.__volumeName));
 
             if config.has_option(section, 'imagepath'):
                 self.__imagePath = config.get(section, 'imagepath')
+            else:
+                logging.debug("imagepath was not found in the config for volume " + str(self.__volumeName));
         else:
             logging.error("!!!ERROR: bad config file. Section for drive letter cannot be found");
             raise LookupError

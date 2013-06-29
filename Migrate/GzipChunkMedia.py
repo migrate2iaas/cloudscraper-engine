@@ -141,7 +141,8 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
         
         self.__overallSize = max(self.__overallSize , len(data)+offset)
         if self.__overallSize > self.__diskSize:
-            logging.warning("!Try to write in gzipped chunks more than allocated");
+            logging.warning("!Try to write in gzipped chunks more than allocated")
+            logging.debug("Preallocated size is " + str(self.__diskSize) + " . Size of data written is " + str(self.__overallSize) );
 
 
     #reads data from the container (as it was a disk)
@@ -170,7 +171,10 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
     #gets the overall image size available for reading. Note: it is subject to grow when new data is written
     def getImageSize(self):
         self.flush()
-        return self.__overallSize
+        # self.__overallSize could be null in case of image created by previous transfer
+        if self.__overallSize:
+            return self.__overallSize
+        return self.__diskSize
 
     #sets the channel so the data may be sent simultaniously. Not implemented for now
     def setChannel(self):

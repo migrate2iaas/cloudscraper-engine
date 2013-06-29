@@ -309,7 +309,9 @@ class Migrator(object):
                 self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , userid , apisecret , self.__systemMedia.getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
                 
         # update the upload path in config in case it was changed or created by the channel
-        self.__migrateOptions.getSystemVolumeConfig().setUploadPath(self.__systemTransferChannel.getUploadPath())
+        uploadpath = self.__systemTransferChannel.getUploadPath()
+        logging.debug("The upload channel path is: " + uploadpath)
+        self.__migrateOptions.getSystemVolumeConfig().setUploadPath(uploadpath)
         return True
         
     def adjustSystemBackupTarget(self):
@@ -367,6 +369,7 @@ class Migrator(object):
     def uploadImage(self , media, channel):
         imagesize = media.getImageSize()
         datasize = channel.getTransferChunkSize()#mb
+        logging.debug("Upload image of size " + str(imagesize));
         dataplace = 0
         datasent = 0
         while dataplace < imagesize:
@@ -479,7 +482,9 @@ class Migrator(object):
                   
         # update the upload path in config in case it was changed or created by the channel
         for volinfo in self.__migrateOptions.getDataVolumes():
-            volinfo.setUploadPath(self.__dataChannelList[volinfo.getVolumePath()].getUploadPath())
+            uploadpath = self.__dataChannelList[volinfo.getVolumePath()].getUploadPath()
+            logging.debug("The upload channel path is: " + uploadpath)
+            volinfo.setUploadPath(uploadpath)
 
         return True
         
