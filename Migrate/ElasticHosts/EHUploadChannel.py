@@ -29,6 +29,7 @@ import requests
 import zlib
 import gzip
 import StringIO
+import UploadChannel
 
 import base64
 import math
@@ -115,7 +116,7 @@ class EHUploadThread(threading.Thread):
 
 #TODO: inherit from kinda base one
 #TODO: descibe the stack backup source->transfer target->media->channel
-class EHUploadChannel(object):
+class EHUploadChannel(UploadChannel.UploadChannel):
     """channel for Elastic Hosts uploading"""
 
     #TODO: make more reliable statistics
@@ -161,6 +162,7 @@ class EHUploadChannel(object):
                 logging.warning("Headers: %s \n Text length= %s gzipped data" , str(response.request.headers) , str(len(response.request.body))  )
                 response.raise_for_status()
             self.__driveId = response.json()[u'drive']
+            logging.info("\n>>>>>>>>>>> REupload to ElasticHosts drive "+ str(self.__driveId)+ " !")
             # TODO: test whether the disk created is compatible
         else:
             #NOTE: we skip the resume scenario for now
@@ -201,6 +203,9 @@ class EHUploadChannel(object):
        self.notifyDataTransfered(size)
 
        return 
+
+    def getUploadPath(self):
+        return self.__driveId
 
    # gets the size of one chunk of data transfered by the each request, the data extent is better to be aligned by the integer of chunk sizes
     def getTransferChunkSize(self):

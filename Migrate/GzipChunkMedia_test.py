@@ -26,7 +26,6 @@ class GzipChunkMedia_test(unittest.TestCase):
         
         
     def test_mediapieces(self):
-        return
         chunksize = 1024
         overallsize = 1024*1024
         media = GzipChunkMedia.GzipChunkMedia("E:\\rawtest\\arc.tar", overallsize , chunksize)
@@ -52,9 +51,19 @@ class GzipChunkMedia_test(unittest.TestCase):
 
         self.assertEqual(media.getImageSize() , overallsize)
 
+    def test_z_reuse_arch(self):
+        chunksize = 1024
+        overallsize = 1024*1024
+        media = GzipChunkMedia.GzipChunkMedia("E:\\rawtest\\arc.tar", overallsize , chunksize)
+        file = open('C:\\procmon.exe', "rb")
+        filedata = file.read()
+        file.close()
+
+        
+
+        self.assertEqual(media.getImageSize() , overallsize)
         
     def test_mediawhole(self):
-        return
         chunksize = 1024
         overallsize = 1024*1024
         media = GzipChunkMedia.GzipChunkMedia("E:\\rawtest_file.tar", overallsize , chunksize)

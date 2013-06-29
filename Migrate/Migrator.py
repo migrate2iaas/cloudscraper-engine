@@ -307,7 +307,9 @@ class Migrator(object):
                 #Note: get upload path should be set to '' for the new downloads
                 description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
                 self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , userid , apisecret , self.__systemMedia.getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
-
+                
+        # update the upload path in config in case it was changed or created by the channel
+        self.__migrateOptions.getSystemVolumeConfig().setUploadPath(self.__systemTransferChannel.getUploadPath())
         return True
         
     def adjustSystemBackupTarget(self):
@@ -327,6 +329,7 @@ class Migrator(object):
         
             #TODO: create kinda callbacks for transfers to monitor them
             self.__systemTransferTarget.transferRawData(extents)
+              
 
             self.__systemTransferTarget.close()
             # TODO: better release options are needed
@@ -469,12 +472,14 @@ class Migrator(object):
                 userid = self.__cloudOptions.getCloudUser()
                 apisecret = self.__cloudOptions.getCloudPass()
                 region = self.__cloudOptions.getRegion()
-                #Note: get upload path should be set to '' for the new downloads
+                #Note: get upload path should be set to '' for the new uploads
                 description = os.environ['COMPUTERNAME']+"-"+"data"+"-"+str(datetime.date.today())
                 for volinfo in self.__migrateOptions.getDataVolumes():
                     self.__dataChannelList[volinfo.getVolumePath()]= EHUploadChannel.EHUploadChannel(volinfo.getUploadPath() , userid , apisecret , self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
-
-            
+                  
+        # update the upload path in config in case it was changed or created by the channel
+        for volinfo in self.__migrateOptions.getDataVolumes():
+            volinfo.setUploadPath(self.__dataChannelList[volinfo.getVolumePath()].getUploadPath())
 
         return True
         

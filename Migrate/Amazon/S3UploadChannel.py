@@ -35,6 +35,7 @@ import StringIO
 import logging
 import threading 
 import datetime
+import UploadChannel
 
 import base64
 import math
@@ -204,7 +205,7 @@ class S3UploadThread(threading.Thread):
 
 #TODO: inherit from kinda base one
 #TODO: descibe the stack backup source->transfer target->media->channel
-class S3UploadChannel(object):
+class S3UploadChannel(UploadChannel.UploadChannel):
     """channel for s3 uploading"""
 
     #TODO: make more reliable statistics
@@ -282,6 +283,9 @@ class S3UploadChannel(object):
         return
 
         logging.info("Succesfully created an upload channel to S3 bucket " + self.__bucketName  + " at " +  location)
+
+    def getUploadPath(self):
+        return self.__keyBase
 
     # this one is async
     def uploadData(self, extent):       

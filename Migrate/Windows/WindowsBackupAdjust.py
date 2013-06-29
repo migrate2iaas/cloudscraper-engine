@@ -228,7 +228,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         # 2) alter it: delete keys if they exist
 
         #TODO: add to the adjust options
-        removeCitrix = False
+        removeCitrix = True
         removeHyperV = False
         removeVmware = False
 
