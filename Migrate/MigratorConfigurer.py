@@ -125,6 +125,7 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
     def setImagePath(self , imagepath):
         self.__imagePath = imagepath
    
+    # image size here is the size of volume in bytes (not in the image file that could be compressed)
     def setImageSize(self , size):
         self.__imageSize = size
 

@@ -308,10 +308,11 @@ class Migrator(object):
                 description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
                 self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , userid , apisecret , self.__systemMedia.getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
                 
-        # update the upload path in config in case it was changed or created by the channel
-        uploadpath = self.__systemTransferChannel.getUploadPath()
-        logging.debug("The upload channel path is: " + uploadpath)
-        self.__migrateOptions.getSystemVolumeConfig().setUploadPath(uploadpath)
+            # update the upload path in config in case it was changed or created by the channel
+            uploadpath = self.__systemTransferChannel.getUploadPath()
+            logging.debug("The upload channel path is: " + uploadpath)
+            self.__migrateOptions.getSystemVolumeConfig().setUploadPath(uploadpath)
+
         return True
         
     def adjustSystemBackupTarget(self):
@@ -415,7 +416,9 @@ class Migrator(object):
             
         return True
 
-    def generateVolume(self , imageid , localimagepath):
+    #TODO: make parameters optional
+    # if they are not specified - load imageid
+    def generateVolume(self , imageid , localimagepath , imagesize , volumesize):
         if self.__cloudName == "EC2":
             import EC2VolumeGenerator
             import EC2Instance
@@ -424,7 +427,7 @@ class Migrator(object):
             awssecret = self.__cloudOptions.getCloudPass()
             generator = EC2VolumeGenerator.EC2VolumeGenerator(self.__cloudOptions.getRegion())
 
-            instance = generator.makeVolumeFromImage(imageid, self.__cloudOptions , awskey, awssecret , localimagepath)
+            instance = generator.makeVolumeFromImage(imageid, self.__cloudOptions , awskey, awssecret , localimagepath , imagesize , volumesize)
         
 
         return True
@@ -480,11 +483,11 @@ class Migrator(object):
                 for volinfo in self.__migrateOptions.getDataVolumes():
                     self.__dataChannelList[volinfo.getVolumePath()]= EHUploadChannel.EHUploadChannel(volinfo.getUploadPath() , userid , apisecret , self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
                   
-        # update the upload path in config in case it was changed or created by the channel
-        for volinfo in self.__migrateOptions.getDataVolumes():
-            uploadpath = self.__dataChannelList[volinfo.getVolumePath()].getUploadPath()
-            logging.debug("The upload channel path is: " + uploadpath)
-            volinfo.setUploadPath(uploadpath)
+            # update the upload path in config in case it was changed or created by the channel
+            for volinfo in self.__migrateOptions.getDataVolumes():
+                uploadpath = self.__dataChannelList[volinfo.getVolumePath()].getUploadPath()
+                logging.debug("The upload channel path is: " + uploadpath)
+                volinfo.setUploadPath(uploadpath)
 
         return True
         
@@ -533,6 +536,7 @@ class Migrator(object):
         
         for volinfo in self.__migrateOptions.getDataVolumes():
 
+            mediaimagesize = 0
             
             if self.__skipUpload:
                 logging.info("\n>>>>>>>>>>>>>>>>> Skipping the data image upload\n");
@@ -543,6 +547,7 @@ class Migrator(object):
                 media = self.__dataMediaList[volinfo.getVolumePath()]
                 imageid = self.uploadImage(media,channel)
                 channel.close()
+                mediaimagesize = media.getImageSize()
                 
                 if imageid:
                     volinfo.setUploadId(imageid)
@@ -552,8 +557,10 @@ class Migrator(object):
                     return False
               
             logging.info("Creating volume from the image stored at " + str(volinfo.getUploadId()))
-            #TODO: implement
-            self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath())
+            
+            # image size is really size of data, imagesize here is size of image file
+            # dammit, needs clarifications
+            self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath() , mediaimagesize , volinfo.getImageSize() )
 
        
         return True
