@@ -90,7 +90,6 @@ class EC2VolumeGenerator(object):
                 logging.info ("Waiting for system volume conversion to complete")
                 #
             while 1:
-                resulting_id = import_task.get_resulting_id()
                 import_task.update()
                 importstatus = import_task.get_status()
                 logging.debug ("Current state is " + importstatus);

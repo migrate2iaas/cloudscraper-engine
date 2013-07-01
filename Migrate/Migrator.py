@@ -343,13 +343,16 @@ class Migrator(object):
         #TODO: add the creation time here? or something alike? snapshot time too?
         self.__migrateOptions.getSystemVolumeConfig().saveConfig()
         
-
+        imagesize = 0
+        disksize = 0
         if self.__skipUpload:
             logging.info("\n>>>>>>>>>>>>>>>>> Skipping the system image upload\n");
         else:
             logging.info("\n>>>>>>>>>>>>>>>>> Started the system image upload\n");
             channel = self.__systemTransferChannel
             media = self.__systemMedia
+            imagesize = media.getImageSize()
+            disksize = media.getMaxSize()
 
             imageid = self.uploadImage(media,channel)
 
@@ -363,7 +366,8 @@ class Migrator(object):
   
   
         #creating instance from the uploaded image
-        self.generateInstance(self.__migrateOptions.getSystemVolumeConfig().getUploadId())
+        # imagesize here is the size of image file. but getImageSize() is the size of initial volume
+        self.generateInstance(self.__migrateOptions.getSystemVolumeConfig().getUploadId() , imagesize , disksize)
 
         return True
 
@@ -403,7 +407,7 @@ class Migrator(object):
     def checkInputParams(self):
         return True
 
-    def generateInstance(self , imageid):
+    def generateInstance(self , imageid,  imagesize , volumesize):
         if self.__cloudName == "EC2":
             logging.info("Creating EC2 VM from the image stored at " + str(imageid))
             import EC2InstanceGenerator
@@ -412,7 +416,7 @@ class Migrator(object):
             awssecret = self.__cloudOptions.getCloudPass()
             generator = EC2InstanceGenerator.EC2InstanceGenerator(self.__cloudOptions.getRegion())
 
-            instance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , awskey, awssecret , self.__migrateOptions.getSystemImagePath())
+            instance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , awskey, awssecret , self.__migrateOptions.getSystemImagePath() , imagesize , volumesize)
             
         return True
 
@@ -537,7 +541,7 @@ class Migrator(object):
         for volinfo in self.__migrateOptions.getDataVolumes():
 
             mediaimagesize = 0
-            
+            disksize = 0
             if self.__skipUpload:
                 logging.info("\n>>>>>>>>>>>>>>>>> Skipping the data image upload\n");
             else:
@@ -548,6 +552,7 @@ class Migrator(object):
                 imageid = self.uploadImage(media,channel)
                 channel.close()
                 mediaimagesize = media.getImageSize()
+                disksize = media.getMaxSize()
                 
                 if imageid:
                     volinfo.setUploadId(imageid)
@@ -560,7 +565,7 @@ class Migrator(object):
             
             # image size is really size of data, imagesize here is size of image file
             # dammit, needs clarifications
-            self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath() , mediaimagesize , volinfo.getImageSize() )
+            self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath() , mediaimagesize , disksize )
 
        
         return True

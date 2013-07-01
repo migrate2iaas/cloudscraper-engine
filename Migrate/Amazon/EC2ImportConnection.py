@@ -1,6 +1,6 @@
 from boto.ec2.connection import *
 from boto.ec2.volume import *
-
+from boto.resultset import ResultSet
 # boto code-style is used in this file
 
 class ConversionImage(dict):
@@ -66,6 +66,77 @@ class VolumeConversionTask(dict):
         elif name in self.ValidValues:
             self[name] = self._current_value
 
+
+class ImportInstanceVolumeConversionTask(dict):
+    ValidValues = ['bytesConverted', 'availabilityZone', 'description', 'status' , 'statusMessage']
+
+    def __init__(self, parent=None):
+        dict.__init__(self)
+        self.platform = None
+        self.description = None
+        self.status = None
+        self.status_message = None
+        self.availability_zone = None
+        self.bytes_converted = None
+        self.volume = None
+
+        self._current_value = None
+
+    def startElement(self, name, attrs, connection):
+        if name == 'image':
+            self[name] = ConversionImage()
+            return self[name]
+        elif name == 'volume':
+            self.volume  = Volume()
+            return self.volume 
+        else:
+            return None
+
+    def endElement(self, name, value, connection):
+        if name == 'bytesConverted':
+            self.bytes_converted = value
+        elif name == 'availabilityZone':
+            self.availability_zone = value
+        elif name == 'description':
+            self.description = value
+        elif name == 'status':
+            self.status = value
+        elif name == 'statusMessage':
+            self.status_message = value
+        elif name in self.ValidValues:
+            self[name] = self._current_value
+
+
+class InstanceConversionTask(dict):
+    ValidValues = ['volumes', 'instanceId', 'description', 'platform']
+
+    def __init__(self, parent=None):
+        dict.__init__(self)
+        self.platform = None
+        self.description = None
+        self.instance_id = None
+        self.volume = None
+
+        self._current_value = None
+
+    def startElement(self, name, attrs, connection):
+        if name == 'volumes':
+            self.volumes  = ResultSet([('item', Volume)])
+            return self.volumes 
+        else:
+            return None
+
+    def endElement(self, name, value, connection):
+        if name == 'instanceId':
+            self.instance_id = value
+        elif name == 'platform':
+            self.platform = value
+        elif name == 'description':
+            self.description = value
+        elif name in self.ValidValues:
+            self[name] = self._current_value
+
+
 class ConversionTask(dict):
 
     ValidValues = ['conversionTaskId', 'expirationTime', 'importVolume', 'state',
@@ -82,6 +153,8 @@ class ConversionTask(dict):
        
         self._current_value = None
 
+    # dumb if-polymorphism, thought nothing can be done to improve it
+
     def is_volume(self):
         return self.has_key('importVolume')
 
@@ -91,6 +164,8 @@ class ConversionTask(dict):
     def get_resulting_id(self):
         if self.is_volume():
             return self['importVolume'].volume.id
+        if self.is_instance():
+            return self['importInstance'].instance_id
 
     def get_status(self):
         return self.state
@@ -182,3 +257,13 @@ class EC2ImportConnection(boto.ec2.connection.EC2Connection):
             self.build_list_params(params, import_task_ids, 'ConversionTaskId')
         return self.get_list('DescribeConversionTasks', params,
                                [('item' , ConversionTask)], verb='POST')
+
+    def import_instance(self, import_manifest_xml, imagesize_bytes , image_format , availability_zone , volume_size_gb , security_group , instance_type , architecture='x86_64' , description=""):
+        #TODO: make extra checks
+        params = {'LaunchSpecification.Placement.AvailabilityZone': availability_zone ,  'LaunchSpecification.Architecture':  architecture , 'LaunchSpecification.InstanceType' : instance_type , 'LaunchSpecification.GroupName.1' : security_group , 'DiskImage.1.Image.Format': image_format, 'DiskImage.1.Image.Bytes' : str(imagesize_bytes) , 'DiskImage.1.Image.ImportManifestUrl' : import_manifest_xml, 'DiskImage.1.Volume.Size' : str(volume_size_gb) , 'Platform' : 'Windows'}
+        if description:
+            params['Description']=description
+        return self.get_object('ImportInstance', params,
+                               ConversionTask, verb='POST')
+
+
