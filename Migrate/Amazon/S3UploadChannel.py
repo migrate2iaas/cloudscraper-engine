@@ -243,7 +243,8 @@ class S3UploadChannel(UploadChannel.UploadChannel):
                     self.__bucket = self.__S3.create_bucket(self.__bucketName , location=awsregion)
                 except:
                     logging.error("!!!ERROR: Wasn't able to find or create bucket " + self.__bucketName + " in region " + location + " ." + "It's possible the bucket with the same name exists but in another region. Try to specify another bucket name for the upload")
-                    #TODO: make kinda better exception
+                    logging.error("Exception = " + str(ex));
+                    logging.error(traceback.format_exc());
                     raise BaseException
     
 
