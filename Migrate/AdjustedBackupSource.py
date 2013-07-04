@@ -157,6 +157,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                              blocksrange.insert(blockindex+pieces.index(piece), piece)
                         break
 
+        blocksrange = sorted(blocksrange)
         #adding replaced files
         for (removed,replacement) in self.__adjustOption.getReplacedFilesEnum():
             replacedfile = removed
@@ -174,6 +175,8 @@ class AdjustedBackupSource(BackupSource.BackupSource):
             for replacedext in replacedrange:
                 newblocks = list()
                 blockstoremove = list()
+                #SOMEHOW THE BLOCK IS DIVIDED BUT NOT FILLED IN THE APPROPRIATE FASHION
+                #ASSUME blocksrange is not sorted and we get errors
                 for block in blocksrange:
                     # we devide the big block of filled data onto three parts: after,before replaced file extent, and the extent itself
                     replacedpart = replacedext.intersection(block)
