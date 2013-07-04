@@ -181,6 +181,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                     # we devide the big block of filled data onto three parts: after,before replaced file extent, and the extent itself
                     replacedpart = replacedext.intersection(block)
                     if replacedpart:
+                        logging.debug("Found intersection of volume block " + str(block) + " with " + str(replacedext) + " = " + str(replacedpart));
                         blockindex = blocksrange.index(block)
                         blockstoremove.append(block)
                         pieces = block.substract(replacedext)
@@ -202,6 +203,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                 for block in blockstoremove:
                     blocksrange.remove(block)
                 blocksrange.extend(newblocks)
+                blocksrange = sorted(blocksrange)
 
         return sorted(blocksrange)
                        
