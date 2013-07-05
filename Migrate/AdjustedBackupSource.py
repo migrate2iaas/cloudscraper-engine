@@ -20,9 +20,6 @@ class ReplacedData(object):
         self.__fileoffset = fileoffset
         logging.debug("\t Seting replaced data for file " + self.__filename + " at offset " + str(self.__fileoffset) + " of size " + str(self.__size))
     def __str__(self):
-        self.__size = size
-        self.__filename = filename
-        self.__fileoffset = fileoffset
         logging.debug("\t Getting replaced data for file " + self.__filename + " at offset " + str(self.__fileoffset) + " of size " + str(self.__size))
         return data
 
