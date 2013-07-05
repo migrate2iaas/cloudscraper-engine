@@ -31,6 +31,7 @@ class SimpleTransferTarget(TransferTarget.TransferTarget):
         
         logging.debug("Found the boot sector, altering it a bit")
         for extent in volExtents:
+            logging.debug("Transfering " + str(extent) + "...");
             #special handling for a boot options
             extentswritten = extentswritten + 1
             if ( extentswritten  % 100 == 0):

@@ -25,7 +25,7 @@ class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT"""
 
 
-    def __init__(self , cloudOptions , migrateOptions, sysAdjustOptions , skipImaging=False, resumeUpload=False, skipUpload=False):
+    def __init__(self , cloudOptions , migrateOptions, sysAdjustOptions , skipImaging=False, resumeUpload=False, skipUpload=False , selfChecks=True):
         self.__adjustedSystemBackupSource = None
         self.__systemBackupSource = None
         self.__systemTransferTarget = None
@@ -44,7 +44,8 @@ class Migrator(object):
         self.__dataMediaList = dict()
         
         self.__runOnWindows = False
-
+        
+        self.__selfChecks = selfChecks
         self.__skipImaging = skipImaging
         self.__skipUpload = skipUpload
         self.__resumeUpload = resumeUpload
@@ -329,15 +330,29 @@ class Migrator(object):
         
             #get data
             extents = self.__adjustedSystemBackupSource.getFilesBlockRange()
-        
+            
             #TODO: create kinda callbacks for transfers to monitor them
             self.__systemTransferTarget.transferRawData(extents)
-              
 
             self.__systemTransferTarget.close()
             # TODO: better release options are needed
             if self.__runOnWindows:
                 self.__windows.freeDataBackupSource(self.__systemBackupSource.getBackupDataSource())
+                # extra testing
+                if self.__selfChecks:
+                    try:
+                        logging.info("Making instance self-check");
+                        testmedia = self.__systemTransferTarget.getMedia()
+                        if isinstance(WindowsVhdMedia.WindowsVhdMedia , testmedia):
+                            testmedia.open()
+                            mediapath = testmedia.getWindowsDevicePath()+"\\Partition1"
+                            self.__adjustedSystemBackupSource.replacementSelfCheck(mediapath)
+                            testmedia.close()
+                    except Exception as e:
+                        logging.warning("!Image self-check couldn't be done");
+                        logging.error("Exception occured = " + str(e));
+                        logging.error(traceback.format_exc())
+            
         
         # we save the config to reflect the image generated is ready. 
         #TODO: add the creation time here? or something alike? snapshot time too?

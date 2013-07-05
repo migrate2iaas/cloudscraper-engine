@@ -8,6 +8,23 @@ import BackupAdjust
 import BackupSource
 import MigrateExceptions
 import logging
+import difflib
+
+#NOTE: defred read could also be used when filesize is too large to keep in memory
+class ReplacedData(object):
+    """Reader for replaced data, needed for debug purposes"""
+    def __init__(self, data, size, filename, fileoffset):
+        self.__data = data
+        self.__size = size
+        self.__filename = filename
+        self.__fileoffset = fileoffset
+        logging.debug("\t Seting replaced data for file" + self.__filename + " at offset " + str(self.__fileoffset) + "of size " + str(self.__size))
+    def __str__(self):
+        self.__size = size
+        self.__filename = filename
+        self.__fileoffset = fileoffset
+        logging.debug("\t Getting replaced data for file" + self.__filename + " at offset " + str(self.__fileoffset) + "of size " + str(self.__size))
+        return data
 
 #for nner use only
 # it uses simple file io to read files
@@ -168,7 +185,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
             try:
                 replacedrange = self.__backupSource.getFileBlockRange(replacedfile)
             except:
-                logging.warning("Cannot get blocks for removed file " + replacedfile)
+                logging.warning("Cannot get blocks for replaced file " + replacedfile)
                 continue
             replacedoffset = 0
             # iterate thru all extents in file to replace, see what blocks it intersects with
@@ -181,7 +198,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                     # we devide the big block of filled data onto three parts: after,before replaced file extent, and the extent itself
                     replacedpart = replacedext.intersection(block)
                     if replacedpart:
-                        logging.debug("Found intersection of volume block " + str(block) + " with " + str(replacedext) + " = " + str(replacedpart));
+                        logging.debug("\tFound intersection of volume block " + str(block) + " with " + str(replacedext) + " = " + str(replacedpart));
                         blockindex = blocksrange.index(block)
                         blockstoremove.append(block)
                         pieces = block.substract(replacedext)
@@ -189,9 +206,15 @@ class AdjustedBackupSource(BackupSource.BackupSource):
 
                         logging.debug("Changing block " + str(replacedpart) + " by data from offset " + str(replacedoffset) + " of replacement file " + str(replacement));
                         filereplacement = open(replacement, "rb")
+                        
                         filereplacement.seek(replacedoffset)
-                        replacedpart.setData(filereplacement.read(replacedpart.getSize())) 
-                        replacedoffset = replacedoffset + replacedpart.getSize()
+                        data = filereplacement.read(replacedpart.getSize())
+                        if (len(data) != replacedpart.getSize()):
+                            logging.warning("Cannot get enough data from the replaced file: " + str(len(data)) + " instead of " + str(replacedpart.getSize()) )
+                        replaceddata = ReplacedData(data , len(data) , removed , replacedoffset)
+                        replacedpart.setData(replaceddata) 
+
+                        replacedoffset = replacedoffset + len(data)
                         filereplacement.close()
 
                         pieces.append(replacedpart)
@@ -201,7 +224,10 @@ class AdjustedBackupSource(BackupSource.BackupSource):
 
                         #break - there could be lots of neighboor blocks cause blocks are divided into parts. see WindowsVolume.py line 264
                 for block in blockstoremove:
+                    logging.debug("\tRemoving inital block " + str(block) + " from block list")
                     blocksrange.remove(block)
+                for newblocks in blocksrange:
+                    logging.debug("\tAdding block"+ str(block) +" to from block list")
                 blocksrange.extend(newblocks)
                 blocksrange = sorted(blocksrange)
 
@@ -232,4 +258,41 @@ class AdjustedBackupSource(BackupSource.BackupSource):
 
         return self.__backupSource.getFileBlockRange(filename)
 
+    #compares if the replaced data on resulting FS (idenitfied by meidapath) is equal to data in replacing files.
+    #Used for self-testing purposes
+    def replacementSelfCheck(self, mediapath):
+        for (removed,replacement) in self.__adjustOption.getReplacedFilesEnum():
+             volname = self.__backupSource.getBackupDataSource().getVolumeName()
+             if replacedfile.startswith(volname):
+                 #remove the starting volume path if any
+                 replacedfile = replacedfile.replace(volname + "\\" , "" , 1)
+             
+             replacedoffset = 0
+             size = 4096*4096;
+             offset = 0
+
+             filereplacement = open(replacement, "rb")
+             targetpath = mediapath+"\\"+replacedfile
+             filetarget = open(targetpath , "rb");
+
+             while 1:
+                datasrc = filereplacement.read(size)
+                datatarget = filetarget.read(size)
+                if len(datasrc) == len(datatarget):
+                    if datasrc == datatarget:
+                        offset += len(datasrc)
+                        continue
+                    else:
+                        logging.error("!!!Error: image corruption detected during the self-check!")
+                        logging.error("Data at offset " + str(offset) + " is not equal for file " + replacedfile);
+                        break
+                else:
+                    logging.error("!!!Error: image corruption detected during the self-check!")
+                    logging.error("Data returned size at offset " + str(offset) + " is dfifferent for two files " + replacedfile);
+                    break
+                if len(datasrc) == 0:
+                    break
+
+             filereplacement.close()
+             filetarget.close()
 
