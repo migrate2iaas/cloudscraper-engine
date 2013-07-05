@@ -21,7 +21,7 @@ class ReplacedData(object):
         logging.debug("\t Seting replaced data for file " + self.__filename + " at offset " + str(self.__fileoffset) + " of size " + str(self.__size))
     def __str__(self):
         logging.debug("\t Getting replaced data for file " + self.__filename + " at offset " + str(self.__fileoffset) + " of size " + str(self.__size))
-        return data
+        return self.__data
 
 #for nner use only
 # it uses simple file io to read files
