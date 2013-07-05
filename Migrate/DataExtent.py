@@ -90,7 +90,10 @@ class DataExtent(object):
         else:
             end = other.getStart() + other.getSize()
 
-        return SplittedDataExtent(start, end-start, self)
+        if end - start > 0:
+            return SplittedDataExtent(start, end-start, self)
+        else:
+            return None
 
          
     # returns list of pieces left after substraction the intersection. The original extent is not affected     
