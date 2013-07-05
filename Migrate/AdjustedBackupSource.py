@@ -18,12 +18,12 @@ class ReplacedData(object):
         self.__size = size
         self.__filename = filename
         self.__fileoffset = fileoffset
-        logging.debug("\t Seting replaced data for file" + self.__filename + " at offset " + str(self.__fileoffset) + "of size " + str(self.__size))
+        logging.debug("\t Seting replaced data for file " + self.__filename + " at offset " + str(self.__fileoffset) + " of size " + str(self.__size))
     def __str__(self):
         self.__size = size
         self.__filename = filename
         self.__fileoffset = fileoffset
-        logging.debug("\t Getting replaced data for file" + self.__filename + " at offset " + str(self.__fileoffset) + "of size " + str(self.__size))
+        logging.debug("\t Getting replaced data for file " + self.__filename + " at offset " + str(self.__fileoffset) + " of size " + str(self.__size))
         return data
 
 #for nner use only
@@ -226,8 +226,8 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                 for block in blockstoremove:
                     logging.debug("\tRemoving inital block " + str(block) + " from block list")
                     blocksrange.remove(block)
-                for newblocks in blocksrange:
-                    logging.debug("\tAdding block"+ str(block) +" to from block list")
+                for block in newblocks:
+                    logging.debug("\tAdding block "+ str(block) +" to overall block list")
                 blocksrange.extend(newblocks)
                 blocksrange = sorted(blocksrange)
 

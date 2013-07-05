@@ -343,6 +343,7 @@ class Migrator(object):
                     try:
                         logging.info("Making instance self-check");
                         testmedia = self.__systemTransferTarget.getMedia()
+                        import WindowsVhdMedia
                         if isinstance(WindowsVhdMedia.WindowsVhdMedia , testmedia):
                             testmedia.open()
                             mediapath = testmedia.getWindowsDevicePath()+"\\Partition1"
