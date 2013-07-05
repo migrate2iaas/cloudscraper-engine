@@ -167,8 +167,11 @@ class Migrator(object):
                 channel.close()
             if self.__systemTransferChannel:
                 self.__systemTransferChannel.close()
-         
-            
+
+            if self.__systemTransferTarget:
+                self.__systemTransferTarget.close()
+            for target in self.__dataTransferTargetList:
+                target.close()
             
 
         # TODO: catch and free resources here! registry, files, vhds, snapshots.
