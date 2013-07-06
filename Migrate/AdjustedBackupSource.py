@@ -258,7 +258,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
     #compares if the replaced data on resulting FS (idenitfied by meidapath) is equal to data in replacing files.
     #Used for self-testing purposes
     def replacementSelfCheck(self, mediapath):
-        for (removed,replacement) in self.__adjustOption.getReplacedFilesEnum():
+        for (replacedfile,replacement) in self.__adjustOption.getReplacedFilesEnum():
              volname = self.__backupSource.getBackupDataSource().getVolumeName()
              if replacedfile.startswith(volname):
                  #remove the starting volume path if any
