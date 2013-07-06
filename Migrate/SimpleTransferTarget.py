@@ -12,6 +12,7 @@ class SimpleTransferTarget(TransferTarget.TransferTarget):
     def __init__(self , offset , mediaproto):
         self.__offset = offset
         self.__mediaProto = mediaproto
+        self.__closed = False
 
     # writes the file
     # need file metadata\permissions too
@@ -24,6 +25,9 @@ class SimpleTransferTarget(TransferTarget.TransferTarget):
 
     # transfers file data only
     def transferRawData(self, volExtents):
+        if self.__closed == True:
+            logging.warning("The transfer target is closed, doing nothing")
+            return
         # we change bootsector so the sysem could boot from it
         #TODO: move to specialized (NTFS) transfer target
         bootsector = DataExtent.DataExtent(0,512)
@@ -72,4 +76,7 @@ class SimpleTransferTarget(TransferTarget.TransferTarget):
         return self.__mediaProto.getMedia()
 
     def close(self):
-        return self.__mediaProto.getMedia().release()
+        if self.__closed == False:
+            return self.__mediaProto.getMedia().release()
+        else:
+            logging.warning("Attempt to close target that was already closed")
