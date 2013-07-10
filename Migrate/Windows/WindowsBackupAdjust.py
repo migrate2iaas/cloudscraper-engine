@@ -398,7 +398,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         for extent in extentsSoftHive:
             data_read = extent.getData()
             data_read_size = len(data_read)
-            softHiveTmp.write(data_read)
+            softHiveTmp.write(data_read)    
 
         softHiveTmp.close()
         self.adjustSoftwareHive(soft_hive_path)

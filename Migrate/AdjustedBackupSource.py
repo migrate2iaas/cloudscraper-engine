@@ -6,9 +6,12 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 import FileToBackup
 import BackupAdjust
 import BackupSource
-import MigrateExceptions
+from MigrateExceptions import *
 import logging
 import difflib
+import DataExtent
+import os
+import sys
 
 #NOTE: defred read could also be used when filesize is too large to keep in memory
 class ReplacedData(object):
@@ -56,8 +59,8 @@ class AdjustedFileToBackup(FileToBackup.FileToBackup):
 
      def getChangedExtents(self):
         self.__reopen()
-        size = GetFileSize(self.__hFile)
-        return DataExtent(0 , size)
+        size = os.stat(self.getSourcePath()).st_size
+        return DataExtent.DataExtent(0 , size)
 
      #returns data read
      def readData(self,extent):
@@ -75,9 +78,7 @@ class AdjustedFileToBackup(FileToBackup.FileToBackup):
             self.__file = open( self.getSourcePath(), mode = "rb" )
     
      def __close(self):
-        if self.__hFile != None:
-            self.__file.close()
-            self.__hFile = None
+        self.__file.close()
 
     
 #for inner use only

@@ -13,7 +13,7 @@ import win32security
 import win32api
 import pywintypes
 
-import MigrateExceptions
+from MigrateExceptions import *
 import BackupSource
 import WindowsFileToBackup
 

@@ -28,12 +28,10 @@ import os
 import logging
 import ImageMedia
 
-from ctypes import *
-
 from MigrateExceptions import *
 
 # TODO: make media base class
-class WindowsVhdMedia(ImageMedia.ImageMedia):
+class WindowsDiskpartVhdMedia(ImageMedia.ImageMedia):
     """VHD disk created and managed by Win2008R2+ systems"""
 
     #it should generate RW-access (protocol to write data) so it could be accessed from elsewhere
@@ -53,97 +51,66 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         self.__maxSizeMb = sizemb
         self.__hDrive = None
 
-        # Load DLL into memory.
-        self.__vdiskDll = ctypes.CDLL("vhdwrap.dll")
-
         return 
 
     #internal function to open drive
-    def __openDrive(self):
+    def opendrive(self):
         secur_att = win32security.SECURITY_ATTRIBUTES()
         secur_att.Initialize()
         drivename = self.getWindowsDevicePath()
         logging.debug("Openning disk %s" , drivename);
         filename = drivename
-
-        # data for ioctl to bring the disk online
-        # input
-        #  typedef struct _SET_DISK_ATTRIBUTES {
-        #  DWORD     Version;
-        #  BOOLEAN   Persist;
-        #  BOOLEAN   Reserved1[3];
-        #  DWORDLONG Attributes;
-        #  DWORDLONG AttributesMask;
-        #  DWORD     Reserved2[4];
-        #} SET_DISK_ATTRIBUTES, *PSET_DISK_ATTRIBUTES;
-        
-        versionsize = struct.calcsize('=IIqqIIII')
-        attributes = struct.pack('=IIqqIIII',versionsize,1,0,1,0,0,0,0)
-        IOCTL_DISK_SET_DISK_ATTRIBUTES = 0x7c0f4
         try:
             self.__hDrive = win32file.CreateFile( drivename, win32con.GENERIC_READ | win32con.GENERIC_WRITE| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ | win32con. FILE_SHARE_WRITE, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
-            outbuffer = win32file.DeviceIoControl(self.__hDrive,  IOCTL_DISK_SET_DISK_ATTRIBUTES ,  attributes, None, None )
         except Exception as ex:
             raise FileException(filename , ex)
 
-    def __closeDrive(self):
+    def closedrive(self):
         win32file.CloseHandle(self.__hDrive)
 
-
-    def __createDisk(self):
-        self.__vdiskDll.CreateExpandingVhd.restype = c_void_p
-        self.__hVirtDisk = self.__vdiskDll.CreateExpandingVhd(c_wchar_p(unicode(self.__fileName)) , c_ulonglong(self.__maxSizeMb*1024*1024))
-        if (self.__hVirtDisk == 0 or self.__hVirtDisk == -1):
-           logging.error("!!!ERROR: Failed to create virtual disk to store data, error = 0x" + hex(self.__vdiskDll.GetLastVhdError(None)))
-           raise WindowsError
-        return
-
-    def __openDisk(self):
-        self.__vdiskDll.CreateExpandingVhd.restype = c_void_p
-        #TODO: check its size
-        self.__hVirtDisk = self.__vdiskDll.OpenVhd(c_wchar_p(unicode(self.__fileName)))
-        if (self.__hVirtDisk == 0 or self.__hVirtDisk == -1):
-           logging.error("!!!ERROR: Failed to create virtual disk to store data, error = 0x" + hex(self.__vdiskDll.GetLastVhdError(None)))
-           raise WindowsError
-        return
-
-    #returns the disk number
-    def __attachDisk(self):
-        self.__vdiskDll.CreateExpandingVhd.restype = c_void_p
-        success = self.__vdiskDll.AttachVhd(c_void_p(self.__hVirtDisk))
-        if success == 0:
-           logging.error("!!!ERROR: Failed to attach virtual disk, error = 0x" + hex(self.__vdiskDll.GetLastVhdError(None)))
-           raise WindowsError
-
-        diskno = self.__vdiskDll.GetAttachedVhdDiskNumber(c_void_p(self.__hVirtDisk))
-        if diskno == -1:
-           last_error = self.__vdiskDll.GetLastVhdError(None)
-           logging.error("!!!ERROR: Failed to get attached virtual disk path, error = 0x" + hex(last_error))
-           raise WindowsError(last_error)
-
-        return diskno
-
-    def __detachDisk(self):
-        success = self.__vdiskDll.DetachVhd(c_void_p(self.__hVirtDisk))
-        if success == 0:
-           logging.error("!!!ERROR: Failed to detach virtual disk, error = 0x" + hex(self.__vdiskDll.GetLastVhdError(None)))
-           raise WindowsError
-        
-    def __closeDisk(self):
-        success = self.__vdiskDll.CloseVhd(c_void_p(self.__hVirtDisk))
-        if success == 0:
-           logging.error("!!!ERROR: Failed to close virtual disk, error = 0x" + hex(self.__vdiskDll.GetLastVhdError(None)))
-           raise WindowsError
-    
+    #starts the connection
     def open(self):
         if os.path.exists(self.__fileName):
-            self.__openDisk()
-        else:
-            logging.debug("Initing new VHD disk");
-            self.__createDisk()
+            #NOTE in this case only readImageData is supported
+            logging.warning("!Image file" + self.__fileName + " opened to read file data only.");
+            return True
+            
+            #raise IOError("image file" + self.__fileName + " already exists. Please, specify another one")
 
-        self.__diskNo = self.__attachDisk()
-        self.__openDrive()
+        logging.debug("Initing new VHD disk");
+        scriptpath = "diskpart_open.tmp"
+        scrfile = open(scriptpath, "w+")
+        script = "create vdisk file=\""+self.__fileName+"\" maximum="+str(self.__maxSizeMb) + " type=EXPANDABLE";
+        script = script.__add__("\nattach vdisk");
+        script = script.__add__("\nconvert mbr");
+        script = script.__add__("\ndetail vdisk");
+        scrfile.write(script);
+        scrfile.close()
+
+        windir = os.environ['windir']
+
+        proc_import_sys = subprocess.Popen([windir+'\\system32\\cmd.exe', '/C', 'diskpart', '/s' , scriptpath ]
+                  , bufsize=1024*1024*128, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        logging.debug("Executing diskpart open script %s" , script);
+        (stdoutdata, stderrdata) = proc_import_sys.communicate();
+        if proc_import_sys.returncode != 0 or stderrdata:
+            logging.error("!!!ERROR: Cannot create new VHD disk. Try to specify another folder for disk image")
+            logging.error("Diskpart failed \n error: " + stderrdata )
+            logging.error("Diskpart failed \n out: " + stdoutdata )
+            logging.error("Script:" + script);
+            return False
+        
+        output = stdoutdata;    
+
+        match = re.search('Associated disk[#][:] ([0-9]+)',output)
+        if match == None:
+            logging.error("!!!ERROR: Cannot create new VHD disk.");
+            logging.error("Diskpart bad output, cannot find disk associated. Output: %s", output)
+            raise EnvironmentError("Bad diskpart output")
+        diskno = int(match.group(1))
+        self.__diskNo = diskno
+        self.opendrive()
 
         return True
 
@@ -156,10 +123,24 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         return
 
     def close(self):
-        self.__closeDrive()
-        self.__detachDisk()
-        self.__closeDisk()
-        
+        self.closedrive()
+
+        scriptpath = "diskpart_close.tmp"
+        scrfile = open(scriptpath, "w+")
+        script = "select vdisk file=\""+self.__fileName+"\"";
+        script = script + "\ndetach vdisk";
+        scrfile.write(script);
+        scrfile.close()
+
+        logging.debug("Executing diskpart close script %s" , script);
+
+        try:
+            output = subprocess.check_output("diskpart /s \"" + scriptpath +"\"" , shell=True);
+        except subprocess.CalledProcessError as ex:
+            logging.error("!!!ERROR: Cannot release VHD image disk in order to upload it. Try to detach it manually and restart program with upload-only option.");
+            logging.error("Diskpart failed" + ex.output)
+            logging.error("Script: \n" + script);
+            raise
         return True
 
     def flush(self):

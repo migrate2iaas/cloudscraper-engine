@@ -25,6 +25,7 @@
     <Compile Include="AdjusteBackupSource_test.py" />
     <Compile Include="AdjustedBackupSource.py" />
     <Compile Include="Amazon\AmazonConfigs.py" />
+    <Compile Include="Amazon\EC2ImportConnection.py" />
     <Compile Include="Amazon\EC2Instance.py" />
     <Compile Include="Amazon\EC2InstanceGenerator.py" />
     <Compile Include="Amazon\EC2Instance_test.py" />
@@ -42,6 +43,7 @@
     <Compile Include="ElasticHosts\EHUploadChannel_test.py" />
     <Compile Include="GzipChunkMedia.py" />
     <Compile Include="GzipChunkMedia_test.py" />
+    <Compile Include="Helper\UnicodeConfigParser.py" />
     <Compile Include="ImageMedia.py" />
     <Compile Include="Migrate.py" />
     <Compile Include="MigrateConfig.py" />
@@ -59,6 +61,7 @@
     <Compile Include="SystemAdjustOptions.py" />
     <Compile Include="SystemInfo.py" />
     <Compile Include="TransferTarget.py" />
+    <Compile Include="UploadChannel.py" />
     <Compile Include="VolumeInfo.py" />
     <Compile Include="Windows\VSS.py" />
     <Compile Include="Windows\VSSthruVscsc.py" />
@@ -71,6 +74,7 @@
     <Compile Include="Windows\WindowsBackupSource.py" />
     <Compile Include="Windows\WindowsDiskParser.py" />
     <Compile Include="Windows\WindowsDiskParser_test.py" />
+    <Compile Include="Windows\WindowsDiskpartVhdMedia.py" />
     <Compile Include="Windows\WindowsFileToBackup.py" />
     <Compile Include="Windows\WindowsSystemAdjustOptions.py" />
     <Compile Include="Windows\WindowsSystemInfo.py" />
@@ -86,6 +90,7 @@
     <Folder Include="Amazon\" />
     <Folder Include="ElasticHosts\" />
     <Folder Include="Azure\" />
+    <Folder Include="Helper\" />
     <Folder Include="Windows" />
   </ItemGroup>
   <ItemGroup>

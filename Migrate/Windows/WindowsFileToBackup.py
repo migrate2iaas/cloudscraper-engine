@@ -72,7 +72,7 @@ class WindowsFileToBackup(FileToBackup.FileToBackup):
         return DataExtent(0 , size)
 
     #returns data read
-    def readData(self,extent):
+    def readData(self,volextent):
         self.__reopen()
         filename = self.__name
         try:
@@ -90,6 +90,8 @@ class WindowsFileToBackup(FileToBackup.FileToBackup):
         if self.__hFile == None:
             filename = self.getSourcePath()
             try:
+                secur_att = win32security.SECURITY_ATTRIBUTES()
+                secur_att.Initialize()
                 self.__hFile = win32file.CreateFile( filename, win32con.GENERIC_READ | win32con.READ_CONTROL | ntsecuritycon.FILE_READ_ATTRIBUTES | ntsecuritycon.FILE_WRITE_ATTRIBUTES, win32con. FILE_SHARE_READ|win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_ALWAYS, win32con.FILE_ATTRIBUTE_NORMAL|win32con. FILE_FLAG_BACKUP_SEMANTICS , 0 )
             except Exception as ex:
                 raise FileException(filename , ex)

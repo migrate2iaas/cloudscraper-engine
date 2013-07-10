@@ -123,7 +123,9 @@ class SplittedDataExtent(DataExtent):
         return super(SplittedDataExtent, self).__init__(start, size)
          
     def getData(self):
+        #NOTE: wtf is it?
         if self._DataExtent__data:
-           return super(SplittedDataExtent, self).getData()
+            logging.debug("SplittedDataExtent: Getting data from base class data."); #dunno when and why it might be called
+            return super(SplittedDataExtent, self).getData()
         data = self.__originalExt.getData()
         return data[self.getStart() -  self.__originalExt.getStart():self.getStart() - self.__originalExt.getStart() + self.getSize()]

@@ -123,7 +123,8 @@ class EC2InstanceGenerator(object):
 
                         return EC2Instance.EC2Instance(instanceid)
                     if importstatus == "cancelled":
-                        logging.error("!!!ERROR: The import task was cancelled by AWS. Reason: " + import_task.get_message());
+                        logging.error("!!!ERROR: The import task was cancelled by AWS. Reason: ");
+                        logging.error("!!! " + import_task.get_message());
                         return None
 
         return None

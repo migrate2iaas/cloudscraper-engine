@@ -48,8 +48,40 @@ class WindowsVhdMedia_test(unittest.TestCase):
         #TODO: need kinda automate it in order to reinit
         media.close()
         os.remove(imagepath)
+
+
+    def test_utfdisk(self):
+        imagesize = 512*1024*1024*1024
+        imagepath = u"E:\\\u4500abc.vhd"
+        media = WindowsVhdMedia.WindowsVhdMedia(imagepath , imagesize+1024*1024)
+        self.assertTrue(media.open())
+        datatransfer = WindowsDeviceDataTransferProto.WindowsDeviceDataTransferProto(media.getWindowsDevicePath(), media.getWindowsDiskNumber() , media)
+        parser = SimpleDiskParser.SimpleDiskParser(datatransfer , 0xeda)
+        transfertarget = parser.createTransferTarget(imagesize)
+        #TODO: test media is ok
+        #TODO: need kinda automate it in order to reinit
+        media.close()
+        os.remove(imagepath)
+
+    def test_utfdiskreopen(self):
+        imagesize = 512*1024*1024*1024
+        imagepath = u"E:\\\u4500abc2.vhd"
+        media = WindowsVhdMedia.WindowsVhdMedia(imagepath , imagesize+1024*1024)
+        self.assertTrue(media.open())
+        datatransfer = WindowsDeviceDataTransferProto.WindowsDeviceDataTransferProto(media.getWindowsDevicePath(), media.getWindowsDiskNumber() , media)
+        parser = SimpleDiskParser.SimpleDiskParser(datatransfer , 0xeda)
+        transfertarget = parser.createTransferTarget(imagesize)
+        #TODO: test media is ok
+        #TODO: need kinda automate it in order to reinit
+        media.close()
+        self.assertTrue(media.open())
+        media.close()
+        os.remove(imagepath)
+    
     
     def test_sharedisk(self):
+        #virtual disk doesn't seem to open on a share pointing to local machine due to vhd support limitations
+        return
         imagesize = 512*1024*1024*1024
         imagepath = "\\\\127.0.0.1\\downloads\\share.vhd"
         media = WindowsVhdMedia.WindowsVhdMedia(imagepath , imagesize+1024*1024)
@@ -57,7 +89,8 @@ class WindowsVhdMedia_test(unittest.TestCase):
         
 
     def test_nonemptydisk(self):
-        return 
+        return
+        #NOTE: rewrites are available only if we use WindowsDiskParser. Writes are blocked otherwise
         imagesize = 512*1024*1024*1024
         imagepath = "E:\\vhdtest4.vhd"
         media = WindowsVhdMedia.WindowsVhdMedia(imagepath , imagesize+1024*1024)
@@ -68,30 +101,19 @@ class WindowsVhdMedia_test(unittest.TestCase):
 
         #createa two volumes on 1 disk. G is first (and starts from the first disk) and H is the second.
         #the test is to transfer filesystem form H to vhdtest.vhd with the bootsector loaded from G
-        self.__WinVol1 = WindowsVolume.WindowsVolume("\\\\.\\J:")
-        extent = DataExtent.DataExtent(0, 4096)
-        boot1 = self.__WinVol1.readExtent(extent)
-
-        file = open("E:\\j_bootsector.raw", "wb")
-        file.write(boot1)
-        file.close()
-
-        self.__WinVol2 = WindowsVolume.WindowsVolume("\\\\.\\H:")
+        self.__WinVol2 = WindowsVolume.WindowsVolume("\\\\.\\D:")
         extent = DataExtent.DataExtent(0, 4096)
         boot2 = self.__WinVol2.readExtent(extent)
 
-        file = open("E:\\h_bootsector.raw", "wb")
+        file = open("E:\\d_bootsector.raw", "wb")
         file.write(boot2)
         file.close()
-
 
         self.__systemBackupSource = WindowsBackupSource.WindowsBackupSource()
         self.__systemBackupSource.setBackupDataSource(self.__WinVol2)
         blocks = self.__systemBackupSource.getFilesBlockRange()
         transfertarget.transferRawData(blocks)
-       # extent.setData(boot1)
-       # transfertarget.transferRawData(extent)
-       # media.close()
+        media.close()
         
 
 if __name__ == '__main__':

@@ -183,7 +183,6 @@ class EHUploadChannel(UploadChannel.UploadChannel):
             i = i + 1
         return
 
-        logging.info("Succesfully created an upload channel to S3 bucket " + self.__bucketName  + " at " +  location)
 
     # this one is async
     def uploadData(self, extent):       

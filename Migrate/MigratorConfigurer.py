@@ -161,9 +161,9 @@ class MigratorConfigurer(object):
         config = UnicodeConfigParser.UnicodeConfigParser()
         config.readfp(codecs.open(configfile, "r", "utf16"))
         if config.has_section('EC2'):
-            return configAmazon(configfile , '' , password)
+            return self.configAmazon(configfile , '' , password)
         if config.has_section('ElasticHosts'):
-            return configElasticHosts(configfile , '' , password)
+            return self.configElasticHosts(configfile , '' , password)
         return None
 
     #returns the tuple containing the config info (Image,Fixups,Cloud)

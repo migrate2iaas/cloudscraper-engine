@@ -85,7 +85,7 @@ class RawGzipMedia(ImageMedia.ImageMedia):
     #reads data from the container (as it was a disk)
     def readDiskData(self , offset , size):
         self.__gzipFile.seek(offset)
-        return  self.__gzipFile.read(data)
+        return  self.__gzipFile.read(size)
 
     #gets the overall image size available for writing. Note: it is subject to grow when new data is written
     def getImageSize(self):

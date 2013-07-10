@@ -24,8 +24,8 @@ import GzipChunkMedia
 class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT"""
 
-
-    def __init__(self , cloudOptions , migrateOptions, sysAdjustOptions , skipImaging=False, resumeUpload=False, skipUpload=False , selfChecks=True):
+    #self-checks are not working for now
+    def __init__(self , cloudOptions , migrateOptions, sysAdjustOptions , skipImaging=False, resumeUpload=False, skipUpload=False , selfChecks=False):
         self.__adjustedSystemBackupSource = None
         self.__systemBackupSource = None
         self.__systemTransferTarget = None
@@ -255,7 +255,7 @@ class Migrator(object):
         if newtarget:
             parser = SimpleDiskParser.SimpleDiskParser(SimpleDataTransferProto.SimpleDataTransferProto(media) , adjustoptions.getNewMbrId() , self.__additionalMediaSize)
             return parser.createTransferTarget(size)
-        return SimpleDiskTransferTarget( self.__additionalMediaSize , SimpleDataTransferProto.SimpleDataTransferProto(media) )
+        return SimpleDiskTransferTarget.SimpleDiskTransferTarget( self.__additionalMediaSize , SimpleDataTransferProto.SimpleDataTransferProto(media) )
         
 
     def createSystemTransferTarget(self):
@@ -383,7 +383,8 @@ class Migrator(object):
                 logging.error("!!!Error: Upload error. Please make a reupload via resume upload")
                 return False
   
-  
+        #TODO: add redeploy!
+
         #creating instance from the uploaded image
         # imagesize here is the size of image file. but getImageSize() is the size of initial volume
         self.generateInstance(self.__migrateOptions.getSystemVolumeConfig().getUploadId() , imagesize , disksize)
