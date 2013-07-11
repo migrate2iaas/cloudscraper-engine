@@ -121,12 +121,12 @@ class SplittedDataExtent(DataExtent):
 
     def __init__(self, start, size, originalext):
         self.__originalExt = originalext
-        return super(SplittedDataExtent, self).__init__(start, size)
+        super(SplittedDataExtent, self).__init__(start, size)
          
     def getData(self):
-        #NOTE: means someone has reset the data to another one
+        #NOTE: means someone has changed the data by setData call
         if self._DataExtent__data:
-            logging.debug("SplittedDataExtent: Getting data from base class data."); #dunno when and why it might be called
+            logging.debug("SplittedDataExtent: Getting data from base class data."); 
             return super(SplittedDataExtent, self).getData()
         data = self.__originalExt.getData()
         return data[self.getStart() -  self.__originalExt.getStart():self.getStart() - self.__originalExt.getStart() + self.getSize()]

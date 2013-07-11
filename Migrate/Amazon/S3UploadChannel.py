@@ -115,7 +115,7 @@ class S3UploadThread(threading.Thread):
         self.__skipExisting = skipExisting
         self.__channel = channel
         self.__maxRetries = retries
-        return super(S3UploadThread,self).__init__()
+        super(S3UploadThread,self).__init__()
 
     def run(self):
         while 1:

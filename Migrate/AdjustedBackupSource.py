@@ -63,7 +63,7 @@ class AdjustedFileToBackup(FileToBackup.FileToBackup):
         return DataExtent.DataExtent(0 , size)
 
      #returns data read
-     def readData(self,extent):
+     def readData(self,volextent):
         self.__reopen()
 
         self.__file.seek(volextent.getStart());

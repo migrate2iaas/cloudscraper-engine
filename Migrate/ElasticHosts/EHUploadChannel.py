@@ -50,7 +50,7 @@ class EHUploadThread(threading.Thread):
         self.__maxRetries = retries
         self.__EH = ehSession
         self.__hostname = hostname
-        return super(EHUploadThread,self).__init__()
+        super(EHUploadThread,self).__init__()
 
     def run(self):
         while 1:

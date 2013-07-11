@@ -45,7 +45,7 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
          self.__systemPartStart = newPart
 
      # gets new mount points
-     def getMountPoints():
+     def getMountPoints(self):
          return
 
      def fixRDP(self):

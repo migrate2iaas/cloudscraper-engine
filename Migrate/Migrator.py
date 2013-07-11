@@ -20,6 +20,7 @@ import MigrateConfig
 import CloudConfig
 import SystemAdjustOptions
 import GzipChunkMedia
+import SimpleTransferTarget
 
 class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT"""
@@ -255,7 +256,7 @@ class Migrator(object):
         if newtarget:
             parser = SimpleDiskParser.SimpleDiskParser(SimpleDataTransferProto.SimpleDataTransferProto(media) , adjustoptions.getNewMbrId() , self.__additionalMediaSize)
             return parser.createTransferTarget(size)
-        return SimpleDiskTransferTarget.SimpleDiskTransferTarget( self.__additionalMediaSize , SimpleDataTransferProto.SimpleDataTransferProto(media) )
+        return SimpleTransferTarget.SimpleTransferTarget( self.__additionalMediaSize , SimpleDataTransferProto.SimpleDataTransferProto(media) )
         
 
     def createSystemTransferTarget(self):
