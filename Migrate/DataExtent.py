@@ -3,6 +3,7 @@ __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
+import logging
 
 class DataExtent(object):
     """one linear data interval"""
@@ -123,7 +124,7 @@ class SplittedDataExtent(DataExtent):
         return super(SplittedDataExtent, self).__init__(start, size)
          
     def getData(self):
-        #NOTE: wtf is it?
+        #NOTE: means someone has reset the data to another one
         if self._DataExtent__data:
             logging.debug("SplittedDataExtent: Getting data from base class data."); #dunno when and why it might be called
             return super(SplittedDataExtent, self).getData()
