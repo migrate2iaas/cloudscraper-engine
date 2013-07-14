@@ -183,10 +183,10 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
             raise IOError("Use open first to create vhd disk media")
         filename = self.getWindowsDevicePath()
         try:
-            logging.error("!!!ERROR: Failed to write to existing disk image. Please specify another image path and restart the operation.")
             win32file.SetFilePointer(self.__hDrive, offset, win32con.FILE_BEGIN)
             (result , output) = win32file.WriteFile(self.__hDrive,data)
         except Exception as ex:
+            logging.error("!!!ERROR: Failed to write to existing disk image. Please specify another image path and restart the operation.")
             raise FileException(filename , ex)
         return output
 

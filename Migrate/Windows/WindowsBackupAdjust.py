@@ -276,7 +276,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         hivepath = os.environ['TEMP']+"\\tempbcdhive"+str(int(time.mktime(time.localtime())))
         shutil.copy2(originalhivepath , hivepath)
         #TODO: copy hive to sorta temp dir
-        bcdkeyname = "MigrationBCD"
+        bcdkeyname = "MigrationBCD"+str(int(time.mktime(time.localtime())))
         BCD_DETECTHAL_KEY = "26000010"
         BCD_DEVICE_KEY = "11000001"
         BCD_OS_DEVICE_KEY = "21000001"
@@ -312,15 +312,13 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
                     logging.debug("MBR ID = " + hex(self.__adjustConfig.getNewMbrId()) + " , PartOffset = " + hex(self.__adjustConfig.getNewSysPartStart()))
                     win32api.RegSetValueEx(valuekey, "Element", 0, valtype, newvalue)
                     valuekey.close()
-            # turn on detect hal option 
-            if detecthal:
-                valuekey = win32api.RegCreateKey(elementskey, BCD_DETECTHAL_KEY);
-                logging.debug("Changing the element " + BCD_DETECTHAL_KEY + " of " + keyname + " bcd object: setting HAL autodetect" );
-                win32api.RegSetValueEx(valuekey, "Element", 0, win32con.REG_BINARY, 1)
-                valuekey.close()
-            
-            elementskey = win32api.RegOpenKeyEx(objectskey, keyname+"\\Elements" , 0 , win32con.KEY_ALL_ACCESS )
-            
+                    # turn on detect hal option 
+                    if detecthal:
+                        valuekey = win32api.RegCreateKey(elementskey, BCD_DETECTHAL_KEY);
+                        logging.debug("Changing the element " + BCD_DETECTHAL_KEY + " of " + keyname + " bcd object: setting HAL autodetect" );
+                        value = bytearray([0x01])
+                        win32api.RegSetValueEx(valuekey, "Element", 0, win32con.REG_BINARY, value)
+                        valuekey.close()
             elementskey.close()
         objectskey.close()
 

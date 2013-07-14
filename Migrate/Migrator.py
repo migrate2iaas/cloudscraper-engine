@@ -178,14 +178,7 @@ class Migrator(object):
         # TODO: catch and free resources here! registry, files, vhds, snapshots.
         # use context manager for that
         return
-
-    def generateStepHandlers(self):
-        # kinda of config factory in here
-        # just schamatic:
-       
-        return True
             
-
 
     def checkSystemCompatibility(self):
         if self.__runOnWindows:
