@@ -256,11 +256,11 @@ class MigratorConfigurer(object):
                 letters = config.get('Volumes', 'letters');
                 for letter in letters.split(','):
                     devicepath = '\\\\.\\'+letter+':';
-                    size = Windows.Windows().getSystemInfo().getVolumeInfo(letter+":").getSize()
                     volume = VolumeMigrateIniConfig(config , configfile , letter , devicepath)
                     if volume.getImagePath() == '':
                         volume.setImagePath(imagedir+"\\"+letter+"."+imagetype);
                     if volume.getImageSize() == 0:
+                        size = Windows.Windows().getSystemInfo().getVolumeInfo(letter+":").getSize()
                         volume.setImageSize(size);
                     s3objkey = letter
                     if s3prefix:

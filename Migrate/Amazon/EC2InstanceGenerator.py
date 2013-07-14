@@ -47,12 +47,12 @@ class EC2InstanceGenerator(object):
 
         S3 = S3Connection(s3owner, s3key, is_secure=True)
         parsedurl = xml[xml.find('.com'):].split('/' , 3)
-        buceketname = parsedurl[1]
+        bucketname = parsedurl[1]
         keyname = parsedurl[2]
 
-        logging.debug("Manifest xml is in bucket " + buceketname + " , key " + keyname);
+        logging.debug("Manifest xml is in bucket " + bucketname + " , key " + keyname);
 
-        xmlurl = S3.generate_url( linktimeexp_seconds, method='GET', bucket=buceketname, key=keyname, force_http=False)
+        xmlurl = S3.generate_url( linktimeexp_seconds, method='GET', bucket=bucketname, key=keyname, force_http=False)
 
         ec2region = self.__region
         machine_arch = initialconfig.getArch()
@@ -64,7 +64,32 @@ class EC2InstanceGenerator(object):
         tmp_vmdk_file = temp_local_image_path
       
         if image_file_size == 0 and temp_local_image_path:
-            image_file_size = os.stat(temp_local_image_path).st_size
+            if os.path.exists(temp_local_image_path):
+                image_file_size = os.stat(temp_local_image_path).st_size
+
+        if volume_size_bytes == 0 or image_file_size == 0:
+            bucket = S3.get_bucket(bucketname)
+            if bucket:
+                key = bucket.get_key(keyname)
+                if key:
+                    xmlheader = key.read(4096)
+                    (head, sep ,tail) = xmlheader.partition("<size>")
+                    if tail:
+                        image_file_size = int(tail , base = 10)
+                        logging.debug("The image of size " + image_file_size)
+                    else:
+                        logging.warning("!Couldn't parse the xml describing the import done")
+                    (head, sep ,tail) = xmlheader.partition("<volume-size>")
+                    if tail:
+                        volume_size_bytes = int(tail , base = 10) * gb
+                    else:
+                        logging.warning("!Couldn't parse the xml describing the import done")
+                        logging.debug("The volume would be of size " + volume_size_bytes)
+                else:
+                    logging.error("!!!ERROR: Cannot find S3 key " + xml + " describing the image uploaded");
+            else:
+                logging.error("!!!ERROR: Couldn't access bucket " + bucketname + " to find " + xml + " describing the image uploaded")
+
 
         scripts_dir = ".\\Amazon"
 

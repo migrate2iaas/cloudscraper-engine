@@ -171,7 +171,7 @@ class Migrator(object):
 
             if self.__systemTransferTarget:
                 self.__systemTransferTarget.close()
-            for target in self.__dataTransferTargetList:
+            for target in self.__dataTransferTargetList.values():
                 target.close()
             
 
@@ -501,7 +501,7 @@ class Migrator(object):
                 #Note: get upload path should be set to '' for the new uploads
                 description = os.environ['COMPUTERNAME']+"-"+"data"+"-"+str(datetime.date.today())
                 for volinfo in self.__migrateOptions.getDataVolumes():
-                    self.__dataChannelList[volinfo.getVolumePath()]= EHUploadChannel.EHUploadChannel(volinfo.getUploadPath() , userid , apisecret , self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
+                    self.__dataChannelList[volinfo.getVolumePath()] = EHUploadChannel.EHUploadChannel(volinfo.getUploadPath() , userid , apisecret , self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
                   
             # update the upload path in config in case it was changed or created by the channel
             for volinfo in self.__migrateOptions.getDataVolumes():
