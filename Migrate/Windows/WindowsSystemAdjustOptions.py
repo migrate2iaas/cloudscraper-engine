@@ -10,19 +10,24 @@ import SystemAdjustOptions
 class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):    
      """special Windows options"""
      
-     def __init__(self):
+     def __init__(self, detectHal = True):
          super(WindowsSystemAdjustOptions,self).__init__()
          random.seed()
          self.__systemPartStart = long(0x0100000);
          self.__newMbr = int(random.randint(1, 0x0FFFFFFF))
          self.__prebuiltBcdPath = "..\\resources\\boot\\win\\BCD_MBR"
+         self.__detectHal = detectHal
 
      # override loading the data from config file
      def loadConfig(self , adjustOptionConfig):
+         #TODO: load ini config setting these values
          return 
 
      
      #Windows special methods
+
+     def detectHal(self):
+         return self.__detectHal
 
      #
      def getPregeneratedBcdHivePath(self):

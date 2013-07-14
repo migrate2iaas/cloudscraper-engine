@@ -277,7 +277,12 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         shutil.copy2(originalhivepath , hivepath)
         #TODO: copy hive to sorta temp dir
         bcdkeyname = "MigrationBCD"
-        
+        BCD_DETECTHAL_KEY = "26000010"
+        BCD_DEVICE_KEY = "11000001"
+        BCD_OS_DEVICE_KEY = "21000001"
+
+        detecthal = True
+
         logging.info("Creating new BCD record");
 
         # A call to RegLoadKey fails if the calling process does not have the SE_RESTORE_PRIVILEGE privilege.
@@ -293,7 +298,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             elementskey = win32api.RegOpenKeyEx(objectskey, keyname+"\\Elements" , 0 , win32con.KEY_ALL_ACCESS )
             valuekeys = win32api.RegEnumKeyEx(elementskey)
             for  (valkeyname, reserved, classname1, modtime1) in valuekeys:
-                if valkeyname == "11000001" or valkeyname == "21000001":
+                if valkeyname == BCD_DEVICE_KEY or valkeyname == BCD_OS_DEVICE_KEY:
                     logging.debug("Changing the element " + valkeyname + " of " + keyname + " bcd object" );
 
                     valuekey = win32api.RegOpenKeyEx(elementskey, valkeyname , 0 , win32con.KEY_ALL_ACCESS )
@@ -307,6 +312,15 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
                     logging.debug("MBR ID = " + hex(self.__adjustConfig.getNewMbrId()) + " , PartOffset = " + hex(self.__adjustConfig.getNewSysPartStart()))
                     win32api.RegSetValueEx(valuekey, "Element", 0, valtype, newvalue)
                     valuekey.close()
+            # turn on detect hal option 
+            if detecthal:
+                valuekey = win32api.RegCreateKey(elementskey, BCD_DETECTHAL_KEY);
+                logging.debug("Changing the element " + BCD_DETECTHAL_KEY + " of " + keyname + " bcd object: setting HAL autodetect" );
+                win32api.RegSetValueEx(valuekey, "Element", 0, win32con.REG_BINARY, 1)
+                valuekey.close()
+            
+            elementskey = win32api.RegOpenKeyEx(objectskey, keyname+"\\Elements" , 0 , win32con.KEY_ALL_ACCESS )
+            
             elementskey.close()
         objectskey.close()
 

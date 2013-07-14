@@ -247,7 +247,7 @@ class Migrator(object):
             logging.error("!!!ERROR: VHD images are supported on Windows 2008R2 Server and 2012 Server systems only")    
         if self.__migrateOptions.getImageType() == "raw.gz" and self.__migrateOptions.getImagePlacement() == "local":
             media = RawGzipMedia.RawGzipMedia(imagepath , imagesize)
-        if self.__migrateOptions.getImageType() == "raw.tar" and self.__migrateOptions.getImagePlacement() == "local":
+        if (self.__migrateOptions.getImageType() == "raw.tar" or self.__migrateOptions.getImageType() == "RAW") and self.__migrateOptions.getImagePlacement() == "local":
             media = GzipChunkMedia.GzipChunkMedia(imagepath , imagesize , self.__cloudOptions.getUploadChunkSize())
         media.open()
         return media
