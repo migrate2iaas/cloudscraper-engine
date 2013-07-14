@@ -190,7 +190,8 @@ class Migrator(object):
     def checkSystemCompatibility(self):
         if self.__runOnWindows:
             SysInfo = self.__windows.getSystemInfo()
-            if SysInfo.getSystemArcheticture() == SysInfo.Archx8664 and SysInfo.getKernelVersion() >= SysInfo.Win2008R2:
+            logging.info("System version: " + SysInfo.getSystemVersionString() + " arch:" + hex(SysInfo.getSystemArcheticture()));
+            if (SysInfo.getSystemArcheticture() == SysInfo.Archx8664 or SysInfo.getSystemArcheticture() == Archi386) and SysInfo.getKernelVersion() >= SysInfo.Win2008:
                 return True
             logging.error("!!!ERROR: The configuration is not supported " + SysInfo.getSystemVersionString() + " arch:" + hex(SysInfo.getSystemArcheticture()));
             logging.info("Windows 2008R2 and 2012 Server are supported for now");
@@ -241,10 +242,11 @@ class Migrator(object):
         imagemedia = None
         if self.__runOnWindows:
             import Windows
-            if self.__migrateOptions.getImageType() == "VHD" and self.__migrateOptions.getImagePlacement() == "local" and self.__windows.getVersion() >= self.__windows.getSystemInfo().Win2008R2:
-                media = self.__windows.createVhdMedia(imagepath, imagesize)
-        else:
-            logging.error("!!!ERROR: VHD images are supported on Windows 2008R2 Server and 2012 Server systems only")    
+            if self.__migrateOptions.getImageType() == "VHD" and self.__migrateOptions.getImagePlacement() == "local":
+                if self.__windows.getVersion() >= self.__windows.getSystemInfo().Win2008R2:
+                    media = self.__windows.createVhdMedia(imagepath, imagesize)
+                else:
+                    logging.error("!!!ERROR: VHD images are supported on Windows 2008 R2 Server and higher systems only")    
         if self.__migrateOptions.getImageType() == "raw.gz" and self.__migrateOptions.getImagePlacement() == "local":
             media = RawGzipMedia.RawGzipMedia(imagepath , imagesize)
         if (self.__migrateOptions.getImageType() == "raw.tar" or self.__migrateOptions.getImageType() == "RAW") and self.__migrateOptions.getImagePlacement() == "local":

@@ -77,7 +77,7 @@ class WindowsSystemInfo(SystemInfo.SystemInfo):
         if self.__winOsType == 2: #VER_NT_DOMAIN_CONTROLLER:
             ostype = "Domain Controller"
         #TODO: convert self.__winSuite to text according to _OSVERSIONINFOEX
-        return "Windows "+ ostype + str()+"."+str(self.__winMinor)+"."+str(self.__winBuild)+" SP:"+str(self.__winServicePackMajor)+"."+str(self.__winServicePackMinor)+" \"" + self.__winVersionExtraString +"\" Suite mask:" +  hex(self.__winSuite)
+        return "Windows "+ ostype + str(self.__winMajor)+"."+str(self.__winMinor)+"."+str(self.__winBuild)+" SP:"+str(self.__winServicePackMajor)+"."+str(self.__winServicePackMinor)+" \"" + self.__winVersionExtraString +"\" Suite mask:" +  hex(self.__winSuite)
 
 
     def getKernelVersion(self):
