@@ -507,7 +507,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
     def close(self):
         for thread in self.__workThreads:
-            self.__uploadQueue.put( (None , None, None, None ) )
+            self.__uploadQueue.put( None )
    
 
         
