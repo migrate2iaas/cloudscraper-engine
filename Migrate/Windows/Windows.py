@@ -99,7 +99,7 @@ class Windows(object):
             logging.debug("Creating an empty BCD store");      
             # we create an empty BCD so it'll be altered after the transition
             bcdfile = open(bootdir+"\\BCD", "w")
-            nullbytes = bytearray(64*1024*1024)
+            nullbytes = bytearray(64*1024)
             bcdfile.write(nullbytes)
 
 
@@ -126,7 +126,7 @@ class Windows(object):
         return parser.createTransferTarget(size)
         
     def createSystemAdjustOptions(self):
-        return WindowsSystemAdjustOptions.WindowsSystemAdjustOptions()
+        return WindowsSystemAdjustOptions.WindowsSystemAdjustOptions(self.getVersion() < WindowsSystemInfo.WindowsSystemInfo.Win2008R2)
 
     def getVersion(self):
         return WindowsSystemInfo.WindowsSystemInfo().getKernelVersion()

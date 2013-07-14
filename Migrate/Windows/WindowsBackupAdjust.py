@@ -340,6 +340,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             blocks = backupSource.getFileBlockRange(bootdir+"\\BCD")
             for block in blocks:
                 bcd_size = bcd_size + block.getSize()
+            logging.debug("Original BCD of size " + str(bcd_size) + " was found");
         except:
             bcd_exists = False
 
