@@ -281,7 +281,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         BCD_DEVICE_KEY = "11000001"
         BCD_OS_DEVICE_KEY = "21000001"
 
-        detecthal = True
+        detecthal = self.__adjustConfig.detectHal()
 
         logging.info("Creating new BCD record");
 
