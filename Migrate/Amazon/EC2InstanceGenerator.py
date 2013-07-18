@@ -21,6 +21,7 @@ import traceback
 import datetime
 
 import EC2ImportConnection
+from EC2VolumeGenerator import getImageDataFromXml
 
 class EC2InstanceGenerator(object):
     """generator class for ec2 instances"""
@@ -36,7 +37,7 @@ class EC2InstanceGenerator(object):
      
      #TODO: need extra params like volume size and image size.
      #TODO: maybe we have all the data in initialconfig
-    def makeInstanceFromImage(self , imageid , initialconfig, s3owner, s3key, temp_local_image_path , image_file_size = 0, volume_size_bytes = 0):
+    def makeInstanceFromImage(self , imageid , initialconfig, s3owner, s3key, temp_local_image_path , image_file_size = 0, volume_size_bytes = 0, imagetype='VHD'):
 
         #NOTE: should download imageid of no image_file_size or volume_size_bytes specified
 
@@ -68,27 +69,8 @@ class EC2InstanceGenerator(object):
                 image_file_size = os.stat(temp_local_image_path).st_size
 
         if volume_size_bytes == 0 or image_file_size == 0:
-            bucket = S3.get_bucket(bucketname)
-            if bucket:
-                key = bucket.get_key(keyname)
-                if key:
-                    xmlheader = key.read(4096)
-                    (head, sep ,tail) = xmlheader.partition("<size>")
-                    if tail:
-                        image_file_size = int(tail , base = 10)
-                        logging.debug("The image of size " + image_file_size)
-                    else:
-                        logging.warning("!Couldn't parse the xml describing the import done")
-                    (head, sep ,tail) = xmlheader.partition("<volume-size>")
-                    if tail:
-                        volume_size_bytes = int(tail , base = 10) * gb
-                    else:
-                        logging.warning("!Couldn't parse the xml describing the import done")
-                        logging.debug("The volume would be of size " + volume_size_bytes)
-                else:
-                    logging.error("!!!ERROR: Cannot find S3 key " + xml + " describing the image uploaded");
-            else:
-                logging.error("!!!ERROR: Couldn't access bucket " + bucketname + " to find " + xml + " describing the image uploaded")
+            if volume_size_bytes == 0 or image_file_size == 0:
+                (volume_size_bytes , image_file_size , imagetype) = getImageDataFromXml(bucketname, keyname)
 
 
         scripts_dir = ".\\Amazon"
@@ -114,7 +96,7 @@ class EC2InstanceGenerator(object):
             # waiting till the process completes        
             import_task = None
             try:
-                import_task = connection.import_instance(xmlurl, image_file_size , 'VHD' , ec2zone , newvolsize , securitygroup , instancetype , machine_arch , "cloudscraper"+str(datetime.date.today()) )
+                import_task = connection.import_instance(xmlurl, image_file_size , imagetype , ec2zone , newvolsize , securitygroup , instancetype , machine_arch , "cloudscraper"+str(datetime.date.today()) )
             except Exception as e:
                 logging.error("!!!ERROR: Couldn't start volume conversion!")
                 logging.error("!!!ERROR:" + str(e))

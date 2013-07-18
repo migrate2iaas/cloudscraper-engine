@@ -432,7 +432,7 @@ class Migrator(object):
             awssecret = self.__cloudOptions.getCloudPass()
             generator = EC2InstanceGenerator.EC2InstanceGenerator(self.__cloudOptions.getRegion())
 
-            instance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , awskey, awssecret , self.__migrateOptions.getSystemImagePath() , imagesize , volumesize)
+            instance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , awskey, awssecret , self.__migrateOptions.getSystemImagePath() , imagesize , volumesize , self.__migrateOptions.getImageType())
             
         return True
 
@@ -447,7 +447,7 @@ class Migrator(object):
             awssecret = self.__cloudOptions.getCloudPass()
             generator = EC2VolumeGenerator.EC2VolumeGenerator(self.__cloudOptions.getRegion())
 
-            instance = generator.makeVolumeFromImage(imageid, self.__cloudOptions , awskey, awssecret , localimagepath , imagesize , volumesize)
+            instance = generator.makeVolumeFromImage(imageid, self.__cloudOptions , awskey, awssecret , localimagepath , imagesize , volumesize , self.__migrateOptions.getImageType())
         
 
         return True

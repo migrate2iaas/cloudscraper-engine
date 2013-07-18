@@ -477,7 +477,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         #but the parts should be named in a right way
         xmlkey = self.__keyBase+"manifest.xml"
 
-        manifest = S3ManfiestBuilder( xmltempfile , xmlkey , self.__bucketName, self.__S3)	
+        manifest = S3ManfiestBuilder( xmltempfile , xmlkey , self.__bucketName, self.__S3, self.__diskType)	
         manifest.buildHeader(self.__overallSize , self.__volumeToAllocateGb , fragment_count)
         
 
