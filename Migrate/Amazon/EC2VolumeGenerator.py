@@ -28,14 +28,13 @@ import traceback
 import datetime
 
 
-def getImageDataFromXml(bucketname, keyname):
+def getImageDataFromXml(bucket, keyname, xml):
     """returns tuple (volume-size-bytes,image-size-bytes,image-file-type)"""
-    
+    gb = 1024*1024*1024
     volume_size_bytes = 0
     image_file_size = 0
     imagetype = ''
-
-    bucket = S3.get_bucket(bucketname)
+    
     if bucket:
         key = bucket.get_key(keyname)
         if key:
@@ -85,7 +84,7 @@ class EC2VolumeGenerator(object):
         linktimeexp_seconds = 60*60*24*15 # 15 days
 
         S3 = S3Connection(s3owner, s3key, is_secure=True)
-        parsedurl = xml[xml.find('.com'):].split('/' , 3)
+        parsedurl = xml[xml.find('.com'):].split('/' , 2)
         bucketname = parsedurl[1]
         keyname = parsedurl[2]
 
@@ -100,7 +99,8 @@ class EC2VolumeGenerator(object):
                 image_file_size = os.stat(temp_local_image_path).st_size
 
         if volume_size_bytes == 0 or image_file_size == 0:
-            (volume_size_bytes , image_file_size , imagetype) = getImageDataFromXml(bucketname, keyname)
+            bucket = S3.get_bucket(bucketname)
+            (volume_size_bytes , image_file_size , imagetype) = getImageDataFromXml(bucket, keyname, xml)
 
         scripts_dir = ".\\Amazon"
 

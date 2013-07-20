@@ -47,7 +47,7 @@ class EC2InstanceGenerator(object):
         linktimeexp_seconds = 60*60*24*15 # 15 days
 
         S3 = S3Connection(s3owner, s3key, is_secure=True)
-        parsedurl = xml[xml.find('.com'):].split('/' , 3)
+        parsedurl = xml[xml.find('.com'):].split('/' , 2)
         bucketname = parsedurl[1]
         keyname = parsedurl[2]
 
@@ -70,7 +70,8 @@ class EC2InstanceGenerator(object):
 
         if volume_size_bytes == 0 or image_file_size == 0:
             if volume_size_bytes == 0 or image_file_size == 0:
-                (volume_size_bytes , image_file_size , imagetype) = getImageDataFromXml(bucketname, keyname)
+                bucket = S3.get_bucket(bucketname)
+                (volume_size_bytes , image_file_size , imagetype) = getImageDataFromXml(bucket, keyname, xml)
 
 
         scripts_dir = ".\\Amazon"
