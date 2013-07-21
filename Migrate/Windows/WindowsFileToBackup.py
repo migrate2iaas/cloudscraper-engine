@@ -4,7 +4,7 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
 import FileToBackup
-import DataExtent
+from DataExtent import DataExtent
 import WindowsVolume
 
 import win32file
@@ -76,8 +76,8 @@ class WindowsFileToBackup(FileToBackup.FileToBackup):
         self.__reopen()
         filename = self.__name
         try:
-            win32file.SetFilePointer(self.__hfile, volextent.getStart(), win32con.FILE_BEGIN)
-            (result , output) = win32file.ReadFile(self.__hfile,volextent.getSize(),None)
+            win32file.SetFilePointer(self.__hFile, volextent.getStart(), win32con.FILE_BEGIN)
+            (result , output) = win32file.ReadFile(self.__hFile,volextent.getSize(),None)
         except Exception as ex:
             raise FileException(filename , ex)
         
