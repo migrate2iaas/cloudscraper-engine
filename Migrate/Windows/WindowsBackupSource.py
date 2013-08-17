@@ -28,10 +28,10 @@ class WindowsBackupSource(BackupSource.BackupSource):
         return
 
     # gets enumerator of FilesToBackup type
-    def getFileEnum(self):
+    def getFileEnum(self, root = "\\" , mask = "*"):
         if self.__volumeDataSource == None:
             raise PropertyNotInitialized("self.__volumeDataSource", " Use setBackupDataSource() to init it")
-        return WindowsFileToBackup.WindowsFileIterator(self.__volumeDataSource.getFileEnumerator() , self)
+        return WindowsFileToBackup.WindowsFileIterator(self.__volumeDataSource.getFileEnumerator(root, mask) , self)
 
     # gets block range list for all the files. Note: it should be ordered
     def getFilesBlockRange(self):

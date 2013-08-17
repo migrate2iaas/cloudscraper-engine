@@ -36,7 +36,7 @@ class AllFilesIterator(object):
     """Iterator for looping over a sequence backwards."""
 
     def __init__(self, rootIterator, rootPath):
-        self.__RootPath = rootPath
+        self.__rootPath = rootPath
         self.__rootIterator = rootIterator
         self.__currentIterator = None
     
@@ -58,7 +58,7 @@ class AllFilesIterator(object):
 
         # data[0] == attributes
         if (data[0] & win32con.FILE_ATTRIBUTE_DIRECTORY):
-            currentpath = self.__RootPath+'\\'+data[8]
+            currentpath = self.__rootPath+'\\'+data[8]
             try:
                 self.__currentIterator = AllFilesIterator(win32file.FindFilesIterator(currentpath+'\\*', None ) , currentpath)
             except Exception as ex:
@@ -66,7 +66,7 @@ class AllFilesIterator(object):
             return self.next()
         else:
             #data[8] == filename
-            return self.__RootPath+'\\'+data[8]
+            return self.__rootPath+'\\'+data[8]
 
 
 
@@ -121,10 +121,11 @@ class WindowsVolume(object):
         return struct.unpack("@q" , outbuffer)[0]
 
     # gets the file enumerator (iterable). each of it's elements represent a filename (unicode string)
-    def getFileEnumerator(self):
-        filename = self.__volumeName
+    # one may specify another mask
+    def getFileEnumerator(self , rootpath = "\\" , mask = "*"):
+        filename = self.__volumeName+rootpath
         try:
-            return AllFilesIterator(win32file.FindFilesIterator(self.__volumeName+'\\*', None ) , filename)
+            return AllFilesIterator(win32file.FindFilesIterator(self.__volumeName + rootpath + mask, None ) , filename)
         except Exception as ex:
             raise FileException(filename , ex)
 
@@ -139,7 +140,7 @@ class WindowsVolume(object):
 
         filename = self.__volumeName+"\\"+fileName
         try:
-            hFile = win32file.CreateFile(filename ,ntsecuritycon.FILE_READ_ATTRIBUTES, win32con.FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
+            hFile = win32file.CreateFile(filename ,ntsecuritycon.FILE_READ_ATTRIBUTES, win32con.FILE_SHARE_READ + win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
         except Exception as ex:
             raise FileException(filename , ex)
        

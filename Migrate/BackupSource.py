@@ -8,7 +8,8 @@ class BackupSource(object):
 
     # gets files enumerator
     # iterable of FileToBackup objects
-    def getFileEnum(self):
+    # they could be filtered via specifying the root dir and mask
+    def getFileEnum(self, root="\\", mask="*"):
         return
 
     # gets block range for range of files

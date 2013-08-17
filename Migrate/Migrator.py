@@ -133,6 +133,8 @@ class Migrator(object):
                     logging.info("Transfer target creation failed")
                     return
         
+                #TODO: create source adjust too
+
                 # 10) gets system backup source
                 logging.info("Initializing the system backup")
                 if self.createDataBackupSources() == False:
@@ -226,7 +228,17 @@ class Migrator(object):
         self.__adjustedSystemBackupSource.setBackupSource(self.__systemBackupSource)
 
         self.__adjustOption.configureBackupAdjust(self.__systemBackupSource)
-
+        # remove excluded files and dirs
+        excludeddirs = self.__migrateOptions.getSystemVolumeConfig().getExcludedDirs()
+        for excluded in excludeddirs:
+            logging.info("Removing the file contents from directory " + str(excluded))
+            fileenum = self.__systemBackupSource.getFileEnum(excluded)
+            for file in fileenum:
+                logging.debug("Contents of file " + str(file) + " is set to removal")
+                self.__adjustOption.removeFile(str(file))
+        
+        # for every file in a mask do the following. the excludes shopuld be flexible in vdi migration case
+        #self.__systemBackupSource.getFileEnum("\\" , mask)
         self.__adjustedSystemBackupSource.setAdjustOption(self.__adjustOption)
 
         return True

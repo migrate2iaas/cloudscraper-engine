@@ -34,6 +34,12 @@ class VolumeMigrateConfig(object):
     def getVolumePath(self):
         raise NotImplementedError
 
+    # returns iterable of excluded dirs
+    # NOTE: some more sophisticated exclude system is to be designed
+    # if this mechanism is to be really used
+    def getExcludedDirs(self):
+        raise NotImplementedError
+
     def setUploadPath(self, path):
         raise NotImplementedError
 

@@ -35,6 +35,11 @@ class WindowsVolume_test(unittest.TestCase):
         enumerator = self.WinVol.getFileEnumerator()
         for enum in enumerator:
             print(enum)
+
+    def test_filelistmasked(self):
+        enumerator = self.WinVol.getFileEnumerator("\\boot\\")
+        for enum in enumerator:
+            print(enum)
        
     def test_size(self):
         print (self.WinVol.getVolumeSize())

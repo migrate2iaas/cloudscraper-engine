@@ -31,6 +31,7 @@ class VolumeMigrateNoConfig(VolumeMigrateConfig):
         self.__imageSize = imagesize
         self.__pathToUpload = ''
         self.__uploadedImageId = ''
+        self.__excludedDirs = list()
 
     def getImagePath(self):
         return self.__imagePath
@@ -46,6 +47,9 @@ class VolumeMigrateNoConfig(VolumeMigrateConfig):
 
     def getVolumePath(self):
         return self.__volumeName
+
+    def getExcludedDirs(self):
+        return self.__excludedDirs
 
     def setUploadPath(self, path):
         self.__pathToUpload = path
@@ -76,6 +80,8 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
         self.__imageSize = 0
         self.__pathToUpload = ''
         self.__uploadedImageId = ''
+        self.__excludedDirs = list()
+
         if config.has_section(section):
             if config.has_option(section, 'imagesize'):
                 self.__imageSize = config.getint(section, 'imagesize')
@@ -96,6 +102,13 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
                 self.__imagePath = config.get(section, 'imagepath')
             else:
                 logging.debug("imagepath was not found in the config for volume " + str(self.__volumeName));
+
+            # excludedir is a string of dirs separated by ;
+            if config.has_option(section, 'excludedir'):
+                dirstr = config.get(section, 'excludedir')
+                self.__excludedDirs = dirstr.split(";")
+            else:
+                logging.debug("excludedir was not found in the config for volume " + str(self.__volumeName));
         else:
             logging.error("!!!ERROR: bad config file. Section for drive letter cannot be found");
             raise LookupError
@@ -115,6 +128,9 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
 
     def getVolumePath(self):
         return self.__volumeName
+
+    def getExcludedDirs(self):
+        return self.__excludedDirs
 
     def setUploadPath(self, path):
         self.__pathToUpload = path

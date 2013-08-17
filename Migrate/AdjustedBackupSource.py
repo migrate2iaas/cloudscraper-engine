@@ -135,12 +135,12 @@ class AdjustedBackupSource(BackupSource.BackupSource):
     #Overrides:
 
     # gets files enumerator
-    def getFileEnum(self):
+    def getFileEnum(self , root="\\", mask="*"):
         if self.__backupSource == None:
             raise PropertyNotInitialized("__backupSource", " Use setBackupSource() to init it")
         if self.__adjustOption == None:
             raise PropertyNotInitialized("__adjustOption", " Use setAdjustOption() to init it")
-        return AdjustedFileEnum(self.__adjustOption, self.__backupSource.getFileEnum(), self.__backupSource)
+        return AdjustedFileEnum(self.__adjustOption, self.__backupSource.getFileEnum(root, mask), self.__backupSource)
 
     # gets block range for range of files
     def getFilesBlockRange(self):
@@ -158,8 +158,9 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                 removedfile = removedfile.replace(volname + "\\" , "" , 1)
             try:
                 removedrange = self.__backupSource.getFileBlockRange(removedfile)
-            except:
+            except Exception as ex:
                 logging.warning("Cannot get blocks for removed file " + removedfile)
+                logging.debug("Reason: " + str(ex))
                 continue
             #NOTE: it may work faster if it's sorted, ugly code by the way
             for removedextent in removedrange:
@@ -184,6 +185,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                 replacedrange = self.__backupSource.getFileBlockRange(replacedfile)
             except:
                 logging.warning("Cannot get blocks for replaced file " + replacedfile)
+                logging.debug("Reason: " + str(ex))
                 continue
             replacedoffset = 0
             # iterate thru all extents in file to replace, see what blocks it intersects with

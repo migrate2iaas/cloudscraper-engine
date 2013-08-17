@@ -39,6 +39,8 @@ class WindowsFileToBackup(FileToBackup.FileToBackup):
         self.__transferDest = None
         return
 
+    def __str__(self):
+        return self.getName()
 
     def getName(self):
         return self.__name.lower()
@@ -118,7 +120,6 @@ class WindowsFileIterator(object):
     def __iter__(self):
         return self
 
-    #returns name of the file
     def next(self):
         filepath = self.__filePathIterator.next()
         winfile = WindowsFileToBackup(filepath ,  self.__backupSource)
