@@ -318,7 +318,11 @@ class Migrator(object):
                 region = self.__cloudOptions.getRegion()
                 #Note: get upload path should be set to '' for the new downloads
                 description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
-                self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , userid , apisecret , self.__systemMedia.getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
+                if self.__resumeUpload:
+                    driveid = self.__migrateOptions.getSystemVolumeConfig().getUploadPath()
+                else:
+                    driveid = ''
+                self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(driveid , userid , apisecret , self.__systemMedia.getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
                 
             # update the upload path in config in case it was changed or created by the channel
             uploadpath = self.__systemTransferChannel.getUploadPath()
@@ -513,7 +517,11 @@ class Migrator(object):
                 #Note: get upload path should be set to '' for the new uploads
                 description = os.environ['COMPUTERNAME']+"-"+"data"+"-"+str(datetime.date.today())
                 for volinfo in self.__migrateOptions.getDataVolumes():
-                    self.__dataChannelList[volinfo.getVolumePath()] = EHUploadChannel.EHUploadChannel(volinfo.getUploadPath() , userid , apisecret , self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
+                    if self.__resumeUpload:
+                        driveid = volinfo.getUploadPath()
+                    else:
+                        driveid = ''
+                    self.__dataChannelList[volinfo.getVolumePath()] = EHUploadChannel.EHUploadChannel(driveid , userid , apisecret , self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
                   
             # update the upload path in config in case it was changed or created by the channel
             for volinfo in self.__migrateOptions.getDataVolumes():

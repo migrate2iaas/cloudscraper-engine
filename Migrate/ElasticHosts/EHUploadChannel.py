@@ -89,7 +89,7 @@ class EHUploadThread(threading.Thread):
                     inmemfile.close()
                     
                     # check if 
-                    if self.__skipExisting and not (self.__alreadyUploaded < start + size):
+                    if self.__skipExisting and not (self.__channel.getDiskUploadedProperty() < start + size):
                         upload = False
 
                     if upload:
@@ -160,6 +160,7 @@ class EHUploadChannel(UploadChannel.UploadChannel):
         self.__alreadyUploaded = 0
        
         self.__volumeToAllocateBytes = resultDiskSizeBytes
+        self.__allocatedDriveSize = resultDiskSizeBytes
 
         #check disk is allocated
         #TODO: move it to kinda method
@@ -169,14 +170,14 @@ class EHUploadChannel(UploadChannel.UploadChannel):
             response = self.__EH.get(self.__hostname+"/drives/" + driveid + "/info")
             if response.status_code != 200:
                 logging.warning("!Unexpected status code returned by the ElasticHosts write request: " + str(response) + " " + str(response.text))
-                logging.warning("Headers: %s \n Text length= %s gzipped data" , str(response.request.headers) , str(len(response.request.body))  )
+                logging.warning("Headers: %s \n" , str(response.request.headers) )
                 response.raise_for_status()
             self.__driveId = response.json()[u'drive']
-            disksize = response.json()[u'size']
+            self.__allocatedDriveSize = response.json()[u'size']
             uploadedsize = response.json().get(UPLOADED_BEFORE_JSON_KEY)
             if uploadedsize:
                 self.__alreadyUploaded = uploadedsize
-            if resultDiskSizeBytes > disksize:
+            if resultDiskSizeBytes > self.__allocatedDriveSize:
                 logging.error("\n!!!ERROR: The disk " + str(self.__driveId) + " size is not sufficient to store an image!");
                 raise IOError
             logging.info("\n>>>>>>>>>>> Reupload to ElasticHosts drive "+ str(self.__driveId)+ " !")
@@ -186,7 +187,9 @@ class EHUploadChannel(UploadChannel.UploadChannel):
             createdata = "name "+str(self.__driveName)+"\nsize "+str(self.__volumeToAllocateBytes)
             response = self.__EH.post(self.__hostname+"/drives/create" , data=createdata)
             self.__driveId = response.json()[u'drive']
+            self.__allocatedDriveSize = response.json()[u'size']
             logging.info("\n>>>>>>>>>>> New ElasticHosts drive "+str(drivename)+ " UUID: " + str(self.__driveId)+ " created!")
+            logging.info("Drive size = " + str(self.__allocatedDriveSize));
         
         #dictionary by the start of the block
         self.__fragmentDictionary = dict()
@@ -215,7 +218,7 @@ class EHUploadChannel(UploadChannel.UploadChannel):
        if self.__overallSize < start + size:
            self.__overallSize = start + size       
 
-       if self.__fragmentDictionary.__len__() % 32 == 0:
+       if self.__fragmentDictionary.__len__() % 32 == 1:
            self.updateDiskProperty()
 
        return 
@@ -277,10 +280,12 @@ class EHUploadChannel(UploadChannel.UploadChannel):
    
     # function to notify EH on the data amount transfered
     def updateDiskProperty(self):
-        setinfodata = "name "+str(self.__driveName) + "\nsize "+str(self.__volumeToAllocateBytes) + "\n"+str(UPLOADED_BEFORE_JSON_KEY) +" "+str(self.__alreadyUploaded)
+        setinfodata = "name "+str(self.__driveName) + "\nsize "+str(self.__allocatedDriveSize) + "\n"+str(UPLOADED_BEFORE_JSON_KEY) +" "+str(self.__alreadyUploaded)
         response = self.__EH.post(self.__hostname+"/drives/"+self.__driveId+"/set" , data=setinfodata)
         if response.status_code != 200 and response.status_code != 204:
             logging.warning("!Unexpected status code returned by the ElasticHosts set disk info request: " + str(response) + " " + str(response.text))
-            logging.warning("Headers: %s \n Text length= %s gzipped data" , str(response.request.headers) , str(len(response.request.body))  )
+            logging.warning("Headers: %s \n Text length= %s , data = %s" , str(response.request.headers) , str(len(response.request.body)) ,  str(response.request.body))
             response.raise_for_status()
-        
+    
+    def getDiskUploadedProperty(self):
+        return self.__alreadyUploaded
