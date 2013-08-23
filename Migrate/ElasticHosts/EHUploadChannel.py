@@ -39,10 +39,12 @@ except ImportError:
     from md5 import md5
 
 
+UPLOADED_BEFORE_JSON_KEY = u'user:uploaded'
+
 class EHUploadThread(threading.Thread):
     """thread making all uploading works"""
     #skip existing is ignored right now
-    def __init__(self , queue , threadId , hostname , ehSession , skipExisting = False , retries = 3):
+    def __init__(self , queue , threadId , hostname , ehSession , skipExisting = False , channel = None , retries = 3):
         self.__uploadQueue = queue
         #thread id , for troubleshooting purposes
         self.__threadId = threadId
@@ -50,11 +52,11 @@ class EHUploadThread(threading.Thread):
         self.__maxRetries = retries
         self.__EH = ehSession
         self.__hostname = hostname
+        self.__channel = channel
         super(EHUploadThread,self).__init__()
 
     def run(self):
         while 1:
-
             (driveid , start, size, data_getter) = self.__uploadQueue.get()
 
             # means it's time to exit
@@ -86,16 +88,23 @@ class EHUploadThread(threading.Thread):
                     gzip_data = inmemfile.getvalue()
                     inmemfile.close()
                     
+                    # check if 
+                    if self.__skipExisting and not (self.__alreadyUploaded < start + size):
+                        upload = False
+
                     if upload:
-                        #request = self.__EH.request('POST' ,self.__hostname+"/drives/"+str(driveid)+"/write/"+str(start) , None , gzip_data , {'Content-Type': 'application/octet-stream' ,  'Content-Encoding':'gzip'})
-                        #request.hisotry
                         response = self.__EH.post(self.__hostname+"/drives/"+str(driveid)+"/write/"+str(start) , data=gzip_data, headers={'Content-Type': 'application/octet-stream' ,  'Content-Encoding':'gzip' , 'Expect':''})
+                        if response.status_code != 204:
+                            logging.warning("!Unexpected status code returned by the ElasticHosts write request: " + str(response) + " " + str(response.text))
+                            logging.warning("Headers: %s \n Text length= %s gzipped data" , str(response.request.headers) , str(len(response.request.body))  )
+                            response.raise_for_status()
+                        else:
+                            self.__channel.notifyDataTransfered(size)
+                    else:
+                        logging.debug("Skipped the uploading of data at offset " + str(start))
+                        self.__channel.notifyDataSkipped(size)
                     
-                    if response.status_code != 204:
-                        logging.warning("!Unexpected status code returned by the ElasticHosts write request: " + str(response) + " " + str(response.text))
-                        logging.warning("Headers: %s \n Text length= %s gzipped data" , str(response.request.headers) , str(len(response.request.body))  )
-                        response.raise_for_status()
-                    
+                  
                     
                 except Exception as e:
                     #reput the task into the queue
@@ -141,13 +150,14 @@ class EHUploadChannel(UploadChannel.UploadChannel):
         self.__EH.headers.update({'Content-Type': 'text/plain', 'Accept':'application/json'})
         
         self.__region = location
-
+        self.__driveName = drivename
         self.__resumeUpload = resumeUpload
 
         self.__uploadedSize = 0
         self.__uploadSkippedSize = 0
         self.__overallSize = 0
         self.__chunkSize = chunksize
+        self.__alreadyUploaded = 0
        
         self.__volumeToAllocateBytes = resultDiskSizeBytes
 
@@ -162,11 +172,18 @@ class EHUploadChannel(UploadChannel.UploadChannel):
                 logging.warning("Headers: %s \n Text length= %s gzipped data" , str(response.request.headers) , str(len(response.request.body))  )
                 response.raise_for_status()
             self.__driveId = response.json()[u'drive']
+            disksize = response.json()[u'size']
+            uploadedsize = response.json().get(UPLOADED_BEFORE_JSON_KEY)
+            if uploadedsize:
+                self.__alreadyUploaded = uploadedsize
+            if resultDiskSizeBytes > disksize:
+                logging.error("\n!!!ERROR: The disk " + str(self.__driveId) + " size is not sufficient to store an image!");
+                raise IOError
             logging.info("\n>>>>>>>>>>> Reupload to ElasticHosts drive "+ str(self.__driveId)+ " !")
+            logging.debug(str(self.__alreadyUploaded) + " bytes were already uploaded to the cloud")
             # TODO: test whether the disk created is compatible
         else:
-            #NOTE: we skip the resume scenario for now
-            createdata = "name "+str(drivename)+"\nsize "+str(self.__volumeToAllocateBytes)
+            createdata = "name "+str(self.__driveName)+"\nsize "+str(self.__volumeToAllocateBytes)
             response = self.__EH.post(self.__hostname+"/drives/create" , data=createdata)
             self.__driveId = response.json()[u'drive']
             logging.info("\n>>>>>>>>>>> New ElasticHosts drive "+str(drivename)+ " UUID: " + str(self.__driveId)+ " created!")
@@ -177,7 +194,7 @@ class EHUploadChannel(UploadChannel.UploadChannel):
         self.__workThreads = list()
         i = 0
         while i < uploadThreads:
-            thread = EHUploadThread(self.__uploadQueue , i ,  self.__hostname , self.__EH , self.__resumeUpload)
+            thread = EHUploadThread(self.__uploadQueue , i ,  self.__hostname , self.__EH , self.__resumeUpload , self)
             thread.start()
             self.__workThreads.append(thread)
             i = i + 1
@@ -198,8 +215,8 @@ class EHUploadChannel(UploadChannel.UploadChannel):
        if self.__overallSize < start + size:
            self.__overallSize = start + size       
 
-       # since there are no data skip and only 1 thread writes in a moment it ok to call it from here
-       self.notifyDataTransfered(size)
+       if self.__fragmentDictionary.__len__() % 32 == 0:
+           self.updateDiskProperty()
 
        return 
 
@@ -223,6 +240,9 @@ class EHUploadChannel(UploadChannel.UploadChannel):
     def getOverallDataSkipped(self):
         return self.__uploadSkippedSize
 
+    # The assumption is data is uploaded lineary. 
+    # it's true due to use of one uploading thread 
+    # TODO: find a better way!
     def notifyDataTransfered(self , transfered_size):
         now = datetime.datetime.now()
         if self.__prevUploadTime:
@@ -234,6 +254,7 @@ class EHUploadChannel(UploadChannel.UploadChannel):
         self.__prevUploadTime = now
         with self.__statLock:
             self.__uploadedSize = self.__uploadedSize + transfered_size
+            self.__alreadyUploaded = self.__uploadSkippedSize + self.__uploadedSize
 
     #gets the overall size of data uploaded
     def getOverallDataTransfered(self):
@@ -246,6 +267,7 @@ class EHUploadChannel(UploadChannel.UploadChannel):
 
     # confirm good upload. uploads resulting xml then, returns the id of the upload done
     def confirm(self):
+        self.updateDiskProperty()
         #TODO: here we may generate kinda crc32 map for faster uploading
         return self.__driveId
 
@@ -253,5 +275,12 @@ class EHUploadChannel(UploadChannel.UploadChannel):
         for thread in self.__workThreads:
             self.__uploadQueue.put( (None , None, None, None ) )
    
-
+    # function to notify EH on the data amount transfered
+    def updateDiskProperty(self):
+        setinfodata = "name "+str(self.__driveName) + "\nsize "+str(self.__volumeToAllocateBytes) + "\n"+str(UPLOADED_BEFORE_JSON_KEY) +" "+str(self.__alreadyUploaded)
+        response = self.__EH.post(self.__hostname+"/drives/"+self.__driveId+"/set" , data=setinfodata)
+        if response.status_code != 200 and response.status_code != 204:
+            logging.warning("!Unexpected status code returned by the ElasticHosts set disk info request: " + str(response) + " " + str(response.text))
+            logging.warning("Headers: %s \n Text length= %s gzipped data" , str(response.request.headers) , str(len(response.request.body))  )
+            response.raise_for_status()
         

@@ -38,6 +38,7 @@ import pywintypes
 import ctypes
 import winioctlcon
 import struct
+import datetime
 import ntsecuritycon
 
 import EHUploadChannel
@@ -57,7 +58,8 @@ class EHUploadChannel_test(unittest.TestCase):
         return
 
     def tearDown(self):
-        self.__channel.close()
+        if self.__channel:
+            self.__channel.close()
 
     # just testing their scripts, too much of hardcode really
     def notusedtest_ShScript(self):
@@ -80,14 +82,12 @@ class EHUploadChannel_test(unittest.TestCase):
         self.__channel = EHUploadChannel.EHUploadChannel('' , self.__key, self.__secret, 1024*1024*1024 , 'sat-p' , 'testcreate')
     
     def test_diskUpload(self):
-        return
-        diskNo = 4
+        diskNo = 2
         secur_att = win32security.SECURITY_ATTRIBUTES()
         secur_att.Initialize()
-        drivename = "\\\\.\\PhysicalDrive" + str(diskNo)
+        drivename = "E:\\diskraw.raw"
         hfile = win32file.CreateFile( drivename, win32con.GENERIC_READ| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
-        self.__channel = EHUploadChannel.EHUploadChannel('' , self.__key, self.__secret, 256*1024*1024 , 'sat-p' , 'testupload')
-        
+        self.__channel = EHUploadChannel.EHUploadChannel('' , self.__key, self.__secret, 256*1024*1024 , 'sat-p' , 'testupload', False)
 
         dataplace = 0
         while 1:
@@ -95,6 +95,8 @@ class EHUploadChannel_test(unittest.TestCase):
             try:
                 (result , data) = win32file.ReadFile(hfile,mb,None)
             except:
+                break
+            if len(data) == 0:
                 break
             dataext = DataExtent.DataExtent(dataplace , len(data))
             dataext.setData(data)
@@ -104,6 +106,106 @@ class EHUploadChannel_test(unittest.TestCase):
         self.__channel.waitTillUploadComplete()    
         diskid = self.__channel.confirm()
         logging.info("Disk "+ diskid+ " was uploaded!");
+
+    def test_diskFullReUpload(self):
+        diskNo = 2
+        secur_att = win32security.SECURITY_ATTRIBUTES()
+        secur_att.Initialize()
+        drivename = "E:\\diskraw.raw"
+        hfile = win32file.CreateFile( drivename, win32con.GENERIC_READ| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
+        diskname = 'testupload'+str(datetime.date.today())
+        self.__channel = EHUploadChannel.EHUploadChannel('' , self.__key, self.__secret, 256*1024*1024 , 'sat-p' , diskname , False)
+
+        dataplace = 0
+        while 1:
+            mb = 4*1024*1024
+            try:
+                (result , data) = win32file.ReadFile(hfile,mb,None)
+            except:
+                break
+            if len(data) == 0:
+                break
+            dataext = DataExtent.DataExtent(dataplace , len(data))
+            dataext.setData(data)
+            dataplace = dataplace + len(data)
+            self.__channel.uploadData(dataext)
+        
+
+        self.__channel.waitTillUploadComplete()    
+        diskid = self.__channel.confirm()
+        logging.info("Disk "+ diskid+ " was uploaded!");
+        self.__channel.close()
+        
+        hfile = win32file.CreateFile( drivename, win32con.GENERIC_READ| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
+        diskname = 'testupload'+str(datetime.date.today())
+        self.__channel = EHUploadChannel.EHUploadChannel(diskid , self.__key, self.__secret, 256*1024*1024 , 'sat-p' , diskname , True)
+        dataplace = 0
+        while 1:
+            mb = 4*1024*1024
+            try:
+                (result , data) = win32file.ReadFile(hfile,mb,None)
+            except:
+                break
+            if len(data) == 0:
+                break
+            dataext = DataExtent.DataExtent(dataplace , len(data))
+            dataext.setData(data)
+            dataplace = dataplace + len(data)
+            self.__channel.uploadData(dataext)
+
+        self.assertEqual(self.__channel.getOverallDataTransfered() , 0 , "no data should be transfered")
+
+
+    def test_diskPartialReUpload(self):
+        diskNo = 2
+        secur_att = win32security.SECURITY_ATTRIBUTES()
+        secur_att.Initialize()
+        drivename = "E:\\diskraw.raw"
+        hfile = win32file.CreateFile( drivename, win32con.GENERIC_READ| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
+        diskname = 'testupload'+str(datetime.date.today())
+        self.__channel = EHUploadChannel.EHUploadChannel('' , self.__key, self.__secret, 256*1024*1024 , 'sat-p' , diskname , False)
+
+        dataplace = 0
+        while 1:
+            mb = 4*1024*1024
+            try:
+                (result , data) = win32file.ReadFile(hfile,mb,None)
+            except:
+                break
+            if len(data) == 0:
+                break
+            dataext = DataExtent.DataExtent(dataplace , len(data))
+            dataext.setData(data)
+            dataplace = dataplace + len(data)
+            self.__channel.uploadData(dataext)
+            if dataplace > 48*mb:
+                break
+            
+        
+        self.__channel.waitTillUploadComplete()    
+        diskid = self.__channel.confirm()
+        logging.info("Disk "+ diskid+ " was uploaded!");
+        self.__channel.close()
+        
+        hfile = win32file.CreateFile( drivename, win32con.GENERIC_READ| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
+        diskname = 'testupload'+str(datetime.date.today())
+        self.__channel = EHUploadChannel.EHUploadChannel(diskid , self.__key, self.__secret, 256*1024*1024 , 'sat-p' , diskname , True)
+        dataplace = 0
+        while 1:
+            mb = 4*1024*1024
+            try:
+                (result , data) = win32file.ReadFile(hfile,mb,None)
+            except:
+                break
+            if len(data) == 0:
+                break
+            dataext = DataExtent.DataExtent(dataplace , len(data))
+            dataext.setData(data)
+            dataplace = dataplace + len(data)
+            self.__channel.uploadData(dataext)
+
+        self.assertLess(self.__channel.getOverallDataTransfered() , 200*1024*1024 , "Less data should be transfered")
+   
 
     def notest_reuploadHome(self):
         #quick test to check if the system is up to work after the ntfs was rebuilt
