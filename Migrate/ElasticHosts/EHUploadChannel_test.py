@@ -205,6 +205,7 @@ class EHUploadChannel_test(unittest.TestCase):
             self.__channel.uploadData(dataext)
 
         self.assertLess(self.__channel.getOverallDataTransfered() , 200*1024*1024 , "Less data should be transfered")
+        self.assertGreater(self.__channel.getOverallDataTransfered() , 0 , "grater data should be transfered")
    
 
     def notest_reuploadHome(self):

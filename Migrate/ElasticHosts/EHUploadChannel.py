@@ -66,8 +66,10 @@ class EHUploadThread(threading.Thread):
             
             #NOTE: kinda dedup could be added here!
             #NOTE: we should able to change the initial keyname here so the data'll be redirected 
-
+            
             #TODO: make md5 map for resume uploads
+
+            #TODO: skip the empty sectors!
 
             failed = True
             retries = 0
@@ -75,7 +77,6 @@ class EHUploadThread(threading.Thread):
                 retries = retries + 1
 
                 try:
-                # s3 key is kinda file in the bucket (directory)
                 
                     data = str(data_getter)[0:size]
                     upload = True
@@ -88,9 +89,12 @@ class EHUploadThread(threading.Thread):
                     gzip_data = inmemfile.getvalue()
                     inmemfile.close()
                     
+                    already_uploaded = self.__channel.getDiskUploadedProperty()
                     # check if 
-                    if self.__skipExisting and not (self.__channel.getDiskUploadedProperty() < start + size):
-                        upload = False
+                    if self.__skipExisting:
+                        # seems like python has troubels comparing longs and ints
+                        if long(already_uploaded) >= long(start + size):
+                            upload = False
 
                     if upload:
                         response = self.__EH.post(self.__hostname+"/drives/"+str(driveid)+"/write/"+str(start) , data=gzip_data, headers={'Content-Type': 'application/octet-stream' ,  'Content-Encoding':'gzip' , 'Expect':''})
@@ -101,7 +105,7 @@ class EHUploadThread(threading.Thread):
                         else:
                             self.__channel.notifyDataTransfered(size)
                     else:
-                        logging.debug("Skipped the uploading of data at offset " + str(start))
+                        logging.debug("Skipped the uploading of data at offset " + str(start) + " because " + str(already_uploaded) + " were already uploaded")
                         self.__channel.notifyDataSkipped(size)
                     
                   
