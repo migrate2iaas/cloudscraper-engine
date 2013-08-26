@@ -41,6 +41,7 @@ except ImportError:
 
 UPLOADED_BEFORE_JSON_KEY = u'user:uploaded'
 
+# NOTE: only one thread does really work. EH doesn't support concurent access
 class EHUploadThread(threading.Thread):
     """thread making all uploading works"""
     #skip existing is ignored right now
@@ -56,11 +57,18 @@ class EHUploadThread(threading.Thread):
         super(EHUploadThread,self).__init__()
 
     def run(self):
+        iterations = 0
+        update_size_every = 64
         while 1:
+            iterations = iterations + 1
             (driveid , start, size, data_getter) = self.__uploadQueue.get()
 
+            # NOTE: its ok since we have only one thread
+            if iterations % update_size_every == 0:
+                self.__channel.updateDiskProperty()
             # means it's time to exit
             if driveid == None:
+                self.__channel.updateDiskProperty()
                 return
             #NOTE: consider to use multi-upload in case of large chunk sizes
             
@@ -222,8 +230,7 @@ class EHUploadChannel(UploadChannel.UploadChannel):
        if self.__overallSize < start + size:
            self.__overallSize = start + size       
 
-       if self.__fragmentDictionary.__len__() % 32 == 1:
-           self.updateDiskProperty()
+       
 
        return 
 
@@ -260,7 +267,7 @@ class EHUploadChannel(UploadChannel.UploadChannel):
                 self.__transferRate = transfered_size/delta.seconds
         self.__prevUploadTime = now
         with self.__statLock:
-            self.__uploadedSize = self.__uploadedSize + transfered_size
+            self.__uploadedSize = self.__uploadedSize + int(transfered_size)
             self.__alreadyUploaded = self.__uploadSkippedSize + self.__uploadedSize
 
     #gets the overall size of data uploaded

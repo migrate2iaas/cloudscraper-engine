@@ -178,7 +178,7 @@ class EHUploadChannel_test(unittest.TestCase):
             dataext.setData(data)
             dataplace = dataplace + len(data)
             self.__channel.uploadData(dataext)
-            if dataplace > 48*mb:
+            if dataplace > 16*mb:
                 break
             
         
@@ -204,6 +204,7 @@ class EHUploadChannel_test(unittest.TestCase):
             dataplace = dataplace + len(data)
             self.__channel.uploadData(dataext)
 
+        diskid = self.__channel.confirm()
         self.assertLess(self.__channel.getOverallDataTransfered() , 200*1024*1024 , "Less data should be transfered")
         self.assertGreater(self.__channel.getOverallDataTransfered() , 0 , "grater data should be transfered")
    
