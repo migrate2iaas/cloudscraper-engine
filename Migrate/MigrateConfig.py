@@ -3,6 +3,11 @@ __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
+
+import time
+import os
+
+
 class ConfigAccessor(object):
     """base class to save the config value"""
 
@@ -59,8 +64,23 @@ class VolumeMigrateConfig(object):
 class MigrateConfig(object):
     """ base class for the migration config"""
 
-    def __init__(self):
-        return
+    def __init__(self , images, media_factory):
+        self.__dataVolumes = list()
+        self.__systemVolumeConfig = None
+        self.__mediaFactory = media_factory
+
+        #TODO: make cross-system
+        for config in images:
+            originalwindir = os.environ['windir']
+            windrive = originalwindir.split("\\")[0] #get C: substring
+            if windrive in config.getVolumePath():
+                self.__systemVolumeConfig = config
+            else:
+                #TODO: make migration config for each volume not to have all this stuff
+                self.__dataVolumes.append( config )
+        
+    def getImageFactory(self):
+        return self.__mediaFactory
 
     #local system or the pre-created image. No fixups on images are currently supported
     def getSourceOs(self):
@@ -75,24 +95,20 @@ class MigrateConfig(object):
     def getImagePlacement(self):
         raise NotImplementedError
 
-    def getSystemImagePath(self):
-        raise NotImplementedError
-
-    def getSystemImageSize(self):
-        raise NotImplementedError
-
     def getSystemConfig(self):
         raise NotImplementedError
 
+    
+    def getSystemImagePath(self):
+        return self.__systemVolumeConfig.getImagePath()
+
+    def getSystemImageSize(self):
+        return self.__systemVolumeConfig.getImageSize()
+
     def getSystemVolumeConfig(self):
-        raise NotImplementedError
-
-    def getSystemDiskType(self):
-        raise NotImplementedError
-
+        return self.__systemVolumeConfig
+    
     # gets list of VolumeMigrateConfig
     def getDataVolumes(self):
-        raise NotImplementedError
-   
-
+        return self.__dataVolumes
      

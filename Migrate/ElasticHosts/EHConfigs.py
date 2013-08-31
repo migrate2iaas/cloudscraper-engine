@@ -23,13 +23,14 @@ class EHAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
 
 class EHCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self, user , password , newsize , arch , region , chunksize = 4096*4096):
+    # avoid means which servers\disks to avoid, the option is rarely used
+    def __init__(self, user , password , newsize , arch , region , avoid , chunksize = 4096*4096):
         super(EHCloudOptions, self).__init__()
         self.__user = user
         self.__pass = password
         self.__newSysSize = newsize
         self.__arch = arch
-        self.__zone = ''
+        self.__zone = avoid
         self.__region = region
         self.__securityGroup = ''
         self.__chunkSize = chunksize
@@ -52,8 +53,9 @@ class EHCloudOptions(CloudConfig.CloudConfig):
     def getArch(self):
         return self.__arch
 
+    #returns avoid
     def getZone(self):
-        return ''
+        return self.__zone
 
     def getRegion(self):
         return self.__region
@@ -68,27 +70,13 @@ class EHMigrateConfig(MigrateConfig.MigrateConfig):
 
     #TODO: make docs
     # images is list of VolumeMigrateConfig
-    def __init__(self, images , source_arch , imageplacement = 'local', imagetype='raw.gz'):
-        super(EHMigrateConfig, self).__init__()
+    #TODO: kinda image creation factory needed
+    def __init__(self, images , media_factory , source_arch , image_type):
+        super(EHMigrateConfig, self).__init__(images,media_factory)
         
-        self.__dataVolumes = list()
-        self.__systemVolumeConfig = None
-
-        #TODO: make cross-system
-        for config in images:
-            originalwindir = os.environ['windir']
-            windrive = originalwindir.split("\\")[0] #get C: substring
-            if windrive in config.getVolumePath():
-                self.__systemVolumeConfig = config
-            else:
-                #TODO: make migration config for each volume not to have all this stuff
-                self.__dataVolumes.append( config )
-
         self.__imageArch = source_arch
         #do we need few images? dunno...
-        self.__imageType = imagetype
-        self.__imagePlacement = imageplacement
-
+        self.__imageType = image_type
 
     def getSourceOs(self):
         return "local"
@@ -104,21 +92,9 @@ class EHMigrateConfig(MigrateConfig.MigrateConfig):
         return self.__imageType
     
     def getImagePlacement(self):
-        return self.__imagePlacement
-
-    def getSystemImagePath(self):
-        return self.__systemVolumeConfig.getImagePath()
-
-    def getSystemImageSize(self):
-        return self.__systemVolumeConfig.getImageSize()
-
-    def getSystemVolumeConfig(self):
-        return self.__systemVolumeConfig
+        return "local"
 
     def getSystemConfig(self):
         #TODO: really , dunno what should be palced here. should make some umls to see what needed to be changed
         return None
     
-    # gets list of VolumeMigrateConfig
-    def getDataVolumes(self):
-        return self.__dataVolumes

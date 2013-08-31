@@ -243,20 +243,14 @@ class Migrator(object):
 
         return True
 
+    # it's kinda ImageFactory
     def createImageMedia(self, imagepath, imagesize):
-        imagemedia = None
-        if self.__runOnWindows:
-            import Windows
-            if self.__migrateOptions.getImageType() == "VHD" and self.__migrateOptions.getImagePlacement() == "local":
-                if self.__windows.getVersion() >= self.__windows.getSystemInfo().Win2008R2:
-                    media = self.__windows.createVhdMedia(imagepath, imagesize)
-                else:
-                    logging.error("!!!ERROR: VHD images are supported on Windows 2008 R2 Server and higher systems only")    
-        if self.__migrateOptions.getImageType() == "raw.gz" and self.__migrateOptions.getImagePlacement() == "local":
-            media = RawGzipMedia.RawGzipMedia(imagepath , imagesize)
-        if (self.__migrateOptions.getImageType() == "raw.tar" or self.__migrateOptions.getImageType() == "RAW") and self.__migrateOptions.getImagePlacement() == "local":
-            media = GzipChunkMedia.GzipChunkMedia(imagepath , imagesize , self.__cloudOptions.getUploadChunkSize())
-        media.open()
+        factory = self.__migrateOptions.getImageFactory()
+        media = factory.createMedia(imagepath , imagesize)
+        if media:
+            media.open()
+        else:
+            logging.error("Cannot open or create intermediate media to save the machine state")
         return media
 
     def createTransferTarget(self , media , size , adjustoptions, newtarget = True):
@@ -322,7 +316,7 @@ class Migrator(object):
                     driveid = self.__migrateOptions.getSystemVolumeConfig().getUploadPath()
                 else:
                     driveid = ''
-                self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(driveid , userid , apisecret , self.__systemMedia.getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
+                self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(driveid , userid , apisecret , self.__systemMedia.getMaxSize() , region , description , self.__cloudOptions , self.__resumeUpload)
                 
             # update the upload path in config in case it was changed or created by the channel
             uploadpath = self.__systemTransferChannel.getUploadPath()
@@ -521,7 +515,7 @@ class Migrator(object):
                         driveid = volinfo.getUploadPath()
                     else:
                         driveid = ''
-                    self.__dataChannelList[volinfo.getVolumePath()] = EHUploadChannel.EHUploadChannel(driveid , userid , apisecret , self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , region , description , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize())
+                    self.__dataChannelList[volinfo.getVolumePath()] = EHUploadChannel.EHUploadChannel(driveid , userid , apisecret , self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , region , description , self.__cloudOptions, self.__resumeUpload)
                   
             # update the upload path in config in case it was changed or created by the channel
             for volinfo in self.__migrateOptions.getDataVolumes():

@@ -74,26 +74,12 @@ class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
 
     #TODO: make docs
     # images is list of VolumeMigrateConfig
-    def __init__(self, images , source_arch ,  imagetype='VHD'):
-        super(AmazonMigrateConfig, self).__init__()
-        
-        self.__dataVolumes = list()
-        self.__systemVolumeConfig = None
-
-        #TODO: make cross-system
-        for config in images:
-            originalwindir = os.environ['windir']
-            windrive = originalwindir.split("\\")[0] #get C: substring
-            if windrive in config.getVolumePath():
-                self.__systemVolumeConfig = config
-            else:
-                #TODO: make migration config for each volume not to have all this stuff
-                self.__dataVolumes.append( config )
+    def __init__(self, images , media_factory , source_arch , imagetype):
+        super(AmazonMigrateConfig, self).__init__(images, media_factory)
 
         self.__imageArch = source_arch
         #do we need few images? dunno...
         self.__imageType = imagetype
-
 
     def getSourceOs(self):
         return "local"
@@ -111,19 +97,6 @@ class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
     def getImagePlacement(self):
         return "local"
 
-    def getSystemImagePath(self):
-        return self.__systemVolumeConfig.getImagePath()
-
-    def getSystemImageSize(self):
-        return self.__systemVolumeConfig.getImageSize()
-
-    def getSystemVolumeConfig(self):
-        return self.__systemVolumeConfig
-
     def getSystemConfig(self):
         #TODO: really , dunno what should be palced here. should make some umls to see what needed to be changed
         return None
-    
-    # gets list of VolumeMigrateConfig
-    def getDataVolumes(self):
-        return self.__dataVolumes

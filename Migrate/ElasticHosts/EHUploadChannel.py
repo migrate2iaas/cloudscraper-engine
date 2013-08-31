@@ -58,7 +58,7 @@ class EHUploadThread(threading.Thread):
 
     def run(self):
         iterations = 0
-        update_size_every = 64
+        update_size_every = 32
         while 1:
             iterations = iterations + 1
             (driveid , start, size, data_getter) = self.__uploadQueue.get()
@@ -148,12 +148,14 @@ class EHUploadChannel(UploadChannel.UploadChannel):
     # since there is no one big storage, location is mandatory
     # driveid could be empty if no drive is already created
     # upload threads should be equal to 1 to avoid collisions
-    def __init__(self, driveid, userid, apisercret , resultDiskSizeBytes , location , drivename , resumeUpload = False, chunksize = 4096*1024 , uploadThreads=1 , queueSize=16):
+    def __init__(self, driveid, userid, apisercret , resultDiskSizeBytes , location , drivename , cloudoptions , resumeUpload = False, uploadThreads=1 , queueSize=1):
         self.__uploadQueue = Queue.Queue(queueSize)
         self.__statLock = threading.Lock()
         self.__prevUploadTime = None 
         self.__transferRate = 0
-
+        
+        chunksize = cloudoptions.getUploadChunkSize()
+        avoid = cloudoptions.getZone()
 
         #TODO: catch kinda exception here if not connected. shouldn't last too long
         self.__hostname = 'https://api-'+location+'.elastichosts.com'
@@ -197,6 +199,8 @@ class EHUploadChannel(UploadChannel.UploadChannel):
             # TODO: test whether the disk created is compatible
         else:
             createdata = "name "+str(self.__driveName)+"\nsize "+str(self.__volumeToAllocateBytes)
+            if avoid:
+                createdata = createdata + "\navoid " + avoid
             response = self.__EH.post(self.__hostname+"/drives/create" , data=createdata)
             self.__driveId = response.json()[u'drive']
             self.__allocatedDriveSize = response.json()[u'size']

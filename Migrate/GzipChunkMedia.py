@@ -30,11 +30,12 @@ import ImageMedia
 class GzipChunkMedia(ImageMedia.ImageMedia):
     """Media consisting of one tar with lots of already gzipped chunks"""
 
-    def __init__(self , filename , imagesizeBytes , chunksize):
+    def __init__(self , filename , imagesizeBytes , chunksize , compression=4):
         self.__filename = filename
         self.__diskSize = imagesizeBytes
         self.__chunkSize = chunksize
         self.__overallSize = 0
+        self.__compression = compression
         #contains the sizes of written files
         self.__filesWritten = dict()
         return 
@@ -90,13 +91,13 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
             logging.debug(chunkfilename+" created \n")
             file = open(chunkfilename, "wb")
             nullbytes = bytearray(self.__chunkSize)
-            gzipfile = gzip.GzipFile("offset"+str(chunknumber*self.__chunkSize), "wb" , 8 , file)
+            gzipfile = gzip.GzipFile("offset"+str(chunknumber*self.__chunkSize), "wb" , self.__compression , file)
             gzipfile.write(str(nullbytes))
             gzipfile.close()
             file.close()
 
         file = open(chunkfilename, "rb")
-        gzipfile = gzip.GzipFile("offset"+str(chunknumber*self.__chunkSize), "r" , 8 , file)
+        gzipfile = gzip.GzipFile("offset"+str(chunknumber*self.__chunkSize), "r" , self.__compression , file)
         chunk = gzipfile.read()
         gzipfile.close()
         file.close()
@@ -130,7 +131,7 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
             #    self.__overallSize = self.__overallSize - self.__filesWritten[chunkfilename]
 
             file = open(chunkfilename, "wb")
-            gzipfile = gzip.GzipFile("offset"+str(offset+offsetindata), "wb" , 8 , file)
+            gzipfile = gzip.GzipFile("offset"+str(offset+offsetindata), "wb" , self.__compression , file)
             gzipfile.write(data[offsetindata:offsetindata+self.__chunkSize])
             gzipfile.flush()
             gzipfile.close()

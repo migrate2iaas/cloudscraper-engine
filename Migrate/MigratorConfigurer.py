@@ -23,6 +23,9 @@ import codecs
 import time
 from MigrateConfig import VolumeMigrateConfig
 import UnicodeConfigParser
+import GzipChunkMedia
+import GzipChunkMediaFactory
+import RawGzipMediaFactory
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
     def __init__(self, volumename, imagepath , imagesize):
@@ -299,10 +302,27 @@ class MigratorConfigurer(object):
                 newsize = imagesize
             volumes.append( VolumeMigrateNoConfig(Windows.Windows().getSystemInfo().getSystemVolumeInfo().getDevicePath() , imagepath , imagesize ))
         
+        image_placement = "local"
+        #TODO: make a config part to create the factory
+        # check failures
+        # check run on windows flag
+        factory = None
+        if imagetype == "VHD" and image_placement == "local":
+            sys.path.append('.\..')
+            sys.path.append('.\..\Windows')
+            sys.path.append('.\Windows')
+            import WindowsVhdMediaFactory
+            factory = WindowsVhdMediaFactory.WindowsVhdMediaFactory()
+        if imagetype == "raw.gz" and image_placement == "local":
+            factory =  RawGzipMediaFactory.RawGzipMediaFactory()
+        if (imagetype == "raw.tar" or imagetype == "RAW") and image_placement == "local":
+            chunk = 4096*1024
+            compression = 3
+            factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
 
         newsize = imagesize
         adjust = AmazonConfigs.AmazonAdjustOptions()
-        image = AmazonConfigs.AmazonMigrateConfig(volumes , imagearch , imagetype)
+        image = AmazonConfigs.AmazonMigrateConfig(volumes , factory, imagearch , imagetype)
         cloud = AmazonConfigs.AmazonCloudOptions(bucket , user , password , newsize , arch , zone , region, security , instancetype)
 
         return (image,adjust,cloud)
@@ -325,6 +345,14 @@ class MigratorConfigurer(object):
         if region == '':
             region = config.get('ElasticHosts', 'region')
 
+        avoiddisks = ""
+        if config.has_option('ElasticHosts', 'avoid-disks'):
+           avoiddisks = config.get('ElasticHosts', 'avoid-disks') 
+           #making it just space-separated
+           avoiddisks = avoiddisks.replace("; ", " ");
+           #TODO: make a list so it could be iterated thru in case we need to use for checking something
+        
+
         #really, it doesn't matter for the EH cloud
         imagearch = config.get('Image', 'source-arch')
 
@@ -333,6 +361,9 @@ class MigratorConfigurer(object):
         else:
             imagetype = 'raw.gz'
             logging.warning("No image type specified. Default raw.gz is used.");
+
+        if config.has_option('Image', 'compression'):
+            compression =  config.getint('Image', 'compression')
         
         imagedir = ""
         if config.has_option('Image', 'image-dir'):
@@ -372,10 +403,27 @@ class MigratorConfigurer(object):
                     if volume.getImageSize() == 0:
                         volume.setImageSize(size);
                     volumes.append( volume )
-        
+
+        #TODO: make a config part to create the factory
+        # check failures
+        # check run on windows flag
+        factory = None
+        if imagetype == "VHD" and image_placement == "local":
+            sys.path.append('.\..')
+            sys.path.append('.\..\Windows')
+            sys.path.append('.\Windows')
+            import WindowsVhdMediaFactory
+            factory = WindowsVhdMediaFactory.WindowsVhdMediaFactory()
+        if imagetype == "raw.gz" and image_placement == "local":
+            factory =  RawGzipMediaFactory.RawGzipMediaFactory(imagepath , imagesize)
+        if (imagetype == "raw.tar" or imagetype == "RAW") and image_placement == "local":
+            chunk = 4096*1024
+            compression = 3
+            factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
+      
         newsize = imagesize
         adjust = EHConfigs.EHAdjustOptions()
-        image = EHConfigs.EHMigrateConfig(volumes , imagearch , image_placement, imagetype)
-        cloud = EHConfigs.EHCloudOptions( user , password , newsize , imagearch , region)
+        image = EHConfigs.EHMigrateConfig(volumes , factory, imagearch , imagetype)
+        cloud = EHConfigs.EHCloudOptions( user , password , newsize , imagearch , region, avoiddisks)
 
         return (image,adjust,cloud)
