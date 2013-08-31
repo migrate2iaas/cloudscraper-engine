@@ -119,6 +119,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
     def __init__ (self):
         __adjustOption = None
         __backupSource = None
+        super(BackupSource,self).__init__() 
 
     def setAdjustOption(self,adjustOption):
         self.__adjustOption = adjustOption

@@ -9,6 +9,7 @@ class GzipChunkMediaFactory(ImageMediaFactory.ImageMediaFactory):
     """Abstract factory to create images"""
     
     def __init__(self, chunksize = 4096*1024, compression = 3):
+        super(GzipChunkMediaFactory,self).__init__() 
         self.__compression = compression
         self.__chunkSize = chunksize
 

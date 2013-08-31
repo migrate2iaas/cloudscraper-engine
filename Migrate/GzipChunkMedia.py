@@ -38,7 +38,7 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
         self.__compression = compression
         #contains the sizes of written files
         self.__filesWritten = dict()
-        return 
+        super(GzipChunkMedia,self).__init__() 
 
     #starts the connection
     def open(self):
