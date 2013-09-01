@@ -327,7 +327,7 @@ class MigratorConfigurer(object):
 
         return (image,adjust,cloud)
 
-    #note its better
+    #TODO: move the common code to one function
     def configElasticHosts(self , configfile , user = '' , password = '' , region = '', imagepath = ''):
         config = UnicodeConfigParser.UnicodeConfigParser()
         config.readfp(codecs.open(configfile, "r", "utf16"))
@@ -362,6 +362,7 @@ class MigratorConfigurer(object):
             imagetype = 'raw.gz'
             logging.warning("No image type specified. Default raw.gz is used.");
 
+        compression = 3
         if config.has_option('Image', 'compression'):
             compression =  config.getint('Image', 'compression')
         
@@ -418,7 +419,6 @@ class MigratorConfigurer(object):
             factory =  RawGzipMediaFactory.RawGzipMediaFactory(imagepath , imagesize)
         if (imagetype == "raw.tar" or imagetype == "RAW") and image_placement == "local":
             chunk = 4096*1024
-            compression = 3
             factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
       
         newsize = imagesize

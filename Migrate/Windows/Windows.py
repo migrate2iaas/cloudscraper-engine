@@ -111,7 +111,7 @@ class Windows(object):
 
 
     def createVhdMedia(self , path , imagesize):
-        vhd = WindowsVhdMedia.WindowsVhdMedia(path, imagesize)
+       
         return vhd
 
     def createVhdTransferTarget(self , path , size , adjustOptions):
