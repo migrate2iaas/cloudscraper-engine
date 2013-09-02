@@ -10,6 +10,7 @@ class WindowsVhdMediaFactory(ImageMediaFactory.ImageMediaFactory):
     """Abstract factory to create images"""
     
     def __init__(self):
+        self.__windows = Windows.Windows()
         super(WindowsVhdMediaFactory,self).__init__() 
         return
 

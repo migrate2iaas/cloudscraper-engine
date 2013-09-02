@@ -11,7 +11,7 @@ majorVersion = 0
 buildtime = "(none)"
 revisionhash = "(none)"
 branch = "(none)"
-revision = "(none)"
+revision = "0"
 
 def getFullVersionString():
     return "v"+str(majorVersion)+"."+str(minorVersion) + "." + revision + " built on " + str(buildtime) + " (" + str(branch) + " " + str(revisionhash) + ")"
