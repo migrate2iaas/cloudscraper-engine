@@ -28,9 +28,10 @@ import argparse
 import sysconfig
 import time
 import traceback
+import Version
 
-MigrateVerisonHigh = 0
-MigrateVersionLow = 3
+MigrateVerisonHigh = Version.majorVersion
+MigrateVersionLow = Version.minorVersion
 
 
 #TODO: make versioning and expiration time!!
@@ -61,7 +62,8 @@ if __name__ == '__main__':
         outhandler.setLevel(logging.INFO)
         logging.getLogger().addHandler(outhandler)
     
-    logging.info("\n>>>>>>>>>>>>>>>>> The Server Transfer Process (v " + str(MigrateVerisonHigh)+ "." + str(MigrateVersionLow) +  ") is initializing\n")
+    logging.info("\n>>>>>>>>>>>>>>>>> The Server Transfer Process ("+ Version.getShortVersionString() + ") is initializing\n")
+    logging.info("Full version: " + Version.getFullVersionString())
 
     config = MigratorConfigurer.MigratorConfigurer()
     

@@ -1,3 +1,9 @@
+# --------------------------------------------------------
+__author__ = "Vladimir Fedorov"
+__copyright__ = "Copyright (C) 2013 Migrate2Iaas"
+#---------------------------------------------------------
+
+
 class UploadChannel(object):
     """Interface class of data upload channel"""
 
