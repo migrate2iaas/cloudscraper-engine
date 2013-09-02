@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Windows\WindowsVhdMedia_test.py</StartupFile>
+    <StartupFile>ElasticHosts\EHUploadChannel_test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,6 +22,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AaaTheFirst_test.py" />
     <Compile Include="AdjusteBackupSource_test.py" />
     <Compile Include="AdjustedBackupSource.py" />
     <Compile Include="Amazon\AmazonConfigs.py" />
@@ -42,8 +43,10 @@
     <Compile Include="ElasticHosts\EHUploadChannel.py" />
     <Compile Include="ElasticHosts\EHUploadChannel_test.py" />
     <Compile Include="GzipChunkMedia.py" />
+    <Compile Include="GzipChunkMediaFactory.py" />
     <Compile Include="GzipChunkMedia_test.py" />
     <Compile Include="Helper\UnicodeConfigParser.py" />
+    <Compile Include="ImageMediaFactory.py" />
     <Compile Include="ImageMedia.py" />
     <Compile Include="Migrate.py" />
     <Compile Include="MigrateConfig.py" />
@@ -53,6 +56,7 @@
     <Compile Include="Migrator.py" />
     <Compile Include="MigratorConfigurer.py" />
     <Compile Include="Migrator_test.py" />
+    <Compile Include="RawGzipMediaFactory.py" />
     <Compile Include="RawGzipMedia.py" />
     <Compile Include="RawGzipMedia_test.py" />
     <Compile Include="SimpleDataTransferProto.py" />
@@ -62,6 +66,7 @@
     <Compile Include="SystemInfo.py" />
     <Compile Include="TransferTarget.py" />
     <Compile Include="UploadChannel.py" />
+    <Compile Include="Version.py" />
     <Compile Include="VolumeInfo.py" />
     <Compile Include="Windows\VSS.py" />
     <Compile Include="Windows\VSSthruVscsc.py" />
@@ -79,6 +84,7 @@
     <Compile Include="Windows\WindowsSystemAdjustOptions.py" />
     <Compile Include="Windows\WindowsSystemInfo.py" />
     <Compile Include="Windows\WindowsVhdMedia.py" />
+    <Compile Include="Windows\WindowsVhdMediaFactory.py" />
     <Compile Include="Windows\WindowsVhdMedia_test.py" />
     <Compile Include="Windows\WindowsVolume.py" />
     <Compile Include="Windows\WindowsVolumeInfo.py" />

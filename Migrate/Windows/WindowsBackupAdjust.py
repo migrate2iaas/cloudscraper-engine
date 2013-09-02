@@ -22,8 +22,8 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
     """Backupa adjust for Windows OS"""
 
 
-    def __init__(self, adjustConfig):
-        self.__adjustConfig = adjustConfig
+    def __init__(self, adjust_config):
+        self.__adjustConfig = adjust_config
         return super(WindowsBackupAdjust,self).__init__()        
 
     def adjustSystemHive(self ,hiveFilePath):

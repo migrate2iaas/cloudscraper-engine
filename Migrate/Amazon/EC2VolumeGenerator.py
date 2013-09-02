@@ -61,7 +61,7 @@ def getImageDataFromXml(bucket, keyname, xml):
         else:
             logging.error("!!!ERROR: Cannot find " + xml + " describing the image uploaded");
     else:
-        logging.error("!!!ERROR: Couldn't access bucket " + bucketname + " to find " + xml + " describing the image uploaded")
+        logging.error("!!!ERROR: Couldn't access bucket " + str(bucket) + " to find " + xml + " describing the image uploaded")
 
     return (volume_size_bytes, image_file_size , imagetype)
 
