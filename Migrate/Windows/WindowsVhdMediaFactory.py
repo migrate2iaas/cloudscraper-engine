@@ -5,6 +5,7 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 import ImageMediaFactory
 import Windows
 import WindowsVhdMedia
+import logging
 
 class WindowsVhdMediaFactory(ImageMediaFactory.ImageMediaFactory):
     """Abstract factory to create images"""

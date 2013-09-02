@@ -29,7 +29,7 @@ class WindowsVolumeInfo(VolumeInfo.VolumeInfo):
     
     def __init__(self , path):
         self.__rootPath = path
-        return super(WindowsVolumeInfo, self).__init__()
+        super(WindowsVolumeInfo, self).__init__()
 
     #gets the size of volume in bytes
     def getSize(self):
