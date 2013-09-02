@@ -54,7 +54,9 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         self.__hDrive = None
 
         # Load DLL into memory.
-        self.__vdiskDll = ctypes.CDLL("vhdwrap.dll")
+        folder = os.path.dirname(os.path.abspath(__file__))
+        dll_path = os.path.join(folder, "..\\vhdwrap.dll") 
+        self.__vdiskDll = ctypes.CDLL(dll_path)
         super(WindowsVhdMedia,self).__init__() 
 
         return 

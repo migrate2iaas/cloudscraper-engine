@@ -49,6 +49,7 @@ class AdjusteBackupSource_test(unittest.TestCase):
         for files in self.__AdjustedBackupSource.getFileEnum():
             self.assertTrue(files.getName() != "\\\\.\\d:\\bootmgr")
             self.assertTrue(files.getSourcePath() != "\\\\.\\d:\\bootmgr")
+            # TEST: Seems like bug here!
             self.assertFalse( "bootsect.bak" in files.getName())
 
     def test_add(self):

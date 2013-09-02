@@ -54,6 +54,9 @@ class ConfigTest(CloudConfig.CloudConfig):
     def getSecurity(self):
         return "default"
 
+    def getInstanceType(self):
+        return "m1.medium"
+
 class EC2Instance_test(unittest.TestCase):
     
     def setUp(self):

@@ -44,6 +44,9 @@ class AdjustOptionTest(SystemAdjustOptions.SystemAdjustOptions):
     def fixRDP(self):
         return True
 
+    def detectHal(self):
+        return True
+
 class WindowsBackupAdjust_test(unittest.TestCase):
      #TODO: make more sophisticated config\test reading data from some config. dunno
     """description of class"""
