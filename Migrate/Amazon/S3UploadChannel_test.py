@@ -41,7 +41,6 @@ class S3UploadChannel_test(unittest.TestCase):
         
 
     def test_file_useast(self):
-        return
         size = 1024*1024*1024
         bucket = 'feoffuseastfiletest'
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size)
@@ -58,7 +57,6 @@ class S3UploadChannel_test(unittest.TestCase):
        
 
     def test_file_euro(self):
-        return
         size = 1024*1024*1024
         bucket = 'feoffuseastfiletest.s3-eu-west-1a'
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size , 'eu-west-1')
@@ -75,7 +73,7 @@ class S3UploadChannel_test(unittest.TestCase):
 
     def test_fullvhd(self):
         
-        filename = 'E:\\vms\\2003r2\\win2003r2_32.vhd'
+        filename = 'E:\\vhdtest4.vhd'
         size = 20*1024*1024*1024
         bucket = 'feoffuseastfiletestvhd'
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size)
@@ -139,7 +137,7 @@ class S3UploadChannel_test(unittest.TestCase):
         
 
     def test_resumeupload_useast(self):
-        filename = 'E:\\vms\\2003r2\\win2003r2_32.vhd'
+        filename = 'E:\\vhdtest4.vhd'
         size = 20*1024*1024*1024
         bucket = 'feoffuseastfiletestvhd'
         region = ''
@@ -148,7 +146,7 @@ class S3UploadChannel_test(unittest.TestCase):
     def test_resumeupload_euro(self):
         bucket = 'feoffuseastfiletestvhdeuro'
         region = 'eu-west-1'
-        filename = 'E:\\vms\\2003r2\\win2003r2_32.vhd'
+        filename = 'E:\\vhdtest.vhd'
         size = 20*1024*1024*1024
         self.resumeUpload(region, bucket , filename , size)
 
