@@ -33,6 +33,8 @@ class WindowsDiskParaser_test(unittest.TestCase):
         
 
     def test_part(self):
+        logging.debug("Not used")
+        return 
         self.__vhd.open()
         datatransfer = WindowsDeviceDataTransferProto.WindowsDeviceDataTransferProto(self.__vhd.getWindowsDevicePath(), self.__vhd.getWindowsDiskNumber() , self.__vhd)
         parser = WindowsDiskParser.WindowsDiskParser(datatransfer, 123456)
