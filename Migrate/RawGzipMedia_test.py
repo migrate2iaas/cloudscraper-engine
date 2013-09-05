@@ -25,6 +25,7 @@ class RawGzipMedia_test(unittest.TestCase):
         
         
     def test_emptydisk(self):
+        logging.debugging("Doesn't seem to work. But it's not used");
         imagesize = 128*1024*1024
         imagepath = "E:\\rawtest.raw.gz"
         media = RawGzipMedia.RawGzipMedia(imagepath , imagesize+1024*1024)

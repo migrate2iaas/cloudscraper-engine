@@ -81,7 +81,7 @@ class GzipChunkMedia_test(unittest.TestCase):
     def test_localshare(self):
         chunksize = 1024
         overallsize = 1024*1024
-        media = GzipChunkMedia.GzipChunkMedia("\\\\127.0.0.1\\download\\rawtest\\tar", overallsize , chunksize)
+        media = GzipChunkMedia.GzipChunkMedia("\\\\127.0.0.1\\downloads\\rawtest\\tar", overallsize , chunksize)
         file = open('C:\\layout.ini', "r")
         filedata = file.read()
         file.close()

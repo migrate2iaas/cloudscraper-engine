@@ -83,6 +83,7 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
     def getUnzippedChunk(self , chunknumber):
 
         if chunknumber*self.__chunkSize >= self.__diskSize:
+            logging.warning("!Trying to access disk location above the disk size limits. Offset = " + str(chunknumber*self.__chunkSize) + " , disk size = " + str(self.__diskSize))
             return None
 
         chunkfilename = self.__filename+"offset"+str(chunknumber*self.__chunkSize)+".gz"

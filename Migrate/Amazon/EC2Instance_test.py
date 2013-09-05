@@ -77,7 +77,7 @@ class EC2Instance_test(unittest.TestCase):
     def test_fullvhd(self):
         
         filename = 'E:\\vms\\2008r2\\win2008r2.vhd'
-        size = 20*1024*1024*1024
+        size = 136365211648 
         bucket = 'feoffuseastconversiontest'
         self.__channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size)
         
@@ -110,7 +110,7 @@ class EC2Instance_test(unittest.TestCase):
          
         
         filename = 'E:\\vms\\2008r2\\win2008r2.vhd'
-        size = 20*1024*1024*1024
+        size = 136365211648 
 
         # TDOO: should be 10 mb-aligned
 

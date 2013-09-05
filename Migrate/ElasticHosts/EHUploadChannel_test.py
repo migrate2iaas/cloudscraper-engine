@@ -42,6 +42,7 @@ import datetime
 import ntsecuritycon
 
 import EHUploadChannel
+import EhConfigs
 
 class EHUploadChannel_test(unittest.TestCase):
    
@@ -51,6 +52,8 @@ class EHUploadChannel_test(unittest.TestCase):
         self.__key = '570a0faa-ca17-4689-b06b-3400ce8b5294'
         self.__secret = 'EcbSsaj6YbQnX2qPeYzJBdx4PCtL9zbgk2wEGDcE'
         self.__channel = None
+        self.__region = 'sat-p'
+        self.__cloudoptions = EhConfigs.EHCloudOptions(self.__key , self.__secret, 0 , 'x86-64', self.__region , '')
         logging.basicConfig(format='%(asctime)s %(message)s' , filename='elastichosts-channel.log',level=logging.DEBUG)
         handler = logging.StreamHandler(stream=sys.stderr)
         handler.setLevel(logging.DEBUG)
@@ -79,7 +82,7 @@ class EHUploadChannel_test(unittest.TestCase):
         rawfile.close()
     
     def test_diskCreate(self):
-        self.__channel = EHUploadChannel.EHUploadChannel('' , self.__key, self.__secret, 1024*1024*1024 , 'sat-p' , 'testcreate')
+        self.__channel = EHUploadChannel.EHUploadChannel('' , self.__key, self.__secret, 1024*1024*1024 , self.__region , 'testcreate' , self.__cloudoptions)
     
     def test_diskUpload(self):
         diskNo = 2
@@ -87,7 +90,7 @@ class EHUploadChannel_test(unittest.TestCase):
         secur_att.Initialize()
         drivename = "E:\\diskraw.raw"
         hfile = win32file.CreateFile( drivename, win32con.GENERIC_READ| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
-        self.__channel = EHUploadChannel.EHUploadChannel('' , self.__key, self.__secret, 256*1024*1024 , 'sat-p' , 'testupload', False)
+        self.__channel = EHUploadChannel.EHUploadChannel('' , self.__key, self.__secret, 256*1024*1024 , self.__region , 'testupload', self.__cloudoptions , False)
 
         dataplace = 0
         while 1:
@@ -114,7 +117,7 @@ class EHUploadChannel_test(unittest.TestCase):
         drivename = "E:\\diskraw.raw"
         hfile = win32file.CreateFile( drivename, win32con.GENERIC_READ| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
         diskname = 'testupload'+str(datetime.date.today())
-        self.__channel = EHUploadChannel.EHUploadChannel('' , self.__key, self.__secret, 256*1024*1024 , 'sat-p' , diskname , False)
+        self.__channel = EHUploadChannel.EHUploadChannel('' , self.__key, self.__secret, 256*1024*1024 , self.__region , diskname , self.__cloudoptions, False)
 
         dataplace = 0
         while 1:
@@ -138,7 +141,7 @@ class EHUploadChannel_test(unittest.TestCase):
         
         hfile = win32file.CreateFile( drivename, win32con.GENERIC_READ| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
         diskname = 'testupload'+str(datetime.date.today())
-        self.__channel = EHUploadChannel.EHUploadChannel(diskid , self.__key, self.__secret, 256*1024*1024 , 'sat-p' , diskname , True)
+        self.__channel = EHUploadChannel.EHUploadChannel(diskid , self.__key, self.__secret, 256*1024*1024 , self.__region , diskname, self.__cloudoptions , True)
         dataplace = 0
         while 1:
             mb = 4*1024*1024
@@ -163,7 +166,7 @@ class EHUploadChannel_test(unittest.TestCase):
         drivename = "E:\\diskraw.raw"
         hfile = win32file.CreateFile( drivename, win32con.GENERIC_READ| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
         diskname = 'testupload'+str(datetime.date.today())
-        self.__channel = EHUploadChannel.EHUploadChannel('' , self.__key, self.__secret, 256*1024*1024 , 'sat-p' , diskname , False)
+        self.__channel = EHUploadChannel.EHUploadChannel('' , self.__key, self.__secret, 256*1024*1024 , self.__region , diskname , self.__cloudoptions , False)
 
         dataplace = 0
         while 1:
@@ -189,7 +192,7 @@ class EHUploadChannel_test(unittest.TestCase):
         
         hfile = win32file.CreateFile( drivename, win32con.GENERIC_READ| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
         diskname = 'testupload'+str(datetime.date.today())
-        self.__channel = EHUploadChannel.EHUploadChannel(diskid , self.__key, self.__secret, 256*1024*1024 , 'sat-p' , diskname , True)
+        self.__channel = EHUploadChannel.EHUploadChannel(diskid , self.__key, self.__secret, 256*1024*1024 , self.__region , diskname , self.__cloudoptions , True)
         dataplace = 0
         while 1:
             mb = 4*1024*1024
@@ -218,7 +221,7 @@ class EHUploadChannel_test(unittest.TestCase):
         secur_att.Initialize()
         drivename = "\\\\.\\PhysicalDrive" + str(diskNo)
         hfile = win32file.CreateFile( drivename, win32con.GENERIC_READ| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
-        self.__channel = EHUploadChannel.EHUploadChannel('44110126-f7fd-477e-bd9b-9a95ec88419c' , self.__key, self.__secret, 71*1024*1024*1024 , 'sat-p' , 'testuploadwrk')
+        self.__channel = EHUploadChannel.EHUploadChannel('44110126-f7fd-477e-bd9b-9a95ec88419c' , self.__key, self.__secret, 71*1024*1024*1024 , self.__region , 'testuploadwrk' , self.__cloudoptions)
         
         dataplace = 0
         mb = 1024*1024*16
@@ -240,7 +243,7 @@ class EHUploadChannel_test(unittest.TestCase):
         secur_att.Initialize()
         drivename = "\\\\.\\PhysicalDrive" + str(diskNo)
         hfile = win32file.CreateFile( drivename, win32con.GENERIC_READ| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
-        self.__channel = EHUploadChannel.EHUploadChannel('' , self.__key, self.__secret, 90*1024*1024*1024 , 'sat-p' , 'testuploadwrk')
+        self.__channel = EHUploadChannel.EHUploadChannel('' , self.__key, self.__secret, 90*1024*1024*1024 , self.__region , 'testuploadwrk', self.__cloudoptions)
         
 
         dataplace = 0
