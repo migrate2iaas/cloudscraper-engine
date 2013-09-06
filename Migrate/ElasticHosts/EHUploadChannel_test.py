@@ -42,7 +42,7 @@ import datetime
 import ntsecuritycon
 
 import EHUploadChannel
-import EhConfigs
+import EHConfigs
 
 class EHUploadChannel_test(unittest.TestCase):
    
