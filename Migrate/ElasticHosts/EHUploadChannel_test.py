@@ -53,7 +53,7 @@ class EHUploadChannel_test(unittest.TestCase):
         self.__secret = 'EcbSsaj6YbQnX2qPeYzJBdx4PCtL9zbgk2wEGDcE'
         self.__channel = None
         self.__region = 'sat-p'
-        self.__cloudoptions = EhConfigs.EHCloudOptions(self.__key , self.__secret, 0 , 'x86-64', self.__region , '')
+        self.__cloudoptions = EHConfigs.EHCloudOptions(self.__key , self.__secret, 0 , 'x86-64', self.__region , '')
         logging.basicConfig(format='%(asctime)s %(message)s' , filename='elastichosts-channel.log',level=logging.DEBUG)
         handler = logging.StreamHandler(stream=sys.stderr)
         handler.setLevel(logging.DEBUG)
