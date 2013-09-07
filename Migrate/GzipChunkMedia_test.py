@@ -40,7 +40,7 @@ class GzipChunkMedia_test(unittest.TestCase):
             try:
                 offset = 0
                 datasize = datasize + 31
-                while offset + chunksize < overallsize:
+                while offset + datasize < overallsize:
                     media.writeDiskData(offset , filedata[0:datasize])
                     data = media.readDiskData(offset , datasize)
                     self.assertEqual(filedata[0:datasize] , data)
