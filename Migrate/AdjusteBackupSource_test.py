@@ -46,7 +46,7 @@ class AdjusteBackupSource_test(unittest.TestCase):
         adjust.removeFile("\\\\.\\d:\\bootmgr")
         adjust.removeFile("\\\\.\\d:\\bootsect.bak")
         self.__AdjustedBackupSource.setAdjustOption(adjust)
-        for files in self.__AdjustedBackupSource.getFileEnum():
+        for file in self.__AdjustedBackupSource.getFileEnum():
             self.assertTrue(file.getName() != "\\\\.\\d:\\bootmgr")
             self.assertTrue(file.getSourcePath() != "\\\\.\\d:\\bootmgr")
             # TEST: Seems like bug here!
