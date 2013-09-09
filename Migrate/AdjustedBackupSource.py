@@ -107,6 +107,7 @@ class AdjustedFileEnum(object):
 
         file = self.__fileIterator.next()
         while self.__adjustOption.isFileRemoved(file.getName()):
+            logging.debug("Skipping file " + str(file.getName()));
             file = self.__fileIterator.next()
         
         return file
