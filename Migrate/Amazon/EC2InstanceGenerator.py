@@ -51,7 +51,7 @@ class EC2InstanceGenerator(object):
         bucketname = parsedurl[1]
         keyname = parsedurl[2]
 
-        logging.debug("Manifest xml is in bucket " + bucketname + " , key " + keyname);
+        logging.debug("Manifest xml is in bucket " + bucketname + " , key " + keyname) 
 
         xmlurl = S3.generate_url( linktimeexp_seconds, method='GET', bucket=bucketname, key=keyname, force_http=False)
 
@@ -93,7 +93,7 @@ class EC2InstanceGenerator(object):
         while retry < self.__retryCount:
             retry = retry + 1
 
-            import_task_id = "";
+            import_task_id = "" 
             # waiting till the process completes        
             import_task = None
             try:
@@ -114,8 +114,8 @@ class EC2InstanceGenerator(object):
                     
                     import_task.update()
                     importstatus = import_task.get_status()
-                    logging.debug ("Current state is " + importstatus);
-                    logging.debug ("Current import task is " + repr(import_task));
+                    logging.debug ("Current state is " + importstatus) 
+                    logging.debug ("Current import task is " + repr(import_task)) 
 
                     if importstatus == "active" or importstatus == "pending":
                        # logging.info("% Conversion Progress: " + match.group(1) + "%");
@@ -124,15 +124,15 @@ class EC2InstanceGenerator(object):
                     if importstatus == "completed":
                         resultingtask = connection.get_import_tasks([import_task_id])[0]
                         instanceid = resultingtask.get_resulting_id()
-                        logging.info("==========================================================================");
-                        logging.info(">>> The system instance " + instanceid + " has been successfully imported");
-                        logging.info(">>> It could be configured and started via AWS EC2 management console");
-                        logging.info("==========================================================================");
+                        logging.info("==========================================================================") 
+                        logging.info(">>> The system instance " + instanceid + " has been successfully imported") 
+                        logging.info(">>> It could be configured and started via AWS EC2 management console") 
+                        logging.info("==========================================================================") 
 
                         return EC2Instance.EC2Instance(instanceid)
                     if importstatus == "cancelled":
-                        logging.error("!!!ERROR: The import task was cancelled by AWS. Reason: ");
-                        logging.error("!!! " + import_task.get_message());
+                        logging.error("!!!ERROR: The import task was cancelled by AWS. Reason: ") 
+                        logging.error("!!! " + import_task.get_message()) 
                         return None
 
         return None

@@ -82,7 +82,7 @@ class WindowsVolume(object):
         
         self.__volumeName = volumeName.lower()
 
-        logging.debug("Openning volume %s" , self.__volumeName);
+        logging.debug("Openning volume %s" , self.__volumeName) 
         filename = self.__volumeName
         try:
             self.__hfile = win32file.CreateFile( filename, win32con.GENERIC_READ|  win32con.GENERIC_WRITE | ntsecuritycon.FILE_READ_ATTRIBUTES | ntsecuritycon.FILE_WRITE_ATTRIBUTES, win32con. FILE_SHARE_READ|win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_ALWAYS, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
@@ -91,7 +91,7 @@ class WindowsVolume(object):
 
         #TODO: impersonate with backup priveleges
         
-        output_buffer_size = 256;
+        output_buffer_size = 256 
         try:
             outbuffer = win32file.DeviceIoControl(self.__hfile,  winioctlcon.FSCTL_GET_NTFS_VOLUME_DATA,  None, output_buffer_size, None )
         except Exception as ex:
@@ -99,15 +99,15 @@ class WindowsVolume(object):
        
         if outbuffer:
             self.__bytesPerCluster = struct.unpack("@qqqqqIIIIqqqqq",outbuffer[0:96])[6]
-            logging.debug("Opened volume %s for reading, bytes per cluster %d" , self.__volumeName , self.__bytesPerCluster);
-            self.__filesystem = 'NTFS';
+            logging.debug("Opened volume %s for reading, bytes per cluster %d" , self.__volumeName , self.__bytesPerCluster) 
+            self.__filesystem = 'NTFS' 
 
         return 
 
     # gets the volume size
     def getVolumeSize(self):
             # typedef struct {
-            #LARGE_INTEGER Length;
+            #LARGE_INTEGER Length 
             #} GET_LENGTH_INFORMATION;
         IOCTL_DISK_GET_LENGTH_INFO = 0x7405c
         outbuffersize = 8
@@ -178,7 +178,7 @@ class WindowsVolume(object):
 
         extent_count = 0
         current_file_vcn = retrieval_pointers_buffer_header.StartingVcn
-        volextents = list();
+        volextents = list() 
         extenttuple = namedtuple('Extents', 'NextVcn Lcn')
         while extent_count < retrieval_pointers_buffer_header.ExtentCount:
             
@@ -229,26 +229,26 @@ class WindowsVolume(object):
         volume_bitmap_buffer_headertuple = namedtuple('VOLUME_BITMAP_BUFFER', 'StartingLcn BitmapSize')
         volume_bitmap_buffer_header = volume_bitmap_buffer_headertuple._make(struct.unpack("@qq" , outbuffer[0:struct.calcsize("@qq")]))
         
-        bits_left = volume_bitmap_buffer_header.BitmapSize;
-        current_start = volume_bitmap_buffer_header.StartingLcn;
+        bits_left = volume_bitmap_buffer_header.BitmapSize 
+        current_start = volume_bitmap_buffer_header.StartingLcn 
         buffer_offset = struct.calcsize("@qq")
-        last_start = long(0);
-        last_size = long(0);
+        last_start = long(0) 
+        last_size = long(0) 
         volextents = list()
         while bits_left > 0:
             byte = ord(outbuffer[buffer_offset])
             # our granularity is 8 clusters, mark all used even if one of 8 is used
             if byte > 0: 
                 if last_size == 0:
-                    last_start = current_start;
-                last_size = last_size + 8 * self.__bytesPerCluster;    
+                    last_start = current_start 
+                last_size = last_size + 8 * self.__bytesPerCluster     
             else: 
                 if last_size:
                     volextent = DataExtent(last_start, last_size)
                     volextent.setData(DeferedReader(volextent, self) )
                     volextents.append(volextent)
-                last_size = 0;
-                last_start = 0;
+                last_size = 0 
+                last_start = 0 
             
             #Here we decide what extent size is treated as max
             #TODO: move it somewhere else. Bad to see it here
@@ -256,13 +256,13 @@ class WindowsVolume(object):
                 volextent = DataExtent(last_start, last_size)
                 volextent.setData(DeferedReader(volextent, self) )
                 volextents.append(volextent)
-                last_size = 0;
-                last_start = 0;
+                last_size = 0 
+                last_start = 0 
 
 
-            bits_left = bits_left - 8;
+            bits_left = bits_left - 8 
             buffer_offset = buffer_offset + 1
-            current_start += 8*self.__bytesPerCluster;
+            current_start += 8*self.__bytesPerCluster 
         
         if last_size:
             volextent = DataExtent(last_start, last_size)

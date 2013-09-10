@@ -43,7 +43,7 @@ class WindowsVolumeInfo(VolumeInfo.VolumeInfo):
         return long((total_clusters+1)*sectors_per_cluster*bytes_per_sector)
 
     def getUsedSize(self):
-        return self.getSize() - self.getFreeSize();
+        return self.getSize() - self.getFreeSize() 
 
     def getFreeSize(self):
         filename = self.__rootPath

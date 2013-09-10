@@ -28,7 +28,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
     def adjustSystemHive(self ,hiveFilePath):
         
-        logging.info("Adjusting the system hive");
+        logging.info("Adjusting the system hive") 
 
         originalwindir = os.environ['windir']
         windrive = originalwindir.split("\\")[0] #get C: substring
@@ -58,14 +58,14 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         #TODO: replace mountpoints for another vols\VolGuids too
         mountdevkey.close()
 
-        logging.debug("Set the mountpoint for\\DosDevices\\"+windrive + " from " + str(oldvalue) + "to " + str(newvalue));
+        logging.debug("Set the mountpoint for\\DosDevices\\"+windrive + " from " + str(oldvalue) + "to " + str(newvalue)) 
 
         # 2b) change firmware\system entires in \\CurrentControlSet\Control
         selectkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\Select" , 0 , win32con.KEY_READ )
         (currentcontrolset,valtype) = win32api.RegQueryValueEx(selectkey, "Current")
         selectkey.close()
 
-        logging.debug("Current Control Set is " + str(currentcontrolset));
+        logging.debug("Current Control Set is " + str(currentcontrolset)) 
 
         
         #let's turn all of them by default
@@ -85,14 +85,14 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         controlsetkey.close()
 
         if diskSCSI:
-            logging.info("Setting the SCSI driver as default");
+            logging.info("Setting the SCSI driver as default") 
             # 2c) add lsiscsi to load on start
             lsikey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\LSI_SCSI" , 0 , win32con.KEY_ALL_ACCESS )
             win32api.RegSetValueEx(lsikey, "Start" , 0, win32con.REG_DWORD, 0)
             lsikey.close()
         
         if diskIDE:
-            logging.info("Setting the IDE driver as default");
+            logging.info("Setting the IDE driver as default") 
             # 2c) add intelide\atapi to load on start
             idekey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\intelide" , 0 , win32con.KEY_ALL_ACCESS )
             win32api.RegSetValueEx(idekey, "Start" , 0, win32con.REG_DWORD, 0)
@@ -111,26 +111,26 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         
     
         if turnRDP:
-            logging.info("Turning on RDP");
+            logging.info("Turning on RDP") 
 
             #NOTE: checked on 6.1 only! 
             #TODO: Should recheck on other versions!
             # 2d) add turn on rdp feature
             firewarllruleskeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\FirewallRules"
-            logging.debug("Openning key" + firewarllruleskeypath);
+            logging.debug("Openning key" + firewarllruleskeypath) 
             firewallkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, firewarllruleskeypath , 0 , win32con.KEY_ALL_ACCESS )
 
             try:
                 remotedesk_value = "RemoteDesktop-In-TCP"
                 (oldvalue,valtype) = win32api.RegQueryValueEx(firewallkey, remotedesk_value)
             except Exception as ex: 
-                logging.debug("failed to find " + remotedesk_value + "in firewall settings. Possibly 2012 Server, trying RemoteDesktop-UserMode-In-TCP");
+                logging.debug("failed to find " + remotedesk_value + "in firewall settings. Possibly 2012 Server, trying RemoteDesktop-UserMode-In-TCP") 
                 #TODO: ugly , should depend on win version
                 remotedesk_value = "RemoteDesktop-UserMode-In-TCP"
                 (oldvalue,valtype) = win32api.RegQueryValueEx(firewallkey, remotedesk_value)
 
-            logging.debug("Got " + remotedesk_value + " = " + str(oldvalue));
-            newvalue = str(oldvalue).replace("Active=FALSE", "Active=TRUE");
+            logging.debug("Got " + remotedesk_value + " = " + str(oldvalue)) 
+            newvalue = str(oldvalue).replace("Active=FALSE", "Active=TRUE") 
             newvalue = newvalue.replace("Action=Block", "Action=Allow")
             
             portstart = newvalue.find("LPort=")
@@ -145,7 +145,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             #2e) setting the rdp setting to ones needed
             #TODO: make kinda wrapper function!
             terminalkeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Control\\Terminal Server\\WinStations\\RDP-TCP"
-            logging.debug("Openning key" + terminalkeypath);
+            logging.debug("Openning key" + terminalkeypath) 
             terminalkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, terminalkeypath , 0 , win32con.KEY_ALL_ACCESS )
             win32api.RegSetValueEx(terminalkey, "UserAuthentication" , 0, win32con.REG_DWORD, 1)
             win32api.RegSetValueEx(terminalkey, "SecurityLayer" , 0, win32con.REG_DWORD, 1)
@@ -155,7 +155,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
             #2f) setting the allow flag
             terminalkeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Control\\Terminal Server"
-            logging.debug("Openning key" + terminalkeypath);
+            logging.debug("Openning key" + terminalkeypath) 
             terminalkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, terminalkeypath , 0 , win32con.KEY_ALL_ACCESS )
             win32api.RegSetValueEx(terminalkey, "fDenyTSConnections" , 0, win32con.REG_DWORD, 0)
             terminalkey.close()
@@ -163,7 +163,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         turnHyperV = True
     
         if turnHyperV:
-            logging.info("Turning on HyperV bus");
+            logging.info("Turning on HyperV bus") 
 
             #Note: it is good for 6.0+ only. 
             idekey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\vmbus" , 0 , win32con.KEY_ALL_ACCESS )
@@ -185,16 +185,16 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             # and then remove Software Citrix key. Should be enough
             # and remove this one too HKEY_LOCAL_MACHINE\sys\ControlSet001\Control\Class\{4D36E967-E325-11CE-BFC1-08002BE10318}\scsifilt (todo: check the right name once more)
 
-            logging.info("Removing Citrix services");
+            logging.info("Removing Citrix services") 
 
         if removeVmware:
-            logging.info("Removing VmWare services");
+            logging.info("Removing VmWare services") 
             vmwarekey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\vmtools" , 0 , win32con.KEY_ALL_ACCESS )
             win32api.RegSetValueEx(vmwarekey, "Start" , 0, win32con.REG_DWORD, 4)
             vmwarekey.close()
           
         if removeHyperV:
-            logging.info("Removing HyperV services");
+            logging.info("Removing HyperV services") 
 
         #Do operations
         #for operation in self.__adjustConfig.getSystemHiveOperations():
@@ -210,7 +210,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
     def adjustSoftwareHive(self ,hiveFilePath):
         
-        logging.info("Adjusting the software hive");
+        logging.info("Adjusting the software hive") 
 
         originalwindir = os.environ['windir']
         windrive = originalwindir.split("\\")[0] #get C: substring
@@ -233,20 +233,20 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         removeVmware = False
 
         if removeCitrix:
-            logging.info("Removing Citrix software keys");
+            logging.info("Removing Citrix software keys") 
             # NOTE: works under Vista+ only
             try:
                 # NOTE: seem to damage the hive, should test it more
                 win32api.RegDeleteTree(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\Citrix")
             except Exception as e:
-                logging.debug("Couldn't delete Citrix keys");
+                logging.debug("Couldn't delete Citrix keys") 
                 logging.debug(str(e))
       
       
                   
         removeAutologon = True
         if removeAutologon:
-            logging.info("Removing Auto Logon");
+            logging.info("Removing Auto Logon") 
             winlogonkey = None
             try:
                 # NOTE: seem to damage the hive, should test it more
@@ -254,7 +254,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
                 win32api.RegSetValueEx(winlogonkey, "AutoAdminLogon", 0 , win32con.REG_DWORD, 0)
                 win32api.RegDeleteValue(winlogonkey, "DefaultPassword")
             except Exception as e:
-                logging.debug("Couldn't remove Autologon");
+                logging.debug("Couldn't remove Autologon") 
                 logging.debug(str(e))
             finally:
                 if winlogonkey:
@@ -283,7 +283,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
         detecthal = self.__adjustConfig.detectHal()
 
-        logging.info("Creating new BCD record");
+        logging.info("Creating new BCD record") 
 
         # A call to RegLoadKey fails if the calling process does not have the SE_RESTORE_PRIVILEGE privilege.
         token = win32security.OpenProcessToken(-1, win32con.TOKEN_ALL_ACCESS )
@@ -291,7 +291,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         privilages = win32security.AdjustTokenPrivileges(token, False , [(privid , win32security.SE_PRIVILEGE_ENABLED)])
 
         win32api.RegLoadKey(win32con.HKEY_LOCAL_MACHINE, bcdkeyname, hivepath)
-        logging.debug("Openning " + bcdkeyname+"\\Objects" );
+        logging.debug("Openning " + bcdkeyname+"\\Objects" ) 
         objectskey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, bcdkeyname+"\\Objects" , 0 , win32con.KEY_ALL_ACCESS )
         guidskeys = win32api.RegEnumKeyEx(objectskey)
         for  (keyname, reserved, classname, modtime) in guidskeys:
@@ -299,7 +299,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             valuekeys = win32api.RegEnumKeyEx(elementskey)
             for  (valkeyname, reserved, classname1, modtime1) in valuekeys:
                 if valkeyname == BCD_DEVICE_KEY or valkeyname == BCD_OS_DEVICE_KEY:
-                    logging.debug("Changing the element " + valkeyname + " of " + keyname + " bcd object" );
+                    logging.debug("Changing the element " + valkeyname + " of " + keyname + " bcd object" ) 
 
                     valuekey = win32api.RegOpenKeyEx(elementskey, valkeyname , 0 , win32con.KEY_ALL_ACCESS )
                     (value,valtype) = win32api.RegQueryValueEx(valuekey, "Element")
@@ -307,15 +307,15 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
                         #TODO: err here
                         return
                     newvalue_part1 = value[0:0x20] + struct.pack('=q',self.__adjustConfig.getNewSysPartStart()) 
-                    newvalue = newvalue_part1 + value[0x28:0x38] + struct.pack('=i',self.__adjustConfig.getNewMbrId()) + value[0x3c:];
-                    logging.debug("From " + value + "to " + newvalue);
+                    newvalue = newvalue_part1 + value[0x28:0x38] + struct.pack('=i',self.__adjustConfig.getNewMbrId()) + value[0x3c:] 
+                    logging.debug("From " + value + "to " + newvalue) 
                     logging.debug("MBR ID = " + hex(self.__adjustConfig.getNewMbrId()) + " , PartOffset = " + hex(self.__adjustConfig.getNewSysPartStart()))
                     win32api.RegSetValueEx(valuekey, "Element", 0, valtype, newvalue)
                     valuekey.close()
                     # turn on detect hal option 
                     if detecthal:
-                        valuekey = win32api.RegCreateKey(elementskey, BCD_DETECTHAL_KEY);
-                        logging.debug("Changing the element " + BCD_DETECTHAL_KEY + " of " + keyname + " bcd object: setting HAL autodetect" );
+                        valuekey = win32api.RegCreateKey(elementskey, BCD_DETECTHAL_KEY) 
+                        logging.debug("Changing the element " + BCD_DETECTHAL_KEY + " of " + keyname + " bcd object: setting HAL autodetect" ) 
                         value = bytearray([0x01])
                         win32api.RegSetValueEx(valuekey, "Element", 0, win32con.REG_BINARY, value)
                         valuekey.close()
@@ -340,31 +340,31 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             blocks = backupSource.getFileBlockRange(bootdir+"\\BCD")
             for block in blocks:
                 bcd_size = bcd_size + block.getSize()
-            logging.debug("Original BCD of size " + str(bcd_size) + " was found");
+            logging.debug("Original BCD of size " + str(bcd_size) + " was found") 
         except:
             bcd_exists = False
 
         #TODO: note we may need some cleanup management after all theese copies
-        logging.info("Adjusting BCD settings");
+        logging.info("Adjusting BCD settings") 
         if ( bcd_exists ) :
             #found it on system drive, we should alter it somehow, easy
-            logging.debug("BCD found, making replacement for it");
+            logging.debug("BCD found, making replacement for it") 
             sizedelta = int(bcd_size - os.path.getsize(newbcd))
             if sizedelta > 0:
-                logging.debug("New bcd is larger " + str(sizedelta) + " bytes than the new generated one");
-                logging.debug("Appending nulls");
+                logging.debug("New bcd is larger " + str(sizedelta) + " bytes than the new generated one") 
+                logging.debug("Appending nulls") 
                 #pad new bcd with 0 to fit the original size
                 bcdfile = open(newbcd, "a+b")
                 nulls = bytearray(sizedelta) # is filled with nulls by python
                 bcdfile.write(nulls)
             if sizedelta < 0:
-                logging.error("!!!ERROR: Cannot insert the new BCD because it's larger than the original one");
+                logging.error("!!!ERROR: Cannot insert the new BCD because it's larger than the original one") 
                 return 
 
             self.replaceFile("\\Boot\\BCD" , newbcd)
             return
         else:
-            logging.error("!!!ERROR: BCD was not found on the original location!");
+            logging.error("!!!ERROR: BCD was not found on the original location!") 
             return
             
     def adjustHal(self, backupSource):
@@ -393,7 +393,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         windir = originalwindir.split(":\\")[-1] #get substring after X:\
         tmphiveroot = os.environ['TEMP']
         #TODO: more logs here
-        sys_hive_path = tmphiveroot+"\\syshive"+str(int(time.mktime(time.localtime())));
+        sys_hive_path = tmphiveroot+"\\syshive"+str(int(time.mktime(time.localtime()))) 
         sysHiveTmp = open(sys_hive_path, "wb")
         extentsSysHive = backupSource.getFileBlockRange(windir+"\\system32\\config\\system")
         for extent in extentsSysHive:
@@ -401,12 +401,12 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             data_read_size = len(data_read)
             sysHiveTmp.write(data_read)
 
-        sysHiveTmp.close();
+        sysHiveTmp.close() 
 
         self.adjustSystemHive(sys_hive_path)
 
         extentsSoftHive = backupSource.getFileBlockRange(windir+"\\system32\\config\\software")
-        soft_hive_path = tmphiveroot+"\\softhive"+str(int(time.mktime(time.localtime())));
+        soft_hive_path = tmphiveroot+"\\softhive"+str(int(time.mktime(time.localtime()))) 
         softHiveTmp = open(soft_hive_path, "wb")
         for extent in extentsSoftHive:
             data_read = extent.getData()

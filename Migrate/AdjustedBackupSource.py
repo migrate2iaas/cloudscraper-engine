@@ -66,7 +66,7 @@ class AdjustedFileToBackup(FileToBackup.FileToBackup):
      def readData(self,volextent):
         self.__reopen()
 
-        self.__file.seek(volextent.getStart());
+        self.__file.seek(volextent.getStart()) 
         output = self.__file.read(volextent.getSize())
 
         self.__close()
@@ -107,7 +107,7 @@ class AdjustedFileEnum(object):
 
         file = self.__fileIterator.next()
         while self.__adjustOption.isFileRemoved(file.getName()):
-            logging.debug("Skipping file " + str(file.getName()));
+            logging.debug("Skipping file " + str(file.getName())) 
             file = self.__fileIterator.next()
         
         return file
@@ -200,13 +200,13 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                     # we devide the big block of filled data onto three parts: after,before replaced file extent, and the extent itself
                     replacedpart = replacedext.intersection(block)
                     if replacedpart:
-                        logging.debug("\tFound intersection of volume block " + str(block) + " with " + str(replacedext) + " = " + str(replacedpart));
+                        logging.debug("\tFound intersection of volume block " + str(block) + " with " + str(replacedext) + " = " + str(replacedpart)) 
                         blockindex = blocksrange.index(block)
                         blockstoremove.append(block)
                         pieces = block.substract(replacedext)
                         #TODO: checks and logging here
 
-                        logging.debug("Changing block " + str(replacedpart) + " by data from offset " + str(replacedoffset) + " of replacement file " + str(replacement));
+                        logging.debug("Changing block " + str(replacedpart) + " by data from offset " + str(replacedoffset) + " of replacement file " + str(replacement)) 
                         filereplacement = open(replacement, "rb")
                         
                         filereplacement.seek(replacedoffset)
@@ -270,12 +270,12 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                  replacedfile = replacedfile.replace(volname + "\\" , "" , 1)
              
              replacedoffset = 0
-             size = 4096*4096;
+             size = 4096*4096 
              offset = 0
 
              filereplacement = open(replacement, "rb")
              targetpath = mediapath+"\\"+replacedfile
-             filetarget = open(targetpath , "rb");
+             filetarget = open(targetpath , "rb") 
 
              while 1:
                 datasrc = filereplacement.read(size)
@@ -286,11 +286,11 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                         continue
                     else:
                         logging.error("!!!Error: image corruption detected during the self-check!")
-                        logging.error("Data at offset " + str(offset) + " is not equal for file " + replacedfile);
+                        logging.error("Data at offset " + str(offset) + " is not equal for file " + replacedfile) 
                         break
                 else:
                     logging.error("!!!Error: image corruption detected during the self-check!")
-                    logging.error("Data returned size at offset " + str(offset) + " is dfifferent for two files " + replacedfile);
+                    logging.error("Data returned size at offset " + str(offset) + " is dfifferent for two files " + replacedfile) 
                     break
                 if len(datasrc) == 0:
                     break

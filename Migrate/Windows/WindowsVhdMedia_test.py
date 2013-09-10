@@ -81,7 +81,7 @@ class WindowsVhdMedia_test(unittest.TestCase):
     
     def test_sharedisk(self):
         #virtual disk doesn't seem to open on a share pointing to local machine due to vhd support limitations
-        logging.debug("Skipping the test, VHD doesn't work on the share on the same machine");
+        logging.debug("Skipping the test, VHD doesn't work on the share on the same machine") 
         return
         imagesize = 512*1024*1024*1024
         imagepath = "\\\\127.0.0.1\\downloads\\share.vhd"
@@ -92,7 +92,7 @@ class WindowsVhdMedia_test(unittest.TestCase):
     def test_nonemptydisk(self):
         #NOTE: rewrites are available only if we use WindowsDiskParser. Writes are blocked otherwise
         #It only works with WindowsDiskParser
-        logging.debug("This test is not going to work without windows disk parser");
+        logging.debug("This test is not going to work without windows disk parser") 
         return 
         imagesize = 512*1024*1024*1024
         imagepath = "E:\\vhdtest.vhd"

@@ -72,13 +72,13 @@ class EHUploadChannel_test(unittest.TestCase):
         diskNo = 2
         drivename = "\\\\.\\PhysicalDrive" + str(diskNo)
         hfile = win32file.CreateFile( drivename, win32con.GENERIC_READ| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
-        rawfile = open("E:\\test.raw" , "wb");
+        rawfile = open("E:\\test.raw" , "wb") 
         while 1:
             mb = 1024*1024
             (result , output) = win32file.ReadFile(hfile,mb,None)
             rawfile.write(output)
             if len(output) < mb:
-                break;
+                break 
         rawfile.close()
     
     def test_diskCreate(self):
@@ -108,7 +108,7 @@ class EHUploadChannel_test(unittest.TestCase):
         
         self.__channel.waitTillUploadComplete()    
         diskid = self.__channel.confirm()
-        logging.info("Disk "+ diskid+ " was uploaded!");
+        logging.info("Disk "+ diskid+ " was uploaded!") 
 
     def test_diskFullReUpload(self):
         diskNo = 2
@@ -136,7 +136,7 @@ class EHUploadChannel_test(unittest.TestCase):
 
         self.__channel.waitTillUploadComplete()    
         diskid = self.__channel.confirm()
-        logging.info("Disk "+ diskid+ " was uploaded!");
+        logging.info("Disk "+ diskid+ " was uploaded!") 
         self.__channel.close()
         
         hfile = win32file.CreateFile( drivename, win32con.GENERIC_READ| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
@@ -187,7 +187,7 @@ class EHUploadChannel_test(unittest.TestCase):
         
         self.__channel.waitTillUploadComplete()    
         diskid = self.__channel.confirm()
-        logging.info("Disk "+ diskid+ " was uploaded!");
+        logging.info("Disk "+ diskid+ " was uploaded!") 
         self.__channel.close()
         
         hfile = win32file.CreateFile( drivename, win32con.GENERIC_READ| ntsecuritycon.FILE_READ_ATTRIBUTES , win32con. FILE_SHARE_READ, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
@@ -233,10 +233,10 @@ class EHUploadChannel_test(unittest.TestCase):
         
         self.__channel.waitTillUploadComplete()    
         diskid = self.__channel.confirm()
-        logging.info("Disk "+ diskid+ " was uploaded!");
+        logging.info("Disk "+ diskid+ " was uploaded!") 
 
     def test_workDiskUpload(self):
-        logging.info("test disabled");
+        logging.info("test disabled") 
         return 
         diskNo = 5
         secur_att = win32security.SECURITY_ATTRIBUTES()
@@ -260,7 +260,7 @@ class EHUploadChannel_test(unittest.TestCase):
         
         self.__channel.waitTillUploadComplete()    
         diskid = self.__channel.confirm()
-        logging.info("Disk "+ diskid+ " was uploaded!");
+        logging.info("Disk "+ diskid+ " was uploaded!") 
 
 if __name__ == '__main__':
     unittest.main()

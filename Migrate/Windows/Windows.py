@@ -49,10 +49,10 @@ class Windows(object):
         
 
     def getSystemDataBackupSource(self):
-        logging.debug("Getting the system backup source");
-        windir = os.environ['Windir'];
+        logging.debug("Getting the system backup source") 
+        windir = os.environ['Windir'] 
         windir = windir.lower()
-        windrive_letter = windir[0];
+        windrive_letter = windir[0] 
         system_vol = "\\\\.\\"+windrive_letter+":"
 
         self.makeSystemVolumeBootable()
@@ -78,7 +78,7 @@ class Windows(object):
         
         #TODO: set right permissions to it
         if (os.path.exists(windrive+"\\bootmgr")) == False:
-            logging.debug("Bootmgr not found in Windows root , copying it there");      
+            logging.debug("Bootmgr not found in Windows root , copying it there")       
             shutil.copy2(originalwindir + "\\Boot\\PCAT\\bootmgr", windrive+"\\bootmgr")
             self.__filesToDelete.add(windrive+"\\bootmgr")
 
@@ -88,15 +88,15 @@ class Windows(object):
             if os.path.exists(bootdir) == False:
                 #create a new one here
                 try:
-                    logging.debug("Creating a bootdir");      
+                    logging.debug("Creating a bootdir")       
                     shutil.copytree(originalwindir + "\\Boot\\PCAT" , bootdir)
                     self.__filesToDelete.add(bootdir)
                 except:
-                    logging.error("Cannot create bootdir");      
+                    logging.error("Cannot create bootdir")       
                     #TODO log error
                     return
 
-            logging.debug("Creating an empty BCD store");      
+            logging.debug("Creating an empty BCD store")       
             # we create an empty BCD so it'll be altered after the transition
             bcdfile = open(bootdir+"\\BCD", "w")
             nullbytes = bytearray(64*1024)
@@ -105,7 +105,7 @@ class Windows(object):
 
     def rollbackSystemVolumeChanges(self):
         for file in  self.__filesToDelete:
-            logging.debug("Deleting temporary file" + file);      
+            logging.debug("Deleting temporary file" + file)       
             shutil.rmtree(file , True , None)
             #TODO: log failures
 

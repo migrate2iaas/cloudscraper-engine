@@ -40,7 +40,7 @@ class VolumeMigrateNoConfig(VolumeMigrateConfig):
         return self.__imagePath
 
     def getUploadPath(self):
-        return  self.__pathToUpload;
+        return  self.__pathToUpload 
 
     def getUploadId(self):
         return self.__uploadedImageId
@@ -89,31 +89,31 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
             if config.has_option(section, 'imagesize'):
                 self.__imageSize = config.getint(section, 'imagesize')
             else:
-                logging.debug("imagesize was not found in the config for volume " + str(self.__volumeName));
+                logging.debug("imagesize was not found in the config for volume " + str(self.__volumeName)) 
 
             if config.has_option(section, 'pathuploaded'):
                 self.__uploadedImageId = config.get(section, 'pathuploaded')
             else:
-                logging.debug("pathuploaded was not found in the config for volume " + str(self.__volumeName));
+                logging.debug("pathuploaded was not found in the config for volume " + str(self.__volumeName)) 
 
             if config.has_option(section, 'pathtoupload'):
                 self.__pathToUpload = config.get(section, 'pathtoupload')
             else:
-                logging.debug("pathtoupload was not found in the config for volume " + str(self.__volumeName));
+                logging.debug("pathtoupload was not found in the config for volume " + str(self.__volumeName)) 
 
             if config.has_option(section, 'imagepath'):
                 self.__imagePath = config.get(section, 'imagepath')
             else:
-                logging.debug("imagepath was not found in the config for volume " + str(self.__volumeName));
+                logging.debug("imagepath was not found in the config for volume " + str(self.__volumeName)) 
 
             # excludedir is a string of dirs separated by ;
             if config.has_option(section, 'excludedir'):
                 dirstr = config.get(section, 'excludedir')
                 self.__excludedDirs = dirstr.split(";")
             else:
-                logging.debug("excludedir was not found in the config for volume " + str(self.__volumeName));
+                logging.debug("excludedir was not found in the config for volume " + str(self.__volumeName)) 
         else:
-            logging.error("!!!ERROR: bad config file. Section for drive letter cannot be found");
+            logging.error("!!!ERROR: bad config file. Section for drive letter cannot be found") 
             raise LookupError
 
 
@@ -121,7 +121,7 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
         return self.__imagePath
 
     def getUploadPath(self):
-        return  self.__pathToUpload;
+        return  self.__pathToUpload 
 
     def getUploadId(self):
         return self.__uploadedImageId
@@ -214,7 +214,7 @@ class MigratorConfigurer(object):
             imagetype = config.get('Image', 'image-type')
         else:
             imagetype = 'VHD'
-            logging.warning("No image type specified. Default VHD is used.");
+            logging.warning("No image type specified. Default VHD is used.") 
         
 
         imagedir = ""
@@ -222,19 +222,19 @@ class MigratorConfigurer(object):
            imagedir = config.get('Image', 'image-dir') 
         else:
             imagedir = "."
-            logging.warning("No directory for image store is specified. It'll be created in local script execution directory");
+            logging.warning("No directory for image store is specified. It'll be created in local script execution directory") 
 
         if imagedir[-1] == '\\':
             imagedir = imagedir[0:-1]
         if os.path.exists(imagedir) == False:
-            logging.debug("Directory " + str(imagedir) + " not found, creating it");
+            logging.debug("Directory " + str(imagedir) + " not found, creating it") 
             os.mkdir(imagedir)           
         else:
             dirmode = os.stat(imagedir).st_mode
             if stat.S_ISDIR(dirmode) == False:
                 #TODO: create wrapper for error messages
                 #TODO: test UNC path
-                logging.error("!!!ERROR Directory given for image storage is not valid!");
+                logging.error("!!!ERROR Directory given for image storage is not valid!") 
 
             
         s3prefix = ""
@@ -272,15 +272,15 @@ class MigratorConfigurer(object):
         volumes = list()
         if config.has_section('Volumes') :
             if config.has_option('Volumes', 'letters'):
-                letters = config.get('Volumes', 'letters');
+                letters = config.get('Volumes', 'letters') 
                 for letter in letters.split(','):
-                    devicepath = '\\\\.\\'+letter+':';
+                    devicepath = '\\\\.\\'+letter+':' 
                     volume = VolumeMigrateIniConfig(config , configfile , letter , devicepath)
                     if volume.getImagePath() == '':
-                        volume.setImagePath(imagedir+"\\"+letter+"."+imagetype);
+                        volume.setImagePath(imagedir+"\\"+letter+"."+imagetype) 
                     if volume.getImageSize() == 0:
                         size = Windows.Windows().getSystemInfo().getVolumeInfo(letter+":").getSize()
-                        volume.setImageSize(size);
+                        volume.setImageSize(size) 
                     s3objkey = letter
                     if s3prefix:
                         s3objkey = s3prefix+"/"+s3objkey
@@ -298,7 +298,7 @@ class MigratorConfigurer(object):
                 imagesize = config.getint('Image' , 'image-size')
                 newsize = config.get('EC2', 'instance-size')
             except ConfigParser.NoOptionError as exception:
-                logging.info("No image type or size found, using the default ones");
+                logging.info("No image type or size found, using the default ones") 
                 newsize = imagesize
             volumes.append( VolumeMigrateNoConfig(Windows.Windows().getSystemInfo().getSystemVolumeInfo().getDevicePath() , imagepath , imagesize ))
         
@@ -383,7 +383,7 @@ class MigratorConfigurer(object):
             if stat.S_ISDIR(dirmode) == False:
                 #TODO: create wrapper for error messages
                 #TODO: test UNC path
-                logging.error("!!!ERROR Directory given for image storage is not valid!");
+                logging.error("!!!ERROR Directory given for image storage is not valid!") 
 
         image_placement = ""
         if config.has_option('Image', 'image-placement'):
@@ -394,15 +394,15 @@ class MigratorConfigurer(object):
         volumes = list()
         if config.has_section('Volumes') :
             if config.has_option('Volumes', 'letters'):
-                letters = config.get('Volumes', 'letters');
+                letters = config.get('Volumes', 'letters') 
                 for letter in letters.split(','):
-                    devicepath = '\\\\.\\'+letter+':';
+                    devicepath = '\\\\.\\'+letter+':' 
                     size = Windows.Windows().getSystemInfo().getVolumeInfo(letter+":").getSize()
                     volume = VolumeMigrateIniConfig(config , configfile , letter , devicepath)
                     if volume.getImagePath() == '':
                         volume.setImagePath(imagedir+"\\"+letter+"."+imagetype);
                     if volume.getImageSize() == 0:
-                        volume.setImageSize(size);
+                        volume.setImageSize(size)
                     volumes.append( volume )
 
         #TODO: make a config part to create the factory

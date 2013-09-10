@@ -25,22 +25,22 @@ class VSS_test(unittest.TestCase):
     def test_create(self):
  
         print("Testing VSS snapshots, it may take some time (approx 2 mins)")
-        snap1 = self.__Vss.createSnapshot("D:");
-        snap2 = self.__Vss.createSnapshot("C:");
+        snap1 = self.__Vss.createSnapshot("D:") 
+        snap2 = self.__Vss.createSnapshot("C:") 
 
-        self.__Vss.deleteSnapshot(snap2);
-        self.__Vss.deleteSnapshot(snap1);
+        self.__Vss.deleteSnapshot(snap2) 
+        self.__Vss.deleteSnapshot(snap1) 
 
         exceptedDeleteSame = False
         try:
-            self.__Vss.deleteSnapshot(snap1);
+            self.__Vss.deleteSnapshot(snap1) 
         except:
             exceptedDeleteSame = True
         self.assertTrue(exceptedDeleteSame)
 
         exceptedDeleteRandom = False
         try:
-            self.__Vss.deleteSnapshot("sdasada");
+            self.__Vss.deleteSnapshot("sdasada") 
         except:
             exceptedDeleteRandom = True
         self.assertTrue(exceptedDeleteRandom)
@@ -48,7 +48,7 @@ class VSS_test(unittest.TestCase):
         
         exceptedCreateBad = False
         try:
-            self.__Vss.createSnapshot("4:");
+            self.__Vss.createSnapshot("4:") 
         except:
             exceptedCreateBad = True
         self.assertTrue(exceptedCreateBad)

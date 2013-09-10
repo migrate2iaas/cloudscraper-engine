@@ -37,7 +37,7 @@ class WindowsDeviceDataTransferProto(DataTransferProto.DataTransferProto):
 
         path = self.__devicePath
         try:
-            logging.debug("Openning Win32 device transfer protocol , device = " + self.__devicePath);
+            logging.debug("Openning Win32 device transfer protocol , device = " + self.__devicePath) 
             self.__hFile = win32file.CreateFile( path, win32con.GENERIC_READ | win32con.GENERIC_WRITE| ntsecuritycon.FILE_READ_ATTRIBUTES | ntsecuritycon.FILE_WRITE_ATTRIBUTES, win32con. FILE_SHARE_READ|win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
         except Exception as ex:
             raise FileException(path , ex)

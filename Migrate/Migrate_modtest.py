@@ -26,18 +26,18 @@ import unittest
 class Migrate_test(unittest.TestCase):
 
     def test_migrate(self):
-        windir = os.environ['Windir'];
+        windir = os.environ['Windir'] 
         windir = windir.lower()
-        windrive_letter = windir[0];
+        windrive_letter = windir[0] 
         system_vol = "\\\\.\\"+windrive_letter+":"
 
-        print("Copy started");
+        print("Copy started") 
         print("Creating snapshot")
         Vss = VssThruVshadow.VssThruVshadow()
         snapname = Vss.createSnapshot(system_vol)
         snapvol = snapname
 
-        print("Adjusting target and source volumes");
+        print("Adjusting target and source volumes") 
 
         WinVol = WindowsVolume.WindowsVolume(snapname)
         WinBackupSource = WindowsBackupSource.WindowsBackupSource()

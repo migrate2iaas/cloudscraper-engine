@@ -121,7 +121,7 @@ class EHUploadThread(threading.Thread):
                 except Exception as e:
                     #reput the task into the queue
                     logging.warning("!Failed to upload data: disk %s at offset %s , making a retry...", str(driveid), str(start) )
-                    logging.warning("Exception = " + str(e));
+                    logging.warning("Exception = " + str(e)) 
                     continue
 
                 self.__uploadQueue.task_done()
@@ -192,7 +192,7 @@ class EHUploadChannel(UploadChannel.UploadChannel):
             if uploadedsize:
                 self.__alreadyUploaded = uploadedsize
             if resultDiskSizeBytes > self.__allocatedDriveSize:
-                logging.error("\n!!!ERROR: The disk " + str(self.__driveId) + " size is not sufficient to store an image!");
+                logging.error("\n!!!ERROR: The disk " + str(self.__driveId) + " size is not sufficient to store an image!") 
                 raise IOError
             logging.info("\n>>>>>>>>>>> Reupload to ElasticHosts drive "+ str(self.__driveId)+ " !")
             logging.debug(str(self.__alreadyUploaded) + " bytes were already uploaded to the cloud")
@@ -205,7 +205,7 @@ class EHUploadChannel(UploadChannel.UploadChannel):
             self.__driveId = response.json()[u'drive']
             self.__allocatedDriveSize = response.json()[u'size']
             logging.info("\n>>>>>>>>>>> New ElasticHosts drive "+str(drivename)+ " UUID: " + str(self.__driveId)+ " created!")
-            logging.info("Drive size = " + str(self.__allocatedDriveSize));
+            logging.info("Drive size = " + str(self.__allocatedDriveSize)) 
         
         #dictionary by the start of the block
         self.__fragmentDictionary = dict()

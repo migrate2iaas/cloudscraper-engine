@@ -65,7 +65,7 @@ class DataExtent(object):
             return True
          if other.getStart() < self.getStart() and other.getStart() +  other.getSize() > self.getStart():
             return True
-         return False;
+         return False 
     
     # returns block describing the intersection
     def intersection(self, other):
@@ -126,7 +126,7 @@ class SplittedDataExtent(DataExtent):
     def getData(self):
         #NOTE: means someone has changed the data by setData call
         if self._DataExtent__data:
-            logging.debug("SplittedDataExtent: Getting data from base class data."); 
+            logging.debug("SplittedDataExtent: Getting data from base class data.")  
             return super(SplittedDataExtent, self).getData()
         data = self.__originalExt.getData()
         return data[self.getStart() -  self.__originalExt.getStart():self.getStart() - self.__originalExt.getStart() + self.getSize()]

@@ -226,7 +226,7 @@ class S3UploadThread(threading.Thread):
                             # extra check. could be avoided
                             existing_md5 = source3key.etag
                             if '"'+str(md5_hexdigest)+'"' == existing_md5:
-                                 logging.debug("key with same md5 and length already exisits, skip uploading");
+                                 logging.debug("key with same md5 and length already exisits, skip uploading") 
                                  upload = False
                             s3key = source3key.copy(bucket.name , keyname)
                             upload = False
@@ -242,7 +242,7 @@ class S3UploadThread(threading.Thread):
                                 existing_md5 = s3key.etag
                                 #md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest) 
                                 if '"'+str(md5_hexdigest)+'"' == existing_md5:
-                                    logging.debug("key with same md5 and length already exisits, skip uploading");
+                                    logging.debug("key with same md5 and length already exisits, skip uploading") 
                                     upload = False
 
                     if upload:
@@ -250,14 +250,14 @@ class S3UploadThread(threading.Thread):
                         s3key.set_contents_from_string(data, replace=True, policy=None, md5=(md5digest, base64md5), reduced_redundancy=False, encrypt_key=False)
                         uploadtask.notifyDataTransfered()
                     else:
-                        logging.debug("Skipped the data upload: %s/%s " , str(bucket), keyname);
+                        logging.debug("Skipped the data upload: %s/%s " , str(bucket), keyname) 
                         uploadtask.notifyDataSkipped()
                     s3key.close()
                 except Exception as e:
                     # reput the task into the queue
                     logging.warning("!Failed to upload data: %s/%s , making a retry...", str(bucket), keyname )
-                    logging.warning("Exception = " + str(e));
-                    logging.error(traceback.format_exc());
+                    logging.warning("Exception = " + str(e)) 
+                    logging.error(traceback.format_exc()) 
                     continue
 
                 self.__uploadQueue.task_done()
@@ -307,17 +307,17 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             try:
                 self.__bucket = self.__S3.get_bucket(self.__bucketName)
             except Exception as ex:
-                logging.info(">>>>> Creating a new S3 bucket: " + self.__bucketName);
+                logging.info(">>>>> Creating a new S3 bucket: " + self.__bucketName) 
                 try:
                     self.__bucket = self.__S3.create_bucket(self.__bucketName , location=awsregion)
                 except Exception as ex:
                     logging.error("!!!ERROR: Wasn't able to find or create bucket " + self.__bucketName + " in region " + location + " ." + "It's possible the bucket with the same name exists but in another region. Try to specify another bucket name for the upload")
-                    logging.error("Exception = " + str(ex));
-                    logging.error(traceback.format_exc());
+                    logging.error("Exception = " + str(ex)) 
+                    logging.error(traceback.format_exc()) 
                     raise BaseException
     
 
-        self.__chunkSize = chunksize;
+        self.__chunkSize = chunksize 
         self.__region = awsregion
 
         self.__diskType = diskType
@@ -340,7 +340,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             # migrate + number of seconds since 1980
             self.__keyBase = "Migrate" +str(long(time.mktime(now))) + "/image"
 
-        logging.info("\n>>>>>>>>>>>>>>>>> Initializing cloud storage\n");
+        logging.info("\n>>>>>>>>>>>>>>>>> Initializing cloud storage\n") 
         # creating null block to optimize downloads
         self.__nullData = bytearray(self.__chunkSize)
         md5encoder = md5()
@@ -352,8 +352,8 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             nullkey.set_contents_from_string(self.__nullData, replace=False, policy=None)
         except Exception as ex:
             logging.error("!!!ERROR: Failed to make a test upload to bucket " + self.__bucketName)
-            logging.error("Exception = " + str(ex));
-            logging.error(traceback.format_exc());
+            logging.error("Exception = " + str(ex)) 
+            logging.error(traceback.format_exc()) 
             raise BaseException
 
         #dictionary by the start of the block
@@ -387,7 +387,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
        #should split the chunk or wait till new data arrives for the same data block
        # the last one could be less than 10Mb
        if size != self.__chunkSize:
-           logging.warning("Bad chunk size for upload , should be " + str(self.__chunkSize) );
+           logging.warning("Bad chunk size for upload , should be " + str(self.__chunkSize) ) 
 
        
        uploadtask = UploadQueueTask(self.__bucket , keyname, size, extent.getData() , self )
@@ -454,7 +454,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         # generate the XML file then:
 
         if self.__errorUploading:
-            logging.error("!!!ERROR: there were upload failures. Please, reupload by choosing resume upload option!");
+            logging.error("!!!ERROR: there were upload failures. Please, reupload by choosing resume upload option!") 
             return None
 
         # the default value. means lots of time
@@ -498,7 +498,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
                
         s3key = Key(self.__bucket , xmlkey)
-        s3key.set_contents_from_filename(xmltempfile);
+        s3key.set_contents_from_filename(xmltempfile) 
         s3key.close()
         
         self.__xmlKey = 'https://s3.amazonaws.com/' + str(self.__bucketName) + "/" + xmlkey

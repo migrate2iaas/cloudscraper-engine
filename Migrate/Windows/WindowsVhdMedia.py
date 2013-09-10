@@ -43,7 +43,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
     def __init__(self, filename, maxInBytes):
         # TODO: it's better to use CreateVirtualDisk() from WinAPI to acomplish the task
         # this one is created with diskpart
-        logging.info("Initing new VHD disk " + filename + " of size " + str(maxInBytes) + " bytes");
+        logging.info("Initing new VHD disk " + filename + " of size " + str(maxInBytes) + " bytes") 
         self.__fileName = filename
         sizemb = int(maxInBytes/1024/1024)
         if sizemb % (1024*1024):
@@ -66,13 +66,13 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         secur_att = win32security.SECURITY_ATTRIBUTES()
         secur_att.Initialize()
         drivename = self.getWindowsDevicePath()
-        logging.debug("Openning disk %s" , drivename);
+        logging.debug("Openning disk %s" , drivename) 
         filename = drivename
 
         # data for ioctl to bring the disk online
         # input
         #  typedef struct _SET_DISK_ATTRIBUTES {
-        #  DWORD     Version;
+        #  DWORD     Version 
         #  BOOLEAN   Persist;
         #  BOOLEAN   Reserved1[3];
         #  DWORDLONG Attributes;
@@ -142,7 +142,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         if os.path.exists(self.__fileName):
             self.__openDisk()
         else:
-            logging.debug("Initing new VHD disk");
+            logging.debug("Initing new VHD disk") 
             self.__createDisk()
 
         self.__diskNo = self.__attachDisk()

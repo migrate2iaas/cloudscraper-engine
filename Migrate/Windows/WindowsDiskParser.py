@@ -50,22 +50,22 @@ class WindowsDiskParser(object):
             mbridstr = hex(self.__mbrId)[2:] # # we substract first 0x symbols
             while len(mbridstr) < 8:
                 mbridstr = "0"+mbridstr # and add some 0s at the beggining
-            script = script.__add__("\nUNIQUEID DISK ID="+mbridstr);
-        script = script.__add__("\nCREATE PARTITION PRIMARY");
+            script = script.__add__("\nUNIQUEID DISK ID="+mbridstr) 
+        script = script.__add__("\nCREATE PARTITION PRIMARY") 
         if size:
             sizemb = int(size/1024/1024)
             if sizemb % (1024*1024):
                 sizemb = sizemb + 1
             script = script.__add__(" size=" + str(sizemb))
-        script = script.__add__("\nACTIVE");
-        script = script.__add__("\nONLINE VOLUME");
-        script = script.__add__("\nFORMAT FS=NTFS REVISION=6.00 QUICK");
-        script = script.__add__("\nDETAIL PARTITION");
-        scrfile.write(script);
+        script = script.__add__("\nACTIVE") 
+        script = script.__add__("\nONLINE VOLUME") 
+        script = script.__add__("\nFORMAT FS=NTFS REVISION=6.00 QUICK") 
+        script = script.__add__("\nDETAIL PARTITION") 
+        scrfile.write(script) 
         scrfile.close()
 
         try:
-            output = subprocess.check_output("diskpart /s \"" + scriptpath +"\"" , shell=True);
+            output = subprocess.check_output("diskpart /s \"" + scriptpath +"\"" , shell=True) 
         except subprocess.CalledProcessError as ex:
             logging.error("!!!ERROR: Cannot create target volume")
             logging.error("diskpart failed" + ex.output)
@@ -73,11 +73,11 @@ class WindowsDiskParser(object):
 
         match = re.search('Partition ([0-9])+',output)
         if match == None:
-            logging.error("!!!ERROR: Cannot create target volume");
-            logging.error("Bad output from the diskpart utility! Output: " + output);
+            logging.error("!!!ERROR: Cannot create target volume") 
+            logging.error("Bad output from the diskpart utility! Output: " + output) 
             raise EnvironmentError
         partno = int(match.group(1))
-        logging.debug("Openning windows transfer target: %s" , "\\\\?\\GLOBALROOT\\Device\\Harddisk"+str(self.__diskNumber)+"\\Partition"+str(partno));
+        logging.debug("Openning windows transfer target: %s" , "\\\\?\\GLOBALROOT\\Device\\Harddisk"+str(self.__diskNumber)+"\\Partition"+str(partno)) 
         return WindowsVolumeTransferTarget.WindowsVolumeTransferTarget("\\\\?\\GLOBALROOT\\Device\\Harddisk"+str(self.__diskNumber)+"\\Partition"+str(partno) , self.__backingStore.getMedia())
         
     # TODO: move the data\metadata ditinction here    

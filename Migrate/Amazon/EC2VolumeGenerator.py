@@ -59,7 +59,7 @@ def getImageDataFromXml(bucket, keyname, xml):
             else:
                 logging.warning("!Couldn't parse the xml describing the import done")
         else:
-            logging.error("!!!ERROR: Cannot find " + xml + " describing the image uploaded");
+            logging.error("!!!ERROR: Cannot find " + xml + " describing the image uploaded") 
     else:
         logging.error("!!!ERROR: Couldn't access bucket " + str(bucket) + " to find " + xml + " describing the image uploaded")
 
@@ -90,7 +90,7 @@ class EC2VolumeGenerator(object):
 
         gb = 1024*1024*1024
 
-        logging.debug("Manifest xml is in bucket " + bucketname + " , key " + keyname);
+        logging.debug("Manifest xml is in bucket " + bucketname + " , key " + keyname) 
 
         xmlurl = S3.generate_url( linktimeexp_seconds, method='GET', bucket=bucketname, key=keyname, force_http=False)
         #TODO: download the image-id xml if no volume_size and image_file_size given
@@ -139,9 +139,9 @@ class EC2VolumeGenerator(object):
             while 1:
                 import_task.update()
                 importstatus = import_task.get_status()
-                logging.debug ("Current state is " + importstatus);
+                logging.debug ("Current state is " + importstatus) 
                 if importstatus == "active" or importstatus == "pending":
-                    #logging.info("% Conversion Progress: " + match.group(1) + "%");
+                    #logging.info("% Conversion Progress: " + match.group(1) + "%") 
                     time.sleep(30) #30 sec
                     continue
                 if importstatus == "completed":
@@ -150,14 +150,14 @@ class EC2VolumeGenerator(object):
                     resultingtask = connection.get_import_tasks([import_task_id])[0]
                     volumeid = resultingtask.get_resulting_id()
 
-                    logging.info("==========================================================================");
-                    logging.info(">>> The data volume " + volumeid + " has been successfully imported");
-                    logging.info(">>> It could be attached to your instance via AWS EC2 management console");
-                    logging.info("==========================================================================");
+                    logging.info("==========================================================================") 
+                    logging.info(">>> The data volume " + volumeid + " has been successfully imported") 
+                    logging.info(">>> It could be attached to your instance via AWS EC2 management console") 
+                    logging.info("==========================================================================") 
 
                     return EC2Volume.EC2Volume(volumeid)
                 if importstatus == "cancelled":
-                    logging.error("!!!ERROR: The import task was cancelled by AWS, the reason is: " + import_task.get_message());
+                    logging.error("!!!ERROR: The import task was cancelled by AWS, the reason is: " + import_task.get_message()) 
                     return None
 
         return None

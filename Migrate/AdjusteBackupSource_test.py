@@ -55,7 +55,7 @@ class AdjusteBackupSource_test(unittest.TestCase):
 
     def test_add(self):
         adjust = BackupAdjust.BackupAdjust()
-        adjust.addFile("c:\\windows\\write.exe" , "write.exe");
+        adjust.addFile("c:\\windows\\write.exe" , "write.exe") 
 
         self.__AdjustedBackupSource.setAdjustOption(adjust)
         found = False
@@ -89,14 +89,14 @@ class AdjusteBackupSource_test(unittest.TestCase):
         self.__AdjustedBackupSource.setAdjustOption(adjust)
         blocks = self.__AdjustedBackupSource.getFileBlockRange("log.txt")
         data = blocks[0].getData()
-        self.assertTrue("F\x00R\x00O\x00M\x00D\x00I\x00S\x00K" in data);
+        self.assertTrue("F\x00R\x00O\x00M\x00D\x00I\x00S\x00K" in data) 
 
         adjust = BackupAdjust.BackupAdjust()
         adjust.replaceFile("log.txt", "\\\\.\\c:\\log.txt")
         self.__AdjustedBackupSource.setAdjustOption(adjust)
         blocks = self.__AdjustedBackupSource.getFileBlockRange("log.txt")
         data = blocks[0].getData()
-        self.assertFalse("F\x00R\x00O\x00M\x00D\x00I\x00S\x00K" in data);
+        self.assertFalse("F\x00R\x00O\x00M\x00D\x00I\x00S\x00K" in data) 
         #print (blocks[0].getData())
         
     def test_blockreplacefiles(self):
@@ -110,8 +110,8 @@ class AdjusteBackupSource_test(unittest.TestCase):
         blockfound = False
         for block in self.__AdjustedBackupSource.getFilesBlockRange():
             if fileblocks[0] in block:
-                self.assertFalse("F\x00R\x00O\x00M\x00D\x00I\x00S\x00K" in block.getData());
-                self.assertTrue("F\x00R\x00O\x00M\x00D\x00I\x00S\x00K" in fileblocks[0].getData());
+                self.assertFalse("F\x00R\x00O\x00M\x00D\x00I\x00S\x00K" in block.getData()) 
+                self.assertTrue("F\x00R\x00O\x00M\x00D\x00I\x00S\x00K" in fileblocks[0].getData()) 
                 blockfound = True
         self.assertTrue(blockfound)
 

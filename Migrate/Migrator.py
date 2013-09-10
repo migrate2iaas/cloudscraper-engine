@@ -120,12 +120,12 @@ class Migrator(object):
                     logging.info("System copy failed")
                     return
             else:
-                logging.info(">>>>>>>>>>>>>>>>>>>>>>>>>> No system volumes specified for transfer");
+                logging.info(">>>>>>>>>>>>>>>>>>>>>>>>>> No system volumes specified for transfer") 
 
             # 8) TODO: instance creation should be distinct start()
 
             if self.__migrateOptions.getDataVolumes().__len__():
-                logging.info(">>>>>>>>>>>>>>>>>>>>>>>>>> Migrating %d data volumes" , self.__migrateOptions.getDataVolumes().__len__());
+                logging.info(">>>>>>>>>>>>>>>>>>>>>>>>>> Migrating %d data volumes" , self.__migrateOptions.getDataVolumes().__len__()) 
 
                 # 9) create data images\upload targets. that could be done in several ways
                 logging.info("Initializing data transfer target")
@@ -160,7 +160,7 @@ class Migrator(object):
         # for now we just save the data here
 
         except Exception as ex:
-            traceback.print_exception(sys.exc_info()[0] , sys.exc_info()[1] , sys.exc_info()[2]);
+            traceback.print_exception(sys.exc_info()[0] , sys.exc_info()[1] , sys.exc_info()[2]) 
             logging.error("!!!ERROR: Unexpected error occured")
             logging.error("!!!ERROR: " + str(ex))
             logging.error(traceback.format_exc())
@@ -185,11 +185,11 @@ class Migrator(object):
     def checkSystemCompatibility(self):
         if self.__runOnWindows:
             SysInfo = self.__windows.getSystemInfo()
-            logging.info("System version: " + SysInfo.getSystemVersionString() + " arch:" + hex(SysInfo.getSystemArcheticture()));
+            logging.info("System version: " + SysInfo.getSystemVersionString() + " arch:" + hex(SysInfo.getSystemArcheticture())) 
             if (SysInfo.getSystemArcheticture() == SysInfo.Archx8664 or SysInfo.getSystemArcheticture() == SysInfo.Archi386) and SysInfo.getKernelVersion() >= SysInfo.Win2008:
                 return True
-            logging.error("!!!ERROR: The configuration is not supported " + SysInfo.getSystemVersionString() + " arch:" + hex(SysInfo.getSystemArcheticture()));
-            logging.info("Windows 2008R2 and 2012 Server are supported for now");
+            logging.error("!!!ERROR: The configuration is not supported " + SysInfo.getSystemVersionString() + " arch:" + hex(SysInfo.getSystemArcheticture())) 
+            logging.info("Windows 2008R2 and 2012 Server are supported for now") 
         else: 
             logging.error("!!!ERROR: Non-Windows configs are not supported for now")
         return False
@@ -332,10 +332,10 @@ class Migrator(object):
     def startSystemBackup(self):
 
         if self.__skipImaging:
-            logging.info("\n>>>>>>>>>>>>>>>>> Skipping the system imaging\n");
+            logging.info("\n>>>>>>>>>>>>>>>>> Skipping the system imaging\n") 
         else:
             #TODO: log and profile
-            logging.info("\n>>>>>>>>>>>>>>>>> Started the system imaging\n");
+            logging.info("\n>>>>>>>>>>>>>>>>> Started the system imaging\n") 
         
             #get data
             extents = self.__adjustedSystemBackupSource.getFilesBlockRange()
@@ -350,7 +350,7 @@ class Migrator(object):
                 # extra testing
                 if self.__selfChecks:
                     try:
-                        logging.info("Making instance self-check");
+                        logging.info("Making instance self-check") 
                         testmedia = self.__systemTransferTarget.getMedia()
                         import WindowsVhdMedia
                         if isinstance(testmedia,WindowsVhdMedia.WindowsVhdMedia):
@@ -359,8 +359,8 @@ class Migrator(object):
                             self.__adjustedSystemBackupSource.replacementSelfCheck(mediapath)
                             testmedia.close()
                     except Exception as e:
-                        logging.warning("!Image self-check couldn't be done");
-                        logging.error("Exception occured = " + str(e));
+                        logging.warning("!Image self-check couldn't be done") 
+                        logging.error("Exception occured = " + str(e)) 
                         logging.error(traceback.format_exc())
             
         
@@ -371,9 +371,9 @@ class Migrator(object):
         imagesize = 0
         disksize = 0
         if self.__skipUpload:
-            logging.info("\n>>>>>>>>>>>>>>>>> Skipping the system image upload\n");
+            logging.info("\n>>>>>>>>>>>>>>>>> Skipping the system image upload\n") 
         else:
-            logging.info("\n>>>>>>>>>>>>>>>>> Started the system image upload\n");
+            logging.info("\n>>>>>>>>>>>>>>>>> Started the system image upload\n") 
             channel = self.__systemTransferChannel
             media = self.__systemMedia
             imagesize = media.getImageSize()
@@ -400,7 +400,7 @@ class Migrator(object):
     def uploadImage(self , media, channel):
         imagesize = media.getImageSize()
         datasize = channel.getTransferChunkSize()
-        logging.debug("Upload image of size " + str(imagesize) + " (full source disk data size is " + str(media.getMaxSize()) + " )");
+        logging.debug("Upload image of size " + str(imagesize) + " (full source disk data size is " + str(media.getMaxSize()) + " )") 
         dataplace = 0
         datasent = 0
         while dataplace < imagesize:
@@ -545,11 +545,11 @@ class Migrator(object):
     def startDataBackup(self):
         
         if self.__skipImaging:
-            logging.info("\n>>>>>>>>>>>>>>>>> Skipping the data volume imaging\n");
+            logging.info("\n>>>>>>>>>>>>>>>>> Skipping the data volume imaging\n") 
         else:
             #RODO: make kinda generic function. I'm pissed with all this copy-paste bugs
             #TODO: log and profile
-            logging.info("\n>>>>>>>>>>>>>>>>> Started the data volume imaging\n");
+            logging.info("\n>>>>>>>>>>>>>>>>> Started the data volume imaging\n") 
             for volinfo in self.__migrateOptions.getDataVolumes():
                 #get data
                 extents = self.__dataBackupSourceList[volinfo.getVolumePath()].getFilesBlockRange()
@@ -573,9 +573,9 @@ class Migrator(object):
             mediaimagesize = 0
             disksize = 0
             if self.__skipUpload:
-                logging.info("\n>>>>>>>>>>>>>>>>> Skipping the data image upload\n");
+                logging.info("\n>>>>>>>>>>>>>>>>> Skipping the data image upload\n") 
             else:
-                logging.info("\n>>>>>>>>>>>>>>>>> Started the data image upload\n");
+                logging.info("\n>>>>>>>>>>>>>>>>> Started the data image upload\n") 
 
                 channel = self.__dataChannelList[volinfo.getVolumePath()]
                 media = self.__dataMediaList[volinfo.getVolumePath()]

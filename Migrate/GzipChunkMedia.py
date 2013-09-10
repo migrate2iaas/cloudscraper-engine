@@ -146,7 +146,7 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
         self.__overallSize = max(self.__overallSize , initialdatalen+iniitaloffset)
         if self.__overallSize > self.__diskSize:
             logging.warning("!Try to write in gzipped chunks more than allocated")
-            logging.debug("Preallocated size is " + str(self.__diskSize) + " . Size of data written is " + str(self.__overallSize) );
+            logging.debug("Preallocated size is " + str(self.__diskSize) + " . Size of data written is " + str(self.__overallSize) ) 
 
 
     #reads data from the container (as it was a disk)
