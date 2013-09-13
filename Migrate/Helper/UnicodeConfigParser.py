@@ -34,12 +34,12 @@ class UnicodeConfigParser(ConfigParser.RawConfigParser):
     def write(self, fp):
         """Write an .ini-format representation of the configuration state."""
         if self._defaults:
-            fp.write("[%s]\n" % ConfigParser.DEFAULTSECT)
+            fp.write("[%s]%s" % (ConfigParser.DEFAULTSECT,os.linesep))
             for (key, value) in self._defaults.items():
-                fp.write("%s = %s\n" % (key, unicode(value, self.__encoding).replace('\n', '\n\t')))
+                fp.write("%s = %s%s" % (key, unicode(value, self.__encoding).replace('\n', '\n\t'), os.linesep))
             fp.write("\n")
         for section in self._sections:
-            fp.write("[%s]\n" % section)
+            fp.write("[%s]%s" % (section,os.linesep))
             for (key, value) in self._sections[section].items():
                 if key == "__name__":
                     continue
