@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 import ConfigParser
 import collections
 import encodings
+import os
 
 class UnicodeConfigParser(ConfigParser.RawConfigParser):
     """Specialized config parser. The main feature is it's unicode support"""
@@ -42,7 +43,7 @@ class UnicodeConfigParser(ConfigParser.RawConfigParser):
             for (key, value) in self._sections[section].items():
                 if key == "__name__":
                     continue
-                if (value is not None) or (self._optcre == self.OPTCRE):
+                if (value is not None) or (self._optcre == self.OPTCRE):    
                     key = u" = ".join((key, unicode(value).replace(u'\n', u'\n\t')))
-                fp.write("%s\n" % (key))
+                fp.write("%s%s" % (key,os.linesep))
             fp.write("\n")
