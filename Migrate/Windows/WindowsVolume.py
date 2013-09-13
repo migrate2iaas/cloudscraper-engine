@@ -66,7 +66,11 @@ class AllFilesIterator(object):
             return self.next()
         else:
             #data[8] == filename
-            return self.__rootPath+'\\'+data[8]
+            #check it already ends with \
+            if self.__rootPath[-1] == '\\':
+                return self.__rootPath+data[8]
+            else:
+                return self.__rootPath+'\\'+data[8]
 
 
 

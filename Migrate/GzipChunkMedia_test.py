@@ -28,7 +28,7 @@ class GzipChunkMedia_test(unittest.TestCase):
     def test_mediapieces(self):
         chunksize = 1024
         overallsize = 1024*1024
-        media = GzipChunkMedia.GzipChunkMedia("E:\\rawtest\\arc.tar", overallsize , chunksize)
+        media = GzipChunkMedia.GzipChunkMedia("E:\\rawtest\\arc.tar", overallsize , chunksize, 1) # set no compression to boost operations
         file = open('C:\\procmon.exe', "rb")
         filedata = file.read()
         file.close()
@@ -50,7 +50,7 @@ class GzipChunkMedia_test(unittest.TestCase):
                 print("Error while testng rw data at offset = " + str(offset) + " size = " + str(datasize))
                 raise
 
-        self.assertEqual(media.getImageSize() , overallsize)
+        self.assertLessEqual(media.getImageSize() , overallsize)
 
     def test_z_reuse_arch(self):
         chunksize = 1024

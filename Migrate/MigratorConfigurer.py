@@ -427,3 +427,4 @@ class MigratorConfigurer(object):
         cloud = EHConfigs.EHCloudOptions( user , password , newsize , imagearch , region, avoiddisks)
 
         return (image,adjust,cloud)
+
