@@ -25,19 +25,30 @@ import SimpleTransferTarget
 class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT"""
 
-    #self-checks are not working for now
-    def __init__(self , cloudOptions , migrateOptions, sysAdjustOptions , skipImaging=False, resumeUpload=False, skipUpload=False , selfChecks=False):
+    def __init__(self , cloud_options , migrate_options, sys_adjust_overrides , skip_imaging=False, resume_upload=False, skip_upload=False , self_checks=False):
+        """
+        Inits the Migrator mega-class. 
+
+        Args:
+            cloud_options: CloudConfig.CloudConfig - options specifiying cloud parameters. These options are passed to cloud instance generators and upload channels
+            migrate_options: MigrateConfig.MigrateConfig - options specifiying how the image should be migrated. These options alters the Migrator behaviour
+            sys_adjust_overrides: dict - dict-like class overriding default options specifying how the resulting system should be adjusted
+            skip_imaging: bool - flag to skip imaging activities. Needed primarily for resume-upload scenarios
+            resume_upload: bool - flag to resume upload instead of starting new one. Needed primarily for resume-upload scenarios
+            skip_upload: bool - flag to skip upload at all. Needed primarily in case when the upload is already done but cloud server is not created yet
+            self_checks: bool - some self-checks on images\registry during the Migrator work (doesn't work for now!)
+        """
         self.__adjustedSystemBackupSource = None
         self.__systemBackupSource = None
         self.__systemTransferTarget = None
-        self.__systemAdjustOptions = sysAdjustOptions
+        self.__systemAdjustOptions = None
         # the channel is underlying connection to transfer the data for system target
         self.__systemTransferChannel = None
         self.__systemMedia = None
 
         self.__adjustOption = None
-        self.__migrateOptions = migrateOptions
-        self.__cloudOptions = cloudOptions
+        self.__migrateOptions = migrate_options
+        self.__cloudOptions = cloud_options
         
         self.__dataBackupSourceList = dict() # the key is data volume device path
         self.__dataTransferTargetList = dict()
@@ -46,11 +57,12 @@ class Migrator(object):
         
         self.__runOnWindows = False
         
-        self.__selfChecks = selfChecks
-        self.__skipImaging = skipImaging
-        self.__skipUpload = skipUpload
-        self.__resumeUpload = resumeUpload
+        self.__selfChecks = self_checks
+        self.__skipImaging = skip_imaging
+        self.__skipUpload = skip_upload
+        self.__resumeUpload = resume_upload
        
+        self.__resultingInstance = None
 
         self.__cloudName = self.__cloudOptions.getTargetCloud()
 
@@ -62,7 +74,9 @@ class Migrator(object):
             import Windows
             self.__windows = Windows.Windows()
             self.__runOnWindows = True
-            self.__winSystemAdjustOptions = None
+            self.__winSystemAdjustOptions = self.__windows.createSystemAdjustOptions(sys_adjust_overrides)
+            self.__systemAdjustOptions = self.__winSystemAdjustOptions
+
         if self.__cloudOptions.getTargetCloud() == "EC2":
             import S3UploadChannel
         if self.__cloudOptions.getTargetCloud() == "ElasticHosts":
@@ -70,7 +84,7 @@ class Migrator(object):
 
     # runs full scenario from the start to the upload
     def runFullScenario(self):
-
+        """runs full scenario doing all the stuff needed to migrate the server and create a cloud server. returns instance object"""
         try:
             logging.info("Generating migration process step handlers...")
             # 0) check the input action config: what to do
@@ -179,7 +193,7 @@ class Migrator(object):
 
         # TODO: catch and free resources here! registry, files, vhds, snapshots.
         # use context manager for that
-        return
+        return self.__resultingInstance
             
 
     def checkSystemCompatibility(self):
@@ -207,6 +221,7 @@ class Migrator(object):
             return self.__windows.getDataBackupSource(volume)
 
     def createSystemBackupSource(self):
+        """creates the system backup source, inits the system disk snapshot"""
         if self.__skipImaging:
             return True
         if self.__runOnWindows:
@@ -220,7 +235,7 @@ class Migrator(object):
         return True
 
     def adjustSystemBackupSource(self):
-        
+        """configures all adjusts needed for the system to be backed-up to transfer target"""
         if self.__skipImaging:
             return True
 
@@ -255,22 +270,19 @@ class Migrator(object):
 
     def createTransferTarget(self , media , size , adjustoptions, newtarget = True):
         if newtarget:
-            parser = SimpleDiskParser.SimpleDiskParser(SimpleDataTransferProto.SimpleDataTransferProto(media) , adjustoptions.getNewMbrId() , self.__additionalMediaSize)
+            parser = SimpleDiskParser.SimpleDiskParser(SimpleDataTransferProto.SimpleDataTransferProto(media) , default_offset = self.__additionalMediaSize)
             return parser.createTransferTarget(size)
         return SimpleTransferTarget.SimpleTransferTarget( self.__additionalMediaSize , SimpleDataTransferProto.SimpleDataTransferProto(media) )
         
 
     def createSystemTransferTarget(self):
-        
+        """Creates transfer targets: disk images where the data should be transfered"""
         if self.__skipImaging == False or self.__skipUpload == False:
             self.__systemMedia = self.createImageMedia(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize() + self.__additionalMediaSize)          
             if self.__systemMedia == None:
                 logging.error("!!!ERROR: Cannot create/open intermediate image (media) for an operation")
                 return
             if self.__runOnWindows:
-                #TODO: need kinda redisign the stuff related to system adjusts!
-                self.__winSystemAdjustOptions = self.__windows.createSystemAdjustOptions()
-                self.__winSystemAdjustOptions.setSysDiskType(self.__systemAdjustOptions.getSysDiskType())
                 #NOTE: the medai should be created nevertheless of the imaging done
                 #so , calls are
                 if self.__skipImaging == False:
@@ -442,7 +454,7 @@ class Migrator(object):
             awssecret = self.__cloudOptions.getCloudPass()
             generator = EC2InstanceGenerator.EC2InstanceGenerator(self.__cloudOptions.getRegion())
 
-            instance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , awskey, awssecret , self.__migrateOptions.getSystemImagePath() , imagesize , volumesize , self.__migrateOptions.getImageType())
+            self.__resultingInstance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , awskey, awssecret , self.__migrateOptions.getSystemImagePath() , imagesize , volumesize , self.__migrateOptions.getImageType())
             
         return True
 
@@ -474,8 +486,6 @@ class Migrator(object):
                 self.__dataMediaList[volinfo.getVolumePath()]=media
                 if self.__runOnWindows:
                     #TODO: need kinda redisign the stuff related to system adjusts!
-                    self.__winSystemAdjustOptions = self.__windows.createSystemAdjustOptions()
-                    self.__winSystemAdjustOptions.setSysDiskType(self.__systemAdjustOptions.getSysDiskType())
                     if self.__skipImaging == False:
                        self.__dataTransferTargetList[volinfo.getVolumePath()] = self.createTransferTarget(media , volinfo.getImageSize(), self.__winSystemAdjustOptions)
         

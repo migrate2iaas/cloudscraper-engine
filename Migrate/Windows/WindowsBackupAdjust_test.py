@@ -47,6 +47,18 @@ class AdjustOptionTest(SystemAdjustOptions.SystemAdjustOptions):
     def detectHal(self):
         return True
 
+    def installNotifyService(self):
+         """returns True or False whether the notification service should be installed"""
+         return False
+
+    def getNotificationServicePath(self):
+         """returns absolute path to the notification service executable"""
+         return ""
+
+    def getNotificationServiceConfigPath(self):
+         """returns absolute path to the notification service config"""
+         return ""
+
 class WindowsBackupAdjust_test(unittest.TestCase):
      #TODO: make more sophisticated config\test reading data from some config. dunno
     """description of class"""

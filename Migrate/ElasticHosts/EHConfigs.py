@@ -11,14 +11,6 @@ import MigrateConfig
 import time
 import os
 
-class EHAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
-
-    def __init__(self):
-        super(EHAdjustOptions, self).__init__()
-        # EH support lots of disk types. We use Disk Ata but diskUnknown could be used aswell
-        self.setSysDiskType(SystemAdjustOptions.SystemAdjustOptions.diskAta)
-        #TODO: improve the adjust class: we need more on rdp and stuff
-
 
 
 class EHCloudOptions(CloudConfig.CloudConfig):

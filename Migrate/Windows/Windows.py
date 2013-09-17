@@ -126,8 +126,12 @@ class Windows(object):
         parser = WindowsDiskParser.WindowsDiskParser(datatransfer , adjustOptions.getNewMbrId())
         return parser.createTransferTarget(size)
         
-    def createSystemAdjustOptions(self):
-        return WindowsSystemAdjustOptions.WindowsSystemAdjustOptions(self.getVersion() < WindowsSystemInfo.WindowsSystemInfo.Win2008R2)
+    def createSystemAdjustOptions(self , config = dict()):
+        # we should get specific configs here to generate the correct config
+        options = WindowsSystemAdjustOptions.WindowsSystemAdjustOptions(self.getVersion() < WindowsSystemInfo.WindowsSystemInfo.Win2008R2)
+        # TODO: here we should check windows version and add some configs from pre-build configs
+        options.loadConfig(config)
+        return options
 
     def getVersion(self):
         return WindowsSystemInfo.WindowsSystemInfo().getKernelVersion()

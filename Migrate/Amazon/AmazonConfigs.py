@@ -11,15 +11,6 @@ import MigrateConfig
 import time
 import os
 
-class AmazonAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
-
-    def __init__(self):
-        super(AmazonAdjustOptions, self).__init__()
-        # we emulate hyper-v import so the disk should be ata-based
-        self.setSysDiskType(SystemAdjustOptions.SystemAdjustOptions.diskAta)
-        #TODO: improve the adjust class: we need more on rdp and stuff
-
-
 
 class AmazonCloudOptions(CloudConfig.CloudConfig):
     

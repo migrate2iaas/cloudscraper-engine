@@ -160,17 +160,17 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             win32api.RegSetValueEx(terminalkey, "fDenyTSConnections" , 0, win32con.REG_DWORD, 0)
             terminalkey.close()
 
+        #---------------- 2g) turniong on hyper-v bus so the machine would start in hyper-v
         turnHyperV = True
     
         if turnHyperV:
             logging.info("Turning on HyperV bus") 
-
             #Note: it is good for 6.0+ only. 
-            idekey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\vmbus" , 0 , win32con.KEY_ALL_ACCESS )
-            win32api.RegSetValueEx(idekey, "Start" , 0, win32con.REG_DWORD, 0)
-            idekey.close()
+            hypervkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\vmbus" , 0 , win32con.KEY_ALL_ACCESS )
+            win32api.RegSetValueEx(hypervkey, "Start" , 0, win32con.REG_DWORD, 0)
+            hypervkey.close()
 
-
+        #---------------- 2g) remove extra paltform-dependent virtualization services
         #TODO: make remove scripts
         removeCitrix = False
         removeHyperV = False
@@ -196,16 +196,36 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         if removeHyperV:
             logging.info("Removing HyperV services") 
 
+
+        #---------------- 3) inject the service
+        #Note: the service should be placed on windrive!
+        installNotificationService = self.__adjustConfig.installNotifyService()
+        if installNotificationService:
+            servicepath = self.__adjustConfig.getNotificationServicePath();
+            serviceconfigpath = self.__adjustConfig.getNotificationServiceConfigPath();
+            servicekeyname = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\CloudscraperNotify"
+            servicekey = win32api.RegCreateKey(win32con.HKEY_LOCAL_MACHINE, servicekeyname)
+            win32api.RegSetValueEx(servicekey , "Start" , 0 , win32con.REG_DWORD , 2)
+            win32api.RegSetValueEx(servicekey , "WOW64" , 0 , win32con.REG_DWORD , 1)
+            win32api.RegSetValueEx(servicekey , "ErrorControl" , 0 , win32con.REG_DWORD , 1)
+            win32api.RegSetValueEx(servicekey , "Type" , 0 , win32con.REG_DWORD , 0x10)
+            win32api.RegSetValueEx(servicekey , "ObjectName" , 0 , win32con.REG_SZ , "LocalSystem")
+            win32api.RegSetValueEx(servicekey , "DisplayName" , 0 , win32con.REG_SZ , "Cloudscraper Notification Service")
+            win32api.RegSetValueEx(servicekey , "DependOnService" , 0 , win32con.REG_MULTI_SZ , "EventLog")
+            win32api.RegSetValueEx(servicekey , "ImagePath" , 0 , win32con.REG_EXPAND_SZ , servicepath)
+            win32api.RegSetValueEx(servicekey , "ConfigPath" , 0 , win32con.REG_EXPAND_SZ , serviceconfigpath)
+            servicekey.close()
+
         #Do operations
         #for operation in self.__adjustConfig.getSystemHiveOperations():
         #    operation.Do(rootRegKey)
 
-        # 3) dismount
+        # 4) dismount
         win32api.RegUnLoadKey(win32con.HKEY_LOCAL_MACHINE, hivekeyname)
 
-        # 4) check the hive has the same size it was before
+        # 5) check the hive has the same size it was before
 
-        # 5) maybe find a way to shrink it?
+        # 6) maybe find a way to shrink it?
         return
 
     def adjustSoftwareHive(self ,hiveFilePath):

@@ -7,7 +7,7 @@ import sys
 
 import subprocess
 import re
-
+import random
 import struct
 import logging
 
@@ -87,15 +87,15 @@ eb f7 b0 42 e8 80 00 8b \
 '
 
 
-    def __init__(self , backingStore , mbrId, defaultOffset = 0x800*0x200):
-        self.__backingStore = backingStore
+    def __init__(self , backing_store , mbr_id = int(random.randint(1, 0x0FFFFFFF)), default_offset = 0x800*0x200):
+        self.__backingStore = backing_store
         self.__freeSize = self.__backingStore.getSize()
         self.__wholeSize = self.__backingStore.getSize()
-        self.__mbrId = int(mbrId)
+        self.__mbrId = int(mbr_id)
         #NOTE: alternatively, these parms could be re-loaded from backing store
         #TODO: make the reload
         self.__mbr = bytearray.fromhex(SimpleDiskParser.builtin_mbr_hex_str)
-        self.__defaultOffset = defaultOffset
+        self.__defaultOffset = default_offset
         self.__currentOffset = self.__defaultOffset
         self.__partitionsCreated = 0
 

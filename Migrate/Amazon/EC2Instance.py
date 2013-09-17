@@ -7,15 +7,26 @@ import boto
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 from boto.s3.bucket import Bucket
+from boto.ec2.instance import *
 
 #TODO: make base class for instances
+#it's about to extend
 class EC2Instance(object):
-    """description of class"""
+    """Class representing EC2 virutal server (instance)"""
 
-    def __init__(self , instanceId):
-
+    def __init__(self , instance_id , user , password , region):
         #TODO: make ec2 connection here
-
-        self.__instanceId = instanceId
-
+        self.__user = user
+        self.__password = password
+        self.__instanceId = instance_id
+        self.__ec2Connnection = boto.ec2.connect_to_region(region,aws_access_key_id=user,aws_secret_access_key=password)
+        
         return 
+
+    def run(self):
+        self.__ec2Connnection.start_instances([self.__instanceId])
+        return
+
+    def stop(self):
+        self.__ec2Connnection.stop_instances([self.__instanceId] , force=True)
+        return

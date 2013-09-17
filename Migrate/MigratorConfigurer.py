@@ -12,6 +12,8 @@ sys.path.append('.\Helper')
 
 import AmazonConfigs
 import EHConfigs
+import platform
+import shutil
 
 import EC2InstanceGenerator
 import EC2Instance
@@ -26,6 +28,7 @@ import UnicodeConfigParser
 import GzipChunkMedia
 import GzipChunkMediaFactory
 import RawGzipMediaFactory
+import datetime
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
     def __init__(self, volumename, imagepath , imagesize):
@@ -321,11 +324,25 @@ class MigratorConfigurer(object):
             factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
 
         newsize = imagesize
-        adjust = AmazonConfigs.AmazonAdjustOptions()
+        installservice = None;
+
+
+        adjust_override = dict()
+        if config.has_section('Service'):
+            service_test = True
+            if config.has_option('Service', 'test'):
+                service_test = config.getboolean('Service', 'test')
+            installpath = "..\\service\\dist"
+            if config.has_option('Service', 'installpath'):
+                service_test = config.getboolean('Service', 'installpath')
+            
+            adjust_override = self.getServiceOverrides(config , configfile, installpath , test=service_test)
+
+
         image = AmazonConfigs.AmazonMigrateConfig(volumes , factory, imagearch , imagetype)
         cloud = AmazonConfigs.AmazonCloudOptions(bucket , user , password , newsize , arch , zone , region, security , instancetype)
 
-        return (image,adjust,cloud)
+        return (image,adjust_override,cloud)
 
     #TODO: move the common code to one function
     def configElasticHosts(self , configfile , user = '' , password = '' , region = '', imagepath = ''):
@@ -422,9 +439,52 @@ class MigratorConfigurer(object):
             factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
       
         newsize = imagesize
-        adjust = EHConfigs.EHAdjustOptions()
+        
+        adjust_override = dict()
+        
+        if config.has_section('Service'):
+            service_test = True
+            if config.has_option('Service', 'test'):
+                service_test = config.getboolean('Service', 'test')
+            installpath = "..\\..\\service\\dist"
+            if config.has_option('Service', 'installpath'):
+                service_test = config.getboolean('Service', 'installpath')
+            
+            adjust_override = self.getServiceOverrides(config , configfile, installpath , test=service_test)
+
         image = EHConfigs.EHMigrateConfig(volumes , factory, imagearch , imagetype)
         cloud = EHConfigs.EHCloudOptions( user , password , newsize , imagearch , region, avoiddisks)
 
-        return (image,adjust,cloud)
+        return (image,adjust_override,cloud)
 
+
+    def getServiceOverrides(self, config, configfile, installpath , test=False):
+        #here the service config is being generated
+        #TODO: separate override from ini creation
+        #TODO: ini and service should be on Windows drive! Make a separate function for this matter
+        servicepath = "..\\..\\service\\"
+        service_config = installpath + "\\service-"+str(int(time.mktime(time.localtime())))+".ini"
+        if not test:
+            defaultpath = servicepath + "default-non-test.ini";
+        else:
+            defaultpath = servicepath + "default-test.ini";
+
+        srcfile = open(defaultpath , "r")
+        data = srcfile.read()
+        data = data.replace("<TRANSFER-INI>" , os.path.abspath(configfile))
+        srcfile.close()
+
+        dstfile = open(service_config, "w")
+        dstfile.write(data)
+        dstfile.close()
+
+        service_exe = os.path.abspath(installpath+"\\CloudscraperServiceMain.exe");  
+        
+        # looks ugly
+        
+        override = dict()
+        override['service-config-path'] = os.path.abspath(service_config)
+        override['service-bin-path'] = service_exe
+        override['service-install'] = True
+
+        return override

@@ -8,6 +8,8 @@ import sys
 sys.path.append('.\Windows')
 sys.path.append('.\Amazon')
 sys.path.append('.\ElasticHosts')
+sys.path.append('.\SelfTest')
+
 
 import unittest
 import WindowsVolume
@@ -18,7 +20,7 @@ import Migrator
 import SystemAdjustOptions
 
 import getpass
-
+import platform
 
 import logging
 import MigratorConfigurer
@@ -29,6 +31,7 @@ import sysconfig
 import time
 import traceback
 import Version
+import random
 
 MigrateVerisonHigh = Version.majorVersion
 MigrateVersionLow = Version.minorVersion
@@ -40,16 +43,16 @@ if __name__ == '__main__':
     #converting to unicode, add "CheckWindows" option
     import Windows
     sys.argv = Windows.win32_unicode_argv()
-    
 
     #parsing extra option
-    parser = argparse.ArgumentParser(description="This script performs creation of virtualized images from the local server, uploading them to S3, converting them to EC2 instances. See README for more details.")
+    parser = argparse.ArgumentParser(description="This script performs creation of virtualized images from the local server, uploading them to S3, converting them to EC2 instances. See http://www.migrate2iaas.com for more details.")
     parser.add_argument('-k', '--amazonkey', help="Your AWS secret key. If not specified you will be prompted at the script start")
     parser.add_argument('-e', '--ehkey', help="Your ElasicHosts API secret key. If not specified you will be prompted at the script start")
     parser.add_argument('-c', '--config', help="Path to copy config file")
     parser.add_argument('-o', '--output', help="Path to extra file for non-detalized output")                   
     parser.add_argument('-u', '--resumeupload', help="Resumes the upload of image already created", action="store_true")                   
     parser.add_argument('-s', '--skipupload', help="Skips both imaging and upload. Just start the machine in cloud from the image given", action="store_true")                   
+    parser.add_argument('-t', '--testrun', help="Makes test run on the migrated server to see it responding", action="store_true")                   
 
     #Turning on the logging
     logging.basicConfig(format='%(asctime)s %(message)s' , filename='..\\..\\logs\\migrate.log',level=logging.DEBUG)    
@@ -57,6 +60,10 @@ if __name__ == '__main__':
     handler.setLevel(logging.INFO)
     logging.getLogger().addHandler(handler)
     
+    #new random seed
+    random.seed()
+    
+    #some legacy command-line support
     if parser.parse_args().output:
         outhandler = logging.FileHandler(parser.parse_args().output , "w" )
         outhandler.setLevel(logging.INFO)
@@ -88,7 +95,9 @@ if __name__ == '__main__':
         else:
             s3key = getpass.getpass("AWS Secret Access Key:")
 
-
+    testrun = False
+    if parser.parse_args().testrun:
+        testrun = True
 
     resumeupload = False
     if parser.parse_args().resumeupload:
@@ -100,7 +109,6 @@ if __name__ == '__main__':
         #NOTE: skip upload is not yet good enough! 
         # it needs saving of 1) image-id (xml-key) for each volume imported previously 2) instance-id
 
-    #thus we use Amazon
     try:
         if s3key:
             (image,adjust,cloud) = config.configAmazon(configpath , s3owner , s3key , region , imagepath)
@@ -115,9 +123,26 @@ if __name__ == '__main__':
     logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Transfer Process:\n")
     __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload)
     logging.info("Migrator test started")
-    __migrator.runFullScenario()
+    instance = __migrator.runFullScenario()
     logging.info("\n>>>>>>>>>>>>>>>>> Transfer process ended\n")
 
-    
+    try:
+        if testrun:
+            import AzureServiceBusResponder
+            respond = AzureServiceBusResponder.AzureServiceBusResponder("cloudscraper-euwest" , 'Pdw8d/kMGqU0d1m99n3sSrepJu1Q61MwjeLmg0o3lJA=', 'owner' , 'server-up')
 
+            logging.info("\n>>>>>>>>>>>>>>>>> Making test run for an instance to check it alive\n")
+            instance.run()
+            logging.info("\n>>>>>>>>>>>>>>>>> Waiting till it responds\n")
+            response = respond.waitResponseByMachineName(platform.node())
+            if response:
+                logging.info("\n>>>>>>>>>>>>>>>>> Responded successfully\n")
+            else:
+                logging.error("!!!ERROR: Migrated server failed to respond");
+            instance.stop()
+
+    except Exception as e:
+        logging.error("\n!!!ERROR: failed to configurate the process! ")
+        logging.error("\n!!!ERROR: " + str(e) )
+        logging.error(traceback.format_exc())
 
