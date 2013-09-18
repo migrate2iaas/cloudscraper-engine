@@ -25,6 +25,7 @@ import WindowsDiskParser
 import WindowsDeviceDataTransferProto
 import WindowsSystemInfo
 
+import filecmp
 import unittest
 import shutil
 import logging
@@ -73,35 +74,80 @@ class Windows(object):
     def makeSystemVolumeBootable(self):
         originalwindir = os.environ['windir']
         windrive = originalwindir.split("\\")[0] #get C: substring
-        bootdir = windrive+"\\Boot"
-        
-        
-        #TODO: set right permissions to it
-        if (os.path.exists(windrive+"\\bootmgr")) == False:
-            logging.debug("Bootmgr not found in Windows root , copying it there")       
-            shutil.copy2(originalwindir + "\\Boot\\PCAT\\bootmgr", windrive+"\\bootmgr")
-            self.__filesToDelete.add(windrive+"\\bootmgr")
 
-        if (os.path.exists(bootdir) and os.path.exists(bootdir+"\\BCD")):
-            return
+        if self.getVersion() >= WindowsSystemInfo.WindowsSystemInfo.Win2008:
+
+            bootdir = windrive+"\\Boot"
+
+            #TODO: set right permissions to it
+            if (os.path.exists(windrive+"\\bootmgr")) == False:
+                logging.debug("Bootmgr not found in Windows root , copying it there")       
+                shutil.copy2(originalwindir + "\\Boot\\PCAT\\bootmgr", windrive+"\\bootmgr")
+                self.__filesToDelete.add(windrive+"\\bootmgr")
+
+            if (os.path.exists(bootdir) and os.path.exists(bootdir+"\\BCD")):
+                return
+            else:
+                if os.path.exists(bootdir) == False:
+                    #create a new one here
+                    try:
+                        logging.debug("Creating a bootdir")       
+                        shutil.copytree(originalwindir + "\\Boot\\PCAT" , bootdir)
+                        self.__filesToDelete.add(bootdir)
+                    except:
+                        logging.error("Cannot create bootdir")       
+                        #TODO log error
+                        return
+
+                logging.debug("Creating an empty BCD store")       
+                # we create an empty BCD so it'll be altered after the transition
+                bcdfile = open(bootdir+"\\BCD", "w")
+                nullbytes = bytearray(64*1024)
+                bcdfile.write(nullbytes)
         else:
-            if os.path.exists(bootdir) == False:
-                #create a new one here
-                try:
-                    logging.debug("Creating a bootdir")       
-                    shutil.copytree(originalwindir + "\\Boot\\PCAT" , bootdir)
-                    self.__filesToDelete.add(bootdir)
-                except:
-                    logging.error("Cannot create bootdir")       
-                    #TODO log error
-                    return
+            #compare HALs,
+            self.unpackHal() 
+            sys32dir = originalwindir+"\\system32"
+            targethal = sys32dir+"\\halacpi.dll"
+            targethal2 = sys32dir+"\\halmacpi.dll"
+            currenthal = sys32dir+"\\hal.dll"
+            if filecmp.cmp(targethal , currenthal , 0) or filecmp.cmp(targethal2 , currenthal , 0):
+                logging.info("The HAL doesn't need to be virtualized, skipping")
+            else:
+                logging.error("!ERROR Non-standard HAL are not supported. Please, make a P2V migration first!")
+                #boot_ini = windrive+"\\boot.ini"
+                #file = open(boot_ini , "r")
+                #data = file.read()
+                #file.close()
 
-            logging.debug("Creating an empty BCD store")       
-            # we create an empty BCD so it'll be altered after the transition
-            bcdfile = open(bootdir+"\\BCD", "w")
-            nullbytes = bytearray(64*1024)
-            bcdfile.write(nullbytes)
 
+    def unpackHal(self):
+        import cabinet
+        originalwindir = os.environ['windir']
+        sys32dir = originalwindir+"\\system32"
+        targethal = "halacpi.dll"
+        targethal2 = "halmacpi.dll"
+        if os.path.exists(sys32dir + "\\" +targethal) == False:
+            return True
+
+        filerepopath = originalwindir+"\\System32\\Driver Cache"
+        if self.getSystemInfo().getSystemArcheticture() == WindowsSystemInfo.WindowsSystemInfo.Archi386:
+            filerepopath = filerepopath + "\\i386"
+        else:
+            filerepopath = filerepopath + "\\amd64"
+        
+        cabs = os.listdir(fiierepopath) 
+        for dirname in drvstore:
+            if dirname.endswith(".cab"):
+                logging.info("Extracting HAL from " + filerepopath+"\\"+dirname)
+                cab = cabinet.CabinetFile(filerepopath+"\\"+dirname)
+                if targethal in cab.namelist():
+                    cab.extract(sys32dir , [targethal])
+                if targethal2 in cab.namelist():
+                    cab.extract(sys32dir , [targethal2])
+                return True
+
+        return False
 
     def rollbackSystemVolumeChanges(self):
         for file in  self.__filesToDelete:

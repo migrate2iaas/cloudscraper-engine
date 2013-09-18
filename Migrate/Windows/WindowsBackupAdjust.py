@@ -22,8 +22,9 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
     """Backupa adjust for Windows OS"""
 
 
-    def __init__(self, adjust_config):
+    def __init__(self, adjust_config , windows_version):
         self.__adjustConfig = adjust_config
+        self.__windowsVersion = windows_version
         return super(WindowsBackupAdjust,self).__init__()        
 
     def adjustSystemHive(self ,hiveFilePath):
@@ -388,23 +389,17 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             return
             
     def adjustHal(self, backupSource):
-        fiierepopath = originalwindir+"\\System32\\DriverStore\\FileRepository"
-        #Note: it's better to analyze BackupSource! 
-        #Note: It's not good assumption: Windows BackupSource may be not local
-        drvstore = os.listdir(fiierepopath) 
-        #self.BackupAdjust.replaceFile(windir+"\\system32\\hal.dll" , originalwindir+"\\system32\\halmacpi.dll")
 
-        #NOTE: we need to adjust it only on 2003. On Win 2008 we may just choose HAL options in BCD, (kernel is already MP there)
-        # or it easier just to use /detecthal option in the boot loader 
+        # code for win2003, no hal fixes are needed in other versions
+        # here we just extract the hal (halacpi.dll) to system32
+        originalwindir = os.environ['windir']
+        
 
-        # so this code is needed only in case of unpacking *cab files from win2003
-        for dirname in drvstore:
-            if "hal.inf" in dirname:
-                #We use halmacpi (multiprocessor variant) by default
-                halpath = fiierepopath+dirname+"\\halmacpi.dll"
-                if os.path.exists(halpath):
-                    #NOTE: we must install hal of correct SP of windows, older SPs are in this list too
-                     self.replaceFile(windir+"\\system32\\hal.dll" , halpath)
+       # halpath = originalwindir+"\\System32\\halacpi.dll"
+       # if os.path.exists(halpath):
+            #NOTE: we must install hal of correct SP of windows, older SPs are in this list too
+            #self.replaceFile(windir+"\\system32\\hal.dll" , halpath)
+        return
  
 
     def adjustRegistry(self , backupSource):
@@ -425,6 +420,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
         self.adjustSystemHive(sys_hive_path)
 
+        #NOTE: it works for local images only
         extentsSoftHive = backupSource.getFileBlockRange(windir+"\\system32\\config\\software")
         soft_hive_path = tmphiveroot+"\\softhive"+str(int(time.mktime(time.localtime()))) 
         softHiveTmp = open(soft_hive_path, "wb")

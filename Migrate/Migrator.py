@@ -200,7 +200,7 @@ class Migrator(object):
         if self.__runOnWindows:
             SysInfo = self.__windows.getSystemInfo()
             logging.info("System version: " + SysInfo.getSystemVersionString() + " arch:" + hex(SysInfo.getSystemArcheticture())) 
-            if (SysInfo.getSystemArcheticture() == SysInfo.Archx8664 or SysInfo.getSystemArcheticture() == SysInfo.Archi386) and SysInfo.getKernelVersion() >= SysInfo.Win2008:
+            if (SysInfo.getSystemArcheticture() == SysInfo.Archx8664 or SysInfo.getSystemArcheticture() == SysInfo.Archi386) and SysInfo.getKernelVersion() >= SysInfo.Win2003:
                 return True
             logging.error("!!!ERROR: The configuration is not supported " + SysInfo.getSystemVersionString() + " arch:" + hex(SysInfo.getSystemArcheticture())) 
             logging.info("Windows 2008R2 and 2012 Server are supported for now") 
