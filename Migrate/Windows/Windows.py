@@ -136,7 +136,7 @@ class Windows(object):
         else:
             filerepopath = filerepopath + "\\amd64"
         
-        cabs = os.listdir(fiierepopath) 
+        cabs = os.listdir(filerepopath) 
         for dirname in drvstore:
             if dirname.endswith(".cab"):
                 logging.info("Extracting HAL from " + filerepopath+"\\"+dirname)
