@@ -198,12 +198,12 @@ class Migrator(object):
 
     def checkSystemCompatibility(self):
         if self.__runOnWindows:
-            SysInfo = self.__windows.getSystemInfo()
-            logging.info("System version: " + SysInfo.getSystemVersionString() + " arch:" + hex(SysInfo.getSystemArcheticture())) 
-            if (SysInfo.getSystemArcheticture() == SysInfo.Archx8664 or SysInfo.getSystemArcheticture() == SysInfo.Archi386) and SysInfo.getKernelVersion() >= SysInfo.Win2003:
+            sys_info = self.__windows.getSystemInfo()
+            logging.info("System version: " + sys_info.getSystemVersionString() + " arch:" + hex(sys_info.getSystemArcheticture())) 
+            if (sys_info.getSystemArcheticture() == sys_info.Archx8664 or sys_info.getSystemArcheticture() == sys_info.Archi386) and sys_info.getKernelVersion() >= sys_info.Win2003:
                 return True
-            logging.error("!!!ERROR: The configuration is not supported " + SysInfo.getSystemVersionString() + " arch:" + hex(SysInfo.getSystemArcheticture())) 
-            logging.info("Windows 2008R2 and 2012 Server are supported for now") 
+            logging.error("!!!ERROR: The configuration is not supported " + sys_info.getSystemVersionString() + " arch:" + hex(sys_info.getSystemArcheticture())) 
+            logging.info("Windows 2003 , 2008R2 and 2012 Server are supported for now") 
         else: 
             logging.error("!!!ERROR: Non-Windows configs are not supported for now")
         return False
@@ -228,7 +228,7 @@ class Migrator(object):
             import WindowsBackupSource
             import WindowsBackupAdjust
             self.__systemBackupSource = WindowsBackupSource.WindowsBackupSource()
-            self.__adjustOption = WindowsBackupAdjust.WindowsBackupAdjust(self.__winSystemAdjustOptions)
+            self.__adjustOption = WindowsBackupAdjust.WindowsBackupAdjust(self.__winSystemAdjustOptions , self.__windows.getVersion())
 
         self.__systemBackupSource.setBackupDataSource(self.generateSystemDataBackupSource())
         
@@ -260,6 +260,7 @@ class Migrator(object):
 
     # it's kinda ImageFactory
     def createImageMedia(self, imagepath, imagesize):
+        """creats image media using factory provided via migrate options"""
         factory = self.__migrateOptions.getImageFactory()
         media = factory.createMedia(imagepath , imagesize)
         if media:
