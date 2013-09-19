@@ -130,7 +130,7 @@ class Windows(object):
         if os.path.exists(sys32dir + "\\" +targethal) == False:
             return True
 
-        filerepopath = originalwindir+"\\System32\\Driver Cache"
+        filerepopath = originalwindir+"\\Driver Cache"
         if self.getSystemInfo().getSystemArcheticture() == WindowsSystemInfo.WindowsSystemInfo.Archi386:
             filerepopath = filerepopath + "\\i386"
         else:
