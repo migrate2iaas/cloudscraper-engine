@@ -137,7 +137,7 @@ class Windows(object):
             filerepopath = filerepopath + "\\amd64"
         
         cabs = os.listdir(filerepopath) 
-        for dirname in drvstore:
+        for dirname in cabs:
             if dirname.endswith(".cab"):
                 logging.info("Extracting HAL from " + filerepopath+"\\"+dirname)
                 cab = cabinet.CabinetFile(filerepopath+"\\"+dirname)
