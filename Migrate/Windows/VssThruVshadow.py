@@ -3,13 +3,27 @@ __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
-import VSS
 import sys
 import os
+sys.path.append(sys.path[0]+'\\..')
+from MigrateExceptions import FileException
+import VSS
+import win32file
+import win32event
+import win32con
+import win32security
 import win32api
+import pywintypes
+import ctypes
+import winioctlcon
+import struct
+import ntsecuritycon
 import MigrateExceptions
 import subprocess
 import re
+import Windows
+import struct
+
 
 import logging
 
@@ -74,16 +88,62 @@ class VssThruVshadow(VSS.VSS):
             logging.error("Bad vhsadow output! Cannot find snapshot id! Output %s" , output)
             raise IOError
         snapname = match.group(1)
+
+        volname = self.mountSnapshot(devname);
         # make it openable
+<<<<<<< HEAD
         devname = devname.replace("\\\\?\\GLOBALROOT\\Device", "\\\\.").lower()
 
         #TODO: seems like I have to call mount manager in case volume hsadow copy is not working
+=======
+>>>>>>> 4d2f5d789b8757ffae05162d6b57638a5052e3fe
         
-        logging.debug("Saving %s snapshot for device \'%s\'" , snapname , devname);
-        self.__snapshots[devname] = snapname
+        logging.debug("Saving %s snapshot for device \'%s\' mounted on \'%s\'" , snapname , devname , volname);
+        self.__snapshots[volname] = snapname
         logging.debug(str(self.__snapshots));
 
-        return devname
+        return volname
+
+    def mountSnapshot(self , devname):
+        """mounts snapshot on a path accessible by Windows user-mode"""
+        volname = devname.replace("\\\\?\\GLOBALROOT\\Device", "\\\\.").lower()
+        #Win2008 VSS creates symlink themself. 
+        #TODO: make dynamic checks if symlinks exists
+        if (self.__winMajor > 5): 
+            return volname
+
+        secur_att = win32security.SECURITY_ATTRIBUTES()
+        secur_att.Initialize()
+        #openning Windows mount manager to create a link
+        filename = "\\\\.\\MountPointManager" # MOUNTMGR_DEVICE_NAME
+        try:
+            self.__hfile = win32file.CreateFile( filename, win32con.GENERIC_READ|  win32con.GENERIC_WRITE | ntsecuritycon.FILE_READ_ATTRIBUTES | ntsecuritycon.FILE_WRITE_ATTRIBUTES, win32con. FILE_SHARE_READ|win32con.FILE_SHARE_WRITE, secur_att,   win32con.OPEN_ALWAYS, win32con.FILE_ATTRIBUTE_NORMAL , 0 )
+        except Exception as ex:
+            raise FileException(filename , ex)
+
+        symlink = unicode(devname.replace("\\\\?\\GLOBALROOT\\Device", "\\DosDevices"))
+        kernellink = unicode(devname.replace("\\\\?\\GLOBALROOT\\Device", "\\Device"))
+        # typedef struct _MOUNTMGR_CREATE_POINT_INPUT {
+        # USHORT SymbolicLinkNameOffset;
+        # USHORT SymbolicLinkNameLength;
+        # USHORT DeviceNameOffset;
+        # USHORT DeviceNameLength;
+        #} MOUNTMGR_CREATE_POINT_INPUT, *PMOUNTMGR_CREATE_POINT_INPUT;
+        #create symbolic link
+        output_buffer_size = 256 
+        struct_sizeof = 4*2
+        IOCTL_MOUNTMGR_CREATE_POINT = 0x6dc000
+        symlinklen = len(symlink)*2
+        kernelllinklen = len(kernellink)*2
+        input_buffer = struct.pack("=HHHH", struct_sizeof , symlinklen ,   struct_sizeof+symlinklen,  kernelllinklen)\
+            + bytearray(symlink, encoding = "utf-16LE") + bytearray(kernellink , encoding = "utf-16LE")
+        try:
+            win32file.DeviceIoControl(self.__hfile, IOCTL_MOUNTMGR_CREATE_POINT, input_buffer, 0, None )
+        except Exception as ex:
+            logging.error("!!!ERROR Failed to mount volume snapshot so it could be accessed by the program")
+            raise FileException(filename , ex)
+
+        return volname
 
     #deletes the snapshot
     def deleteSnapshot(self, devName):
