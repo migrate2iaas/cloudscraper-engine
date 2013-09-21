@@ -76,6 +76,8 @@ class VssThruVshadow(VSS.VSS):
         snapname = match.group(1)
         # make it openable
         devname = devname.replace("\\\\?\\GLOBALROOT\\Device", "\\\\.").lower()
+
+        #TODO: seems like I have to call mount manager in case volume hsadow copy is not working
         
         logging.debug("Saving %s snapshot for device \'%s\'" , snapname , devname);
         self.__snapshots[devname] = snapname
