@@ -177,6 +177,9 @@ class Windows(object):
         options = WindowsSystemAdjustOptions.WindowsSystemAdjustOptions(self.getVersion() < WindowsSystemInfo.WindowsSystemInfo.Win2008R2)
         # TODO: here we should check windows version and add some configs from pre-build configs
         options.loadConfig(config)
+        if (self.getVersion() < WindowsSystemInfo.WindowsSystemInfo.Win2008):
+            options.setSysDiskType(options.diskAta)
+
         return options
 
     def getVersion(self):

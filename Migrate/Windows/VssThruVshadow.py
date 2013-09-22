@@ -90,7 +90,6 @@ class VssThruVshadow(VSS.VSS):
         snapname = match.group(1)
 
         volname = self.mountSnapshot(devname);
-        # make it openable
         
         logging.debug("Saving %s snapshot for device \'%s\' mounted on \'%s\'" , snapname , devname , volname);
         self.__snapshots[volname] = snapname

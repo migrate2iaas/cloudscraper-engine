@@ -11,7 +11,7 @@ class SystemAdjustOptions(object):
     diskAta = 2
 
     def __init__(self):
-        self.__diskType = self.diskUnknown
+        self.__diskType = self.diskAta
         self.__servicePath = None
         self.__serviceConfigPath = None
         self.__installService = False
