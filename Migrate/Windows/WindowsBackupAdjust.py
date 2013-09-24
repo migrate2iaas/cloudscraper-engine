@@ -27,6 +27,44 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         self.__windowsVersion = windows_version
         return super(WindowsBackupAdjust,self).__init__()        
 
+    def enableRdpFirewall(self , hivekeyname , currentcontrolset):
+        if self.__windowsVersion > WindowsSystemInfo.WindowsSystemInfo.Win2003:
+            firewarllruleskeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\FirewallRules"
+            logging.debug("Openning key" + firewarllruleskeypath) 
+            firewallkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, firewarllruleskeypath , 0 , win32con.KEY_ALL_ACCESS )
+
+            try:
+                remotedesk_value = "RemoteDesktop-In-TCP"
+                (oldvalue,valtype) = win32api.RegQueryValueEx(firewallkey, remotedesk_value)
+            except Exception as ex: 
+                logging.debug("failed to find " + remotedesk_value + "in firewall settings. Possibly 2012 Server, trying RemoteDesktop-UserMode-In-TCP") 
+                #TODO: ugly , should depend on win version
+                remotedesk_value = "RemoteDesktop-UserMode-In-TCP"
+                (oldvalue,valtype) = win32api.RegQueryValueEx(firewallkey, remotedesk_value)
+
+            logging.debug("Got " + remotedesk_value + " = " + str(oldvalue)) 
+            newvalue = str(oldvalue).replace("Active=FALSE", "Active=TRUE") 
+            newvalue = newvalue.replace("Action=Block", "Action=Allow")
+            
+            portstart = newvalue.find("LPort=")
+            portend = newvalue[newvalue.find("LPort="):].find("|")
+            portentry = newvalue[portstart:portstart+portend]
+            newvalue = newvalue.replace(portentry, "LPort="+str(rdpport))
+
+            logging.debug("Changing to  " + newvalue)
+            win32api.RegSetValueEx(firewallkey, remotedesk_value , 0 , win32con.REG_SZ, newvalue)
+            firewallkey.close()
+        else:
+            firewarllruleskeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\StandrardProfile\\GloballyOpenPort\\List"
+            logging.debug("Openning key" + firewarllruleskeypath) 
+            firewallkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, firewarllruleskeypath , 0 , win32con.KEY_ALL_ACCESS )
+            valuename = "3389:TCP"
+            newvalue = "3389:TCP:*:Enabled:@xpsp2res.dll,-22009"
+            win32api.RegSetValueEx(firewallkey, valuename , 0 , win32con.REG_SZ, newvalue)
+            firewallkey.close()
+        return 
+
+
     def adjustSystemHive(self ,hiveFilePath):
         
         logging.info("Adjusting the system hive") 
@@ -53,6 +91,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         # a) LSI_SCSI
         # b) Services\\SharedAccess\\Parameters\\FirewallPolicy\\FirewallRules
         # c) should locate firewalls \ rdp settings then
+
 
         # 2a) mountdevs
         mountdevkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\MountedDevices" , 0 , win32con.KEY_ALL_ACCESS )
@@ -119,35 +158,12 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
             #NOTE: checked on 6.1 only! 
             #TODO: Should recheck on other versions!
-            # 2d) add turn on rdp feature
-            firewarllruleskeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\FirewallRules"
-            logging.debug("Openning key" + firewarllruleskeypath) 
-            firewallkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, firewarllruleskeypath , 0 , win32con.KEY_ALL_ACCESS )
-
-            try:
-                remotedesk_value = "RemoteDesktop-In-TCP"
-                (oldvalue,valtype) = win32api.RegQueryValueEx(firewallkey, remotedesk_value)
-            except Exception as ex: 
-                logging.debug("failed to find " + remotedesk_value + "in firewall settings. Possibly 2012 Server, trying RemoteDesktop-UserMode-In-TCP") 
-                #TODO: ugly , should depend on win version
-                remotedesk_value = "RemoteDesktop-UserMode-In-TCP"
-                (oldvalue,valtype) = win32api.RegQueryValueEx(firewallkey, remotedesk_value)
-
-            logging.debug("Got " + remotedesk_value + " = " + str(oldvalue)) 
-            newvalue = str(oldvalue).replace("Active=FALSE", "Active=TRUE") 
-            newvalue = newvalue.replace("Action=Block", "Action=Allow")
-            
-            portstart = newvalue.find("LPort=")
-            portend = newvalue[newvalue.find("LPort="):].find("|")
-            portentry = newvalue[portstart:portstart+portend]
-            newvalue = newvalue.replace(portentry, "LPort="+str(rdpport))
-
-            logging.debug("Changing to  " + newvalue)
-            win32api.RegSetValueEx(firewallkey, remotedesk_value , 0 , win32con.REG_SZ, newvalue)
-            firewallkey.close()
+            # 2d) add turn on firewall rdp feature
+            self.enableRdpFirewall( hivekeyname , currentcontrolset)
 
             #2e) setting the rdp setting to ones needed
             #TODO: make kinda wrapper function!
+            #TODO: check Windows 2003, how could the security be added
             terminalkeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Control\\Terminal Server\\WinStations\\RDP-TCP"
             logging.debug("Openning key" + terminalkeypath) 
             terminalkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, terminalkeypath , 0 , win32con.KEY_ALL_ACCESS )
