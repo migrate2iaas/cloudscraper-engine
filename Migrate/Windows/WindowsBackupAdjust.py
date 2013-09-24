@@ -49,7 +49,10 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         #To change: Mountdevs, driver entries , maybe setups, system\boot partitions
         #optionally: add my soft
 
-        
+        # TODO: WIN2003 there is no:
+        # a) LSI_SCSI
+        # b) Services\\SharedAccess\\Parameters\\FirewallPolicy\\FirewallRules
+        # c) should locate firewalls \ rdp settings then
 
         # 2a) mountdevs
         mountdevkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\MountedDevices" , 0 , win32con.KEY_ALL_ACCESS )
