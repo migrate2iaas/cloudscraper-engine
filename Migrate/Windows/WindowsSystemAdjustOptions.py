@@ -10,16 +10,17 @@ import os
 class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):    
      """class extending the basic interface of SystemAdjusts so specific Windows options are included"""
      
-     def __init__(self, detectHal = True):
+     def __init__(self, detect_hal = True , enable_hyperv = True):
          """Constructor. Inits adjust options with default values"""
          super(WindowsSystemAdjustOptions,self).__init__()
          random.seed()
          self.__systemPartStart = long(0x0100000);
          self.__newMbr = int(random.randint(1, 0x0FFFFFFF))
          self.__prebuiltBcdPath = "..\\resources\\boot\\win\\BCD_MBR"
-         self.__detectHal = detectHal
+         self.__detectHal = detect_hal
          self.__fixRdp = True
          self.__rdpPort = 3389
+         self.__turnHyperV = enable_hyperv
          
      def __getValue(self , config , key , default = None):
          """auxillary to read data from dict-like config with no exceptions"""
@@ -43,6 +44,7 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
          self.__fixRdp = self.__getValue(config , 'fix-rdp' , self.__fixRdp)
          self.__detectHal = self.__getValue(config , 'detect-hal' , self.__detectHal)
          self.__rdpPort = self.__getValue(config , 'rdp-port' , self.__rdpPort)
+         self.__turnHyperV = self.__getValue(config , 'turn-hyperv' , self.__turnHyperV)
 
          #TODO: load ini config setting these values
          #get config class from the service
@@ -52,30 +54,32 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
      #Windows special methods
 
      def detectHal(self):
+         """if HAL should be automatically detected. Affects BCD manipulations for Win2008+"""
          return self.__detectHal
 
-     #
      def getPregeneratedBcdHivePath(self):
+        """gets precretead bcd"""
         return  self.__prebuiltBcdPath
 
-     #
      def getNewMbrId(self):
+        """get new mbr id for the system drive"""
         return  self.__newMbr
     
-     #
      def setNewMbrId(self , newMbr):
+        """sets new mbr id for the system drive"""
         self.__newMbr = newMbr 
 
-     #  
      def getNewSysPartStart(self):
+        """gets the new system partition start"""
         return self.__systemPartStart
     
-     #
      def setNewSysPartStart(self , newPart):
+         """sets the new system partition start"""
          self.__systemPartStart = newPart
 
      # gets new mount points
      def getMountPoints(self):
+         """gets extra predefined mount points. NOT IMPLEMENTED"""
          return
 
      def fixRDP(self):
@@ -85,3 +89,7 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
      def rdpPort(self):
          """returns rdp TCP port to use"""
          return self.__rdpPort
+
+     def turnOnHyperV(self):
+         """Turn if internal hyperV bus should be enabled by default"""
+         return self.__turnHyperV

@@ -28,6 +28,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         return super(WindowsBackupAdjust,self).__init__()        
 
     def enableRdpFirewall(self , hivekeyname , currentcontrolset):
+        """function to enable rdp ports in Windows firewall"""
         if self.__windowsVersion > WindowsSystemInfo.WindowsSystemInfo.Win2003:
             firewarllruleskeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\FirewallRules"
             logging.debug("Openning key" + firewarllruleskeypath) 
@@ -64,6 +65,30 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             firewallkey.close()
         return 
 
+    def enableRdpService(self , hivekeyname , currentcontrolset , rdpport = 3389):
+        """function to enable rdp (terminal) services for this machine and configure its basic security"""
+        #setting correct auth flags
+        terminalkeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Control\\Terminal Server\\WinStations\\RDP-TCP"
+        logging.debug("Openning key" + terminalkeypath) 
+        terminalkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, terminalkeypath , 0 , win32con.KEY_ALL_ACCESS )
+        win32api.RegSetValueEx(terminalkey, "PortNumber" , 0 ,  win32con.REG_DWORD , rdpport)
+        win32api.RegSetValueEx(terminalkey, "SecurityLayer" , 0, win32con.REG_DWORD, 1)
+        if self.__windowsVersion > WindowsSystemInfo.WindowsSystemInfo.Win2003:
+            win32api.RegSetValueEx(terminalkey, "UserAuthentication" , 0, win32con.REG_DWORD, 1)
+            win32api.RegSetValueEx(terminalkey, "fAllowSecProtocolNegotiation" , 0, win32con.REG_DWORD, 1)
+        else:
+            win32api.RegSetValueEx(terminalkey, "MinEncryptionLayer" , 0, win32con.REG_DWORD, 3) #high encryption level
+            win32api.RegSetValueEx(terminalkey, "fPromptForPassword" , 0, win32con.REG_DWORD, 1) 
+        terminalkey.close()
+
+        #2f) setting the allow flag
+        terminalkeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Control\\Terminal Server"
+        logging.debug("Openning key" + terminalkeypath) 
+        terminalkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, terminalkeypath , 0 , win32con.KEY_ALL_ACCESS )
+        win32api.RegSetValueEx(terminalkey, "fDenyTSConnections" , 0, win32con.REG_DWORD, 0)
+        terminalkey.close()
+
+        return 
 
     def adjustSystemHive(self ,hiveFilePath):
         
@@ -164,24 +189,10 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             #2e) setting the rdp setting to ones needed
             #TODO: make kinda wrapper function!
             #TODO: check Windows 2003, how could the security be added
-            terminalkeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Control\\Terminal Server\\WinStations\\RDP-TCP"
-            logging.debug("Openning key" + terminalkeypath) 
-            terminalkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, terminalkeypath , 0 , win32con.KEY_ALL_ACCESS )
-            win32api.RegSetValueEx(terminalkey, "UserAuthentication" , 0, win32con.REG_DWORD, 1)
-            win32api.RegSetValueEx(terminalkey, "SecurityLayer" , 0, win32con.REG_DWORD, 1)
-            win32api.RegSetValueEx(terminalkey, "fAllowSecProtocolNegotiation" , 0, win32con.REG_DWORD, 1)
-            win32api.RegSetValueEx(terminalkey, "PortNumber" , 0 ,  win32con.REG_DWORD , rdpport)
-            terminalkey.close()
-
-            #2f) setting the allow flag
-            terminalkeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Control\\Terminal Server"
-            logging.debug("Openning key" + terminalkeypath) 
-            terminalkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, terminalkeypath , 0 , win32con.KEY_ALL_ACCESS )
-            win32api.RegSetValueEx(terminalkey, "fDenyTSConnections" , 0, win32con.REG_DWORD, 0)
-            terminalkey.close()
+            self.enableRdpService( hivekeyname , currentcontrolset , rdpport)
 
         #---------------- 2g) turniong on hyper-v bus so the machine would start in hyper-v
-        turnHyperV = True
+        turnHyperV = self.__adjustConfig.turnOnHyperV()
     
         if turnHyperV:
             logging.info("Turning on HyperV bus") 
