@@ -28,7 +28,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         self.__windowsVersion = windows_version
         return super(WindowsBackupAdjust,self).__init__()        
 
-    def enableRdpFirewall(self , hivekeyname , currentcontrolset):
+    def enableRdpFirewall(self , hivekeyname , currentcontrolset, rdpport=3389):
         """function to enable rdp ports in Windows firewall"""
         if self.__windowsVersion > WindowsSystemInfo.WindowsSystemInfo.Win2003:
             firewarllruleskeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\FirewallRules"
@@ -185,7 +185,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             #NOTE: checked on 6.1 only! 
             #TODO: Should recheck on other versions!
             # 2d) add turn on firewall rdp feature
-            self.enableRdpFirewall( hivekeyname , currentcontrolset)
+            self.enableRdpFirewall( hivekeyname , currentcontrolset , rdpport)
 
             #2e) setting the rdp setting to ones needed
             #TODO: make kinda wrapper function!
