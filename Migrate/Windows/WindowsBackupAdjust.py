@@ -17,6 +17,7 @@ import struct
 
 import logging
 import time
+import WindowsSystemInfo
 
 class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
     """Backupa adjust for Windows OS"""
