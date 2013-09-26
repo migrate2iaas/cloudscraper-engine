@@ -58,7 +58,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             win32api.RegSetValueEx(firewallkey, remotedesk_value , 0 , win32con.REG_SZ, newvalue)
             firewallkey.close()
         else:
-            firewarllruleskeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\StandrardProfile\\GloballyOpenPorts\\List"
+            firewarllruleskeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\StandardProfile\\GloballyOpenPorts\\List"
             logging.debug("Openning key" + firewarllruleskeypath) 
             firewallkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, firewarllruleskeypath , 0 , win32con.KEY_ALL_ACCESS )
             valuename = "3389:TCP"
