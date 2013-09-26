@@ -79,8 +79,19 @@ class AllFilesIterator(object):
 class WindowsVolume(object):
     """Windows volume"""
     
-    def __init__(self,volumeName):
+    def __init__(self, volumeName , max_reported_extent_size=32*1024*1024):
+        """
+        constructor
+
+        Args:
+        volumeName :str - path to the volume to be opened
+        max_reported_extent_size: int, long - size of maximum extent size reported by any of funcitons that gets extents.
+        If the extent is larger it is split on few smaller ones of size <= max_reported_extent_size
+
+        """
        
+        self.__maxReportedExtentSize = max_reported_extent_size
+
         secur_att = win32security.SECURITY_ATTRIBUTES()
         secur_att.Initialize()
         
@@ -256,7 +267,8 @@ class WindowsVolume(object):
             
             #Here we decide what extent size is treated as max
             #TODO: move it somewhere else. Bad to see it here
-            if last_size >= 64*1024*1024:
+            
+            if last_size >= self.__maxReportedExtentSize:
                 volextent = DataExtent(last_start, last_size)
                 volextent.setData(DeferedReader(volextent, self) )
                 volextents.append(volextent)
