@@ -382,7 +382,9 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
       
     # creates and adjusts 
     def adjustBcd(self, backupSource):
-        
+        if self.__windowsVersion <= WindowsSystemInfo.WindowsSystemInfo.Win2003:
+            logging.debug("Win2003, BCD is not needed");
+            return
         bootdir = "\\Boot"
         
         newbcd = self.generateBcd(backupSource)

@@ -260,6 +260,7 @@ class S3UploadThread(threading.Thread):
                     logging.error(traceback.format_exc()) 
                     continue
 
+                logging.debug("Upload thread "+str(self.__threadId)+ " set queue task done");
                 self.__uploadQueue.task_done()
                 failed = False
                 break
@@ -446,6 +447,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
     # wait uploaded all needed
     def waitTillUploadComplete(self):
+        logging.debug("Upload complete, waiting for threads to complete");
         self.__uploadQueue.join()
         return
 
@@ -506,6 +508,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         return self.__xmlKey
 
     def close(self):
+        logging.debug("Closing the upload threads, End signal message was sent")
         for thread in self.__workThreads:
             self.__uploadQueue.put( None )
    
