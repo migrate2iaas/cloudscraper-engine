@@ -129,7 +129,7 @@ class EC2InstanceGenerator(object):
                         logging.info(">>> It could be configured and started via AWS EC2 management console") 
                         logging.info("==========================================================================") 
 
-                        return EC2Instance.EC2Instance(instanceid)
+                        return EC2Instance.EC2Instance(instanceid , s3key , s3key , self.__region)
                     if importstatus == "cancelled":
                         logging.error("!!!ERROR: The import task was cancelled by AWS. Reason: ") 
                         logging.error("!!! " + import_task.get_message()) 
