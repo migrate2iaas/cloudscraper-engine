@@ -79,8 +79,9 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             win32api.RegSetValueEx(terminalkey, "UserAuthentication" , 0, win32con.REG_DWORD, 1)
             win32api.RegSetValueEx(terminalkey, "fAllowSecProtocolNegotiation" , 0, win32con.REG_DWORD, 1)
         else:
-            win32api.RegSetValueEx(terminalkey, "MinEncryptionLayer" , 0, win32con.REG_DWORD, 3) #high encryption level
+            win32api.RegSetValueEx(terminalkey, "MinEncryptionLevel" , 0, win32con.REG_DWORD, 3) #high encryption level
             win32api.RegSetValueEx(terminalkey, "fPromptForPassword" , 0, win32con.REG_DWORD, 1) 
+            win32api.RegSetValueEx(terminalkey, "fDisableEncryption" , 0, win32con.REG_DWORD, 0) 
         terminalkey.close()
 
         #2f) setting the allow flag
