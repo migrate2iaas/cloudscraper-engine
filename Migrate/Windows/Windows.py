@@ -126,8 +126,10 @@ class Windows(object):
         import cabinet
         originalwindir = os.environ['windir']
         sys32dir = originalwindir+"\\system32"
+        #TODO: add HAL LIST
         targethal = "halacpi.dll"
         targethal2 = "halmacpi.dll"
+        targethal3 = "halaacpi.dll"
         if os.path.exists(sys32dir + "\\" +targethal) == False:
             return True
 
@@ -146,6 +148,8 @@ class Windows(object):
                     cab.extract(sys32dir , [targethal])
                 if targethal2 in cab.namelist():
                     cab.extract(sys32dir , [targethal2])
+	if targethal3 in cab.namelist():
+                    cab.extract(sys32dir , [targethal3])
                 return True
 
         return False
