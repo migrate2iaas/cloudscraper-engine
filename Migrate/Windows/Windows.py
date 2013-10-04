@@ -143,17 +143,25 @@ class Windows(object):
         else:
             filerepopath = filerepopath + "\\amd64"
         
+        #we seek for the latest cab
+        max_modtime = 0
         cabs = os.listdir(filerepopath) 
-        for dirname in cabs:
-            if dirname.endswith(".cab"):
-                logging.info("Extracting HAL from " + filerepopath+"\\"+dirname)
-                cab = cabinet.CabinetFile(filerepopath+"\\"+dirname)
+        for dirent in cabs:
+            if dirent.endswith(".cab"):
+                cabpath = filerepopath+"\\"+dirent
+                modtime = os.stat(cabpath).st_mtime
+                if modtime > max_modtime:
+                    max_modtime = modtime
+                else:
+                    continue
+                logging.info("Extracting HAL from " + cabpath)
+                cab = cabinet.CabinetFile(cabpath)
                 available_hals = [val for val in cab.namelist() if val in set(self.__halList)] #looks crazy but it is how interesction works
                 for hal in available_hals:
+                    logging.debug("Extracting " + hal)
                     cab.extract(sys32dir , [hal])
-                return True
-
-        return False
+               
+        return True
 
     def rollbackSystemVolumeChanges(self):
         for file in  self.__filesToDelete:
