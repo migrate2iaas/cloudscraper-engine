@@ -36,6 +36,8 @@ class Windows(object):
     def __init__(self):
         self.__filesToDelete = set()
         self.__vss = VssThruVshadow.VssThruVshadow()
+        #note: better to load from conf
+        self.__halList = ["\\halacpi.dll","\\halmacpi.dll","\\halaacpi.dll"]
         return
     
     # volume should be in "\\.\X:" form
@@ -108,28 +110,30 @@ class Windows(object):
             #compare HALs,
             self.unpackHal() 
             sys32dir = originalwindir+"\\system32"
-            targethal = sys32dir+"\\halacpi.dll"
-            targethal2 = sys32dir+"\\halmacpi.dll"
-            targethal3 = sys32dir+"\\halaacpi.dll"
             currenthal = sys32dir+"\\hal.dll"
-            if filecmp.cmp(targethal , currenthal , 0) or filecmp.cmp(targethal2 , currenthal , 0) or filecmp.cmp(targethal3 , currenthal , 0):
-                logging.info("The HAL doesn't need to be virtualized, skipping")
-            else:
-                logging.error("!ERROR Non-standard HAL are not supported. Please, make a P2V migration first!")
-                #boot_ini = windrive+"\\boot.ini"
-                #file = open(boot_ini , "r")
-                #data = file.read()
-                #file.close()
-
+            good_hal_already = False
+            for hal in self.__halList:
+                targethal = sys32dir+"\\"+hal
+                #TODO: check exisits
+                if os.path.exists(targethal):
+                    if filecmp.cmp(targethal , currenthal , 0):
+                        logging.info("The HAL ( " + hal + " ) doesn't need to be virtualized, skipping")
+                        good_hal_already = True
+                    
+            logging.error("!ERROR Non-standard HAL are not supported. Please, make a P2V migration first!")
+            
+            #this code could be used to support non-standard hals but could damage boot.ini
+            #boot_ini = windrive+"\\boot.ini"
+            #file = open(boot_ini , "r")
+            #data = file.read()
+            #file.close()
+            
 
     def unpackHal(self):
         import cabinet
         originalwindir = os.environ['windir']
         sys32dir = originalwindir+"\\system32"
         #TODO: add HAL LIST
-        targethal = "halacpi.dll"
-        targethal2 = "halmacpi.dll"
-        targethal3 = "halaacpi.dll"
         if os.path.exists(sys32dir + "\\" +targethal) == False:
             return True
 
@@ -144,12 +148,9 @@ class Windows(object):
             if dirname.endswith(".cab"):
                 logging.info("Extracting HAL from " + filerepopath+"\\"+dirname)
                 cab = cabinet.CabinetFile(filerepopath+"\\"+dirname)
-                if targethal in cab.namelist():
-                    cab.extract(sys32dir , [targethal])
-                if targethal2 in cab.namelist():
-                    cab.extract(sys32dir , [targethal2])
-                if targethal3 in cab.namelist():
-                    cab.extract(sys32dir , [targethal3])
+                available_hals = [val for val in cab.namelist() if val in set(self.__halList)] #looks crazy but it is how interesction works
+                for hal in available_hals:
+                    cab.extract(sys32dir , [hal])
                 return True
 
         return False
