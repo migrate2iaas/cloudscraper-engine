@@ -110,8 +110,9 @@ class Windows(object):
             sys32dir = originalwindir+"\\system32"
             targethal = sys32dir+"\\halacpi.dll"
             targethal2 = sys32dir+"\\halmacpi.dll"
+            targethal3 = sys32dir+"\\halaacpi.dll"
             currenthal = sys32dir+"\\hal.dll"
-            if filecmp.cmp(targethal , currenthal , 0) or filecmp.cmp(targethal2 , currenthal , 0):
+            if filecmp.cmp(targethal , currenthal , 0) or filecmp.cmp(targethal2 , currenthal , 0) or filecmp.cmp(targethal3 , currenthal , 0):
                 logging.info("The HAL doesn't need to be virtualized, skipping")
             else:
                 logging.error("!ERROR Non-standard HAL are not supported. Please, make a P2V migration first!")
