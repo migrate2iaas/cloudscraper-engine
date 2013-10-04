@@ -148,7 +148,7 @@ class Windows(object):
                     cab.extract(sys32dir , [targethal])
                 if targethal2 in cab.namelist():
                     cab.extract(sys32dir , [targethal2])
-	if targethal3 in cab.namelist():
+                if targethal3 in cab.namelist():
                     cab.extract(sys32dir , [targethal3])
                 return True
 
