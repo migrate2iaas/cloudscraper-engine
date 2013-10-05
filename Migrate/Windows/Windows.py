@@ -119,8 +119,9 @@ class Windows(object):
                     if filecmp.cmp(targethal , currenthal , 0):
                         logging.info("The HAL ( " + hal + " ) doesn't need to be virtualized, skipping")
                         good_hal_already = True
-                    
-            logging.error("!ERROR Non-standard HAL are not supported. Please, make a P2V migration first!")
+            
+            if good_hal_already == False:
+                logging.error("!!!ERROR Non-standard HAL are not supported. Please, make a P2V migration first!")
             
             #this code could be used to support non-standard hals but could damage boot.ini
             #boot_ini = windrive+"\\boot.ini"
