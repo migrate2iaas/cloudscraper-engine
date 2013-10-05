@@ -77,6 +77,9 @@ class SimpleTransferTarget(TransferTarget.TransferTarget):
 
     def close(self):
         if self.__closed == False:
-            return self.__mediaProto.getMedia().release()
+            if self.__mediaProto.getMedia().release():
+                self.__closed = True
+                return True
         else:
             logging.warning("Attempt to close target that was already closed")
+        return False

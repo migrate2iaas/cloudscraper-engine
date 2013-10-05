@@ -28,7 +28,7 @@ import ImageMedia
 
 # the base class for all the media (VHD,raw files etc) to contain a system or data image
 class GzipChunkMedia(ImageMedia.ImageMedia):
-    """Media consisting of one tar with lots of already gzipped chunks"""
+    """Media consisting of lots of already gzipped chunks"""
 
     def __init__(self , filename , imagesizeBytes , chunksize , compression=4):
         self.__filename = filename
@@ -89,6 +89,8 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
         chunkfilename = self.__filename+"offset"+str(chunknumber*self.__chunkSize)+".gz"
 
         if (os.path.exists(chunkfilename) == False):
+            #fails in case there were kinda error in here.
+            #e.g. system crashed when this file was just created
             logging.debug(chunkfilename+" created \n")
             file = open(chunkfilename, "wb")
             nullbytes = bytearray(self.__chunkSize)
@@ -102,6 +104,12 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
         chunk = gzipfile.read()
         gzipfile.close()
         file.close()
+
+        #in case the file is broken, no gzip data is in it
+        if len(chunk) == 0:
+            logging.warning("!Warning: Found bad part in archive " + chunkfilename + " , replacing it");
+            os.remove(chunkfilename)
+            return self.getUnzippedChunk(chunknumber)
 
         return chunk
     

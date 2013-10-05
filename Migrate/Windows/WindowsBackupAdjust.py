@@ -58,13 +58,21 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             win32api.RegSetValueEx(firewallkey, remotedesk_value , 0 , win32con.REG_SZ, newvalue)
             firewallkey.close()
         else:
-            firewarllruleskeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\StandardProfile\\GloballyOpenPorts\\List"
-            logging.debug("Openning key" + firewarllruleskeypath) 
-            firewallkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, firewarllruleskeypath , 0 , win32con.KEY_ALL_ACCESS )
-            valuename = "3389:TCP"
-            newvalue = "3389:TCP:*:Enabled:@xpsp2res.dll,-22009"
-            win32api.RegSetValueEx(firewallkey, valuename , 0 , win32con.REG_SZ, newvalue)
-            firewallkey.close()
+            #TODO: check StandardProfile is available FirewallEnabled = 0
+            firewallkey = None
+            try:
+                #sometimes (when firewall is turned off there is no such a key)
+                firewarllruleskeypath = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\StandardProfile\\GloballyOpenPorts\\List"
+                logging.debug("Openning key" + firewarllruleskeypath) 
+                firewallkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, firewarllruleskeypath , 0 , win32con.KEY_ALL_ACCESS )
+                valuename = "3389:TCP"
+                newvalue = "3389:TCP:*:Enabled:@xpsp2res.dll,-22009"
+                win32api.RegSetValueEx(firewallkey, valuename , 0 , win32con.REG_SZ, newvalue)
+            except Exception as e:
+                logging.warning("!Warning: your firewall seem to be disabled. Please enable your firewall before the migration to ensure additional server security in the cloud!")
+            finally:
+                if firewallkey:
+                    firewallkey.close()
         return 
 
     def enableRdpService(self , hivekeyname , currentcontrolset , rdpport = 3389):

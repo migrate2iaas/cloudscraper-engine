@@ -140,6 +140,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
     
     def open(self):
         if os.path.exists(self.__fileName):
+            logging.info(">>>>> Reopening precreated container " + self.__fileName + " . Note: it contents couldn't be changed.")
             self.__openDisk()
         else:
             logging.debug("Initing new VHD disk") 

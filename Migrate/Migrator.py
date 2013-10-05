@@ -11,6 +11,7 @@ import os
 import stat
 import DataExtent
 import datetime
+import time
 
 import RawGzipMedia
 import SimpleDiskParser
@@ -416,16 +417,41 @@ class Migrator(object):
         logging.debug("Upload image of size " + str(imagesize) + " (full source disk data size is " + str(media.getMaxSize()) + " )") 
         dataplace = 0
         datasent = 0
+
+        timestart = datetime.datetime.now()
         while dataplace < imagesize:
-            if (datasent % 50 == 0):
-                logmsg = "% " + str(datasent*datasize/1024/1024)+ " of "+ str(int(imagesize/1024/1024)) + " MB of image data processed. "
+            percentcomplete = int(float(dataplace) / imagesize * 100);
+
+            logmsg = ""
+            if (datasent % 10 == 0):
+                logmsg = str(percentcomplete) + "% - "+ str(datasent*datasize/1024/1024)+ " of "+ str(int(imagesize/1024/1024)) + " MB of image data processed. "
                 if channel.getOverallDataSkipped():
                     logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
-                logging.info( logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded."  )
+                logmsg = logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded." ;
+
+                #NOTE: this is a very rough estimate
+                timenow = datetime.datetime.now()
+                timedelta = datetime.timedelta()
+                timedelta = timenow - timestart
+                if dataplace:
+                    secondsleft = int(float(imagesize - dataplace)/float(dataplace/timedelta.total_seconds()))
+                    days = secondsleft / (3600*24)
+                    hours = secondsleft % (3600*24) / 3600
+                    minutes = (secondsleft % (3600*24) % 3600) / 60
+                    logmsg = logmsg + " Upload time left: " 
+                    if days:
+                        logmsg = logmsg + str(days) + " days "
+                    if hours:
+                        logmsg = logmsg + str(hours) + " hours "
+                    if minutes:
+                        logmsg = logmsg + str(minutes) + " minutes "
+
+                logging.info( "% "+ logmsg )
 
             data = media.readImageData(dataplace, datasize)
             if len(data) == 0:
-                break
+                logging.warning("!Warning: the source archive has ended unexpectedly while uploading...");
+                continue
             dataext = DataExtent.DataExtent(dataplace , len(data))
             dataplace = dataplace + len(data)
             dataext.setData(data)
