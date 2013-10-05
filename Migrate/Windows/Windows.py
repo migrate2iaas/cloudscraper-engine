@@ -133,9 +133,6 @@ class Windows(object):
         import cabinet
         originalwindir = os.environ['windir']
         sys32dir = originalwindir+"\\system32"
-        #TODO: add HAL LIST
-        if os.path.exists(sys32dir + "\\" +targethal) == False:
-            return True
 
         filerepopath = originalwindir+"\\Driver Cache"
         if self.getSystemInfo().getSystemArcheticture() == WindowsSystemInfo.WindowsSystemInfo.Archi386:
