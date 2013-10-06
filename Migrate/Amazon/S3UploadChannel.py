@@ -373,10 +373,16 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         logging.info("Succesfully created an upload channel to S3 bucket " + self.__bucketName  + " at " +  location)
 
     def getUploadPath(self):
-        return self.__keyBase
+        """ gets the upload path identifying the upload: bucket/key """
+        return self.__bucketName + "/" +self.__keyBase
 
     # this one is async
     def uploadData(self, extent):       
+       """ 
+       Uploads data extent
+
+       See UploadChannel.UploadChannel for more info
+       """
        #TODO: monitor the queue sizes
        start = extent.getStart()
        size = extent.getSize()
@@ -411,28 +417,45 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
        return 
 
-   # gets the size of one chunk of data transfered by the each request, the data extent is better to be aligned by the integer of chunk sizes
     def getTransferChunkSize(self):
+        """ 
+        Gets the size of one chunk of data transfered by the each request, 
+        The data extent is better to be aligned by the integer of chunk sizes
+
+        See UploadChannel.UploadChannel for more info
+        """
         return self.__chunkSize
 
-    #returns float: number of bytes transfered in seconds
+   
     def getDataTransferRate(self):
+        """ 
+        Return:
+            Approx number of bytes transfered in seconds
+
+        See UploadChannel.UploadChannel for more info
+
+        Note: not implemented for now
+        """
         return self.__transferRate
 
     #  overall data skipped from uploading if resume upload is set
     def notifyDataSkipped(self , skipped_size):
+        """ For internal use only by the worker threads    """
         with self.__statLock:
             self.__uploadSkippedSize = self.__uploadSkippedSize + skipped_size
 
     # gets overall data skipped from uploading if resume upload is set
     def getOverallDataSkipped(self):
+        """ Gets overall data skipped  """
         return self.__uploadSkippedSize
 
     def notifyTransferError(self, bucket , keyname, size):
+        """ For internal use only by the worker threads   """
         self.__errorUploading = True
         return
 
     def notifyDataTransfered(self , transfered_size):
+        """ For internal use only by the worker threads   """
         now = datetime.datetime.now()
         if self.__prevUploadTime:
             delta = now - self.__prevUploadTime
@@ -442,18 +465,25 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         with self.__statLock:
             self.__uploadedSize = self.__uploadedSize + transfered_size
 
-    #gets the overall size of data uploaded
+    
     def getOverallDataTransfered(self):
+        """ #gets the overall size of data actually uploaded in bytes """
         return self.__uploadedSize 
 
-    # wait uploaded all needed
     def waitTillUploadComplete(self):
+        """Waits till upload completes"""
         logging.debug("Upload complete, waiting for threads to complete");
         self.__uploadQueue.join()
         return
 
-    # confirm good upload. uploads resulting xml then, returns the id of the upload done
+    # 
     def confirm(self):
+        """
+        Confirms good upload. uploads resulting xml describing VM container import to S3 
+        
+        Return
+             Link to XML uploaded
+        """
         # generate the XML file then:
 
         if self.__errorUploading:
@@ -508,7 +538,10 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         
         return self.__xmlKey
 
+    # NOTE: there could be a concurency error when one threads adds the extend while other thread closes all the connections
+    # so there would be extent request in the thread but all threads were close. So then waitTillUploadComplete hang
     def close(self):
+        """Closes the channel, sending all upload threads signal to end their operation"""
         logging.debug("Closing the upload threads, End signal message was sent")
         for thread in self.__workThreads:
             self.__uploadQueue.put( None )
