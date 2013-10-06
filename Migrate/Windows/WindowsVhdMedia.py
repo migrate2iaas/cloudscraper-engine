@@ -170,7 +170,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         return
     
     def release(self):
-        self.close()
+        return self.close()
 
 
      #reads data from image, returns data buffer

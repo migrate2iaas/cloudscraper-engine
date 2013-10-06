@@ -419,33 +419,35 @@ class Migrator(object):
         dataplace = 0
         datasent = 0
 
+        logging.info(">>>>>>>>>> Image size to upload: " + str(imagesize/1024/1024) + " MB")
+
         timestart = datetime.datetime.now()
         while dataplace < imagesize:
             percentcomplete = int(float(dataplace) / imagesize * 100);
 
             logmsg = ""
             if (datasent % 10 == 0):
-                logmsg = str(percentcomplete) + "% - "+ str(datasent*datasize/1024/1024)+ " of "+ str(int(imagesize/1024/1024)) + " MB of image data processed. "
+                logmsg = " Progress:  " + str(percentcomplete) + "% - "
                 if channel.getOverallDataSkipped():
                     logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
-                logmsg = logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded." ;
+                logmsg = logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded. " ;
 
                 #NOTE: this is a very rough estimate
                 timenow = datetime.datetime.now()
                 timedelta = datetime.timedelta()
                 timedelta = timenow - timestart
-                if dataplace:
+                if dataplace and channel.getOverallDataTransfered():
                     secondsleft = int(float(imagesize - dataplace)/float(dataplace/timedelta.total_seconds()))
                     days = secondsleft / (3600*24)
                     hours = secondsleft % (3600*24) / 3600
                     minutes = (secondsleft % (3600*24) % 3600) / 60
-                    logmsg = logmsg + " Upload time left: " 
                     if days:
                         logmsg = logmsg + str(days) + " days "
                     if hours:
-                        logmsg = logmsg + str(hours) + " hours "
+                        logmsg = logmsg + str(hours) + " hrs "
                     if minutes:
-                        logmsg = logmsg + str(minutes) + " minutes "
+                        logmsg = logmsg + str(minutes) + " mins "
+                    logmsg = logmsg + "left." 
 
                 logging.info( "% "+ logmsg )
 
