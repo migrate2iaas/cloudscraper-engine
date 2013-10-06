@@ -26,7 +26,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
     def __init__(self, adjust_config , windows_version):
         self.__adjustConfig = adjust_config
         self.__windowsVersion = windows_version
-        return super(WindowsBackupAdjust,self).__init__()        
+        super(WindowsBackupAdjust,self).__init__()        
 
     def enableRdpFirewall(self , hivekeyname , currentcontrolset, rdpport=3389):
         """function to enable rdp ports in Windows firewall"""

@@ -15,7 +15,7 @@ class WindowsVhdMediaFactory(ImageMediaFactory.ImageMediaFactory):
     def __init__(self , allow_recreate = False):
         self.__windows = Windows.Windows()
         self.__allowRecreate = allow_recreate
-        super(WindowsVhdMediaFactory,self).__init__() 
+        super(WindowsVhdMediaFactory, self).__init__() 
         return
 
     def createMedia(self , imagepath , imagesize):

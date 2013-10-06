@@ -97,7 +97,8 @@ class EC2InstanceGenerator(object):
             # waiting till the process completes        
             import_task = None
             try:
-                import_task = connection.import_instance(xmlurl, image_file_size , imagetype , ec2zone , newvolsize , securitygroup , instancetype , machine_arch , "cloudscraper"+str(datetime.date.today()) )
+                import_task = connection.import_instance(xmlurl, image_file_size , imagetype , ec2zone ,\
+                                                         newvolsize , securitygroup , instancetype , machine_arch , "cloudscraper"+str(datetime.date.today()) )
             except Exception as e:
                 logging.error("!!!ERROR: Couldn't start volume conversion!")
                 logging.error("!!!ERROR:" + str(e))

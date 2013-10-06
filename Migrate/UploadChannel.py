@@ -1,56 +1,83 @@
+"""File declaring interface to upload disk images to cloud storage"""
 # --------------------------------------------------------
 __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
+import DataExtent
 
+#TODO: describe the usecase
 class UploadChannel(object):
-    """Interface class of data upload channel"""
+    """Interface class of disk image data upload channel"""
 
-    #TODO: make more reliable statistics
-
-    #TODO: we need kinda open method for the channel
-    #TODO: need kinda doc
-    #chunk size means one data element to be uploaded. it waits till all the chunk is transfered to the channel than makes an upload (not fully implemented)
     def __init__(self):
+        """constructor"""
         return
               
-    # uploads an image data extent, could be async. Use waitTillUploadComplete() to wait till all data is uploaded
     def uploadData(self, extent):       
+       """ 
+       Uploads image data extent, 
+       Could be async. Use waitTillUploadComplete() to wait till all data is uploaded
+
+       Args:
+            extent: DataExtent - extent of the image to be uploaded. Its size and offset should be integral of chunk size. The only exception is last chunk. 
+       """
        raise NotImplementedError 
 
-   # gets the size of transfer chunk. All the data except the last chunk should be aligned and be integral of this size
     def getTransferChunkSize(self):
+       """
+       Gets the size of transfer chunk in bytes.
+       All the data except the last chunk should be aligned and be integral of this size    
+       """
        raise NotImplementedError
 
-    #returns float: number of bytes transfered per second
-    def getDataTransferRate(self):
-       raise NotImplementedError
-
-    # gets overall data skipped 'cause it was uploaded earlier
-    def getOverallDataSkipped(self):
-        raise NotImplementedError
-
-    # gets path describing the channel. Could be used to resume uploading if diconnected
-    def getUploadPath(self):
-        raise NotImplementedError
-
-    #TODO: this ones should have generic implemenation 
-
-    #gets the overall size of data uploaded
-    def getOverallDataTransfered(self):
-        raise NotImplementedError
-
-    # waits till upload is complete
     def waitTillUploadComplete(self):
+        """
+        Client calls this method to wait till all async upload is complete
+        """
         raise NotImplementedError
 
-    # confirms good upload. returns id of the image created
     def confirm(self):
+        """
+        Is called after waitTillUploadComplete() to ensure the upload task is complete. 
+
+        Return:
+             Cloud disk image identifier: str - in case of success or
+             None - in case of failure
+        """
         raise NotImplementedError
 
-    # closes the channel
+
+    def getUploadPath(self):
+        """
+        Gets string representing the channel, e.g. Amazon bucket and keyname
+        """
+        raise NotImplementedError
+
+    def getDataTransferRate(self):
+       """ 
+       Return: 
+            float: approx. number of bytes transfered per second 
+       """
+       raise NotImplementedError
+
+    def getOverallDataSkipped(self):
+        """
+        Gets overall size of data skipped in bytes. 
+        Data is skipped by the channel when the block with same checksum is already present in the cloud
+        """
+        raise NotImplementedError
+
+    def getOverallDataTransfered(self):
+        """
+        Gets overall size of data actually uploaded (not skipped) in bytes.
+        """
+        raise NotImplementedError
+
     def close(self):
+        """
+        Closes the channel, deallocates any associated resources
+        """
         raise NotImplementedError
    
 

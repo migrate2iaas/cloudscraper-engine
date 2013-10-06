@@ -297,7 +297,8 @@ class Migrator(object):
                 awssecret = self.__cloudOptions.getCloudPass()
                 awsregion = self.__cloudOptions.getRegion()
                 import S3UploadChannel
-                self.__systemTransferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__systemMedia.getMaxSize() , awsregion , self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize() )
+                self.__systemTransferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__systemMedia.getMaxSize() , \
+                                                      awsregion , self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize() )
 
             # ElasticHosts and other KVM options        
          
@@ -367,7 +368,7 @@ class Migrator(object):
                         logging.info("Making instance self-check") 
                         testmedia = self.__systemTransferTarget.getMedia()
                         import WindowsVhdMedia
-                        if isinstance(testmedia,WindowsVhdMedia.WindowsVhdMedia):
+                        if isinstance(testmedia, WindowsVhdMedia.WindowsVhdMedia):
                             testmedia.open()
                             mediapath = testmedia.getWindowsDevicePath()+"\\Partition1"
                             self.__adjustedSystemBackupSource.replacementSelfCheck(mediapath)
