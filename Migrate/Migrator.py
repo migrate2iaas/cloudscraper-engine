@@ -12,6 +12,7 @@ import stat
 import DataExtent
 import datetime
 import time
+import random
 
 import RawGzipMedia
 import SimpleDiskParser
@@ -69,6 +70,8 @@ class Migrator(object):
 
         #extra megabyte of additional size to store mbr, etc on the image
         self.__additionalMediaSize = 0x800*0x200
+
+        
         
         #TODO: analyze both host and source systems
         if self.__migrateOptions.getHostOs() == "Windows":
@@ -77,6 +80,7 @@ class Migrator(object):
             self.__runOnWindows = True
             self.__winSystemAdjustOptions = self.__windows.createSystemAdjustOptions(sys_adjust_overrides)
             self.__systemAdjustOptions = self.__winSystemAdjustOptions
+            #self.__winSystemAdjustOptions
 
         if self.__cloudOptions.getTargetCloud() == "EC2":
             import S3UploadChannel
@@ -270,9 +274,22 @@ class Migrator(object):
             logging.error("Cannot open or create intermediate media to save the machine state")
         return media
 
-    def createTransferTarget(self , media , size , adjustoptions, newtarget = True):
+    def createTransferTarget(self , media , size , adjustoptions, newtarget = True, random_disk_id=True):
+        """
+        Internal call to make transfer target (disk volume abstraction) based on media and adjust options
+        
+        Args:
+            media :ImageMedia - the media transfer target is based on
+            size :long - the size of transfer target (volume)
+            adjustoptions :SystemAdjustOptions - note really WindowsAdjustOptions is used. getNewMbrId() is declared there only
+            newtarget: bool - if the target should be new one or old one could be used (not used, needed to signal the existing container should be re-created)
+            random_disk_id: bool - if we use random disk id for the disk or get it from adjustoptions. Generally it's False for system disks but True for non-system ones
+        """
         if newtarget:
-            parser = SimpleDiskParser.SimpleDiskParser(SimpleDataTransferProto.SimpleDataTransferProto(media) , default_offset = self.__additionalMediaSize)
+            mbr = adjustoptions.getNewMbrId();
+            if random_disk_id:
+                mbr = int(random.randint(1, 0x0FFFFFFF))
+            parser = SimpleDiskParser.SimpleDiskParser(SimpleDataTransferProto.SimpleDataTransferProto(media) , mbr_id = mbr , default_offset = self.__additionalMediaSize)
             return parser.createTransferTarget(size)
         return SimpleTransferTarget.SimpleTransferTarget( self.__additionalMediaSize , SimpleDataTransferProto.SimpleDataTransferProto(media) )
         
@@ -288,7 +305,7 @@ class Migrator(object):
                 #NOTE: the medai should be created nevertheless of the imaging done
                 #so , calls are
                 if self.__skipImaging == False:
-                   self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__winSystemAdjustOptions)
+                   self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__winSystemAdjustOptions , random_disk_id=False)
             
             # move transfer creation to another function
             if self.__cloudName == "EC2":
