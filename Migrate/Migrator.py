@@ -430,7 +430,7 @@ class Migrator(object):
                 logmsg = " Progress:  " + str(percentcomplete) + "%      -      "
                 if channel.getOverallDataSkipped():
                     logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
-                logmsg = logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded.\t" ;
+                logmsg = logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded.   " ;
 
                 #NOTE: this is a very rough estimate
                 timenow = datetime.datetime.now()
