@@ -444,7 +444,7 @@ class Migrator(object):
 
             logmsg = ""
             if (datasent % 10 == 0):
-                logmsg = " Progress:  " + str(percentcomplete) + "%      -      "
+                logmsg = " Progress:  " + str(percentcomplete) + "% - "
                 if channel.getOverallDataSkipped():
                     logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
                 logmsg = logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded.   " ;
