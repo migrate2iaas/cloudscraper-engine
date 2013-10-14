@@ -55,7 +55,7 @@ class EHUploadThread(threading.Thread):
         self.__hostname = hostname
         self.__channel = channel
         self.__compression = compression
-        super(EHUploadThread,self).__init__()
+        super(EHUploadThread, self).__init__()
 
     def run(self):
         iterations = 0
@@ -75,11 +75,6 @@ class EHUploadThread(threading.Thread):
             
             #NOTE: kinda dedup could be added here!
             #NOTE: we should able to change the initial keyname here so the data'll be redirected 
-            
-            #TODO: make md5 map for resume uploads
-
-            #TODO: skip the empty sectors!
-
             failed = True
             retries = 0
             while retries < self.__maxRetries:
@@ -89,24 +84,30 @@ class EHUploadThread(threading.Thread):
                 
                     data = str(data_getter)[0:size]
                     upload = True
-                    
-                    # we create in-memory gzip file and upload it
-                    inmemfile = StringIO.StringIO()
-                    gzipfile = gzip.GzipFile("tmpgzip", "wb" , self.__compression , inmemfile)
-                    gzipfile.write(data)
-                    gzipfile.close()
-                    gzip_data = inmemfile.getvalue()
-                    inmemfile.close()
-                    
-                    already_uploaded = self.__channel.getDiskUploadedProperty()
+
+                    if data.count("\x00") == size:
+                        logging.debug("Skipping the 0-block at offset " + str(start));
+                        upload = False
+
                     # check if 
                     if self.__skipExisting:
+                        already_uploaded = self.__channel.getDiskUploadedProperty()
                         # seems like python has troubels comparing longs and ints
                         if long(already_uploaded) >= long(start + size):
                             upload = False
+                            logging.debug("Skipped the uploading of data at offset " + str(start) + " because " + str(already_uploaded) + "bytes were already uploaded")
 
                     if upload:
-                        response = self.__EH.post(self.__hostname+"/drives/"+str(driveid)+"/write/"+str(start) , data=gzip_data, headers={'Content-Type': 'application/octet-stream' ,  'Content-Encoding':'gzip' , 'Expect':''})
+                        # we create in-memory gzip file and upload it
+                        inmemfile = StringIO.StringIO()
+                        gzipfile = gzip.GzipFile("tmpgzip", "wb" , self.__compression , inmemfile)
+                        gzipfile.write(data)
+                        gzipfile.close()
+                        gzip_data = inmemfile.getvalue()
+                        inmemfile.close()
+
+                        response = self.__EH.post(self.__hostname+"/drives/"+str(driveid)+"/write/"+str(start) , \
+                            data=gzip_data, headers={'Content-Type': 'application/octet-stream' ,  'Content-Encoding':'gzip' , 'Expect':''})
                         if response.status_code != 204:
                             logging.warning("!Unexpected status code returned by the ElasticHosts write request: " + str(response) + " " + str(response.text))
                             logging.warning("Headers: %s \n Text length= %s gzipped data" , str(response.request.headers) , str(len(response.request.body))  )
@@ -114,9 +115,7 @@ class EHUploadThread(threading.Thread):
                         else:
                             self.__channel.notifyDataTransfered(size)
                     else:
-                        logging.debug("Skipped the uploading of data at offset " + str(start) + " because " + str(already_uploaded) + " were already uploaded")
                         self.__channel.notifyDataSkipped(size)
-                    
                   
                     
                 except Exception as e:
@@ -234,8 +233,6 @@ class EHUploadChannel(UploadChannel.UploadChannel):
        # treating overall size as maximum size
        if self.__overallSize < start + size:
            self.__overallSize = start + size       
-
-       
 
        return 
 
