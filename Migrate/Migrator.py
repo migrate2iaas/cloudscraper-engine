@@ -502,7 +502,10 @@ class Migrator(object):
             generator = EC2InstanceGenerator.EC2InstanceGenerator(self.__cloudOptions.getRegion())
 
             self.__resultingInstance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , awskey, awssecret , self.__migrateOptions.getSystemImagePath() , imagesize , volumesize , self.__migrateOptions.getImageType())
-            
+        
+        if self.__cloudName == "ElasticHosts":
+            logging.info("Disk UUID " + imageid + " now contain your server image. Create a new server via ElasticHosts contol panel and attach the disk to ide0:0 port.")
+
         return True
 
     #TODO: make parameters optional

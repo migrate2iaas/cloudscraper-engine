@@ -45,7 +45,7 @@ UPLOADED_BEFORE_JSON_KEY = u'user:uploaded'
 class EHUploadThread(threading.Thread):
     """thread making all uploading works"""
     #skip existing is ignored right now
-    def __init__(self , queue , threadId , hostname , ehSession , skipExisting = False , channel = None , retries = 3):
+    def __init__(self , queue , threadId , hostname , ehSession , skipExisting = False , channel = None , retries = 3 , compression = 7):
         self.__uploadQueue = queue
         #thread id , for troubleshooting purposes
         self.__threadId = threadId
@@ -54,6 +54,7 @@ class EHUploadThread(threading.Thread):
         self.__EH = ehSession
         self.__hostname = hostname
         self.__channel = channel
+        self.__compression = compression
         super(EHUploadThread,self).__init__()
 
     def run(self):
@@ -91,7 +92,7 @@ class EHUploadThread(threading.Thread):
                     
                     # we create in-memory gzip file and upload it
                     inmemfile = StringIO.StringIO()
-                    gzipfile = gzip.GzipFile("tmpgzip", "wb" , 6 , inmemfile)
+                    gzipfile = gzip.GzipFile("tmpgzip", "wb" , self.__compression , inmemfile)
                     gzipfile.write(data)
                     gzipfile.close()
                     gzip_data = inmemfile.getvalue()

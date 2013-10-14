@@ -148,7 +148,7 @@ class Windows(object):
             if dirent.endswith(".cab"):
                 cabpath = filerepopath+"\\"+dirent
                 modtime = os.stat(cabpath).st_mtime
-                if modtime > max_modtime:
+                if modtime >= max_modtime:
                     max_modtime = modtime
                 else:
                     continue
