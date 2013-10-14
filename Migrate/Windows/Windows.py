@@ -37,7 +37,7 @@ class Windows(object):
         self.__filesToDelete = set()
         self.__vss = VssThruVshadow.VssThruVshadow()
         #note: better to load from conf
-        self.__halList = ["\\halacpi.dll","\\halmacpi.dll","\\halaacpi.dll"]
+        self.__halList = ["halacpi.dll","halmacpi.dll","halaacpi.dll"]
         return
     
     # volume should be in "\\.\X:" form
