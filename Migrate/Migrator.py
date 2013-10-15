@@ -481,9 +481,9 @@ class Migrator(object):
         channel.waitTillUploadComplete()
 
         logmsg = "% The image data has been fully processed. "
-        if channel.getOverallDataSkipped():
-            logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
-        logging.info( logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded."  )
+        #if channel.getOverallDataSkipped():
+        #    logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
+        logging.info( logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB transfered."  )
 
         logging.info("\n>>>>>>>>>>>>>>>>> Preparing the image uploaded for cloud use")
         imageid = channel.confirm()
