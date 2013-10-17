@@ -12,6 +12,7 @@ import boto
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 from boto.s3.bucket import Bucket
+from boto.exception import BotoServerError
 
 import threading
 import Queue
@@ -37,6 +38,8 @@ import logging
 import threading 
 import datetime
 import UploadChannel
+
+
 
 import base64
 import math
@@ -311,7 +314,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
                 logging.info(">>>>> Creating a new S3 bucket: " + self.__bucketName) 
                 try:
                     self.__bucket = self.__S3.create_bucket(self.__bucketName , location=awsregion)
-                except boto.BotoServerError as botoex:
+                except BotoServerError as botoex:
                     logging.error("!!!ERROR: Wasn't able to find or create bucket " + self.__bucketName + " in region " + location + " .")
                     logging.error("!!!ERROR: " + botoex.error_message) 
                     logging.error(traceback.format_exc()) 

@@ -42,7 +42,7 @@ class S3UploadChannel_test(unittest.TestCase):
 
     def test_file_useast(self):
         size = 1024*1024*1024
-        bucket = 'feoffuseastfiletest'
+        bucket = 'feoffuseastfiletest12'
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size)
         self.__channel = channel
 
@@ -56,9 +56,40 @@ class S3UploadChannel_test(unittest.TestCase):
         channel.confirm()
        
 
+    #TODO: commit bad these tests
+    def notused_test_bad_bucketname2(self):
+        size = 1024*1024*1024
+        
+        bucket = '!~feoffuseastfiletest2.s3-eu-west-1ab'
+        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size , 'eu-west-1')
+        self.__channel = channel
+        file = open('D:\\log.txt' , "rb")
+        data = file.read()
+        dataext = DataExtent.DataExtent(0 , len(data))
+        dataext.setData(data)
+        file.close()
+        channel.uploadData(dataext)
+        channel.waitTillUploadComplete()
+        channel.confirm()
+
+    def notused_test_bad_bucketname1(self):
+        size = 1024*1024*1024
+        bucket = 'test'
+        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size , 'eu-west-1')
+        self.__channel = channel
+        file = open('D:\\log.txt' , "rb")
+        data = file.read()
+        dataext = DataExtent.DataExtent(0 , len(data))
+        dataext.setData(data)
+        file.close()
+        channel.uploadData(dataext)
+        channel.waitTillUploadComplete()
+        channel.confirm()
+
+
     def test_file_euro(self):
         size = 1024*1024*1024
-        bucket = 'feoffuseastfiletest.s3-eu-west-1a'
+        bucket = 'feoffuseastfiletest2.s3-eu-west-1ab'
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size , 'eu-west-1')
         self.__channel = channel
         file = open('D:\\log.txt' , "rb")
@@ -75,7 +106,7 @@ class S3UploadChannel_test(unittest.TestCase):
         
         filename = 'E:\\vhdtest4.vhd'
         size = 20*1024*1024*1024
-        bucket = 'feoffuseastfiletestvhd'
+        bucket = 'feoffuseastfiletestvhd2'
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size)
         self.__channel = channel
         #TODO: make more different sizes
@@ -149,6 +180,8 @@ class S3UploadChannel_test(unittest.TestCase):
         filename = 'E:\\vhdtest.vhd'
         size = 20*1024*1024*1024
         self.resumeUpload(region, bucket , filename , size)
+
+    #TODO: generate new bucket
 
     def tearDown(self):
         if self.__channel:
