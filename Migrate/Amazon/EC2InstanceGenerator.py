@@ -33,12 +33,10 @@ class EC2InstanceGenerator(object):
 
 
      # marks the data uploaded as system disk, should be called(?) after the upload is confirmed
-     # TODO: make direct EC2 calls instead of this crappy java calls
-     
-     #TODO: need extra params like volume size and image size.
-     #TODO: maybe we have all the data in initialconfig
+    
     def makeInstanceFromImage(self , imageid , initialconfig, s3owner, s3key, temp_local_image_path , image_file_size = 0, volume_size_bytes = 0, imagetype='VHD'):
 
+        #TODO: add machine name so it could be added via tags
         #NOTE: should download imageid of no image_file_size or volume_size_bytes specified
 
         windir = os.environ['windir']
@@ -98,7 +96,8 @@ class EC2InstanceGenerator(object):
             import_task = None
             try:
                 import_task = connection.import_instance(xmlurl, image_file_size , imagetype , ec2zone ,\
-                                                         newvolsize , securitygroup , instancetype , machine_arch , "cloudscraper"+str(datetime.date.today()) )
+                                                         newvolsize , securitygroup , instancetype , machine_arch , "cloudscraper-"+str(datetime.date.today()) )
+                
             except Exception as e:
                 logging.error("!!!ERROR: Couldn't start volume conversion!")
                 logging.error("!!!ERROR:" + str(e))
@@ -130,6 +129,7 @@ class EC2InstanceGenerator(object):
                         logging.info(">>> It could be configured and started via AWS EC2 management console") 
                         logging.info("==========================================================================") 
 
+                        connection.create_tags(instanceid , {"Name":"cloudscraper-"+str(datetime.date.today()) , "MigrationDate":str(datetime.date.today())} )
                         return EC2Instance.EC2Instance(instanceid , s3owner , s3key , self.__region)
                     if importstatus == "cancelled":
                         logging.error("!!!ERROR: The import task was cancelled by AWS. Reason: ") 
