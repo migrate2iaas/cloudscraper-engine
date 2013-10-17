@@ -79,7 +79,7 @@ class AllFilesIterator(object):
 class WindowsVolume(object):
     """Windows volume"""
     
-    def __init__(self, volumeName , max_reported_extent_size=32*1024*1024):
+    def __init__(self, volumeName , max_reported_extent_size=16*1024*1024):
         """
         constructor
 

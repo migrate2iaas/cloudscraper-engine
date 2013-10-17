@@ -33,6 +33,7 @@ import logging
 class Windows(object):
     """factory class for generating objects of Windows subsystem"""
 
+    # TODO: some init configs could be read here, e.g. Windows configs
     def __init__(self):
         self.__filesToDelete = set()
         self.__vss = VssThruVshadow.VssThruVshadow()
@@ -107,6 +108,9 @@ class Windows(object):
                 nullbytes = bytearray(64*1024)
                 bcdfile.write(nullbytes)
         else:
+            if self.getSystemInfo().getSystemArcheticture() != WindowsSystemInfo.WindowsSystemInfo.Archi386:
+                logging.debug("No need to adjust HAL for x64 version")  
+                return
             #compare HALs,
             self.unpackHal() 
             sys32dir = originalwindir+"\\system32"
