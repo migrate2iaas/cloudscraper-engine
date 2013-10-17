@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>ElasticHosts\EHUploadChannel_test.py</StartupFile>
+    <StartupFile>Amazon\S3UploadChannel_test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -59,6 +59,8 @@
     <Compile Include="RawGzipMediaFactory.py" />
     <Compile Include="RawGzipMedia.py" />
     <Compile Include="RawGzipMedia_test.py" />
+    <Compile Include="SelfTest\AzureServiceBusResponder.py" />
+    <Compile Include="SelfTest\ServerResponder.py" />
     <Compile Include="SimpleDataTransferProto.py" />
     <Compile Include="SimpleDiskParser.py" />
     <Compile Include="SimpleTransferTarget.py" />
@@ -68,6 +70,7 @@
     <Compile Include="UploadChannel.py" />
     <Compile Include="Version.py" />
     <Compile Include="VolumeInfo.py" />
+    <Compile Include="Windows\cabinet.py" />
     <Compile Include="Windows\VSS.py" />
     <Compile Include="Windows\VSSthruVscsc.py" />
     <Compile Include="Windows\VssThruVshadow.py" />
@@ -97,6 +100,7 @@
     <Folder Include="ElasticHosts\" />
     <Folder Include="Azure\" />
     <Folder Include="Helper\" />
+    <Folder Include="SelfTest\" />
     <Folder Include="Windows" />
   </ItemGroup>
   <ItemGroup>
