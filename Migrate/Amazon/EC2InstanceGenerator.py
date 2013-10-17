@@ -33,7 +33,7 @@ class EC2InstanceGenerator(object):
 
 
      # marks the data uploaded as system disk, should be called(?) after the upload is confirmed
-    
+    #TODO: should pass name here
     def makeInstanceFromImage(self , imageid , initialconfig, s3owner, s3key, temp_local_image_path , image_file_size = 0, volume_size_bytes = 0, imagetype='VHD'):
 
         #TODO: add machine name so it could be added via tags

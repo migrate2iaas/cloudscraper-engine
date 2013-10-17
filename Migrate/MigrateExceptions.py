@@ -10,9 +10,9 @@ class PropertyNotInitialized(Exception):
        self.__valuename = valuename
        self.__text = text
     def __str__(self):
-         return repr("Class property " + self.valuename + " not initialized. " + self.__text)
+         return repr("Class property " + self.__valuename + " not initialized. " + self.__text)
     def __repr__(self):
-        return repr("<Class property " + self.valuename + " not initialized. " + self.__text + " >")
+        return repr("<Class property " + self.__valuename + " not initialized. " + self.__text + " >")
 
 
 

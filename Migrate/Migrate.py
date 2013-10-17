@@ -116,7 +116,7 @@ if __name__ == '__main__':
             (image,adjust,cloud) = config.configElasticHosts(configpath , '' , ehkey) 
     except Exception as e:
         logging.error("\n!!!ERROR: failed to configurate the process! ")
-        logging.error("\n!!!ERROR: " + str(e) )
+        logging.error("\n!!!ERROR: " + repr(e) )
         logging.error(traceback.format_exc())
         raise
     

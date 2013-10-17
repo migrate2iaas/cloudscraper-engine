@@ -342,8 +342,9 @@ class Migrator(object):
                 userid = self.__cloudOptions.getCloudUser()
                 apisecret = self.__cloudOptions.getCloudPass()
                 region = self.__cloudOptions.getRegion()
-                #Note: get upload path should be set to '' for the new downloads
+                #TODO: move description (mnemonic name seen by the user) to config!!!
                 description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
+                #Note: get upload path should be set to '' for the new downloads
                 if self.__resumeUpload:
                     driveid = self.__migrateOptions.getSystemVolumeConfig().getUploadPath()
                 else:
