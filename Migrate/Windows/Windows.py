@@ -38,7 +38,7 @@ class Windows(object):
         self.__filesToDelete = set()
         self.__vss = VssThruVshadow.VssThruVshadow()
         #note: better to load from conf
-        self.__halList = ["halacpi.dll","halmacpi.dll","halaacpi.dll"]
+        self.__halList = ["halacpi.dll", "halmacpi.dll", "halaacpi.dll"]
         return
     
     # volume should be in "\\.\X:" form
@@ -190,7 +190,8 @@ class Windows(object):
         
     def createSystemAdjustOptions(self , config = dict()):
         # we should get specific configs here to generate the correct config
-        options = WindowsSystemAdjustOptions.WindowsSystemAdjustOptions(self.getVersion() < WindowsSystemInfo.WindowsSystemInfo.Win2008R2 , self.getVersion() >= WindowsSystemInfo.WindowsSystemInfo.Win2008)
+        options = WindowsSystemAdjustOptions.WindowsSystemAdjustOptions(self.getVersion() < WindowsSystemInfo.WindowsSystemInfo.Win2008R2 , \
+            self.getVersion() >= WindowsSystemInfo.WindowsSystemInfo.Win2008)
         # TODO: here we should check windows version and add some configs from pre-build configs
         options.loadConfig(config)
         if (self.getVersion() < WindowsSystemInfo.WindowsSystemInfo.Win2008):
