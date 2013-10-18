@@ -143,6 +143,14 @@ class EC2Instance_test(unittest.TestCase):
 
         return
 
+    def test_aregenerate(self):
+        image_id = "https://s3.amazonaws.com/feoffuseastconversiontest/Migrate1378927435/imagemanifest.xml"
+        generator = EC2InstanceGenerator.EC2InstanceGenerator("us-east-1")
+        instance = generator.makeInstanceFromImage(image_id, ConfigTest("i386", "us-east-1a" , "") , self.__key , self.__secret , "")
+        self.assertIsNotNone(instance)
+
+        return
+
     def tearDown(self):
         self.__channel.close()
 

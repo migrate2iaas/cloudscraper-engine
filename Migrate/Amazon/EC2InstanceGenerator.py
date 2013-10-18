@@ -129,7 +129,7 @@ class EC2InstanceGenerator(object):
                         logging.info(">>> It could be configured and started via AWS EC2 management console") 
                         logging.info("==========================================================================") 
 
-                        connection.create_tags(instanceid , {"Name":"cloudscraper-"+str(datetime.date.today()) , "MigrationDate":str(datetime.date.today())} )
+                        connection.create_tags([instanceid] , {"Name":"cloudscraper-"+str(datetime.date.today()) , "MigrationDate":str(datetime.date.today())} )
                         return EC2Instance.EC2Instance(instanceid , s3owner , s3key , self.__region)
                     if importstatus == "cancelled":
                         logging.error("!!!ERROR: The import task was cancelled by AWS. Reason: ") 
