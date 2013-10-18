@@ -75,7 +75,8 @@ class EC2Instance_test(unittest.TestCase):
     
     
     def test_fullvhd(self):
-        
+        """tests full vhd upload and convert in us eeast region region"""
+
         filename = 'E:\\vms\\2008r2\\win2008r2.vhd'
         size = 136365211648 
         bucket = 'feoffuseastconversiontest'
@@ -107,7 +108,7 @@ class EC2Instance_test(unittest.TestCase):
         self.assertIsNotNone(instance)
 
     def test_fullvhdeuro(self):
-         
+        """tests full vhd upload and convert in euro region"""
         
         filename = 'E:\\vms\\2008r2\\win2008r2.vhd'
         size = 136365211648 
@@ -144,6 +145,7 @@ class EC2Instance_test(unittest.TestCase):
         return
 
     def test_aregenerate(self):
+        """tests instance generation"""
         image_id = "https://s3.amazonaws.com/feoffuseastconversiontest/Migrate1378927435/imagemanifest.xml"
         generator = EC2InstanceGenerator.EC2InstanceGenerator("us-east-1")
         instance = generator.makeInstanceFromImage(image_id, ConfigTest("i386", "us-east-1a" , "") , self.__key , self.__secret , "")
