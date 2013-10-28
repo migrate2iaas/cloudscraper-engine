@@ -34,6 +34,7 @@
     <Compile Include="Amazon\EC2VolumeGenerator.py" />
     <Compile Include="Amazon\S3UploadChannel.py" />
     <Compile Include="Amazon\S3UploadChannel_test.py" />
+    <Compile Include="Azure\AzureUploadChannel.py" />
     <Compile Include="BackupAdjust.py" />
     <Compile Include="BackupSource.py" />
     <Compile Include="CloudConfig.py" />

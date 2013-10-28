@@ -286,8 +286,8 @@ class S3UploadChannel(UploadChannel.UploadChannel):
     #TODO: we need kinda open method for the channel
     #TODO: need kinda doc
     #chunk size means one data element to be uploaded. it waits till all the chunk is transfered to the channel than makes an upload (not fully implemented)
-    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resumeUpload = False , chunksize=10*1024*1024 , uploadThreads=4 , queueSize=16):
-        self.__uploadQueue = Queue.Queue(queueSize)
+    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resume_upload = False , chunksize=10*1024*1024 , upload_threads=4 , queue_size=16):
+        self.__uploadQueue = Queue.Queue(queue_size)
         self.__statLock = threading.Lock()
         self.__prevUploadTime = None 
         self.__transferRate = 0
@@ -331,7 +331,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         self.__region = awsregion
 
         self.__diskType = diskType
-        self.__resumeUpload = resumeUpload
+        self.__resumeUpload = resume_upload
         self.__errorUploading = False
 
         self.__uploadedSize = 0
@@ -371,7 +371,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         #initializing a number of threads, they are stopping when see None in queue job
         self.__workThreads = list()
         i = 0
-        while i < uploadThreads:
+        while i < upload_threads:
             thread = S3UploadThread(self.__uploadQueue , i , self.__resumeUpload , self)
             thread.start()
             self.__workThreads.append(thread )
