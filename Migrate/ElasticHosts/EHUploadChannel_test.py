@@ -23,7 +23,6 @@ import WindowsVolumeTransferTarget
 import WindowsDiskParser
 import WindowsVhdMedia
 import WindowsDeviceDataTransferProto
-import S3UploadChannel
 import time
 import DataExtent
 import logging

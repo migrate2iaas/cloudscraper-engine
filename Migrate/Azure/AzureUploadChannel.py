@@ -1,6 +1,24 @@
-import os 
+# --------------------------------------------------------
+__author__ = "Vladimir Fedorov"
+__copyright__ = "Copyright (C) 2013 Migrate2Iaas"
+#---------------------------------------------------------
+
+
 import sys
 
+sys.path.append('.\..')
+sys.path.append('.\..\Amazon')
+sys.path.append('.\..\Windows')
+sys.path.append('.\..\ElasticHosts')
+sys.path.append('.\..\Azure')
+
+sys.path.append('.\Windows')
+sys.path.append('.\Amazon')
+sys.path.append('.\ElasticHosts')
+sys.path.append('.\Azure')
+
+
+import os 
 import threading
 import Queue
 import DataExtent
@@ -29,7 +47,7 @@ from azure.storage import *
 class UploadQueueTask:
     def __init__(self, container , keyname, offset , size, data_getter, channel, alternative_source_bucket = None, alternative_source_keyname = None):
         self.__channel = channel
-        self.__targetContainer = bucket
+        self.__targetContainer = container
         self.__targetKeyname = keyname
         self.__targetSize = size
         self.__dataGetter = data_getter 
@@ -77,10 +95,11 @@ class UploadQueueTask:
         self.__alternativeKey = alternative_source_keyname
         self.__alternativeBucket = alternative_source_bucket
 
+    #some dedup staff
     def getAlternativeKeyName(self):
         return self.__alternativeKey
 
-    def getAlternativeBucket(self):
+    def getAlternativeContainer(self):
         return self.__alternativeBucket
 
     def getAlternativeKey(self):
@@ -92,6 +111,7 @@ class UploadQueueTask:
 
 class AzureUploadThread(threading.Thread):
     """thread making all uploading works"""
+
     def __init__(self , queue , threadid , skipexisting = False , blobservice = None, channel = None , copysimilar = True,  retries = 3):
         self.__uploadQueue = queue
         #thread id , for troubleshooting purposes
@@ -104,7 +124,6 @@ class AzureUploadThread(threading.Thread):
 
     def run(self):
         while 1:
-
             uploadtask = self.__uploadQueue.get()
             
             # means it's time to exit
@@ -122,9 +141,28 @@ class AzureUploadThread(threading.Thread):
 
             chunk_range = 'bytes={}-{}'.format(offset, offset + size - 1)
 
-            self.__blobService.put_page(container_name, diskname , data , x_ms_range=chunk_range , x_ms_page_write="update")
-            #TODO: handle errors
+            retries = 0
 
+            while retries < self.__maxRetries:
+                retries = retries + 1
+                try:
+                    self.__blobService.put_page(container_name, diskname , data , x_ms_range=chunk_range , x_ms_page_write="update")
+                except Exception as e:
+                    logging.warning("!Failed to upload data: %s/%s , making a retry...", str(container_name), diskname )
+                    logging.warning("Exception = " + str(e)) 
+                    logging.error(traceback.format_exc())
+                    failed = True
+                    continue
+
+                logging.debug("Upload thread " + str(self.__threadId) + " set queue task done");
+                self.__uploadQueue.task_done()
+                failed = False
+            
+            if failed:
+                logging.error("!!! ERROR failed to upload data: %s/%s!", str(container_name), diskname )
+                uploadtask.notifyDataTransferError()
+                self.__uploadQueue.task_done()
+                    
             
 
 
@@ -187,23 +225,19 @@ class AzureUploadChannel(UploadChannel.UploadChannel):
 
        See UploadChannel.UploadChannel for more info
        """
-       #TODO: monitor the queue sizes
        start = extent.getStart()
        size = extent.getSize()
+       
+       skipupload = False
               
        uploadtask = UploadQueueTask(self.__containerName , self.__diskName , start , size, extent.getData() , self )
        
-       #if uploadtask.getDataMd5() == self.__nullMd5:
-       #    if uploadtask.getData() == self.__nullData:
-       #        if self.__nullKey:
-       #             uploadtask.setAlternativeUploadPath(self.__bucket , self.__nullKey)
-               
+       if uploadtask.getDataMd5() == self.__nullMd5:
+           if uploadtask.getData() == self.__nullData:
+                skipupload = True  
 
-       #TODO: check threads are working ok
-       self.__uploadQueue.put( uploadtask )
-       # todo: log
-       #TODO: make this tuple more flexible
-       #TODO: make kinda fragment database with uploaded flag, md5, etc
+       if skipupload == False:
+            self.__uploadQueue.put( uploadtask )
        # treating overall size as maximum size
        if self.__overallSize < start + size:
            self.__overallSize = start + size       
