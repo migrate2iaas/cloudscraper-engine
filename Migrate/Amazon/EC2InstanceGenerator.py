@@ -96,8 +96,13 @@ class EC2InstanceGenerator(object):
             import_task = None
             try:
                 import_task = connection.import_instance(xmlurl, image_file_size , imagetype , ec2zone ,\
-                                                         newvolsize , securitygroup , instancetype , machine_arch , "cloudscraper-"+str(datetime.date.today()) )
-                
+                                                         newvolsize , securitygroup , instancetype , machine_arch , "cloudscraper-"+str(datetime.date.today()) ) 
+            
+            except BotoServerError as botoex:
+                logging.error("!!!ERROR: AWS reported an error when trying the conversion")
+                logging.error("!!!ERROR: " + botoex.error_message) 
+                logging.error(traceback.format_exc()) 
+                return None         
             except Exception as e:
                 logging.error("!!!ERROR: Couldn't start volume conversion!")
                 logging.error("!!!ERROR:" + str(e))
