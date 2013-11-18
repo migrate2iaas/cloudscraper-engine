@@ -38,6 +38,7 @@
     <Compile Include="BackupAdjust.py" />
     <Compile Include="BackupSource.py" />
     <Compile Include="CloudConfig.py" />
+    <Compile Include="CloudSigma\CloudSigmaUploadChannel.py" />
     <Compile Include="DataExtent.py" />
     <Compile Include="DataTransferProto.py" />
     <Compile Include="ElasticHosts\EHConfigs.py" />
@@ -57,6 +58,7 @@
     <Compile Include="Migrator.py" />
     <Compile Include="MigratorConfigurer.py" />
     <Compile Include="Migrator_test.py" />
+    <Compile Include="MultithreadUpoadChannel.py" />
     <Compile Include="RawGzipMediaFactory.py" />
     <Compile Include="RawGzipMedia.py" />
     <Compile Include="RawGzipMedia_test.py" />
@@ -101,6 +103,7 @@
     <Folder Include="ElasticHosts\" />
     <Folder Include="Azure\" />
     <Folder Include="Helper\" />
+    <Folder Include="CloudSigma\" />
     <Folder Include="SelfTest\" />
     <Folder Include="Windows" />
   </ItemGroup>
