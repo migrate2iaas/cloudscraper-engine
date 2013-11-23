@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 import SystemAdjustOptions
 import CloudConfig
 import MigrateConfig
+import S3UploadChannel
 
 import time
 import os
@@ -14,7 +15,7 @@ import os
 
 class AmazonCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self, bucket , user , password , newsize , arch , zone , region , machinename , securityid='' , instancetype='m1.small' , chunksize = 10*1024*1024 ):
+    def __init__(self, bucket , user , password , newsize , arch , zone , region , machinename , securityid='' , instancetype='m1.small' , chunksize = 10*1024*1024 , disktype='VHD' , keyname_prefix = ''):
         super(AmazonCloudOptions, self).__init__()
         self.__bucket = bucket
         self.__user = user
@@ -27,8 +28,14 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         self.__chunkSize = chunksize
         self.__instanceType = instancetype
         self.__machineName = machinename
+        self.__diskType = disktype
+        self.__keynamePrefix = keyname_prefix
         #TODO: more amazon-specfiic configs needed
-      
+    
+    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False):   
+        return S3UploadChannel.S3UploadChannel(self.__bucket , self.__user , self.__pass , targetsize, self.__region , self.__keynamePrefix, self.__diskType , resume , self.__chunkSize)
+         
+
     def getCloudStorage(self):
         return self.__bucket
 
@@ -61,6 +68,12 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
 
     def getInstanceType(self):
         return self.__instanceType
+
+    def getServerName(self):
+        return  self.__machineName
+
+    def getSubnet(self):
+        return ""
 
 class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
 

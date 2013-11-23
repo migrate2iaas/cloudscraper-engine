@@ -183,7 +183,7 @@ class EHUploadChannel(UploadChannel.UploadChannel):
         if driveid:
             response = self.__EH.get(self.__hostname+"/drives/" + driveid + "/info")
             if response.status_code != 200:
-                logging.warning("!Unexpected status code returned by the ElasticHosts write request: " + str(response) + " " + str(response.text))
+                logging.warning("!Unexpected status code returned by the ElasticHosts request: " + str(response) + " " + str(response.text))
                 logging.warning("Headers: %s \n" , str(response.request.headers) )
                 response.raise_for_status()
             self.__driveId = response.json()[u'drive']

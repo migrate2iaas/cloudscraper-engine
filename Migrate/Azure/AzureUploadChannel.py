@@ -44,6 +44,10 @@ import UploadChannel
 from azure.storage import *
 
 
+
+
+
+
 class UploadQueueTask:
     def __init__(self, container , keyname, offset , size, data_getter, channel, alternative_source_bucket = None, alternative_source_keyname = None):
         self.__channel = channel

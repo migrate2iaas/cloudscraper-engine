@@ -6,7 +6,6 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 
 import DataExtent
 
-#TODO: describe the usecase
 class UploadChannel(object):
     """Interface class of disk image data upload channel"""
 
@@ -81,3 +80,15 @@ class UploadChannel(object):
         raise NotImplementedError
    
 
+    def initStorage(self):
+        """
+        Inits storage to run upload
+        Throws in case of unrecoverable errors
+        """
+        raise NotImplementedError
+
+    def getImageSize(self):
+        """
+        Gets image data size to be uploaded
+        """
+        raise NotImplementedError

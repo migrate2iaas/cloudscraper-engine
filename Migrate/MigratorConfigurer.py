@@ -271,57 +271,15 @@ class MigratorConfigurer(object):
             security = config.get('EC2', 'security-group')
         except ConfigParser.NoOptionError as exception:
             logging.info("No security group was speicified, using default one. Note it couldn't be changed afterwards.")
-
-        volumes = list()
-        if config.has_section('Volumes') :
-            if config.has_option('Volumes', 'letters'):
-                letters = config.get('Volumes', 'letters') 
-                for letter in letters.split(','):
-                    devicepath = '\\\\.\\'+letter+':' 
-                    volume = VolumeMigrateIniConfig(config , configfile , letter , devicepath)
-                    if volume.getImagePath() == '':
-                        volume.setImagePath(imagedir+"\\"+letter+"."+imagetype) 
-                    if volume.getImageSize() == 0:
-                        size = Windows.Windows().getSystemInfo().getVolumeInfo(letter+":").getSize()
-                        volume.setImageSize(size) 
-                    s3objkey = letter
-                    if s3prefix:
-                        s3objkey = s3prefix+"/"+s3objkey
-                    if volume.getUploadPath() == '':
-                        volume.setUploadPath(s3objkey)
-                    volumes.append( volume )
-                
-        else:    
-            #the old default version of initializing
-            if imagedir:
-                imagepath = imagedir+"\\system."+imagetype
-            if imagepath == '':
-                imagepath = config.get('Image', 'image-path')
-            try:
-                imagesize = config.getint('Image' , 'image-size')
-                newsize = config.get('EC2', 'instance-size')
-            except ConfigParser.NoOptionError as exception:
-                logging.info("No image type or size found, using the default ones") 
-                newsize = imagesize
-            volumes.append( VolumeMigrateNoConfig(Windows.Windows().getSystemInfo().getSystemVolumeInfo().getDevicePath() , imagepath , imagesize ))
         
-        image_placement = "local"
-        #TODO: make a config part to create the factory
-        # check failures
-        # check run on windows flag
-        factory = None
-        if imagetype == "VHD" and image_placement == "local":
-            sys.path.append('.\..')
-            sys.path.append('.\..\Windows')
-            sys.path.append('.\Windows')
-            import WindowsVhdMediaFactory
-            factory = WindowsVhdMediaFactory.WindowsVhdMediaFactory()
-        if imagetype == "raw.gz" and image_placement == "local":
-            factory =  RawGzipMediaFactory.RawGzipMediaFactory()
-        if (imagetype == "raw.tar" or imagetype == "RAW") and image_placement == "local":
-            chunk = 4096*1024
-            compression = 3
-            factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
+        image_placement = ""
+        if config.has_option('Image', 'image-placement'):
+           image_placement = config.get('Image', 'image-placement') 
+        else:
+            image_placement = "local"
+                    
+        volumes = self.createVolumesList(config , configfile, imagedir, imagetype, )        
+        factory = self.createImageFactory(config , image_placement , imagetype)
 
         newsize = imagesize
         installservice = None;
@@ -340,7 +298,7 @@ class MigratorConfigurer(object):
 
 
         image = AmazonConfigs.AmazonMigrateConfig(volumes , factory, imagearch , imagetype)
-        cloud = AmazonConfigs.AmazonCloudOptions(bucket , user , password , newsize , arch , zone , region, security , instancetype)
+        cloud = AmazonConfigs.AmazonCloudOptions(bucket , user , password , newsize , arch , zone , region, security , instancetype, disktype = imagetype , keyname_prefix = s3prefix)
 
         return (image,adjust_override,cloud)
 
@@ -379,9 +337,7 @@ class MigratorConfigurer(object):
             imagetype = 'raw.gz'
             logging.warning("No image type specified. Default raw.gz is used.");
 
-        compression = 3
-        if config.has_option('Image', 'compression'):
-            compression =  config.getint('Image', 'compression')
+      
         
         imagedir = ""
         if config.has_option('Image', 'image-dir'):
@@ -408,35 +364,9 @@ class MigratorConfigurer(object):
         else:
             image_placement = "local"
 
-        volumes = list()
-        if config.has_section('Volumes') :
-            if config.has_option('Volumes', 'letters'):
-                letters = config.get('Volumes', 'letters') 
-                for letter in letters.split(','):
-                    devicepath = '\\\\.\\'+letter+':' 
-                    size = Windows.Windows().getSystemInfo().getVolumeInfo(letter+":").getSize()
-                    volume = VolumeMigrateIniConfig(config , configfile , letter , devicepath)
-                    if volume.getImagePath() == '':
-                        volume.setImagePath(imagedir+"\\"+letter+"."+imagetype);
-                    if volume.getImageSize() == 0:
-                        volume.setImageSize(size)
-                    volumes.append( volume )
-
-        #TODO: make a config part to create the factory
-        # check failures
-        # check run on windows flag
-        factory = None
-        if imagetype == "VHD" and image_placement == "local":
-            sys.path.append('.\..')
-            sys.path.append('.\..\Windows')
-            sys.path.append('.\Windows')
-            import WindowsVhdMediaFactory
-            factory = WindowsVhdMediaFactory.WindowsVhdMediaFactory()
-        if imagetype == "raw.gz" and image_placement == "local":
-            factory =  RawGzipMediaFactory.RawGzipMediaFactory(imagepath , imagesize)
-        if (imagetype == "raw.tar" or imagetype == "RAW") and image_placement == "local":
-            chunk = 4096*1024
-            factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
+        
+        volumes = self.createVolumesList(config , configfile, imagedir ,imagetype)        
+        factory = self.createImageFactory(config , image_placement , imagetype)
       
         newsize = imagesize
         
@@ -457,6 +387,46 @@ class MigratorConfigurer(object):
 
         return (image,adjust_override,cloud)
 
+    def createVolumesList(self , config, configfile, imagedir , imagetype , upload_prefix = ""):
+        """creates volume list"""
+        volumes = list()
+        if config.has_section('Volumes') :
+            if config.has_option('Volumes', 'letters'):
+                letters = config.get('Volumes', 'letters') 
+                for letter in letters.split(','):
+                    devicepath = '\\\\.\\'+letter+':' 
+                    import Windows
+                    size = Windows.Windows().getSystemInfo().getVolumeInfo(letter+":").getSize()
+                    volume = VolumeMigrateIniConfig(config , configfile , letter , devicepath)
+                    if volume.getImagePath() == '':
+                        volume.setImagePath(imagedir+"\\"+letter+"."+imagetype);
+                    if volume.getImageSize() == 0:
+                        volume.setImageSize(size)
+                    #if volume.getUploadPath() == '':
+                    #    volume.setUploadPath(upload_prefix+letter)
+                    volumes.append( volume )
+        return volumes
+
+    def createImageFactory(self , config , image_placement , imagetype):
+        """generates factory to create media (virtual disk files) to store image before upload"""
+        compression = 3
+        if config.has_option('Image', 'compression'):
+            compression =  config.getint('Image', 'compression')
+        
+        # check run on windows flag
+        factory = None
+        if imagetype == "VHD" and image_placement == "local":
+            sys.path.append('.\..')
+            sys.path.append('.\..\Windows')
+            sys.path.append('.\Windows')
+            import WindowsVhdMediaFactory
+            factory = WindowsVhdMediaFactory.WindowsVhdMediaFactory()
+        #if imagetype == "raw.gz" and image_placement == "local":
+        # factory =  RawGzipMediaFactory.RawGzipMediaFactory(imagepath , imagesize)
+        if (imagetype == "raw.tar" or imagetype == "RAW") and image_placement == "local":
+            chunk = 4096*1024
+            factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
+        return factory
 
     def getServiceOverrides(self, config, configfile, installpath , test=False):
         #here the service config is being generated

@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Azure\AzureUploadChannel_test.py</StartupFile>
+    <StartupFile>CloudSigma\CloudSigmaUploadChannel_test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -40,6 +40,7 @@
     <Compile Include="BackupSource.py" />
     <Compile Include="CloudConfig.py" />
     <Compile Include="CloudSigma\CloudSigmaUploadChannel.py" />
+    <Compile Include="CloudSigma\CloudSigmaUploadChannel_test.py" />
     <Compile Include="DataExtent.py" />
     <Compile Include="DataTransferProto.py" />
     <Compile Include="ElasticHosts\EHConfigs.py" />

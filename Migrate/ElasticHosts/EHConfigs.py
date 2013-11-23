@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 import SystemAdjustOptions
 import CloudConfig
 import MigrateConfig
+import EHUploadChannel
 
 import time
 import os
@@ -14,10 +15,10 @@ import os
 
 
 class EHCloudOptions(CloudConfig.CloudConfig):
-    
+    """Options to set in EH cloud"""
+
     # avoid means which servers\disks to avoid, the option is rarely used
     def __init__(self, user , password , newsize , arch , region , avoid , chunksize = 4096*4096):
-        super(EHCloudOptions, self).__init__()
         self.__user = user
         self.__pass = password
         self.__newSysSize = newsize
@@ -26,7 +27,13 @@ class EHCloudOptions(CloudConfig.CloudConfig):
         self.__region = region
         self.__securityGroup = ''
         self.__chunkSize = chunksize
-      
+        
+        super(EHCloudOptions, self).__init__()
+
+    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False):   
+        return EHUploadChannel.EHUploadChannel(targetid, self.__user , self.__pass , targetsize, self.__region , targetname , self , resume)
+         
+     
     def getCloudStorage(self):
         return ''
 
@@ -58,11 +65,15 @@ class EHCloudOptions(CloudConfig.CloudConfig):
     def getUploadChunkSize(self):
         return self.__chunkSize
 
-class EHMigrateConfig(MigrateConfig.MigrateConfig):
+    def getServerName(self):
+        return ""
 
-    #TODO: make docs
-    # images is list of VolumeMigrateConfig
-    #TODO: kinda image creation factory needed
+    def getSubnet(self):
+        return ""
+
+class EHMigrateConfig(MigrateConfig.MigrateConfig):
+    """Options on how to migrate source system to EH"""
+    
     def __init__(self, images , media_factory , source_arch , image_type):
         super(EHMigrateConfig, self).__init__(images,media_factory)
         

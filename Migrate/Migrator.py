@@ -307,49 +307,9 @@ class Migrator(object):
                 if self.__skipImaging == False:
                    self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__winSystemAdjustOptions , random_disk_id=False)
             
-            # move transfer creation to another function
-            if self.__cloudName == "EC2":
-                bucket = self.__cloudOptions.getCloudStorage()
-                awskey = self.__cloudOptions.getCloudUser()
-                awssecret = self.__cloudOptions.getCloudPass()
-                awsregion = self.__cloudOptions.getRegion()
-                import S3UploadChannel
-                self.__systemTransferChannel = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__systemMedia.getMaxSize() , \
-                                                      awsregion , self.__migrateOptions.getSystemVolumeConfig().getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload , self.__cloudOptions.getUploadChunkSize() )
+            description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
+            self.__systemTransferChannel = self.__cloudOptions.generateUploadChannel(self.__systemMedia.getMaxSize() , self.__cloudOptions.getServerName() or description, self.__migrateOptions.getSystemVolumeConfig().getUploadPath(), self.__resumeUpload )
 
-            # ElasticHosts and other KVM options        
-         
-            # For the future: ! Note: make a better design here
-            #if self.__migrateOptions.getImageType() == "raw" and self.__migrateOptions.getImagePlacement() == "local":
-            #    self.__systemTransferTarget = self.createRawTranferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
-            #if self.__migrateOptions.getImageType() == "volume" and self.__migrateOptions.getImagePlacement() == "local":
-            #    self.__systemTransferTarget = self.createRawTranferTarget(self.__migrateOptions.getSystemImagePath() , self.__migrateOptions.getSystemImageSize()  , self.__winSystemAdjustOptions)
-        
-               
-            if self.__migrateOptions.getImageType() == "raw" and self.__migrateOptions.getImagePlacement() == "direct":
-                if self.__cloudName == "ElasticHosts":
-                    import EHUploadChannel
-                    #directly from the snapshot to the server
-                    return True
-                    #TODO: make direct uploads
-                    #self.__systemTransferChannel = EHUploadChannel.EHUploadChannel()
-                
-        
-            if self.__cloudName == "ElasticHosts":
-                #create the image first and then upload it
-                import EHUploadChannel
-                drive = self.__cloudOptions.getCloudStorage()
-                userid = self.__cloudOptions.getCloudUser()
-                apisecret = self.__cloudOptions.getCloudPass()
-                region = self.__cloudOptions.getRegion()
-                #TODO: move description (name seen by the user) to config!!!
-                description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
-                #Note: get upload path should be set to '' for the new downloads
-                if self.__resumeUpload:
-                    driveid = self.__migrateOptions.getSystemVolumeConfig().getUploadPath()
-                else:
-                    driveid = ''
-                self.__systemTransferChannel = EHUploadChannel.EHUploadChannel(driveid , userid , apisecret , self.__systemMedia.getMaxSize() , region , description , self.__cloudOptions , self.__resumeUpload)
                 
             # update the upload path in config in case it was changed or created by the channel
             uploadpath = self.__systemTransferChannel.getUploadPath()
@@ -505,7 +465,7 @@ class Migrator(object):
             self.__resultingInstance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , awskey, awssecret , self.__migrateOptions.getSystemImagePath() , imagesize , volumesize , self.__migrateOptions.getImageType())
         
         if self.__cloudName == "ElasticHosts":
-            logging.info("Disk UUID " + imageid + " now contain your server image. Create a new server via ElasticHosts contol panel and attach the disk to ide0:0 port.")
+            logging.info("\n>>>>>>>>>>>>>>>>> Disk UUID " + imageid + " now contain your server image. Create a new server via ElasticHosts contol panel and attach the disk to ide0:0 port.")
 
         return True
 
@@ -541,48 +501,8 @@ class Migrator(object):
                        self.__dataTransferTargetList[volinfo.getVolumePath()] = self.createTransferTarget(media , volinfo.getImageSize(), self.__winSystemAdjustOptions)
         
         if self.__skipUpload == False:
-            if self.__cloudName == "EC2":
-                bucket = self.__cloudOptions.getCloudStorage()
-                awskey = self.__cloudOptions.getCloudUser()
-                awssecret = self.__cloudOptions.getCloudPass()
-
-                # here we should get system bucket and the system key from the config
-                # keyname should be associated with the volume by the config program
-                import S3UploadChannel 
-                for volinfo in self.__migrateOptions.getDataVolumes():
-                    self.__dataChannelList[volinfo.getVolumePath()] = S3UploadChannel.S3UploadChannel(bucket, awskey, awssecret , self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , self.__cloudOptions.getRegion() , volinfo.getUploadPath() , self.__migrateOptions.getImageType() , self.__resumeUpload)
-
-            # ElasticHosts part
-            if self.__migrateOptions.getImageType() == "raw" and self.__migrateOptions.getImagePlacement() == "direct":
-                if self.__cloudName == "ElasticHosts":
-                    import EHUploadChannel
-                    #directly from the snapshot to the server
-                    return True
-                    #TODO: make direct uploads
-                    #self.__systemTransferChannel = EHUploadChannel.EHUploadChannel()
-                
-        
-            if self.__cloudName == "ElasticHosts":
-                #create the image first and then upload it
-                import EHUploadChannel
-                drive = self.__cloudOptions.getCloudStorage()
-                userid = self.__cloudOptions.getCloudUser()
-                apisecret = self.__cloudOptions.getCloudPass()
-                region = self.__cloudOptions.getRegion()
-                #Note: get upload path should be set to '' for the new uploads
-                description = os.environ['COMPUTERNAME']+"-"+"data"+"-"+str(datetime.date.today())
-                for volinfo in self.__migrateOptions.getDataVolumes():
-                    if self.__resumeUpload:
-                        driveid = volinfo.getUploadPath()
-                    else:
-                        driveid = ''
-                    self.__dataChannelList[volinfo.getVolumePath()] = EHUploadChannel.EHUploadChannel(driveid , userid , apisecret , self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , region , description , self.__cloudOptions, self.__resumeUpload)
-                  
-            # update the upload path in config in case it was changed or created by the channel
-            for volinfo in self.__migrateOptions.getDataVolumes():
-                uploadpath = self.__dataChannelList[volinfo.getVolumePath()].getUploadPath()
-                logging.debug("The upload channel path is: " + uploadpath)
-                volinfo.setUploadPath(uploadpath)
+            description = os.environ['COMPUTERNAME']+"-"+"data"+"-"+str(datetime.date.today())
+            self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , self.__cloudOptions.getServerName() or description,  volinfo.getUploadPath() , self.__resumeUpload )
 
         return True
         
