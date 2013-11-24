@@ -40,6 +40,8 @@ import zlib
 import gzip
 import StringIO
 import UploadChannel
+import MultithreadUpoadChannel
+import md5
 
 from azure.storage import *
 
@@ -48,36 +50,24 @@ from azure.storage import *
 
 
 
-class UploadQueueTask:
+class AzureUploadTask(MultithreadUpoadChannel.UploadTask):
     def __init__(self, container , keyname, offset , size, data_getter, channel, alternative_source_bucket = None, alternative_source_keyname = None):
-        self.__channel = channel
         self.__targetContainer = container
         self.__targetKeyname = keyname
         self.__targetSize = size
         self.__dataGetter = data_getter 
+        self.__targetOffset = offset
         self.__alternativeKey = alternative_source_keyname
         self.__alternativeBucket = alternative_source_bucket
 
-    def notifyDataTransfered(self):
-        if self.__channel:
-            self.__channel.notifyDataTransfered(self.__targetSize)
+        super(AzureUploadTask).__init__(channel , size , offset)
 
-    def notifyDataSkipped(self):
-        if self.__channel:
-           self.__channel.notifyDataSkipped(self.__targetSize)
-
-    def notifyDataTransferError(self):
-        if self.__channel:
-            self.__channel.notifyTransferError(self.__targetBucket , self.__targetKeyname, self.__targetSize)
-
+   
     def getTargetKey(self):
         return self.__targetKeyname
 
     def getTargetContainer(self):
         return self.__targetContainer
-
-    def getSize(self):
-        return self.__targetSize
 
     def getData(self):
         return str(self.__dataGetter)[0:self.__targetSize]
@@ -112,65 +102,7 @@ class UploadQueueTask:
 
 
 
-
-class AzureUploadThread(threading.Thread):
-    """thread making all uploading works"""
-
-    def __init__(self , queue , threadid , skipexisting = False , blobservice = None, channel = None , copysimilar = True,  retries = 3):
-        self.__uploadQueue = queue
-        #thread id , for troubleshooting purposes
-        self.__threadId = threadid
-        self.__skipExisting = skipexisting
-        self.__maxRetries = retries
-        self.__copySimilar = copysimilar
-        self.__blobService = blobservice
-        super(S3UploadThread,self).__init__()
-
-    def run(self):
-        while 1:
-            uploadtask = self.__uploadQueue.get()
-            
-            # means it's time to exit
-            if uploadtask == None:
-                return
-
-            container = uploadtask.getTargetContainer()
-            diskname = uploadtask.getTargetKey()
-            
-            offset = ploadtask.getOffset()
-            size = uploadtask.getSize()
-            data = uploadtask.getData()
-            
-            md5_hexdigest = uploadtask.getDataMd5()
-
-            chunk_range = 'bytes={}-{}'.format(offset, offset + size - 1)
-
-            retries = 0
-
-            while retries < self.__maxRetries:
-                retries = retries + 1
-                try:
-                    self.__blobService.put_page(container_name, diskname , data , x_ms_range=chunk_range , x_ms_page_write="update")
-                except Exception as e:
-                    logging.warning("!Failed to upload data: %s/%s , making a retry...", str(container_name), diskname )
-                    logging.warning("Exception = " + str(e)) 
-                    logging.error(traceback.format_exc())
-                    failed = True
-                    continue
-
-                logging.debug("Upload thread " + str(self.__threadId) + " set queue task done");
-                self.__uploadQueue.task_done()
-                failed = False
-            
-            if failed:
-                logging.error("!!! ERROR failed to upload data: %s/%s!", str(container_name), diskname )
-                uploadtask.notifyDataTransferError()
-                self.__uploadQueue.task_done()
-                    
-            
-
-
-class AzureUploadChannel(UploadChannel.UploadChannel):
+class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
     """
     Upload channel for Azure implementation
     Implements multithreaded fie upload to Windows Azure 
@@ -193,130 +125,107 @@ class AzureUploadChannel(UploadChannel.UploadChannel):
         self.__uploadedSize = 0
         self.__errorUploading = True
 
+        self.__nullData = bytearray(self.__chunkSize)
+        md5encoder = md5()
+        md5encoder.update(self.__nullData)
+        self.__nullMd5 = md5encoder.hexdigest()
+
+
+        super(AzureUploadChannel,self).__init__(result_disk_size_bytes , resume_upload , chunksize , upload_threads , queue_size)
+
+ 
+    def initStorage(self):
+        """
+        Inits storage to run upload
+        Throws in case of unrecoverable errors
+        """
+
         containers = self.__blobService.list_containers()
         container_found = False
         for container in containers:
-            if container.name == container_name:
+            if container.name == self.__containerName:
                 container_found = True
 
         if container_found == False:
-            self.__blobService.create_container(container_name)
+            self.__blobService.create_container(self.__containerName)
 
         #create empty blob
-        self.__blobService.put_blob(container_name, diskname, '', x_ms_blob_type='PageBlob' , x_ms_blob_content_length = resulting_size_bytes)
-
-        self.__workThreads = list()
-        i = 0
-        while i < upload_threads:
-            thread = AzureUploadThread(self.__uploadQueue , i , self.__resumeUpload , self.__blobService , self)
-            thread.start()
-            self.__workThreads.append(thread)
-            i = i + 1
-        return
-
+        self.__blobService.put_blob(self.__containerName, diskname, '', x_ms_blob_type='PageBlob' , x_ms_blob_content_length = resulting_size_bytes)
+        
         logging.info("Succesfully created an upload channel to Azure container " + self.__storageAccountName  + " at " +  container_name + "\\" + diskname)
+  
 
-        return
+        return True
 
     def getUploadPath(self):
-        """ gets the upload path identifying the upload: bucket/key """
+        """ gets the upload path identifying the upload: container/key """
         return  self.__storageAccountName + "/" +  self.__containerName + "/" + self.__diskName
 
-    # this one is async
-    def uploadData(self, extent):       
-       """ 
-       Uploads data extent
-
-       See UploadChannel.UploadChannel for more info
-       """
-       start = extent.getStart()
-       size = extent.getSize()
-       
-       skipupload = False
-              
-       uploadtask = UploadQueueTask(self.__containerName , self.__diskName , start , size, extent.getData() , self )
-       
-       if uploadtask.getDataMd5() == self.__nullMd5:
-           if uploadtask.getData() == self.__nullData:
-                skipupload = True  
-
-       if skipupload == False:
-            self.__uploadQueue.put( uploadtask )
-       # treating overall size as maximum size
-       if self.__overallSize < start + size:
-           self.__overallSize = start + size       
-
-       return 
-
-    def getTransferChunkSize(self):
+    def createUploadTask(self , extent):
         """ 
-        Gets the size of one chunk of data transfered by the each request, 
-        The data extent is better to be aligned by the integer of chunk sizes
+        Protected method. Creates upload task to add it the queue 
+        Returns UploadTask (or any of inherited class) object
 
-        See UploadChannel.UploadChannel for more info
+        Args:
+            extent: DataExtent - extent of the image to be uploaded. Its size and offset should be integral of chunk size. The only exception is last chunk. 
+
         """
-        return self.__chunkSize
+        start = extent.getStart()
+        size = extent.getSize()
+        data = extent.getData()
 
-   
-    def getDataTransferRate(self):
-        """ 
-        Return:
-            Approx number of bytes transfered in seconds
+        logging.debug("Creating upload task for offset:" + str(start) + " and size "+str(size) + " chunk: " +  str(self.getTransferChunkSize()))
 
-        See UploadChannel.UploadChannel for more info
-
-        Note: not implemented for now
-        """
-        return self.__transferRate
-
-    #  overall data skipped from uploading if resume upload is set
-    def notifyDataSkipped(self , skipped_size):
-        """ For internal use only by the worker threads    """
-        with self.__statLock:
-            self.__uploadSkippedSize = self.__uploadSkippedSize + skipped_size
-
-    # gets overall data skipped from uploading if resume upload is set
-    def getOverallDataSkipped(self):
-        """ Gets overall data skipped  """
-        return self.__uploadSkippedSize
-
-    def notifyTransferError(self, bucket , keyname, size):
-        """ For internal use only by the worker threads   """
-        self.__errorUploading = True
-        return
-
-    def notifyDataTransfered(self , transfered_size):
-        """ For internal use only by the worker threads   """
-        now = datetime.datetime.now()
-        if self.__prevUploadTime:
-            delta = now - self.__prevUploadTime
-            if delta.seconds:
-                self.__transferRate = transfered_size/delta.seconds
-        self.__prevUploadTime = now
-        with self.__statLock:
-            self.__uploadedSize = self.__uploadedSize + transfered_size
+        return AzureUploadTask(self.__containerName,  self.__diskName , start , size , data, self)
 
     
-    def getOverallDataTransfered(self):
-        """ #gets the overall size of data actually uploaded in bytes """
-        return self.__uploadedSize 
+    def uploadChunk(self, uploadtask):
+        """
+        Protected. Uploads one chunk of data
+        Called by the worker thread internally.
+        Could throw any non-recoverable errors
+        """
+        container_name = uploadtask.getTargetContainer()
+        diskname = uploadtask.getTargetKey()
 
-    def waitTillUploadComplete(self):
-        """Waits till upload completes"""
-        logging.debug("Upload complete, waiting for threads to complete");
-        self.__uploadQueue.join()
-        return
+        offset = uploadtask.getUploadOffset()
+        size = uploadtask.getUploadSize()
+        
+        if uploadtask.getDataMd5() == self.__nullMd5:
+           if uploadtask.getData() == self.__nullData:
+               uploadtask.notifyDataSkipped()
+               return True
 
-    # 
+        data = uploadtask.getData()
+
+        chunk_range = 'bytes={}-{}'.format(offset, offset + size - 1)
+
+        try:
+            self.__blobService.put_page(container_name, diskname , data , x_ms_range=chunk_range , x_ms_page_write="update")
+        except Exception as e:
+            logging.warning("!Failed to upload data: %s/%s range %s", str(container_name), diskname , chunk_range)
+            logging.warning("Exception = " + str(e)) 
+            logging.error(traceback.format_exc())
+            raise
+            
+        logging.debug("%s/%s range %s uploaded", str(container_name), diskname , chunk_range );
+        uploadtask.notifyDataTransfered()
+        return True
+    
+    
     def confirm(self):
         """
-        Confirms good upload. uploads resulting xml describing VM container import to S3 
-        
-        Return
-             Link to XML uploaded
+        Confirms good upload
         """
-        # generate the XML file then:
-
         if self.__errorUploading:
             logging.error("!!!ERROR: there were upload failures. Please, reupload by choosing resume upload option!") 
             return None
+        
+        blobs = self.__blobService.list_blobs(self.__containerName , self.__diskName) 
+        for blob in blobs:
+            if blob.name == self.__diskName:
+                return blob.url
+        logging.error("!!!ERROR: no blob matching the disk name found!")
+        return None
+
+   
