@@ -20,6 +20,7 @@ import DataExtent
 import time
 import tempfile
 import warnings
+import datetime
 
 import sys
 import os
@@ -305,7 +306,7 @@ class MultithreadUpoadChannel(UploadChannel.UploadChannel):
 
     
     def getOverallDataTransfered(self):
-        """ #gets the overall size of data actually uploaded in bytes """
+        """ gets the overall size of data actually uploaded in bytes """
         return self.__uploadedSize 
 
     def waitTillUploadComplete(self):

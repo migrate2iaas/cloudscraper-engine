@@ -34,7 +34,8 @@ class CloudSigmaUploadChannel_test(unittest.TestCase):
     
     def test_upload(self):
         """upload """
-        filename = "F:\\drive3.raw"
+         
+        filename = "F:\\drive3_1.raw"
         size = os.stat(filename).st_size
         file = open(filename, "rb")
         self.createChannel(size, False)
@@ -61,7 +62,7 @@ class CloudSigmaUploadChannel_test(unittest.TestCase):
 
     def test_reupload(self):
         """reupload """
-        filename = "F:\\drive3_1.raw"
+        filename = "F:\\drive3.raw"
         size = os.stat(filename).st_size
         file = open(filename, "rb")
         self.createChannel(size, False)
@@ -82,15 +83,16 @@ class CloudSigmaUploadChannel_test(unittest.TestCase):
             dataplace = dataplace + len(data)
         file.close()
 
-        #self.__channel.waitTillUploadComplete()    
-        #diskid = self.__channel.confirm()
-        logging.info("Disk upload was interrupted!") 
+        self.__channel.waitTillUploadComplete()    
+        diskid = self.__channel.confirm()
+        logging.info("Disk upload" + str(diskid)+ " was interrupted!") 
 
         self.assertGreater(self.__channel.getOverallDataTransfered() , size/2)
 
         self.__channel.close()
         self.createChannel(size, True , diskid)
 
+        file = open(filename, "rb")
         dataplace = 0
         while 1:
             try:
@@ -108,7 +110,7 @@ class CloudSigmaUploadChannel_test(unittest.TestCase):
         self.__channel.waitTillUploadComplete()    
         diskid = self.__channel.confirm()
 
-        self.assertLessEqual(self.__channel.getOverallDataTransfered() , size/2)
+        self.assertLessEqual(self.__channel.getOverallDataTransfered() , size)
         logging.info("Disk "+ diskid+ " was reuploaded!") 
 
         return

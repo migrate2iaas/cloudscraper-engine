@@ -309,6 +309,7 @@ class Migrator(object):
             
             description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
             self.__systemTransferChannel = self.__cloudOptions.generateUploadChannel(self.__systemMedia.getMaxSize() , self.__cloudOptions.getServerName() or description, self.__migrateOptions.getSystemVolumeConfig().getUploadPath(), self.__resumeUpload )
+            self.__systemTransferChannel.initStorage()
 
                 
             # update the upload path in config in case it was changed or created by the channel
@@ -467,6 +468,8 @@ class Migrator(object):
         
         if self.__cloudName == "ElasticHosts":
             logging.info("\n>>>>>>>>>>>>>>>>> Disk UUID " + imageid + " now contain your server image. Create a new server via ElasticHosts contol panel and attach the disk to ide0:0 port.")
+            #TODO: create instance
+            self.__resultingInstance = imageid
 
         return True
 
@@ -504,6 +507,7 @@ class Migrator(object):
         if self.__skipUpload == False:
             description = os.environ['COMPUTERNAME']+"-"+"data"+"-"+str(datetime.date.today())
             self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , self.__cloudOptions.getServerName() or description,  volinfo.getUploadPath() , self.__resumeUpload )
+            self.__dataChannelList[volinfo.getVolumePath()].initStorage()
 
         return True
         

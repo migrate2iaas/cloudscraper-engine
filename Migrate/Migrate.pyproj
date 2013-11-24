@@ -34,11 +34,13 @@
     <Compile Include="Amazon\EC2VolumeGenerator.py" />
     <Compile Include="Amazon\S3UploadChannel.py" />
     <Compile Include="Amazon\S3UploadChannel_test.py" />
+    <Compile Include="Azure\AzureConfigs.py" />
     <Compile Include="Azure\AzureUploadChannel.py" />
     <Compile Include="Azure\AzureUploadChannel_test.py" />
     <Compile Include="BackupAdjust.py" />
     <Compile Include="BackupSource.py" />
     <Compile Include="CloudConfig.py" />
+    <Compile Include="CloudSigma\CloudSigmaConfigs.py" />
     <Compile Include="CloudSigma\CloudSigmaUploadChannel.py" />
     <Compile Include="CloudSigma\CloudSigmaUploadChannel_test.py" />
     <Compile Include="DataExtent.py" />

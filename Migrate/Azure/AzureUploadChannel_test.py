@@ -8,21 +8,22 @@ import sys
 sys.path.append('.\..')
 sys.path.append('.\..\Amazon')
 sys.path.append('.\..\Windows')
-sys.path.append('.\..\ElasticHosts')
 
 sys.path.append('.\Windows')
 sys.path.append('.\Amazon')
-sys.path.append('.\ElasticHosts')
 
 
 import AzureUploadChannel
 import unittest
+import datetime
+import os
 
 class AzureUploadChannel_test(unittest.TestCase):
 
     def setUp(self):
-        self.__key = ''
-        self.__secret = ''
+        self.__storageAccount = 'migrate2iaastest'
+        self.__storageKey = 'U7QrRn7HcTeOKC3CN7OL9cH8sKHvvva8kPP7w4HZqevHPW9yrgO7UgfxmacQzN3y+id9eEj53XB00bpEbRoa4Q=='
+        self.__container = 'test'
         self.__channel = None
         self.__region = ''
 
@@ -36,7 +37,7 @@ class AzureUploadChannel_test(unittest.TestCase):
             self.__channel.close()
 
     def initChannel(self, diskname, sizebytes, reupload = False):
-        self.__channel = AzureUploadChannel.AzureUploadChannel(storage_account , accesskey , sizebytes , container_name , diskname , reupload)
+        self.__channel = AzureUploadChannel.AzureUploadChannel(self.__storageAccount , self.__storageKey  , sizebytes , self.__container , diskname , reupload)
         return
 
     def test_uploadNulls(self):
@@ -56,3 +57,27 @@ class AzureUploadChannel_test(unittest.TestCase):
 
     def test_uploadEmpty(self):
         return
+    
+    def test_uploadDataVhd(self):
+        filename = "F:\\datatest.vhd"
+        size = os.stat(filename).st_size
+        file = open(filename, "rb")
+        self.initChannel("test"+str(datetime.datetime.now()) , size, False)
+        
+        dataplace = 0
+        while 1:
+            try:
+                data = file.read(self.__channel.getTransferChunkSize())
+            except: 
+                break
+            if len(data) == 0:
+                break
+            dataext = DataExtent.DataExtent(dataplace , len(data))
+            dataext.setData(data)
+            dataplace = dataplace + len(data)
+            self.__channel.uploadData(dataext)
+        file.close()
+
+        self.__channel.waitTillUploadComplete()    
+        diskid = self.__channel.confirm()
+        logging.info("Disk "+ diskid+ " was uploaded!") 

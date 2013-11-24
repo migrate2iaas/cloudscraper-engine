@@ -169,6 +169,7 @@ class CloudSigmaUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
             drive = self.__cloudsigmaDrive.get(self.__driveUuid)
             drive_size = drive['size']
             if drive_size != self.getImageSize():
+                logging.error("!ERROR: could not reupload drive. Original and cloud drive size mismatch")
                 #TODO: throw appropriate error. See ElasticHosts
                 return 
 
@@ -226,6 +227,7 @@ class CloudSigmaUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
         res = requests.get(upload_url, params=resumable_js_data, **kwargs)
         if 199 < res.status_code < 300:
             logging.debug('Chunk #{} offset {} already uploaded'.format(chunk_number, chunk_offset))
+            uploadtask.notifyDataSkipped()
             return
         
         # getting data after need of upload is confirmed to reduce the source server resource use
@@ -235,6 +237,7 @@ class CloudSigmaUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
         res = requests.post(upload_url, files=resumable_js_data_multipart, **kwargs)
         if 199 < res.status_code < 300:
             logging.debug('Chunk #{} offset {} size {} finished uploading'.format(chunk_number, chunk_offset, len(file_data)))
+            uploadtask.notifyDataTransfered()
             return
         else:
             logging.error('Wrong status {} returned for request '
