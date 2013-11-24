@@ -92,6 +92,7 @@ if __name__ == '__main__':
     s3key=''
     ehkey=''
     azurekey=''
+    cloudsigmapass=''
     if parser.parse_args().ehkey:
         ehkey = parser.parse_args().ehkey
     if parser.parse_args().amazonkey:
@@ -99,7 +100,7 @@ if __name__ == '__main__':
     if parser.parse_args().azurekey:
         azurekey = parser.parse_args().amazonkey    
     if parser.parse_args().cloudsigmapass:
-        azurekey = parser.parse_args().cloudsigmapass    
+        cloudsigmapass = parser.parse_args().cloudsigmapass    
 
     testrun = False
     if parser.parse_args().testrun:
