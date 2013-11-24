@@ -33,6 +33,7 @@ class AzureCloudOptions(CloudConfig.CloudConfig):
         self.__containerName = container_name
         self.__region = region
         self.__instanceType = instance_type
+        self.__chunkSize = chunksize
         #self.__machinename = machinename
         
     def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False):   
@@ -42,14 +43,11 @@ class AzureCloudOptions(CloudConfig.CloudConfig):
         return ""
 
     def getCloudUser(self):
-        return self.__user
+        return self.__storageAccount
     
     def getCloudPass(self):
-        return  self.__pass
+        return self.__storageKey
     
-    def getNewSystemSize(self):
-        return self.__newSysSize
-
     def getTargetCloud(self):
         return "Azure"
 
@@ -72,7 +70,7 @@ class AzureCloudOptions(CloudConfig.CloudConfig):
         return self.__instanceType
 
     def getServerName(self):
-        return  self.__machineName
+        return ""
 
     def getSubnet(self):
         return ""
@@ -82,7 +80,7 @@ class AzureMigrateConfig(MigrateConfig.MigrateConfig):
     #TODO: make docs
     # images is list of VolumeMigrateConfig
     def __init__(self, images , media_factory , source_arch , imagetype):
-        super(AmazonMigrateConfig, self).__init__(images, media_factory)
+        super(AzureMigrateConfig, self).__init__(images, media_factory)
 
         self.__imageArch = source_arch
         #do we need few images? dunno...

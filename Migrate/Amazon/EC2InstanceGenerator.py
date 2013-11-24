@@ -13,6 +13,7 @@ import boto
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 from boto.s3.bucket import Bucket
+from boto.exception import BotoServerError
 
 import logging
 import EC2Instance
@@ -22,6 +23,8 @@ import datetime
 
 import EC2ImportConnection
 from EC2VolumeGenerator import getImageDataFromXml
+
+
 
 class EC2InstanceGenerator(object):
     """generator class for ec2 instances"""

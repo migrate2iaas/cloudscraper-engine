@@ -156,7 +156,7 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
             self.__blobService.create_container(self.__containerName)
 
         #create empty blob
-        self.__blobService.put_blob(self.__containerName, self.__diskName, '', x_ms_blob_type='PageBlob' , x_ms_blob_content_length = resulting_size_bytes)
+        self.__blobService.put_blob(self.__containerName, self.__diskName, '', x_ms_blob_type='PageBlob' , x_ms_blob_content_length = self.getImageSize())
         
         logging.info("Succesfully created an upload channel to Azure container " + self.__storageAccountName  + " at " +  self.__containerName + "\\" + self.__diskName)
   
