@@ -61,7 +61,7 @@ class CloudSigmaUploadChannel_test(unittest.TestCase):
 
     def test_reupload(self):
         """reupload """
-        filename = "F:\\drive3.raw"
+        filename = "F:\\drive3_1.raw"
         size = os.stat(filename).st_size
         file = open(filename, "rb")
         self.createChannel(size, False)
@@ -84,7 +84,7 @@ class CloudSigmaUploadChannel_test(unittest.TestCase):
 
         #self.__channel.waitTillUploadComplete()    
         #diskid = self.__channel.confirm()
-        logging.info("Disk "+ diskid+ " upload was interrupted!") 
+        logging.info("Disk upload was interrupted!") 
 
         self.assertGreater(self.__channel.getOverallDataTransfered() , size/2)
 

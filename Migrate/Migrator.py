@@ -386,7 +386,8 @@ class Migrator(object):
 
         #creating instance from the uploaded image
         # imagesize here is the size of image file. but getImageSize() is the size of initial volume
-        self.generateInstance(self.__migrateOptions.getSystemVolumeConfig().getUploadId() , imagesize , disksize)
+        if self.generateInstance(self.__migrateOptions.getSystemVolumeConfig().getUploadId() , imagesize , disksize):
+            logging.info(">>>>>>>>>>>>> Server has successfully created " + str(self.__resultingInstance));
 
         return True
 

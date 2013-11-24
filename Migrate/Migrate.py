@@ -8,6 +8,8 @@ import sys
 sys.path.append('.\Windows')
 sys.path.append('.\Amazon')
 sys.path.append('.\ElasticHosts')
+sys.path.append('.\Azure')
+sys.path.append('.\CloudSigma')
 sys.path.append('.\SelfTest')
 
 
@@ -46,8 +48,10 @@ if __name__ == '__main__':
 
     #parsing extra option
     parser = argparse.ArgumentParser(description="This script performs creation of virtualized images from the local server, uploading them to S3, converting them to EC2 instances. See http://www.migrate2iaas.com for more details.")
-    parser.add_argument('-k', '--amazonkey', help="Your AWS secret key. If not specified you will be prompted at the script start")
-    parser.add_argument('-e', '--ehkey', help="Your ElasicHosts API secret key. If not specified you will be prompted at the script start")
+    parser.add_argument('-k', '--amazonkey', help="Your AWS secret key. ")
+    parser.add_argument('-e', '--ehkey', help="Your ElasicHosts API secret key.")
+    parser.add_argument('-i', '--cloudsigmapass', help="Your CloudSigma password.")
+    parser.add_argument('-a', '--azurekey', help="Your Azure storage account primary key.")
     parser.add_argument('-c', '--config', help="Path to copy config file")
     parser.add_argument('-o', '--output', help="Path to extra file for non-detalized output")                   
     parser.add_argument('-u', '--resumeupload', help="Resumes the upload of image already created", action="store_true")                   
@@ -87,13 +91,15 @@ if __name__ == '__main__':
 
     s3key=''
     ehkey=''
+    azurekey=''
     if parser.parse_args().ehkey:
         ehkey = parser.parse_args().ehkey
-    else:
-        if parser.parse_args().amazonkey:
-            s3key = parser.parse_args().amazonkey    
-        else:
-            s3key = getpass.getpass("AWS Secret Access Key:")
+    if parser.parse_args().amazonkey:
+        s3key = parser.parse_args().amazonkey    
+    if parser.parse_args().azurekey:
+        azurekey = parser.parse_args().amazonkey    
+    if parser.parse_args().cloudsigmapass:
+        azurekey = parser.parse_args().cloudsigmapass    
 
     testrun = False
     if parser.parse_args().testrun:
@@ -109,11 +115,10 @@ if __name__ == '__main__':
         #NOTE: skip upload is not yet good enough! 
         # it needs saving of 1) image-id (xml-key) for each volume imported previously 2) instance-id
 
+    password = s3key or ehkey or azurekey or cloudsigmapass
     try:
-        if s3key:
-            (image,adjust,cloud) = config.configAmazon(configpath , s3owner , s3key , region , imagepath)
-        if ehkey:
-            (image,adjust,cloud) = config.configElasticHosts(configpath , '' , ehkey) 
+        (image,adjust,cloud) = config.configAuto(configpath , password)
+
     except Exception as e:
         logging.error("\n!!!ERROR: failed to configurate the process! ")
         logging.error("\n!!!ERROR: " + repr(e) )

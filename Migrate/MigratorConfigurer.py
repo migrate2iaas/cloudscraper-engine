@@ -12,6 +12,9 @@ sys.path.append('.\Helper')
 
 import AmazonConfigs
 import EHConfigs
+import AzureConfigs
+import CloudSigmaConfigs
+
 import platform
 import shutil
 
@@ -186,7 +189,95 @@ class MigratorConfigurer(object):
             return self.configAmazon(configfile , '' , password)
         if config.has_section('ElasticHosts'):
             return self.configElasticHosts(configfile , '' , password)
+
+        
+
+        if config.has_section('Azure'):
+            return self.configAzure(configfile , password)
+
+        if config.has_section('CloudSigma'):
+            return self.configCloudSigma(configfile , password )
+
         return None
+
+
+    def configCloudSigma(self, configfile, password):
+        """gets generic parameters for all clouds"""
+        # generic for other clouds
+        (imagedir, image_placement, imagetype) = self.getImageOptions(config)
+        volumes = self.createVolumesList(config , configfile, imagedir, imagetype)        
+        factory = self.createImageFactory(config , image_placement , imagetype)
+
+        adjust_override = dict()
+        if config.has_section('Service'):
+            service_test = True
+            if config.has_option('Service', 'test'):
+                service_test = config.getboolean('Service', 'test')
+            installpath = "..\\service\\dist"
+            if config.has_option('Service', 'installpath'):
+                service_test = config.getboolean('Service', 'installpath')
+            
+            adjust_override = self.getServiceOverrides(config , configfile, installpath , test=service_test)
+
+
+        # Azure-specific
+        user = config.get('CloudSigma', 'user')
+
+        container_name = "cloudscraper"+datetime.date.today().__str__()
+        if config.has_option('CloudSigma', 'container'):
+           container_name = config.get('CloudSigma', 'container') 
+        
+        instancetype = "small"
+        if config.has_option('CloudSigma', 'instance-type'):
+           instancetype = config.get('CloudSigma', 'instance-type')
+
+        region = config.get('CloudSigma', 'region')
+        arch = config.get('CloudSigma', 'target-arch')
+            
+   
+        image = CloudSigmaConfigs.CloudSigmaMigrateConfig(volumes , factory, imagearch , imagetype)
+        cloud = CloudSigmaConfigs.CloudSigmaCloudOptions( region, user , password, "cloudscraper"+datetime.date.today().__str__())
+
+        return (image,adjust_override,cloud)
+
+    def configAzure(self , configfile , password):
+        """gets generic parameters for all clouds"""
+        # generic for other clouds
+        (imagedir, image_placement, imagetype) = self.getImageOptions(config)
+        volumes = self.createVolumesList(config , configfile, imagedir, imagetype)        
+        factory = self.createImageFactory(config , image_placement , imagetype)
+
+        adjust_override = dict()
+        if config.has_section('Service'):
+            service_test = True
+            if config.has_option('Service', 'test'):
+                service_test = config.getboolean('Service', 'test')
+            installpath = "..\\service\\dist"
+            if config.has_option('Service', 'installpath'):
+                service_test = config.getboolean('Service', 'installpath')
+            
+            adjust_override = self.getServiceOverrides(config , configfile, installpath , test=service_test)
+
+
+        # Azure-specific
+        account = config.get('Azure', 'storage-account')
+
+        container_name = "cloudscraper"+datetime.date.today().__str__()
+        if config.has_option('EC2', 'container-name'):
+           container_name = config.get('EC2', 'container-name') 
+        
+        instancetype = "small"
+        if config.has_option('Azure', 'instance-type'):
+           instancetype = config.get('Azure', 'instance-type')
+
+        region = config.get('Azure', 'region')
+        arch = config.get('Azure', 'target-arch')
+            
+   
+        image = AzureConfigs.AzureMigrateConfig(volumes , factory, imagearch , imagetype)
+        cloud = AzureConfigs.AzureCloudOptions(account , password, container_name , region , instancetype)
+
+        return (image,adjust_override,cloud)
 
     #returns the tuple containing the config info (Image,Fixups,Cloud)
     def configAmazon(self , configfile , user = '' , password = '' , region = '', imagepath = ''):
@@ -195,8 +286,7 @@ class MigratorConfigurer(object):
         config.readfp(codecs.open(configfile, "r", "utf16"))
 
         import Windows
-        imagesize = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize() 
-        imagetype = 'VHD'      
+        imagesize = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize()  
 
         #cloud config
         if user == '':
@@ -212,33 +302,6 @@ class MigratorConfigurer(object):
         arch = config.get('EC2', 'target-arch')
 
         imagearch = config.get('Image', 'source-arch')
-
-        if config.has_option('Image', 'image-type'):
-            imagetype = config.get('Image', 'image-type')
-        else:
-            imagetype = 'VHD'
-            logging.warning("No image type specified. Default VHD is used.") 
-        
-
-        imagedir = ""
-        if config.has_option('Image', 'image-dir'):
-           imagedir = config.get('Image', 'image-dir') 
-        else:
-            imagedir = "."
-            logging.warning("No directory for image store is specified. It'll be created in local script execution directory") 
-
-        if imagedir[-1] == '\\':
-            imagedir = imagedir[0:-1]
-        if os.path.exists(imagedir) == False:
-            logging.debug("Directory " + str(imagedir) + " not found, creating it") 
-            os.mkdir(imagedir)           
-        else:
-            dirmode = os.stat(imagedir).st_mode
-            if stat.S_ISDIR(dirmode) == False:
-                #TODO: create wrapper for error messages
-                #TODO: test UNC path
-                logging.error("!!!ERROR Directory given for image storage is not valid!") 
-
             
         s3prefix = ""
         if config.has_option('EC2', 's3prefix'):
@@ -272,12 +335,7 @@ class MigratorConfigurer(object):
         except ConfigParser.NoOptionError as exception:
             logging.info("No security group was speicified, using default one. Note it couldn't be changed afterwards.")
         
-        image_placement = ""
-        if config.has_option('Image', 'image-placement'):
-           image_placement = config.get('Image', 'image-placement') 
-        else:
-            image_placement = "local"
-                    
+        (imagedir, image_placement, imagetype) = self.getImageOptions(config)
         volumes = self.createVolumesList(config , configfile, imagedir, imagetype, )        
         factory = self.createImageFactory(config , image_placement , imagetype)
 
@@ -328,43 +386,8 @@ class MigratorConfigurer(object):
            #TODO: make a list so it could be iterated thru in case we need to use for checking something
         
 
-        #really, it doesn't matter for the EH cloud
-        imagearch = config.get('Image', 'source-arch')
-
-        if config.has_option('Image', 'image-type'):
-            imagetype = config.get('Image', 'image-type')
-        else:
-            imagetype = 'raw.gz'
-            logging.warning("No image type specified. Default raw.gz is used.");
-
-      
         
-        imagedir = ""
-        if config.has_option('Image', 'image-dir'):
-           imagedir = config.get('Image', 'image-dir') 
-        else:
-            imagedir = "."
-            logging.warning("No directory for image store is specified. It'll be created in local script execution directory");
-
-        if imagedir[-1] == '\\':
-            imagedir = imagedir[0:-1]
-        if os.path.exists(imagedir) == False:
-            logging.debug("Directory " + unicode(imagedir) + " not found, creating it");
-            os.mkdir(imagedir)           
-        else:
-            dirmode = os.stat(imagedir).st_mode
-            if stat.S_ISDIR(dirmode) == False:
-                #TODO: create wrapper for error messages
-                #TODO: test UNC path
-                logging.error("!!!ERROR Directory given for image storage is not valid!") 
-
-        image_placement = ""
-        if config.has_option('Image', 'image-placement'):
-           image_placement = config.get('Image', 'image-placement') 
-        else:
-            image_placement = "local"
-
-        
+        (imagedir, image_placement, imagetype) = self.getImageOptions(config)
         volumes = self.createVolumesList(config , configfile, imagedir ,imagetype)        
         factory = self.createImageFactory(config , image_placement , imagetype)
       
@@ -427,6 +450,45 @@ class MigratorConfigurer(object):
             chunk = 4096*1024
             factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
         return factory
+
+    def getImageOptions(self , config):
+        """gets tuple of image related data (image placement , image types , image path (directory) ) """
+        imagearch = config.get('Image', 'source-arch')
+
+        if config.has_option('Image', 'image-type'):
+            imagetype = config.get('Image', 'image-type')
+        else:
+            imagetype = 'raw.gz'
+            logging.warning("No image type specified. Default raw.gz is used.");
+
+      
+        
+        imagedir = ""
+        if config.has_option('Image', 'image-dir'):
+           imagedir = config.get('Image', 'image-dir') 
+        else:
+            imagedir = "."
+            logging.warning("No directory for image store is specified. It'll be created in local script execution directory");
+
+        if imagedir[-1] == '\\':
+            imagedir = imagedir[0:-1]
+        if os.path.exists(imagedir) == False:
+            logging.debug("Directory " + unicode(imagedir) + " not found, creating it");
+            os.mkdir(imagedir)           
+        else:
+            dirmode = os.stat(imagedir).st_mode
+            if stat.S_ISDIR(dirmode) == False:
+                #TODO: create wrapper for error messages
+                #TODO: test UNC path
+                logging.error("!!!ERROR Directory given for image storage is not valid!") 
+
+        image_placement = ""
+        if config.has_option('Image', 'image-placement'):
+           image_placement = config.get('Image', 'image-placement') 
+        else:
+           image_placement = "local"
+
+        return (imagedir, image_placement, imagetype)
 
     def getServiceOverrides(self, config, configfile, installpath , test=False):
         #here the service config is being generated

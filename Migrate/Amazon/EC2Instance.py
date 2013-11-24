@@ -30,3 +30,6 @@ class EC2Instance(object):
     def stop(self):
         self.__ec2Connnection.stop_instances([self.__instanceId] , force=True)
         return
+
+    def __str__(self):
+        "EC2 instance ID="+str(self.__instanceId)
