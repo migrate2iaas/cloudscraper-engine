@@ -233,7 +233,7 @@ class MigratorConfigurer(object):
         arch = config.get('CloudSigma', 'target-arch')
             
    
-        image = CloudSigmaConfigs.CloudSigmaMigrateConfig(volumes , factory, imagearch , imagetype)
+        image = CloudSigmaConfigs.CloudSigmaMigrateConfig(volumes , factory, arch , imagetype)
         cloud = CloudSigmaConfigs.CloudSigmaCloudOptions( region, user , password, "cloudscraper"+datetime.date.today().__str__())
 
         return (image,adjust_override,cloud)
@@ -272,7 +272,7 @@ class MigratorConfigurer(object):
         arch = config.get('Azure', 'target-arch')
             
    
-        image = AzureConfigs.AzureMigrateConfig(volumes , factory, imagearch , imagetype)
+        image = AzureConfigs.AzureMigrateConfig(volumes , factory, arch , imagetype)
         cloud = AzureConfigs.AzureCloudOptions(account , password, container_name , region , instancetype)
 
         return (image,adjust_override,cloud)
@@ -334,7 +334,7 @@ class MigratorConfigurer(object):
             logging.info("No security group was speicified, using default one. Note it couldn't be changed afterwards.")
         
         (imagedir, image_placement, imagetype) = self.getImageOptions(config)
-        volumes = self.createVolumesList(config , configfile, imagedir, imagetype, )        
+        volumes = self.createVolumesList(config , configfile, imagedir, imagetype , s3prefix)        
         factory = self.createImageFactory(config , image_placement , imagetype)
 
         newsize = imagesize
@@ -403,8 +403,8 @@ class MigratorConfigurer(object):
             
             adjust_override = self.getServiceOverrides(config , configfile, installpath , test=service_test)
 
-        image = EHConfigs.EHMigrateConfig(volumes , factory, imagearch , imagetype)
-        cloud = EHConfigs.EHCloudOptions( user , password , newsize , imagearch , region, avoiddisks)
+        image = EHConfigs.EHMigrateConfig(volumes , factory, 'x86_64' , imagetype)
+        cloud = EHConfigs.EHCloudOptions( user , password , newsize , 'x86_64' , region, avoiddisks)
 
         return (image,adjust_override,cloud)
 

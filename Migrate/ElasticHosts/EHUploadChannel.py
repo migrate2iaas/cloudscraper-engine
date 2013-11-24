@@ -33,10 +33,7 @@ import UploadChannel
 
 import base64
 import math
-try:
-    from hashlib import md5
-except ImportError:
-    from md5 import md5
+from md5 import md5
 
 
 UPLOADED_BEFORE_JSON_KEY = u'user:uploaded'
