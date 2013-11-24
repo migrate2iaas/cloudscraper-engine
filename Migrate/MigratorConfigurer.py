@@ -190,18 +190,16 @@ class MigratorConfigurer(object):
         if config.has_section('ElasticHosts'):
             return self.configElasticHosts(configfile , '' , password)
 
-        
-
         if config.has_section('Azure'):
-            return self.configAzure(configfile , password)
+            return self.configAzure(configfile , config , password)
 
         if config.has_section('CloudSigma'):
-            return self.configCloudSigma(configfile , password )
+            return self.configCloudSigma(configfile, config , password )
 
         return None
 
 
-    def configCloudSigma(self, configfile, password):
+    def configCloudSigma(self, configfile, config, password):
         """gets generic parameters for all clouds"""
         # generic for other clouds
         (imagedir, image_placement, imagetype) = self.getImageOptions(config)
@@ -240,7 +238,7 @@ class MigratorConfigurer(object):
 
         return (image,adjust_override,cloud)
 
-    def configAzure(self , configfile , password):
+    def configAzure(self , configfile , config,  password):
         """gets generic parameters for all clouds"""
         # generic for other clouds
         (imagedir, image_placement, imagetype) = self.getImageOptions(config)

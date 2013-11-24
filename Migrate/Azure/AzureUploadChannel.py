@@ -1,3 +1,7 @@
+"""
+This file defines upload to Azure
+"""
+
 # --------------------------------------------------------
 __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
@@ -35,13 +39,14 @@ import re
 import logging
 import threading 
 import datetime
+import traceback
 
 import zlib
 import gzip
 import StringIO
 import UploadChannel
 import MultithreadUpoadChannel
-import md5
+from md5 import md5
 
 from azure.storage import *
 
@@ -81,24 +86,25 @@ class AzureUploadTask(MultithreadUpoadChannel.UploadTask):
     # specifies the alternitive availble path. 
     # alternative source seem to be interesting concept. get something from another place. maybe deferred
     def isAlternitiveAvailable(self):
-        return self.__alternativeKey != None and self.__alternativeBucket != None
+        return False
+        #return self.__alternativeKey != None and self.__alternativeBucket != None
 
     #TODO: find more generic way
     # sometimes source could be active too
     def setAlternativeUploadPath(self, alternative_source_bucket = None, alternative_source_keyname = None):
-        self.__alternativeKey = alternative_source_keyname
-        self.__alternativeBucket = alternative_source_bucket
+        return None
 
     #some dedup staff
     def getAlternativeKeyName(self):
-        return self.__alternativeKey
+        return ""
 
     def getAlternativeContainer(self):
-        return self.__alternativeBucket
+        return ""
 
     def getAlternativeKey(self):
         """gets alternative key object"""
-        return self.__targetBucket.get_key(self.__alternativeKey)
+        return ""
+        #return self.__targetBucket.get_key(self.__alternativeKey)
 
 
 
@@ -131,7 +137,7 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
         self.__nullMd5 = md5encoder.hexdigest()
 
 
-        super(AzureUploadChannel,self).__init__(result_disk_size_bytes , resume_upload , chunksize , upload_threads , queue_size)
+        super(AzureUploadChannel,self).__init__(resulting_size_bytes , resume_upload , chunksize , upload_threads , queue_size)
 
  
     def initStorage(self):
@@ -150,9 +156,9 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
             self.__blobService.create_container(self.__containerName)
 
         #create empty blob
-        self.__blobService.put_blob(self.__containerName, diskname, '', x_ms_blob_type='PageBlob' , x_ms_blob_content_length = resulting_size_bytes)
+        self.__blobService.put_blob(self.__containerName, self.__diskName, '', x_ms_blob_type='PageBlob' , x_ms_blob_content_length = resulting_size_bytes)
         
-        logging.info("Succesfully created an upload channel to Azure container " + self.__storageAccountName  + " at " +  container_name + "\\" + diskname)
+        logging.info("Succesfully created an upload channel to Azure container " + self.__storageAccountName  + " at " +  self.__containerName + "\\" + self.__diskName)
   
 
         return True
@@ -217,7 +223,7 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
         """
         Confirms good upload
         """
-        if self.__errorUploading:
+        if self.unsuccessfulUpload():
             logging.error("!!!ERROR: there were upload failures. Please, reupload by choosing resume upload option!") 
             return None
         

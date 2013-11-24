@@ -75,6 +75,7 @@ class UploadThread(threading.Thread):
         self.__maxRetries = retries
         self.__copySimilar = copy_similar
         self.__channel = channel
+        
         super(UploadThread,self).__init__()
 
     def run(self):
@@ -264,6 +265,13 @@ class MultithreadUpoadChannel(UploadChannel.UploadChannel):
         Checks if upload is resumed one
         """
         return self.__resumeUpload
+
+
+    def unsuccessfulUpload(self):
+        """
+        Checks if there were unrecoverable errors during the upload
+        """
+        return self.__errorUploading
 
    
     def getDataTransferRate(self):

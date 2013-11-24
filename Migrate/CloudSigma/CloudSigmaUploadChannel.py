@@ -43,10 +43,7 @@ import urlparse
 
 import base64
 import math
-try:
-    from hashlib import md5
-except ImportError:
-    from md5 import md5
+from md5 import md5
 
 from cloudsigma.resource import *
 
@@ -257,7 +254,7 @@ class CloudSigmaUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
              Cloud uploaded disk image identifier that could be passed to Cloud API to create new server: str - in case of success or
              None - in case of failure
         """
-        if self._MultithreadUpoadChannel__errorUploading:
+        if self.unsuccessfulUpload():
             logging.error("!!!ERROR: there were upload failures. Please, reupload by choosing resume upload option!") 
             return None
         return self.__driveUuid

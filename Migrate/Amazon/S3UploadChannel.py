@@ -24,7 +24,6 @@ import logging
 
 import sys
 import os
-import win32api
 import MigrateExceptions
 import subprocess
 import re
@@ -43,10 +42,7 @@ import UploadChannel
 
 import base64
 import math
-try:
-    from hashlib import md5
-except ImportError:
-    from md5 import md5
+from md5 import md5
 
 class S3ManfiestBuilder:
 
