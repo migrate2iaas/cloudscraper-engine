@@ -144,6 +144,39 @@ class EC2Instance_test(unittest.TestCase):
 
         return
 
+    def test_fullvhd_apeast(self):
+        """tests full vhd upload and convert in us eeast region region"""
+
+        filename = 'E:\\vms\\2008r2\\win2008r2.vhd'
+        size = 136365211648 
+        bucket = 'feoffbucketsoutheast-ap-southeast-1'
+        self.__channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size , "ap-southeast-1")
+        
+        channel = self.__channel
+
+        #TODO: make more different sizes
+        file = open(filename , "rb")
+        datasize = 10*1024*1024 #mb
+        dataplace = 0
+        while 1:
+            try:
+                data = file.read(datasize)
+            except EOFError:
+                break
+            if len(data) == 0:
+                break
+            dataext = DataExtent.DataExtent(dataplace , len(data))
+            dataplace = dataplace + len(data)
+            dataext.setData(data)
+            channel.uploadData(dataext)
+
+        channel.waitTillUploadComplete()
+        image_id = channel.confirm()
+ 
+        generator = EC2InstanceGenerator.EC2InstanceGenerator("ap-southeast-1")
+        instance = generator.makeInstanceFromImage(image_id, ConfigTest("i386", "ap-southeast-1a" , filename) , self.__key , self.__secret , filename)
+        self.assertIsNotNone(instance)
+
     def test_aregenerate(self):
         """tests instance generation"""
         image_id = "https://s3.amazonaws.com/feoffuseastconversiontest/Migrate1378927435/imagemanifest.xml"

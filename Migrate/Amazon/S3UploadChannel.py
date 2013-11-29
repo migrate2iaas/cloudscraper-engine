@@ -377,8 +377,10 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         logging.info("Succesfully created an upload channel to S3 bucket " + self.__bucketName  + " at " +  location)
 
     def getUploadPath(self):
-        """ gets the upload path identifying the upload: bucket/key """
-        return self.__bucketName + "/" +self.__keyBase
+        """ gets the upload path identifying the upload: key """
+        #return self.__bucketName + "/" +self.__keyBase
+        # Note: we should return keyname sufficient to reupload at the same place in case we already had a bucket
+        return self.__keyBase
 
     # this one is async
     def uploadData(self, extent):       

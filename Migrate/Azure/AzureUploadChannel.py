@@ -165,7 +165,7 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
 
     def getUploadPath(self):
         """ gets the upload path identifying the upload: container/key """
-        return  self.__storageAccountName + "/" +  self.__containerName + "/" + self.__diskName
+        return self.__diskName #self.__storageAccountName + "/" +  self.__containerName + "/" + self.__diskName
 
     def createUploadTask(self , extent):
         """ 

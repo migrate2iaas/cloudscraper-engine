@@ -56,7 +56,7 @@ class UploadTask(object):
 
 class UploadThread(threading.Thread):
     """thread making all uploading works"""
-    def __init__(self , queue , thread_id , skip_existing = False , channel = None , copy_similar = True,  retries = 3):
+    def __init__(self , queue , thread_id , skip_existing = False , channel = None , copy_similar = True,  retries = 5):
         """
         Constructor
         

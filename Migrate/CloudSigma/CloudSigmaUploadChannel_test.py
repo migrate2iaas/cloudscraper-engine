@@ -111,7 +111,10 @@ class CloudSigmaUploadChannel_test(unittest.TestCase):
         diskid = self.__channel.confirm()
 
         self.assertLessEqual(self.__channel.getOverallDataTransfered() , size)
-        logging.info("Disk "+ diskid+ " was reuploaded!") 
+        if diskid:
+            logging.info("Disk "+ diskid+ " was reuploaded!") 
+        else:
+            logging.error("Failed to upload " + self.__channel.getUploadPath()) 
 
         return
 

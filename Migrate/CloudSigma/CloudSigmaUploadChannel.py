@@ -120,7 +120,7 @@ class CloudSigmaUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
     """Uploads data to CloudSigma"""
     
 
-    def __init__(self, result_disk_size_bytes , region , login , password, drive_name=None, drive_uuid=None , resume_upload = False , chunksize=10*1024*1024 , upload_threads=8 , queue_size=16 , generic_cloudsigma_kwargs=None):
+    def __init__(self, result_disk_size_bytes , region , login , password, drive_name=None, drive_uuid=None , resume_upload = False , chunksize=10*1024*1024 , upload_threads=4 , queue_size=16 , generic_cloudsigma_kwargs=None):
         """
         Inits cloudsigma:
 
