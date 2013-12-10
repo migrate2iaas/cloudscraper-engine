@@ -471,7 +471,7 @@ class Migrator(object):
             #TODO: create instance
             self.__resultingInstance = imageid
 
-        return True
+        return self.__resultingInstance != None
 
     #TODO: make parameters optional
     # if they are not specified - load imageid
