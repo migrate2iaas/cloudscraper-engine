@@ -32,4 +32,4 @@ class EC2Instance(object):
         return
 
     def __str__(self):
-        "EC2 instance ID="+str(self.__instanceId)
+        return "EC2 instance ID="+str(self.__instanceId)

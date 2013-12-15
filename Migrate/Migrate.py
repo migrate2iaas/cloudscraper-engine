@@ -130,7 +130,10 @@ if __name__ == '__main__':
     __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload)
     logging.info("Migrator test started")
     instance = __migrator.runFullScenario()
-    logging.info("\n>>>>>>>>>>>>>>>>> Transfer process ended\n")
+    if instance == False:
+        logging.info("\n>>>>>>>>>>>>>>>>> Transfer process ended unsuccessfully\n")
+    else:
+        logging.info("\n>>>>>>>>>>>>>>>>> Transfer process ended\n")
 
     try:
         if testrun:
