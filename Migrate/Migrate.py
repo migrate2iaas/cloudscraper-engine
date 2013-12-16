@@ -34,6 +34,7 @@ import time
 import traceback
 import Version
 import random
+import errno
 
 MigrateVerisonHigh = Version.majorVersion
 MigrateVersionLow = Version.minorVersion
@@ -134,6 +135,7 @@ if __name__ == '__main__':
         logging.info("\n>>>>>>>>>>>>>>>>> Transfer process ended successfully\n")
     else:
        logging.info("\n>>>>>>>>>>>>>>>>>> Transfer process ended unsuccessfully\n")
+       sys.exit(errno.EFAULT)
 
     try:
         if testrun:
@@ -154,4 +156,5 @@ if __name__ == '__main__':
         logging.error("\n!!!ERROR: failed to configurate the process! ")
         logging.error("\n!!!ERROR: " + str(e) )
         logging.error(traceback.format_exc())
-
+        logging.info("\n>>>>>>>>>>>>>>>>>> Transfer process ended unsuccessfully, configuration failed\n")
+        sys.exit(errno.ERANGE)
