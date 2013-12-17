@@ -65,7 +65,7 @@ class AzureUploadTask(MultithreadUpoadChannel.UploadTask):
         self.__alternativeKey = alternative_source_keyname
         self.__alternativeBucket = alternative_source_bucket
 
-        super(AzureUploadTask).__init__(channel , size , offset)
+        super(AzureUploadTask,self).__init__(channel , size , offset)
 
    
     def getTargetKey(self):
@@ -114,19 +114,19 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
     Implements multithreaded fie upload to Windows Azure 
     """
 
-    def __init__(self , storageacc , accesskey , resulting_size_bytes, container_name  , diskname , resume_upload = False , chunksize=10*1024*1024 , upload_threads=4 , queue_size=16):
+    def __init__(self , storageacc , accesskey , resulting_size_bytes, container_name  , diskname , resume_upload = False , chunksize=1024*1024 , upload_threads=8 , queue_size=16):
         """constructor"""
         self.__chunkSize = chunksize
         self.__storageAccountName = storageacc
         self.__containerName = container_name
         self.__diskName = diskname
-        self.__blobService = BlobService(account_name=storageacc, account_key=accesskey)
+        self.__blobService = BlobService(account_name=storageacc, account_key=accesskey, protocol='https')
         self.__resumeUpload = resume_upload
 
         #statistics
         self.__overallSize = 0
         self.__transferRate = 0
-        self.__prevUploadTime = datetime.datetime.now()
+        self.__prevUploadTime = datetime.now()
         self.__statLock = threading.Lock()
         self.__uploadedSize = 0
         self.__errorUploading = True
@@ -196,15 +196,15 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
 
         offset = uploadtask.getUploadOffset()
         size = uploadtask.getUploadSize()
-        
-        if uploadtask.getDataMd5() == self.__nullMd5:
-           if uploadtask.getData() == self.__nullData:
-               uploadtask.notifyDataSkipped()
-               return True
+        chunk_range = 'bytes={}-{}'.format(offset, offset + size - 1)
 
         data = uploadtask.getData()
 
-        chunk_range = 'bytes={}-{}'.format(offset, offset + size - 1)
+        if uploadtask.getDataMd5() == self.__nullMd5:
+           if data == self.__nullData:
+               logging.debug("%s/%s range %s skipped", str(container_name), diskname , chunk_range );
+               uploadtask.notifyDataSkipped()
+               return True
 
         try:
             self.__blobService.put_page(container_name, diskname , data , x_ms_range=chunk_range , x_ms_page_write="update")
