@@ -35,10 +35,17 @@ import traceback
 import Version
 import random
 import errno
+import threading 
+import os
 
 MigrateVerisonHigh = Version.majorVersion
 MigrateVersionLow = Version.minorVersion
 
+
+def heartbeat(interval_sec):
+    while 1:
+        sys.stdout.write('.')
+        time.sleep(int(interval_sec))
 
 #TODO: make versioning and expiration time!!
 
@@ -58,6 +65,7 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--resumeupload', help="Resumes the upload of image already created", action="store_true")                   
     parser.add_argument('-s', '--skipupload', help="Skips both imaging and upload. Just start the machine in cloud from the image given", action="store_true")                   
     parser.add_argument('-t', '--testrun', help="Makes test run on the migrated server to see it responding", action="store_true")                   
+    parser.add_argument('-b', '--heartbeat', help="Specifies interval in seconds to write hearbeat messages to stdout. No heartbeat if this flag is ommited")                   
 
     #Turning on the logging
     logging.basicConfig(format='%(asctime)s %(message)s' , filename='..\\..\\logs\\migrate.log',level=logging.DEBUG)    
@@ -74,6 +82,10 @@ if __name__ == '__main__':
         outhandler.setLevel(logging.INFO)
         logging.getLogger().addHandler(outhandler)
     
+    if parser.parse_args().heartbeat:
+        threading.Thread(target = heartbeat, args=(parser.parse_args().heartbeat)).start()
+        
+
     logging.info("\n>>>>>>>>>>>>>>>>> The Server Transfer Process ("+ Version.getShortVersionString() + ") is initializing\n")
     logging.info("Full version: " + Version.getFullVersionString())
 
@@ -158,3 +170,5 @@ if __name__ == '__main__':
         logging.error(traceback.format_exc())
         logging.info("\n>>>>>>>>>>>>>>>>>> Transfer process ended unsuccessfully, configuration failed\n")
         sys.exit(errno.ERANGE)
+
+    sys.exit(0)
