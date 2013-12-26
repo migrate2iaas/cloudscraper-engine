@@ -83,7 +83,7 @@ if __name__ == '__main__':
         logging.getLogger().addHandler(outhandler)
     
     if parser.parse_args().heartbeat:
-        threading.Thread(target = heartbeat, args=(parser.parse_args().heartbeat)).start()
+        threading.Thread(target = heartbeat, args=(parser.parse_args().heartbeat,) ).start()
         
 
     logging.info("\n>>>>>>>>>>>>>>>>> The Server Transfer Process ("+ Version.getShortVersionString() + ") is initializing\n")
