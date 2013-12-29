@@ -100,44 +100,44 @@ class Migrator(object):
                 # 1) test the system on compatibility
                 if self.checkSystemCompatibility() == False:
                     logging.info(">>>>>>>>>>>> Compatipility check failed")
-                    return False
+                    return None
 
                 logging.info("Checking the input config params")
                 # 2) check the input parms
                 if self.checkInputParams() == False:
                     logging.info(">>>>>>>>>>>> Parameter check failed")
-                    return False
+                    return None
 
                 logging.info("Creating the transfer target")
                 #NOTE: disk size should be min 1 mb larger (offset from mbr)
                 # 3) create virtual image (transfer target)
                 if self.createSystemTransferTarget() == False:
                     logging.info(">>>>>>>>>>>> Transfer target creation failed")
-                    return False
+                    return None
         
                 # 4) gets system backup source
                 logging.info("Initializing system copy source")
                 if self.createSystemBackupSource() == False:
                     logging.info(">>>>>>>>>>>> Couldn't adjust the copy source")
-                    return False
+                    return None
 
                 # 5) adjusts the system backup source
                 logging.info("Adjusting the system copy parms")
                 if self.adjustSystemBackupSource() == False:
                     logging.info(">>>>>>>>>>>> Couldn't adjust the copy parms")
-                    return False
+                    return None
 
                 # 6) adjust transfer target to fit our needs
                 logging.info("Adjusting the copy target")
                 if self.adjustSystemBackupTarget() == False:
                     logging.info(">>>>>>>>>>>> Couldn't adjust the copy target")
-                    return False
+                    return None
 
                 # 7) starts the data transfer
                 logging.info("System copy started")
                 if self.startSystemBackup() == False:
                     logging.info(">>>>>>>>>>>> System copy failed")
-                    return False
+                    return None
             else:
                 logging.info(">>>>>>>>>>>>>>>>>>>>>>>>>> No system volumes specified for transfer") 
 
@@ -150,7 +150,7 @@ class Migrator(object):
                 logging.info("Initializing data transfer target")
                 if self.createDataTransferTargets() == False:
                     logging.info("Transfer target creation failed")
-                    return
+                    return None
         
                 #TODO: create source adjust too
 
@@ -158,19 +158,19 @@ class Migrator(object):
                 logging.info("Initializing the system backup")
                 if self.createDataBackupSources() == False:
                     logging.info("Couldn't adjust the copy source")
-                    return
+                    return None
 
                 # 11) adjust transfer target to fit our needs
                 logging.info("Adjusting the copy target")
                 if self.adjustDataBackupTarget() == False:
                     logging.info("Couldn't adjust the copy target")
-                    return
+                    return None
 
                 # 12) starts the data transfer
                 logging.info("System copy started")
                 if self.startDataBackup() == False:
                     logging.info("System copy failed")
-                    return
+                    return None
 
             #
         

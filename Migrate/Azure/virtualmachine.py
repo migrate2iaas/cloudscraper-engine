@@ -22,7 +22,7 @@ from win32com.client import Dispatch
 # SetClientCertificate, and it will probably find the right one.
 # Note that the last component is the Subject, not the Friendly Name.
 
-def azure_mgmt_response(obect):
+def azure_mgmt_response(object):
     """response compatible with requests Response class"""
 
     def __init__(self , status , status_text , response_headers , response_body):
@@ -50,7 +50,7 @@ def azure_mgmt_response(obect):
     def ok(self):
         try:
             self.raise_for_status()
-        except RequestException:
+        except Exception:
             return False
         return True
 
@@ -73,13 +73,14 @@ def azure_mgmt_response(obect):
 def send_cert_request(url, verb, cert_selection, parms = dict() , x_ms_version = "2012-03-01"):
     req = Dispatch("WinHttp.WinHttpRequest.5.1")
     req.Open(verb, url)
-    req.SetClientCertificate(cert_subject) # Store and user are taken by default if not specified in the same string
+    req.SetClientCertificate(cert_selection) # Store and user are taken by default if not specified in the same string
     # seems like it'll be an buttheart in case we work in context of other user
     req.SetRequestHeader('x-ms-version', x_ms_version)
     for (key, value) in parms.items:
         req.SetRequestHeader(key, value)
     req.Send()
-    return azure_mgmt_response( req.Status, req.StatusText, req.GetAllResponseHeaders() ,  unicode(req.ResponseBody) )
+    response = azure_mgmt_response( req.Status, req.StatusText, req.GetAllResponseHeaders() ,  unicode(req.ResponseBody) )
+    return response
 
 
 class virtualmachine(object):
@@ -111,7 +112,7 @@ class virtualmachine(object):
         url = self.__baseUrl + operation
 
         xmlheader = '<Disk xmlns="http://schemas.microsoft.com/windowsazure" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">\n'
-        xmlbody = '<OS>'+ostype+'</OS>\n'
+        xmlbody = '<OS>'+os_type+'</OS>\n'
         xmlbody = xmlbody + '<Label>'+disk_label+'</Label>\n'
         xmlbody = xmlbody + '<MediaLink>'+media_link+'</MediaLink>\n'
         xmlbody = xmlbody + '<Name>'+disk_name+'</Name>\n'
