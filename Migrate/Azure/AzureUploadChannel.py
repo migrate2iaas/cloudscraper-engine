@@ -156,7 +156,7 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
             self.__blobService.create_container(self.__containerName)
 
         #create empty blob
-        self.__blobService.put_blob(self.__containerName, self.__diskName, '', x_ms_blob_type='PageBlob' , x_ms_blob_content_length = self.getImageSize())
+        self.__blobService.put_blob(self.__containerName, self.__diskName, '', x_ms_blob_type='PageBlob' , x_ms_blob_content_length = self.getImageSize() , x_ms_blob_content_type="binary/octet-stream")
         
         logging.info("Succesfully created an upload channel to Azure container " + self.__storageAccountName  + " at " +  self.__containerName + "\\" + self.__diskName)
   
@@ -164,7 +164,7 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
         return True
 
     def getUploadPath(self):
-        """ gets the upload path identifying the upload: container/key """
+        """ gets the upload path identifying the upload sufficient to upload the disk in case storage account and container name are already defined"""
         return self.__diskName #self.__storageAccountName + "/" +  self.__containerName + "/" + self.__diskName
 
     def createUploadTask(self , extent):
@@ -226,11 +226,12 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
         if self.unsuccessfulUpload():
             logging.error("!!!ERROR: there were upload failures. Please, reupload by choosing resume upload option!") 
             return None
-        
+        # finding the right blob and getting its url
         blobs = self.__blobService.list_blobs(self.__containerName , self.__diskName) 
         for blob in blobs:
             if blob.name == self.__diskName:
                 return blob.url
+        # 
         logging.error("!!!ERROR: no blob matching the disk name found!")
         return None
 

@@ -19,6 +19,7 @@ import SystemAdjustOptions
 import CloudConfig
 import MigrateConfig
 import AzureUploadChannel
+import AzureInstanceGenerator
 
 import time
 import os
@@ -26,7 +27,7 @@ import os
 
 class AzureCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self,  account , storage_key, container_name , region, instance_type="small", chunksize = 10*1024*1024):
+    def __init__(self,  account , storage_key, container_name , region, subscription = "" , certpath = "" , instance_type="small", chunksize = 10*1024*1024):
         super(AzureCloudOptions, self).__init__()
         self.__storageAccount = account
         self.__storageKey = storage_key
@@ -34,13 +35,23 @@ class AzureCloudOptions(CloudConfig.CloudConfig):
         self.__region = region
         self.__instanceType = instance_type
         self.__chunkSize = chunksize
+        self.__certPath = certpath
+        self.__subscription = subscription
         #self.__machinename = machinename
         
     def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False):   
         return AzureUploadChannel.AzureUploadChannel(self.__storageAccount ,  self.__storageKey , targetsize , self.__containerName , targetname, resume , self.__chunkSize)
 
+    def generateInstanceFactory(self):
+        if self.__subscription and self.__certPath:
+            return AzureInstanceGenerator.AzureInstanceGenerator(self.__subscription , self.__certPath)
+        else:
+            logging.warning("! The system disk image is uploaded to your Azure Storage but VM disk wasn't created since no management certificate was specified");
+            logging.info(">>>>>>>>>>>>>>>> Please, create VM disk via Disks menu of Virtual Machine tab in Windows Azure management console");
+            return None
+
     def getCloudStorage(self):
-        return ""
+        return self.__containerName
 
     def getCloudUser(self):
         return self.__storageAccount

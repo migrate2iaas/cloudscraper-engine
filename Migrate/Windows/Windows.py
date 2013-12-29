@@ -171,22 +171,6 @@ class Windows(object):
             shutil.rmtree(file , True , None)
             #TODO: log failures
 
-
-    def createVhdMedia(self , path , imagesize):
-        #TODO: maybe it's good idea to use WindowsVhdMediaFactory here
-        vhd = WindowsVhdMedia.WindowsVhdMedia(path, imagesize)
-        return vhd
-
-    def createVhdTransferTarget(self , path , size , adjustOptions):
-        logging.debug("Creating VHD transfer target")
-        gigabyte = 1024*1024*1024
-        vhd = self.createVhdMedia(path, size+gigabyte)
-        vhd.open()
-          
-        #really this device data transfer proto is not used, it seems to be a connector between raw media and methods to access its contents
-        datatransfer = WindowsDeviceDataTransferProto.WindowsDeviceDataTransferProto(vhd.getWindowsDevicePath(), vhd.getWindowsDiskNumber() , vhd)
-        parser = WindowsDiskParser.WindowsDiskParser(datatransfer , adjustOptions.getNewMbrId())
-        return parser.createTransferTarget(size)
         
     def createSystemAdjustOptions(self , config = dict()):
         # we should get specific configs here to generate the correct config

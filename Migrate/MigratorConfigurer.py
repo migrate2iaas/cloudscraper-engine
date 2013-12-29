@@ -260,20 +260,26 @@ class MigratorConfigurer(object):
         # Azure-specific
         account = config.get('Azure', 'storage-account')
 
+        region = config.get('Azure', 'region')
+
         container_name = "cloudscraper"+datetime.date.today().__str__()
-        if config.has_option('EC2', 'container-name'):
-           container_name = config.get('EC2', 'container-name') 
+        if config.has_option('Azure', 'container-name'):
+           container_name = config.get('Azure', 'container-name') 
         
         instancetype = "small"
         if config.has_option('Azure', 'instance-type'):
            instancetype = config.get('Azure', 'instance-type')
 
-        region = config.get('Azure', 'region')
-        arch = config.get('Azure', 'target-arch')
-            
+        subscription = ""
+        if config.has_option('Azure', 'subscription-id'):
+           subscription = config.get('Azure', 'subscription-id')
+
+        certpath = ""
+        if config.has_option('Azure', 'certificate-selection'):
+           certpath = config.get('Azure', 'certificate-selection')
    
-        image = AzureConfigs.AzureMigrateConfig(volumes , factory, arch , imagetype)
-        cloud = AzureConfigs.AzureCloudOptions(account , password, container_name , region , instancetype)
+        image = AzureConfigs.AzureMigrateConfig(volumes , factory, 'x86_64' , imagetype)
+        cloud = AzureConfigs.AzureCloudOptions(account , password, container_name , region , subscription, certpath, instancetype)
 
         return (image,adjust_override,cloud)
 
@@ -430,18 +436,18 @@ class MigratorConfigurer(object):
 
     def createImageFactory(self , config , image_placement , imagetype):
         """generates factory to create media (virtual disk files) to store image before upload"""
-        compression = 3
+        compression = 0
         if config.has_option('Image', 'compression'):
             compression =  config.getint('Image', 'compression')
         
         # check run on windows flag
         factory = None
-        if imagetype == "VHD" and image_placement == "local":
+        if (imagetype == "VHD" or imagetype == "VHD-fixed") and image_placement == "local":
             sys.path.append('.\..')
             sys.path.append('.\..\Windows')
             sys.path.append('.\Windows')
             import WindowsVhdMediaFactory
-            factory = WindowsVhdMediaFactory.WindowsVhdMediaFactory()
+            factory = WindowsVhdMediaFactory.WindowsVhdMediaFactory(fixed = (imagetype == "VHD-fixed"))
         #if imagetype == "raw.gz" and image_placement == "local":
         # factory =  RawGzipMediaFactory.RawGzipMediaFactory(imagepath , imagesize)
         if (imagetype == "raw.tar" or imagetype == "RAW") and image_placement == "local":

@@ -24,9 +24,9 @@ import datetime
 import EC2ImportConnection
 from EC2VolumeGenerator import getImageDataFromXml
 
+import InstanceGenerator
 
-
-class EC2InstanceGenerator(object):
+class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
     """generator class for ec2 instances"""
 
     def __init__(self , region, retries=1):
@@ -35,9 +35,10 @@ class EC2InstanceGenerator(object):
         self.__retryCount = retries
 
 
-     # marks the data uploaded as system disk, should be called(?) after the upload is confirmed
-    #TODO: should pass name here
-    def makeInstanceFromImage(self , imageid , initialconfig, s3owner, s3key, temp_local_image_path , image_file_size = 0, volume_size_bytes = 0, imagetype='VHD'):
+    # marks the data uploaded as system disk, should be called(?) after the upload is confirmed
+    
+    def makeInstanceFromImage(self , imageid , initialconfig , instancename, s3owner, s3key, temp_local_image_path , image_file_size = 0, volume_size_bytes = 0, imagetype='VHD'):
+        """creates instance from image uploaded to S3"""
 
         #TODO: add machine name so it could be added via tags
         #NOTE: should download imageid of no image_file_size or volume_size_bytes specified
@@ -137,7 +138,7 @@ class EC2InstanceGenerator(object):
                         logging.info(">>> It could be configured and started via AWS EC2 management console") 
                         logging.info("==========================================================================") 
 
-                        connection.create_tags([instanceid] , {"Name":"cloudscraper-"+str(datetime.date.today()) , "MigrationDate":str(datetime.date.today())} )
+                        connection.create_tags([instanceid] , {"Name":instancename , "MigrationDate":str(datetime.date.today())} )
                         return EC2Instance.EC2Instance(instanceid , s3owner , s3key , self.__region)
                     if importstatus == "cancelled":
                         logging.error("!!!ERROR: The import task was cancelled by AWS. Reason: ") 

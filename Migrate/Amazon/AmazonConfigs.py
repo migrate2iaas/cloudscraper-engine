@@ -8,6 +8,7 @@ import SystemAdjustOptions
 import CloudConfig
 import MigrateConfig
 import S3UploadChannel
+import EC2InstanceGenerator
 
 import time
 import os
@@ -35,6 +36,9 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
     def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False):   
         return S3UploadChannel.S3UploadChannel(self.__bucket , self.__user , self.__pass , targetsize, self.__region , self.__keynamePrefix, self.__diskType , resume , self.__chunkSize)
          
+    def generateInstanceFactory(self):
+        """returns object of InstanceFactory type to create servers from uploaded images"""
+        return EC2InstanceGenerator.EC2InstanceGenerator(self.__region)
 
     def getCloudStorage(self):
         return self.__bucket

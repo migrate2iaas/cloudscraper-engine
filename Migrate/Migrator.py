@@ -302,7 +302,7 @@ class Migrator(object):
                 logging.error("!!!ERROR: Cannot create/open intermediate image (media) for an operation")
                 return
             if self.__runOnWindows:
-                #NOTE: the medai should be created nevertheless of the imaging done
+                #NOTE: the media should be created nevertheless of the imaging done
                 #so , calls are
                 if self.__skipImaging == False:
                    self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__winSystemAdjustOptions , random_disk_id=False)
@@ -409,9 +409,9 @@ class Migrator(object):
             logmsg = ""
             if (datasent % 10 == 0):
                 logmsg = " Progress:  " + str(percentcomplete) + "% - "
+                logmsg = logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded. " ;
                 if channel.getOverallDataSkipped():
-                    logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
-                logmsg = logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded.   " ;
+                    logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB of data upload skipped. "
 
                 #NOTE: this is a very rough estimate
                 timenow = datetime.datetime.now()
@@ -457,20 +457,28 @@ class Migrator(object):
         return True
 
     def generateInstance(self , imageid,  imagesize , volumesize):
+        generator = self.__cloudOptions.generateInstanceFactory()
+        instancename = os.environ['COMPUTERNAME']+str(datetime.date.today())
+
+        if not generator:
+            logging.info(">>>>>>>>>>>>>>>>> The system image is uploaded. You could start your server via " + self.__cloudName + " management console")
+            self.__resultingInstance = imageid
+            return True
+
         if self.__cloudName == "EC2":
             logging.info("Creating EC2 VM from the image stored at " + str(imageid))
             import EC2InstanceGenerator
             import EC2Instance
             awskey = self.__cloudOptions.getCloudUser()
             awssecret = self.__cloudOptions.getCloudPass()
-            generator = EC2InstanceGenerator.EC2InstanceGenerator(self.__cloudOptions.getRegion())
 
-            self.__resultingInstance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , awskey, awssecret , self.__migrateOptions.getSystemImagePath() , imagesize , volumesize , self.__migrateOptions.getImageType())
-        
-        if self.__cloudName == "ElasticHosts":
+            self.__resultingInstance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , instancename , awskey, awssecret , self.__migrateOptions.getSystemImagePath() , imagesize , volumesize , self.__migrateOptions.getImageType())
+        elif self.__cloudName == "ElasticHosts":
             logging.info("\n>>>>>>>>>>>>>>>>> Disk UUID " + imageid + " now contain your server image. Create a new server via ElasticHosts contol panel and attach the disk to ide0:0 port.")
             #TODO: create instance
             self.__resultingInstance = imageid
+        else:
+            self.__resultingInstance = generator.makeInstanceFromImage(imageid , self.__cloudOptions , instancename)
 
         return self.__resultingInstance != None
 

@@ -82,15 +82,16 @@ if __name__ == '__main__':
         outhandler.setLevel(logging.INFO)
         logging.getLogger().addHandler(outhandler)
     
+    # starting the heartbeat thread printing some dots while app works
     if parser.parse_args().heartbeat:
         threading.Thread(target = heartbeat, args=(parser.parse_args().heartbeat,) ).start()
-        
 
     logging.info("\n>>>>>>>>>>>>>>>>> The Server Transfer Process ("+ Version.getShortVersionString() + ") is initializing\n")
     logging.info("Full version: " + Version.getFullVersionString())
 
+
     config = MigratorConfigurer.MigratorConfigurer()
-    
+    # creatiing the config
     if parser.parse_args().config:
         configpath = parser.parse_args().config
         s3owner = ''
@@ -111,7 +112,7 @@ if __name__ == '__main__':
     if parser.parse_args().amazonkey:
         s3key = parser.parse_args().amazonkey    
     if parser.parse_args().azurekey:
-        azurekey = parser.parse_args().amazonkey    
+        azurekey = parser.parse_args().azurekey    
     if parser.parse_args().cloudsigmapass:
         cloudsigmapass = parser.parse_args().cloudsigmapass    
 
@@ -131,23 +132,26 @@ if __name__ == '__main__':
 
     password = s3key or ehkey or azurekey or cloudsigmapass
     try:
+        #configuring the process
         (image,adjust,cloud) = config.configAuto(configpath , password)
 
     except Exception as e:
         logging.error("\n!!!ERROR: failed to configurate the process! ")
         logging.error("\n!!!ERROR: " + repr(e) )
         logging.error(traceback.format_exc())
-        raise
+        os._exit(errno.EFAULT)
     
     logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Transfer Process:\n")
     __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload)
     logging.info("Migrator test started")
+    # Doing the task
     instance = __migrator.runFullScenario()
     if instance:
         logging.info("\n>>>>>>>>>>>>>>>>> Transfer process ended successfully\n")
     else:
        logging.info("\n>>>>>>>>>>>>>>>>>> Transfer process ended unsuccessfully\n")
-       sys.exit(errno.EFAULT)
+       #sys.exit(errno.EFAULT)
+       os._exit(errno.EFAULT)
 
     try:
         if testrun:
@@ -169,6 +173,7 @@ if __name__ == '__main__':
         logging.error("\n!!!ERROR: " + str(e) )
         logging.error(traceback.format_exc())
         logging.info("\n>>>>>>>>>>>>>>>>>> Transfer process ended unsuccessfully, configuration failed\n")
-        sys.exit(errno.ERANGE)
+        os._exit(errno.ERANGE)
+        #sys.exit(errno.ERANGE)
 
-    sys.exit(0)
+    os._exit(0)

@@ -32,7 +32,9 @@ class EHCloudOptions(CloudConfig.CloudConfig):
 
     def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False):   
         return EHUploadChannel.EHUploadChannel(targetid, self.__user , self.__pass , targetsize, self.__region , targetname , self , resume)
-         
+     
+    def generateInstanceFactory(self):
+        return None    
      
     def getCloudStorage(self):
         return ''

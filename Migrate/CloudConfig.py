@@ -26,6 +26,10 @@ class CloudConfig(object):
         """
         raise NotImplementedError
         
+    def generateInstanceFactory(self):
+        """returns object of InstanceFactory type to create servers from uploaded images"""
+        raise NotImplementedError
+
     def getCloudStorage(self):
         """gets cloud storage where upload is to be performed e.g. S3 bucket"""
         raise NotImplementedError

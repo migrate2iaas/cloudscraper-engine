@@ -40,7 +40,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
 
 
     # 
-    def __init__(self, filename, maxInBytes):
+    def __init__(self, filename, maxInBytes , fixed = False):
         # TODO: it's better to use CreateVirtualDisk() from WinAPI to acomplish the task
         # this one is created with diskpart
         logging.info("Initing new VHD disk " + filename + " of size " + str(maxInBytes) + " bytes") 
@@ -52,6 +52,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         self.__diskNo = diskno = None
         self.__maxSizeMb = sizemb
         self.__hDrive = None
+        self.__fixedType = fixed
 
         # Load DLL into memory.
         folder = os.path.dirname(os.path.abspath(__file__))
@@ -95,7 +96,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
 
     def __createDisk(self):
         self.__vdiskDll.CreateExpandingVhd.restype = c_void_p
-        self.__hVirtDisk = self.__vdiskDll.CreateExpandingVhd(c_wchar_p(unicode(self.__fileName)) , c_ulonglong(self.__maxSizeMb*1024*1024))
+        self.__hVirtDisk = self.__vdiskDll.CreateVhd(c_wchar_p(unicode(self.__fileName)) , c_ulonglong(self.__maxSizeMb*1024*1024) , c_int(self.__fixedType))
         if (self.__hVirtDisk == 0 or self.__hVirtDisk == -1):
            logging.error("!!!ERROR: Failed to create virtual disk to store data, error = 0x" + hex(self.__vdiskDll.GetLastVhdError(None)))
            raise WindowsError

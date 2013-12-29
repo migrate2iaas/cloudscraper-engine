@@ -199,6 +199,12 @@ class EHUploadChannel(UploadChannel.UploadChannel):
             if avoid:
                 createdata = createdata + "\navoid " + avoid
             response = self.__EH.post(self.__hostname+"/drives/create" , data=createdata)
+            if response.status_code != 200:
+                logging.warning("!Unexpected status code returned by the ElasticHosts request: " + str(response) + " " + str(response.text))
+                logging.error("\n!!!ERROR: Cannot create new disk of "+ str(self.__allocatedDriveSize) + " bytes at ElasticHosts");
+                logging.warning("Headers: %s \n" , str(response.request.headers) )
+                logging.warning(">>>>>>>>>>>>>> Note: ElasticHosts trial account provides 20GB of data storage only. Please contact support@elastichosts.com to extend your storage size.")
+                response.raise_for_status()
             self.__driveId = response.json()[u'drive']
             self.__allocatedDriveSize = response.json()[u'size']
             logging.info("\n>>>>>>>>>>> New ElasticHosts drive "+str(drivename)+ " UUID: " + str(self.__driveId)+ " created!")
