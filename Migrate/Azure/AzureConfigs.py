@@ -27,7 +27,7 @@ import os
 
 class AzureCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self,  account , storage_key, container_name , region, subscription = "" , certpath = "" , instance_type="small", chunksize = 10*1024*1024):
+    def __init__(self,  account , storage_key, container_name , region, subscription = "" , certpath = "" , instance_type="small", chunksize = 1024*1024):
         super(AzureCloudOptions, self).__init__()
         self.__storageAccount = account
         self.__storageKey = storage_key

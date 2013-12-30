@@ -22,7 +22,7 @@ from win32com.client import Dispatch
 # SetClientCertificate, and it will probably find the right one.
 # Note that the last component is the Subject, not the Friendly Name.
 
-def azure_mgmt_response(object):
+class azure_mgmt_response(object):
     """response compatible with requests Response class"""
 
     def __init__(self , status , status_text , response_headers , response_body):
