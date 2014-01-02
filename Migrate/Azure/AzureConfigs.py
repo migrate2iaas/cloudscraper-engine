@@ -40,7 +40,10 @@ class AzureCloudOptions(CloudConfig.CloudConfig):
         #self.__machinename = machinename
         
     def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False):   
-        return AzureUploadChannel.AzureUploadChannel(self.__storageAccount ,  self.__storageKey , targetsize , self.__containerName , targetname, resume , self.__chunkSize)
+        if targetname:
+            if targetname.endswith(".vhd") == False:
+                targetname = targetname + ".vhd"
+        return AzureUploadChannel.AzureUploadChannel(self.__storageAccount ,  self.__storageKey , targetsize , self.__containerName, targetname, resume , self.__chunkSize)
 
     def generateInstanceFactory(self):
         if self.__subscription and self.__certPath:

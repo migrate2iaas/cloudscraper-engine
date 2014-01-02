@@ -40,15 +40,24 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
 
 
     # 
-    def __init__(self, filename, maxInBytes , fixed = False):
-        # TODO: it's better to use CreateVirtualDisk() from WinAPI to acomplish the task
-        # this one is created with diskpart
-        logging.info("Initing new VHD disk " + filename + " of size " + str(maxInBytes) + " bytes") 
+    def __init__(self, filename, max_in_bytes , fixed = False , align_disk = 0):
+        """
+        Inits Vhd media. Constructior just initialiazes the object prior to disk creation. Use open() to create the image.
+        Args:
+            filename: str - full path to vhd disk
+            max_in_bytes : long - maximum size of the image in bytes
+            fixed: Bool - if the image is fully preallocated (fixed) or expanding
+            align_disk: int - number of bytes to align disk. Specify 0 to use defaults: 1 Mb if fixed == True, 512 Byte if fixed == False
+        """
+        logging.info("Initing new VHD disk " + filename + " of size " + str(max_in_bytes) + " bytes") 
         self.__fileName = filename
-        sizemb = int(maxInBytes/1024/1024)
-        if sizemb % (1024*1024):
+        sizemb = int(max_in_bytes/1024/1024)
+        if max_in_bytes % (1024*1024):
             sizemb = sizemb + 1
         
+        if align_disk == 0 and fixed == True:
+            align_disk = 1024*1024
+        self.__alignDisk = align_disk
         self.__diskNo = diskno = None
         self.__maxSizeMb = sizemb
         self.__hDrive = None
@@ -138,6 +147,12 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         if success == 0:
            logging.error("!!!ERROR: Failed to close virtual disk, error = 0x" + hex(self.__vdiskDll.GetLastVhdError(None)))
            raise WindowsError
+        logging.debug("VHD closed, file size = " + str(self.getImageSize()))
+        if self.__alignDisk:
+            # aligning disk to 1Mb , needed by Azure
+            logging.debug("Aligning disk " + str(self.__fileName) + " to " + str(self.__alignDisk) + " bytes")
+            self.__alignVhd(self.__fileName , self.__alignDisk)
+            logging.debug("VHD aligned, file size = " + str(self.getImageSize()))
     
     def open(self):
         if os.path.exists(self.__fileName):
@@ -224,3 +239,15 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
     #sets the channel so the data may be sent whenever data changes
     def setChannel(self):
         return
+
+
+    def __alignVhd(tmp_vmdk_file , alignto):
+        """auxillary static to align disk in case it's needed to"""
+        disk_file = open(tmp_vmdk_file, "a+b");
+        disk_file.seek(-512, os.SEEK_END)
+        footer_data = disk_file.read(512)
+        disk_file.seek(0, os.SEEK_END)
+        while disk_file.tell() % alignto:
+            disk_file.write(footer_data)
+        disk_file.close()
+        return 0

@@ -442,7 +442,7 @@ class MigratorConfigurer(object):
         
         # check run on windows flag
         factory = None
-        if (imagetype == "VHD" or imagetype == "VHD-fixed") and image_placement == "local":
+        if (imagetype == "VHD" or imagetype == "fixed.VHD") and image_placement == "local":
             sys.path.append('.\..')
             sys.path.append('.\..\Windows')
             sys.path.append('.\Windows')
