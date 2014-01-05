@@ -108,6 +108,32 @@ class AzureUploadChannel_test(unittest.TestCase):
             logging.info("Disk "+ str(diskid) + " was uploaded!") 
         self.assertIsNotNone(diskid)
 
+    def test_uploadUnalignedDataVhd(self):
+        filename = "F:\\datadisk1.vhd"
+        size = os.stat(filename).st_size
+        file = open(filename, "rb")
+        self.initChannel("test"+str(datetime.datetime.now())+".vhd" , size, False)
+        
+        dataplace = 0
+        while 1:
+            try:
+                data = file.read(self.__channel.getTransferChunkSize())
+            except: 
+                break
+            if len(data) == 0:
+                break
+            dataext = DataExtent.DataExtent(dataplace , len(data))
+            dataext.setData(data)
+            dataplace = dataplace + len(data)
+            self.__channel.uploadData(dataext)
+        file.close()
+
+        self.__channel.waitTillUploadComplete()    
+        diskid = self.__channel.confirm()
+        if diskid:
+            logging.info("Disk "+ str(diskid) + " was uploaded!") 
+        self.assertIsNotNone(diskid)
+
     def test_uploadSystemVhd(self):
         return
         filename =  'E:\\vms\\2008r2\\win2008r2.vhd'

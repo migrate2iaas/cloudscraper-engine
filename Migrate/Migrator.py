@@ -308,7 +308,7 @@ class Migrator(object):
                    self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__winSystemAdjustOptions , random_disk_id=False)
             
             description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
-            self.__systemTransferChannel = self.__cloudOptions.generateUploadChannel(self.__systemMedia.getMaxSize() , self.__cloudOptions.getServerName() or description, self.__migrateOptions.getSystemVolumeConfig().getUploadPath(), self.__resumeUpload )
+            self.__systemTransferChannel = self.__cloudOptions.generateUploadChannel(self.__systemMedia.getMaxSize() , self.__cloudOptions.getServerName() or description, self.__migrateOptions.getSystemVolumeConfig().getUploadPath(), self.__resumeUpload , self.__additionalMediaSize , self.__systemMedia.getImageSize() )
             self.__systemTransferChannel.initStorage()
 
                 
@@ -515,7 +515,7 @@ class Migrator(object):
         
         if self.__skipUpload == False:
             description = os.environ['COMPUTERNAME']+"-"+"data"+"-"+str(datetime.date.today())
-            self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , self.__cloudOptions.getServerName() or description,  volinfo.getUploadPath() , self.__resumeUpload )
+            self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , self.__cloudOptions.getServerName() or description,  volinfo.getUploadPath() , self.__resumeUpload , self.__dataMediaList[volinfo.getVolumePath()].getImageSize() )
             self.__dataChannelList[volinfo.getVolumePath()].initStorage()
 
         return True

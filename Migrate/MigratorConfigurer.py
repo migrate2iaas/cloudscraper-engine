@@ -447,7 +447,7 @@ class MigratorConfigurer(object):
             sys.path.append('.\..\Windows')
             sys.path.append('.\Windows')
             import WindowsVhdMediaFactory
-            factory = WindowsVhdMediaFactory.WindowsVhdMediaFactory(fixed = (imagetype == "VHD-fixed"))
+            factory = WindowsVhdMediaFactory.WindowsVhdMediaFactory(fixed = (imagetype == "fixed.VHD"))
         #if imagetype == "raw.gz" and image_placement == "local":
         # factory =  RawGzipMediaFactory.RawGzipMediaFactory(imagepath , imagesize)
         if (imagetype == "raw.tar" or imagetype == "RAW") and image_placement == "local":

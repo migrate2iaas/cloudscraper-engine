@@ -47,7 +47,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
             filename: str - full path to vhd disk
             max_in_bytes : long - maximum size of the image in bytes
             fixed: Bool - if the image is fully preallocated (fixed) or expanding
-            align_disk: int - number of bytes to align disk. Specify 0 to use defaults: 1 Mb if fixed == True, 512 Byte if fixed == False
+            align_disk: int - number of bytes to align disk.
         """
         logging.info("Initing new VHD disk " + filename + " of size " + str(max_in_bytes) + " bytes") 
         self.__fileName = filename
@@ -55,8 +55,8 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         if max_in_bytes % (1024*1024):
             sizemb = sizemb + 1
         
-        if align_disk == 0 and fixed == True:
-            align_disk = 1024*1024
+       # if align_disk == 0 and fixed == True:
+        #    align_disk = 1024*1024
         self.__alignDisk = align_disk
         self.__diskNo = diskno = None
         self.__maxSizeMb = sizemb
@@ -109,6 +109,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         if (self.__hVirtDisk == 0 or self.__hVirtDisk == -1):
            logging.error("!!!ERROR: Failed to create virtual disk to store data, error = 0x" + hex(self.__vdiskDll.GetLastVhdError(None)))
            raise WindowsError
+        
         return
 
     def __openDisk(self):
@@ -226,7 +227,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
 
     #gets the overall image size available for writing. Note: it is subject to grow when new data is written
     def getImageSize(self):
-        return os.stat(self.__fileName).st_size
+        return os.stat(self.__fileName).st_size 
 
     #override for WindowsMedia
     # returns path good for opening windows devices
@@ -241,7 +242,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         return
 
 
-    def __alignVhd(tmp_vmdk_file , alignto):
+    def __alignVhd(self , tmp_vmdk_file , alignto):
         """auxillary static to align disk in case it's needed to"""
         disk_file = open(tmp_vmdk_file, "a+b");
         disk_file.seek(-512, os.SEEK_END)

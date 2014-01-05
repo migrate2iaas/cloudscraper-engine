@@ -30,7 +30,7 @@ class EHCloudOptions(CloudConfig.CloudConfig):
         
         super(EHCloudOptions, self).__init__()
 
-    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False):   
+    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):   
         return EHUploadChannel.EHUploadChannel(targetid, self.__user , self.__pass , targetsize, self.__region , targetname , self , resume)
      
     def generateInstanceFactory(self):

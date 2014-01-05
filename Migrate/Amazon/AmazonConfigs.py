@@ -33,7 +33,7 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         self.__keynamePrefix = keyname_prefix
         #TODO: more amazon-specfiic configs needed
     
-    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False):   
+    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):   
         return S3UploadChannel.S3UploadChannel(self.__bucket , self.__user , self.__pass , targetsize, self.__region , self.__keynamePrefix, self.__diskType , resume , self.__chunkSize)
          
     def generateInstanceFactory(self):
