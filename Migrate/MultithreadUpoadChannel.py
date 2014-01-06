@@ -37,11 +37,11 @@ class UploadTask(object):
 
     def notifyDataTransfered(self):
         if self.__channel:
-            self.__channel.notifyDataTransfered(self.__targetSize)
+            self.__channel.notifyDataTransfered(self.__targetOffset, self.__targetSize)
 
     def notifyDataSkipped(self):
         if self.__channel:
-           self.__channel.notifyDataSkipped(self.__targetSize)
+           self.__channel.notifyDataSkipped(self.__targetOffset, self.__targetSize)
 
     def notifyDataTransferError(self):
         if self.__channel:
@@ -143,8 +143,18 @@ class MultithreadUpoadChannel(UploadChannel.UploadChannel):
 
     """
 
-    def __init__(self, result_disk_size_bytes , resume_upload = False , chunksize=10*1024*1024 , upload_threads=4 , queue_size=16):
-        """Inits the default multithreaded upload channel"""
+    def __init__(self, result_disk_size_bytes , resume_upload = False , chunksize=10*1024*1024 , upload_threads=4 , queue_size=16 , sync_every_requests = 128):
+        """
+        Inits the default multithreaded upload channel
+
+        Args:
+            result_disk_size_bytes - the size of resulting disk object
+            resume_upload - whether the upload is reumed
+            chunksize - the size of one upload chunk
+            upload_threads - number of simulanious upload threads
+            queue_size - the size of upload queue
+            sync_every_requests - syncs threads (wait when they are complete every requests)
+        """
         self.__uploadQueue = Queue.Queue(queue_size)
         self.__statLock = threading.Lock()
         self.__prevUploadTime = None 
@@ -158,8 +168,14 @@ class MultithreadUpoadChannel(UploadChannel.UploadChannel):
         self.__uploadSkippedSize = 0
         self.__overallSize = 0
         self.__uploadThreadsCount = upload_threads
+        self.__alreadyUploaded = 0
+        self.__uploadedPropertyChecked = False
 
         self.__resultDiskSizeBytes = result_disk_size_bytes
+
+        # counters representing the number of requests to be executed till wait to sync them
+        self.__syncEvery = sync_every_requests
+        self.__syncCount = 0
 
         #dictionary by the start of the block
         self.__fragmentDictionary = dict()
@@ -232,16 +248,30 @@ class MultithreadUpoadChannel(UploadChannel.UploadChannel):
     def uploadData(self, extent):       
        """ 
        Adds data extent to the upload queue. Use waitTillUploadComplete() to wait till all data is uploaded
+       it should be used from single thread
 
        Args:
             extent: DataExtent - extent of the image to be uploaded. Its size and offset should be integral of chunk size. The only exception is last chunk. 
 
        """
+       # loads data already uploaded on the fiest run
+       if self.__resumeUpload and (self.__alreadyUploaded == 0) and self.__uploadedPropertyChecked == False:
+           self.__uploadedPropertyChecked = True
+           if self.loadDiskUploadedProperty():
+               self.__alreadyUploaded = self.getDiskUploadedProperty()
+
        start = extent.getStart()
        size = extent.getSize()
        
        uploadtask = self.createUploadTask(extent)        
-       
+
+       self.__syncCount = self.__syncCount + 1
+
+       if self.__syncCount > self.__syncEvery:
+             self.__uploadQueue.join()
+             self.notifyThreadsSynced(start)
+             self.__syncCount = 0
+
        self.__uploadQueue.put( uploadtask )
 
        # TODO: add something (identifier?) from uploadtask here
@@ -286,7 +316,7 @@ class MultithreadUpoadChannel(UploadChannel.UploadChannel):
         return self.__transferRate
 
     #  overall data skipped from uploading if resume upload is set
-    def notifyDataSkipped(self , skipped_size):
+    def notifyDataSkipped(self , offset, skipped_size):
         """ For internal use only by the worker threads    """
         with self.__statLock:
             self.__uploadSkippedSize = self.__uploadSkippedSize + skipped_size
@@ -301,8 +331,9 @@ class MultithreadUpoadChannel(UploadChannel.UploadChannel):
         self.__errorUploading = True
         return
 
-    def notifyDataTransfered(self , transfered_size):
+    def notifyDataTransfered(self , offset, transfered_size):
         """ For internal use only by the worker threads   """
+
         now = datetime.datetime.now()
         if self.__prevUploadTime:
             delta = now - self.__prevUploadTime
@@ -311,8 +342,14 @@ class MultithreadUpoadChannel(UploadChannel.UploadChannel):
         self.__prevUploadTime = now
         with self.__statLock:
             self.__uploadedSize = self.__uploadedSize + transfered_size
+            self.__alreadyUploaded = self.__uploadSkippedSize + self.__uploadedSize
 
     
+    def notifyThreadsSynced(self, offset):
+        """ notifies all data till offset was transferred. override if this info is needed for updating """
+        self.updateDiskUploadedProperty(offset)
+   
+
     def getOverallDataTransfered(self):
         """ gets the overall size of data actually uploaded in bytes """
         return self.__uploadedSize 
@@ -323,8 +360,9 @@ class MultithreadUpoadChannel(UploadChannel.UploadChannel):
         """
         logging.debug("Upload complete, waiting for threads to complete");
         self.__uploadQueue.join()
+        maxoffset = max(self.__fragmentDictionary.iterkeys())
+        self.notifyThreadsSynced( maxoffset + self.__fragmentDictionary[maxoffset] )
         return
-
 
     # NOTE: there could be a concurency error when one threads adds the extend while other thread closes all the connections
     # so there would be extent request in the thread but all threads were close. So then waitTillUploadComplete hang
@@ -333,7 +371,20 @@ class MultithreadUpoadChannel(UploadChannel.UploadChannel):
         logging.debug("Closing the upload threads, End signal message was sent")
         for thread in self.__workThreads:
             self.__uploadQueue.put( None )
-    
 
+    def getDiskUploadedProperty(self):
+        """
+        Returns amount of data already uploaded as it saved in the cloud storage
+        This data could be loaded from the disk object on cloud side which channel represents
+        """
+        return self.__preUpload    
 
+    def loadDiskUploadedProperty(self):
+        return False
 
+    def updateDiskUploadedProperty(self , newval):
+        """
+        function to set property to the disk in cloud on the amount of data transfered
+        Returns nothing
+        """
+        logging.error("doesn't update uploaded property " + str(newval));

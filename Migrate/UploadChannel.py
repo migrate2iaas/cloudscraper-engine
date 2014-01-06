@@ -92,3 +92,17 @@ class UploadChannel(object):
         Gets image data size to be uploaded
         """
         raise NotImplementedError
+
+    def getDiskUploadedProperty(self):
+        """
+        Returns amount of data already uploaded as it saved in the cloud storage
+        This data could be loaded from the disk object on cloud side which channel represents
+        """
+        return 0
+
+    def __loadDiskUploadedProperty(self):
+        """
+        Loads data already uploaded property as it saved in the cloud storage
+        Returns False if disk property could be loaded, True if it was loaded and saved, excepts otherwise
+        """
+        return False

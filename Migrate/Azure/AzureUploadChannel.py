@@ -64,6 +64,7 @@ class AzureUploadTask(MultithreadUpoadChannel.UploadTask):
         self.__targetOffset = offset
         self.__alternativeKey = alternative_source_keyname
         self.__alternativeBucket = alternative_source_bucket
+        
 
         super(AzureUploadTask,self).__init__(channel , size , offset)
 
@@ -124,12 +125,7 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
         self.__resumeUpload = resume_upload
 
         #statistics
-        self.__overallSize = 0
-        self.__transferRate = 0
-        self.__prevUploadTime = datetime.now()
-        self.__statLock = threading.Lock()
-        self.__uploadedSize = 0
-        self.__errorUploading = True
+        self.__preUpload = 0
 
         self.__nullData = bytearray(self.__chunkSize)
         md5encoder = md5()
@@ -155,11 +151,17 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
         if container_found == False:
             self.__blobService.create_container(self.__containerName)
 
-        #create empty blob
-        self.__blobService.put_blob(self.__containerName, self.__diskName, '', x_ms_blob_type='PageBlob' , x_ms_blob_content_length = self.getImageSize() , x_ms_blob_content_type="binary/octet-stream")
-        
-        logging.info("Succesfully created an upload channel to Azure container " + self.__storageAccountName  + " at " +  self.__containerName + "\\" + self.__diskName)
-  
+        bolbfound = False
+        blobs = self.__blobService.list_blobs(self.__containerName , self.__diskName) 
+        for blob in blobs:
+            if blob.name == self.__diskName:
+                bolbfound = True
+        #create\open blob
+        if not bolbfound:
+            self.__blobService.put_blob(self.__containerName, self.__diskName, '', x_ms_blob_type='PageBlob' , x_ms_blob_content_length = self.getImageSize() , x_ms_blob_content_type="binary/octet-stream")
+            logging.info("Succesfully created an upload channel to Azure container " + self.__storageAccountName  + " at " +  self.__containerName + "\\" + self.__diskName)
+        else:
+            logging.info("Blob" + self.__storageAccountName  + " at " +  self.__containerName + "\\" + self.__diskName + " already exists")
 
         return True
 
@@ -197,6 +199,11 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
         offset = uploadtask.getUploadOffset()
         size = uploadtask.getUploadSize()
         chunk_range = 'bytes={}-{}'.format(offset, offset + size - 1)
+
+        if self.getDiskUploadedProperty() > offset + size:
+            logging.debug("%s/%s range %s skipped", str(container_name), diskname , chunk_range );
+            uploadtask.notifyDataSkipped()
+            return True
 
         data = uploadtask.getData()
 
@@ -236,3 +243,41 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
         return None
 
    
+    def getDiskUploadedProperty(self):
+        """
+        Returns amount of data already uploaded as it saved in the cloud storage
+        This data could be loaded from the disk object on cloud side which channel represents
+        """
+        return self.__preUpload
+
+    def loadDiskUploadedProperty(self):
+        logging.debug("Loading disk properties");
+        self.__preUpload = 0
+        properties = dict()
+        try:
+            properties = self.__blobService.get_blob_metadata(self.__containerName, self.__diskName);
+            self.__preUpload = properties['x-ms-meta-cloudscraper_uploaded'];
+        except Exception as ex:
+            logging.warning("!Cannot get amount of data already uploaded to the blob. Gonna make full reupload then.")
+            logging.warning("Exception = " + str(ex)) 
+            logging.error(traceback.format_exc())
+            logging.error(repr(properties))
+            return False
+        return True
+
+
+    def updateDiskUploadedProperty(self , newvalue):
+        """
+        function to set property to the disk in cloud on the amount of data transfered
+        Returns if the update was successful, doesn't throw
+        """
+        try:
+            properties = {'cloudscraper_uploaded': str(newvalue)}
+            self.__blobService.set_blob_metadata(self.__containerName, self.__diskName, properties);
+        except Exception as ex:
+            logging.warning("!Cannot get amount of data already uploaded to the blob. Gonna make full reupload then.")
+            logging.warning("Exception = " + str(ex)) 
+            logging.error(traceback.format_exc())
+            return False
+        return True
+        
