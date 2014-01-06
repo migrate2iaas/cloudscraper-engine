@@ -388,7 +388,7 @@ class Migrator(object):
         #creating instance from the uploaded image
         # imagesize here is the size of image file. but getImageSize() is the size of initial volume
         if self.generateInstance(self.__migrateOptions.getSystemVolumeConfig().getUploadId() , imagesize , disksize):
-            logging.info(">>>>>>>>>>>>> Server has been successfully created " + str(self.__resultingInstance));
+            logging.info(">>>>>>>>>>>>> System volume transfer completed successfully");
             return True
         else:
             return False
@@ -462,6 +462,7 @@ class Migrator(object):
 
         if not generator:
             logging.info(">>>>>>>>>>>>>>>>> The system image is uploaded. You could start your server via " + self.__cloudName + " management console")
+            logging.info(">>>>>>>>>>>>>>>>> Data was uploaded to " + str(imageid))
             self.__resultingInstance = imageid
             return True
 
