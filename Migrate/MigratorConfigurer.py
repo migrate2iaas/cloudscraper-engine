@@ -436,7 +436,7 @@ class MigratorConfigurer(object):
 
     def createImageFactory(self , config , image_placement , imagetype):
         """generates factory to create media (virtual disk files) to store image before upload"""
-        compression = 0
+        compression = 1
         if config.has_option('Image', 'compression'):
             compression =  config.getint('Image', 'compression')
         
