@@ -377,7 +377,7 @@ class MultithreadUpoadChannel(UploadChannel.UploadChannel):
         Returns amount of data already uploaded as it saved in the cloud storage
         This data could be loaded from the disk object on cloud side which channel represents
         """
-        return self.__preUpload    
+        return 0  
 
     def loadDiskUploadedProperty(self):
         return False

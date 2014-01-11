@@ -286,7 +286,7 @@ class EHUploadChannel(UploadChannel.UploadChannel):
 
     # confirm good upload. uploads resulting xml then, returns the id of the upload done
     def confirm(self):
-        self.updateDiskProperty()
+        self.updateDiskUploadedProperty()
         #TODO: here we may generate kinda crc32 map for faster uploading
         return self.__driveId
 
