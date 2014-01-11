@@ -22,22 +22,23 @@ class AzureInstanceGenerator(InstanceGenerator.InstanceGenerator):
     def __init__(self , subscription, certpath):
 
         self.__vmService = virtualmachine.virtualmachine(certpath , subscription )
-        
+   
 
-     # marks the data uploaded as system disk, should be called(?) after the upload is confirmed
-    #TODO: should pass name here
     def makeInstanceFromImage(self , imageid , initialconfig, instancename):
+        """marks the data uploaded as system disk, should be called(?) after the upload is confirmed"""
        
-        label = instancename + "-system.vhd"
+        return self.makeVolumeFromImage(imageid, initialconfig , instancename+"system")
+
+
+    def makeVolumeFromImage(self , imageid , initialconfig, instancename):
+        label = instancename  
         medialink = imageid
-        name = instancename + "-system.vhd"
+        name = instancename + "_disk"
 
         response = self.__vmService.add_disk(label, medialink, name)
         if response.ok:
             logging.info(">>>>>>>>>>>>>>> Disk " + name + " has been uploaded, see Disks tab in Virtual Machines menu of the management portal");
             return name
         else:
-            logging.error("!!!ERROR Failed to create VM disk from blob" + str(response.status_code) + " " + response.reason)
+            logging.error("!!!ERROR Failed to create VM disk from blob. " + str(response.status_code) + " " + response.reason)
             return None
-
-

@@ -277,6 +277,7 @@ class MigratorConfigurer(object):
         certpath = ""
         if config.has_option('Azure', 'certificate-selection'):
            certpath = config.get('Azure', 'certificate-selection')
+
    
         image = AzureConfigs.AzureMigrateConfig(volumes , factory, 'x86_64' , imagetype)
         cloud = AzureConfigs.AzureCloudOptions(account , password, container_name , region , subscription, certpath, instancetype)

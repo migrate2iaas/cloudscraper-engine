@@ -483,9 +483,13 @@ class Migrator(object):
 
         return self.__resultingInstance != None
 
-    #TODO: make parameters optional
+    #TODO: make parameters optional, refactor
     # if they are not specified - load imageid
     def generateVolume(self , imageid , localimagepath , imagesize , volumesize):
+        
+        generator = None
+        volname = ""
+        vol = None
         if self.__cloudName == "EC2":
             import EC2VolumeGenerator
             import EC2Instance
@@ -494,10 +498,27 @@ class Migrator(object):
             awssecret = self.__cloudOptions.getCloudPass()
             generator = EC2VolumeGenerator.EC2VolumeGenerator(self.__cloudOptions.getRegion())
 
-            instance = generator.makeVolumeFromImage(imageid, self.__cloudOptions , awskey, awssecret , localimagepath , imagesize , volumesize , self.__migrateOptions.getImageType())
-        
+            vol = generator.makeVolumeFromImage(imageid, self.__cloudOptions , awskey, awssecret , localimagepath , imagesize , volumesize , self.__migrateOptions.getImageType())
+        if self.__cloudName == "Azure":
+            import AzureConfigs
+            import AzureInstanceGenerator
+            generator = self.__cloudOptions.generateInstanceFactory()
+            volname = os.environ['COMPUTERNAME']+str(datetime.date.today())+"_data"
+            #TODO: make it working with two vols
+            if generator:
+                vol = generator.makeVolumeFromImage(imageid , self.__cloudOptions , volname)
 
-        return True
+        if not generator:
+            logging.info(">>>>>>>>>>>>>>>>> The data volume image is uploaded. You could add it to your server via " + self.__cloudName + " management console")
+            logging.info(">>>>>>>>>>>>>>>>> Data was uploaded to " + str(imageid))
+            return True
+
+        if vol:
+            #TODO: add volume attach here
+            logging.info(">>>>>>>>>>>>>>>>> The data volume " + str(volname) + " created. You could add it to your server via " + self.__cloudName + " management console")
+            return True
+
+        return False
 
 
     def createDataTransferTargets(self):

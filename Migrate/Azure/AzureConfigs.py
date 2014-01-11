@@ -28,6 +28,19 @@ import os
 class AzureCloudOptions(CloudConfig.CloudConfig):
     
     def __init__(self,  account , storage_key, container_name , region, subscription = "" , certpath = "" , instance_type="small", chunksize = 1024*1024):
+        """
+        Constructor
+
+        Args:
+            account: str - Azure storage account name, used to store VHDs
+            storage_key: str - key to access the storage
+            container_name: str - name of the container inside the storage account
+            region: str - Azure region name. Note, storage account is tied with region but no checks are done whether this account mathces the region
+            subscription: str - Azure subscription GUID. This one is used to create VMs
+            certpath: str - Azure subscription management certificate selection string\path. See help on WinHttp.WinHttpRequest for more info.
+            instance_type: str - instance type to create
+            chunksize: int - size of one upload chunk
+        """
         super(AzureCloudOptions, self).__init__()
         self.__storageAccount = account
         self.__storageKey = storage_key

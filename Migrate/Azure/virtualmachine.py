@@ -17,11 +17,6 @@ import traceback
 from win32com.client import Dispatch
 
 
-# If you just double-click a pfx file, it probably ended up in CURRENT_USER\MY.
-# If you have only one client certificate installed, you can omit the call to
-# SetClientCertificate, and it will probably find the right one.
-# Note that the last component is the Subject, not the Friendly Name.
-
 class azure_mgmt_response(object):
     """response compatible with requests Response class"""
 
@@ -69,16 +64,38 @@ class azure_mgmt_response(object):
             raise RuntimeError(http_error_msg)
 
 
+# Note that the last component is the Subject, not the Friendly Name.
 
-def send_cert_request(url, verb, cert_selection, parms = dict() , x_ms_version = "2012-03-01"):
+def send_cert_request(url, verb, body, cert_selection = "", parms = dict() , x_ms_version = "2012-03-01" , content_type="application/xml"):
+    """
+    Auxillary method to send HTTP requests thru Windows COM-library.
+
+    Parms:
+        url: str - url to send request to
+        verb: str - HTTP verb like PUT or GET
+        body: str - request bidy
+        cert_selection: str - certificate selection string to sign ssl requests in form <location>\<store>\<cert-subject-name> like CURRENT_USER\My\azurecert 
+        parms: dict - extra header params
+        x_ms_version: str - api version string
+        content_type: str - type of content in a body
+    """
+
+    logging.debug("Excuting WinHttpRequest " + verb + " " + url + " with cert " + cert_selection + " \nBody:\n" + body)
     req = Dispatch("WinHttp.WinHttpRequest.5.1")
     req.Open(verb, url)
-    req.SetClientCertificate(cert_selection) # Store and user are taken by default if not specified in the same string
+    # It never checks if cert is valid! 
+    # TODO: make some checks via other interface
+    if cert_selection:
+        retval = req.SetClientCertificate(cert_selection) # Store and user are taken by default if not specified in the same string
+        if retval:
+            logging.debug("SetClientCertificate() returned " + str(retval) + " on " + cert_selection)
     # seems like it'll be an buttheart in case we work in context of other user
     req.SetRequestHeader('x-ms-version', x_ms_version)
-    for (key, value) in parms.items:
+    req.SetRequestHeader("Content-Type", content_type)
+    for (key, value) in parms.items():
         req.SetRequestHeader(key, value)
-    req.Send()
+    req.Send(body)
+    logging.debug("Returned " + str(req.Status) + " " + req.StatusText + "\n" + req.ResponseBody);
     response = azure_mgmt_response( req.Status, req.StatusText, req.GetAllResponseHeaders() ,  unicode(req.ResponseBody) )
     return response
 
@@ -106,7 +123,7 @@ class virtualmachine(object):
         Adds disk to the user disk storage. 
         See http://msdn.microsoft.com/en-us/library/windowsazure/jj157178.aspx
         """
-        operation = "services/disks"
+        operation = "/services/disks"
         verb = "POST"
 
         url = self.__baseUrl + operation
@@ -119,5 +136,5 @@ class virtualmachine(object):
         
         xml = xmlheader+xmlbody+'</Disk>'
 
-        return send_cert_request(url , verb , self.__certSelection)
+        return send_cert_request(url , verb , xml , self.__certSelection)
 
