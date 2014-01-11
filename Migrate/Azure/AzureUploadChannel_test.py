@@ -106,13 +106,18 @@ class AzureUploadChannel_test(unittest.TestCase):
         diskid = self.__channel.confirm()
         if diskid:
             logging.info("Disk "+ str(diskid) + " was uploaded!") 
+            logging.info("Data skipped is " + str(self.__channel.getOverallDataSkipped()) );
         self.assertIsNotNone(diskid)
+        
 
-    def test_uploadUnalignedDataVhd(self):
-        filename = "F:\\datadisk1.vhd"
+    def test_reuploadDataVhd(self):
+        filename = "F:\\datadisk2.vhd"
         size = os.stat(filename).st_size
         file = open(filename, "rb")
-        self.initChannel("test"+str(datetime.datetime.now())+".vhd" , size, False)
+
+        targetname = "test"+str(datetime.datetime.now())+".vhd";
+
+        self.initChannel(targetname , size, False)
         
         dataplace = 0
         while 1:
@@ -132,15 +137,11 @@ class AzureUploadChannel_test(unittest.TestCase):
         diskid = self.__channel.confirm()
         if diskid:
             logging.info("Disk "+ str(diskid) + " was uploaded!") 
+            logging.info("Data skipped is " + str(self.__channel.getOverallDataSkipped()) );
         self.assertIsNotNone(diskid)
 
-    def test_uploadSystemVhd(self):
-        return
-        filename =  'E:\\vms\\2008r2\\win2008r2.vhd'
-        size = os.stat(filename).st_size
         file = open(filename, "rb")
-        self.initChannel("testsys"+str(datetime.datetime.now())+'.vhd' , size, False)
-        
+        self.initChannel(targetname , size, True)
         dataplace = 0
         while 1:
             try:
@@ -160,6 +161,7 @@ class AzureUploadChannel_test(unittest.TestCase):
         if diskid:
             logging.info("Disk "+ str(diskid) + " was uploaded!") 
         self.assertIsNotNone(diskid)
+        self.assertEqual(self.__channel.getOverallDataSkipped() , size)
 
        
 if __name__ == '__main__':

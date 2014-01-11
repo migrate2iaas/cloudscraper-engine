@@ -295,7 +295,7 @@ class EHUploadChannel(UploadChannel.UploadChannel):
             self.__uploadQueue.put( (None , None, None, None ) )
    
     # function to notify EH on the data amount transfered
-    def updateDiskProperty(self):
+    def (self):
         setinfodata = "name "+str(self.__driveName) + "\nsize "+str(self.__allocatedDriveSize) + "\n"+str(UPLOADED_BEFORE_JSON_KEY) +" "+str(self.__alreadyUploaded)
         response = self.__EH.post(self.__hostname+"/drives/"+self.__driveId+"/set" , data=setinfodata)
         if response.status_code != 200 and response.status_code != 204:
