@@ -49,6 +49,13 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             newvalue = str(oldvalue).replace("Active=FALSE", "Active=TRUE") 
             newvalue = newvalue.replace("Action=Block", "Action=Allow")
             
+            # assigning profile 
+            profstart = newvalue.find("Profile=")
+            profend = newvalue[profstart:].find("|")
+            profentry = newvalue[portstart:portstart+portend]
+            newvalue = newvalue.replace(profentry, "Profile=All")
+
+            # assigning rdp port
             portstart = newvalue.find("LPort=")
             portend = newvalue[newvalue.find("LPort="):].find("|")
             portentry = newvalue[portstart:portstart+portend]

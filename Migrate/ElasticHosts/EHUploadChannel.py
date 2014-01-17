@@ -63,7 +63,7 @@ class EHUploadThread(threading.Thread):
 
             # NOTE: its ok since we have only one thread
             if iterations % update_size_every == 0:
-                self.__channel.updateDiskProperty()
+                self.__channel.updateDiskUploadedProperty()
             # means it's time to exit
             if driveid == None:
                 self.__channel.updateDiskUploadedProperty()
