@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>CloudSigma\CloudSigmaUploadChannel_test.py</StartupFile>
+    <StartupFile>ElasticHosts\EHUploadChannel_test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -35,8 +35,10 @@
     <Compile Include="Amazon\S3UploadChannel.py" />
     <Compile Include="Amazon\S3UploadChannel_test.py" />
     <Compile Include="Azure\AzureConfigs.py" />
+    <Compile Include="Azure\AzureInstanceGenerator.py" />
     <Compile Include="Azure\AzureUploadChannel.py" />
     <Compile Include="Azure\AzureUploadChannel_test.py" />
+    <Compile Include="Azure\virtualmachine.py" />
     <Compile Include="BackupAdjust.py" />
     <Compile Include="BackupSource.py" />
     <Compile Include="CloudConfig.py" />
@@ -54,6 +56,7 @@
     <Compile Include="Helper\UnicodeConfigParser.py" />
     <Compile Include="ImageMediaFactory.py" />
     <Compile Include="ImageMedia.py" />
+    <Compile Include="InstanceGenerator.py" />
     <Compile Include="Migrate.py" />
     <Compile Include="MigrateConfig.py" />
     <Compile Include="MigrateExceptions.py" />

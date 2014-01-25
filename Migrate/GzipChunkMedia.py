@@ -88,6 +88,7 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
 
         chunkfilename = self.__filename+"offset"+str(chunknumber*self.__chunkSize)+".gz"
 
+        # TODO: rewrite this part
         if (os.path.exists(chunkfilename) == False):
             #fails in case there were kinda error in here.
             #e.g. system crashed when this file was just created

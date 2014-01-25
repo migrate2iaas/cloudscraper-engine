@@ -63,6 +63,7 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
 
         securitygroup = initialconfig.getSecurity()
         instancetype = initialconfig.getInstanceType()
+        vpcsubnet = initialconfig.getSubnet()
 
         tmp_vmdk_file = temp_local_image_path
       

@@ -42,7 +42,7 @@ UPLOADED_BEFORE_JSON_KEY = u'user:uploaded'
 class EHUploadThread(threading.Thread):
     """thread making all uploading works"""
     #skip existing is ignored right now
-    def __init__(self , queue , threadId , hostname , ehSession , skipExisting = False , channel = None , retries = 3 , compression = 7):
+    def __init__(self , queue , threadId , hostname , ehSession , skipExisting = False , channel = None , retries = 3 , compression = 3):
         self.__uploadQueue = queue
         #thread id , for troubleshooting purposes
         self.__threadId = threadId
@@ -154,8 +154,12 @@ class EHUploadChannel(UploadChannel.UploadChannel):
         chunksize = cloudoptions.getUploadChunkSize()
         avoid = cloudoptions.getZone()
 
-        #TODO: catch kinda exception here if not connected. shouldn't last too long
-        self.__hostname = 'https://api-'+location+'.elastichosts.com'
+        # We make it possible to use other ElasticStack clouds given by a direct link
+        if location.find("https://") != -1 or location.find("http://") != -1:
+            self.__hostname = location
+        else:
+            self.__hostname = 'https://api-'+location+'.elastichosts.com'
+
         self.__EH = requests.Session()
         self.__EH.auth = (userid, apisercret)
         self.__EH.headers.update({'Content-Type': 'text/plain', 'Accept':'application/json'})

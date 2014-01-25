@@ -210,16 +210,16 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             self.enableRdpService( hivekeyname , currentcontrolset , rdpport)
 
         #---------------- 2g) turniong on hyper-v bus so the machine would start in hyper-v
-        turnHyperV = self.__adjustConfig.turnOnHyperV()
+        turn_hyper_v = self.__adjustConfig.turnOnHyperV()
     
-        if turnHyperV:
+        if turn_hyper_v:
             logging.info("Turning on HyperV bus") 
-            #Note: it is good for 6.0+ only. 
+            #Note: it is good for 6.0+ only... well it worked on win2003r2 too.
             hypervkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\vmbus" , 0 , win32con.KEY_ALL_ACCESS )
             win32api.RegSetValueEx(hypervkey, "Start" , 0, win32con.REG_DWORD, 0)
             hypervkey.close()
 
-        #---------------- 2g) remove extra paltform-dependent virtualization services
+        #---------------- 2h) remove extra paltform-dependent virtualization services
         #TODO: make remove scripts
         removeCitrix = False
         removeHyperV = False
@@ -245,6 +245,16 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         if removeHyperV:
             logging.info("Removing HyperV services") 
 
+        #---------------- 2i) adjust pagefile to start on system volume
+        adjust_pagefile = self.__adjustConfig.adjustPageFile()
+
+        if adjust_pagefile:
+            # windrive
+            logging.info("Adjusting the pagefile") 
+            memory_key = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Control\\Session Manager\\Memory Management" , 0 , win32con.KEY_ALL_ACCESS )
+            win32api.RegSetValueEx(memory_key, "PagingFiles" , 0, win32con.REG_MULTI_SZ, "C:\\pagefile.sys")
+            memory_key.close()
+            
 
         #---------------- 3) inject the service
         #Note: the service should be placed on windrive!
@@ -457,10 +467,10 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         originalwindir = os.environ['windir']
         windir = originalwindir.split(":\\")[-1] #get substring after X:\
         tmphiveroot = os.environ['TEMP']
-        #TODO: more logs here
+       
         sys_hive_path = tmphiveroot+"\\syshive"+str(int(time.mktime(time.localtime()))) 
         sysHiveTmp = open(sys_hive_path, "wb")
-        extentsSysHive = backupSource.getFileBlockRange(windir+"\\system32\\config\\system")
+        extentsSysHive = backupSource.getFileBlockRange(self.__adjustConfig.systemHivePath())
         for extent in extentsSysHive:
             data_read = extent.getData()
             data_read_size = len(data_read)
@@ -471,7 +481,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         self.adjustSystemHive(sys_hive_path)
 
         #NOTE: it works for local images only
-        extentsSoftHive = backupSource.getFileBlockRange(windir+"\\system32\\config\\software")
+        extentsSoftHive = backupSource.getFileBlockRange(self.__adjustConfig.softwareHivePath())
         soft_hive_path = tmphiveroot+"\\softhive"+str(int(time.mktime(time.localtime()))) 
         softHiveTmp = open(soft_hive_path, "wb")
         for extent in extentsSoftHive:

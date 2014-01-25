@@ -86,16 +86,18 @@ class AdjustedFileEnum(object):
     """Adjusted file enumerator: adjusts original enumeration removing or adding special files to the backup list"""
     
     def __init__(self, adjustOption , fileIterator, originalBackupSource):
+        """constructor"""
         self.__fileIterator = fileIterator
         self.__adjustOption = adjustOption
         self.__backupSource = originalBackupSource
         self.__addedFiles = self.__adjustOption.getAddedFilesEnum()
     
     def __iter__(self):
+        """makes it iterable"""
         return self
 
-    #returns name of the file
     def next(self):
+        """returns name of the file"""
 
         if self.__addedFiles != None:
             try:
@@ -118,34 +120,51 @@ class AdjustedBackupSource(BackupSource.BackupSource):
     """Adjusted backup source. Impements BackupSource interface with all the adjusts needed. It bridges (pointer to impl) the backup source"""
 
     def __init__ (self):
+        """default constructor"""
         __adjustOption = None
         __backupSource = None
         super(AdjustedBackupSource,self).__init__() 
 
     def setAdjustOption(self,adjustOption):
+        """sets the adjust options: what files and how to adjust. Adjust option filters the output of file blocks returned by aapropraite functions"""
         self.__adjustOption = adjustOption
 
     def getAdjustOption(self):
+        """gets adjust option: what and which files to adjust"""
         return self.__adjustOption
 
     def setBackupSource(self,backupSource):
+        """sets the associated backup source, the place where data is got"""
         self.__backupSource = backupSource
 
     def getBackupSource(self):
+        """gets the associated backup source"""
         return self.__backupSource
 
     #Overrides:
 
-    # gets files enumerator
     def getFileEnum(self , root="\\", mask="*"):
+        """
+        Gets files enumerator(iterable)
+        
+        Args:
+            root - Directory root where to start the search
+            mask - mask to search (* - is any)
+
+        Return ietrable AdjustedFileEnum
+        """
         if self.__backupSource == None:
             raise PropertyNotInitialized("__backupSource", " Use setBackupSource() to init it")
         if self.__adjustOption == None:
             raise PropertyNotInitialized("__adjustOption", " Use setAdjustOption() to init it")
         return AdjustedFileEnum(self.__adjustOption, self.__backupSource.getFileEnum(root, mask), self.__backupSource)
 
-    # gets block range for range of files
     def getFilesBlockRange(self):
+        """
+        Gets block ranges occupied by files 
+
+        Return the iterable of DataExtent objects
+        """
         if self.__backupSource == None:
             raise PropertyNotInitialized("__backupSource", " Use setBackupSource() to init it")
         if self.__adjustOption == None:
@@ -212,7 +231,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                         filereplacement.seek(replacedoffset)
                         data = filereplacement.read(replacedpart.getSize())
                         if (len(data) != replacedpart.getSize()):
-                            logging.warning("Cannot get enough data from the replaced file: " + str(len(data)) + " instead of " + str(replacedpart.getSize()) )
+                            logging.warning("Cannot get enough data from the replacement "+  replacement + " of file " + replacedfile + ": " + str(len(data)) + " instead of " + str(replacedpart.getSize())   )
                         replaceddata = ReplacedData(data , len(data) , removed , replacedoffset)
                         replacedpart.setData(replaceddata) 
 
@@ -236,9 +255,12 @@ class AdjustedBackupSource(BackupSource.BackupSource):
         return sorted(blocksrange)
                        
         
-
-    # gets block range for file specified
     def getFileBlockRange(self, filename):
+        """
+        Gets block range for file specified
+
+        Return iterable of DataExtent objects
+        """
         if self.__backupSource == None:
             raise PropertyNotInitialized("__backupSource", " Use setBackupSource() to init it")
         if self.__adjustOption == None:
@@ -260,9 +282,11 @@ class AdjustedBackupSource(BackupSource.BackupSource):
 
         return self.__backupSource.getFileBlockRange(filename)
 
-    #compares if the replaced data on resulting FS (idenitfied by meidapath) is equal to data in replacing files.
-    #Used for self-testing purposes
     def replacementSelfCheck(self, mediapath):
+        """
+        Compares if the replaced data on resulting FS (idenitfied by meidapath) is equal to data in replacing files.
+        Used for self-testing purposes
+        """
         for (replacedfile,replacement) in self.__adjustOption.getReplacedFilesEnum():
              volname = self.__backupSource.getBackupDataSource().getVolumeName()
              if replacedfile.startswith(volname):

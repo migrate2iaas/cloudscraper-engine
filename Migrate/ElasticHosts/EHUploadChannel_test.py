@@ -235,9 +235,9 @@ class EHUploadChannel_test(unittest.TestCase):
         logging.info("Disk "+ diskid+ " was uploaded!") 
 
     def test_workDiskUpload(self):
-        logging.info("test disabled") 
-        return 
-        diskNo = 5
+        #logging.info("test disabled") 
+         
+        diskNo = 3
         secur_att = win32security.SECURITY_ATTRIBUTES()
         secur_att.Initialize()
         drivename = "\\\\.\\PhysicalDrive" + str(diskNo)

@@ -182,6 +182,9 @@ class S3UploadThread(threading.Thread):
         super(S3UploadThread,self).__init__()
 
     def run(self):
+        if self.__skipExisting:
+                logging.debug("Upload thread started with reuploading turned on")
+
         while 1:
 
             # TODO: make a better tuple
@@ -206,7 +209,8 @@ class S3UploadThread(threading.Thread):
                 return
             
             #NOTE: kinda dedup could be added here!
-            
+ 
+
             failed = True
             retries = 0
             while retries < self.__maxRetries:
@@ -239,6 +243,7 @@ class S3UploadThread(threading.Thread):
                             existing_length = s3key.size 
                             if int(existing_length) == size:
                                 existing_md5 = s3key.etag
+                                logging.debug("Checking if we could skip " + existing_md5 + " block")
                                 #md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest) 
                                 if '"'+str(md5_hexdigest)+'"' == existing_md5:
                                     logging.debug("key with same md5 and length already exisits, skip uploading") 

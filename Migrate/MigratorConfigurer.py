@@ -206,18 +206,6 @@ class MigratorConfigurer(object):
         volumes = self.createVolumesList(config , configfile, imagedir, imagetype)        
         factory = self.createImageFactory(config , image_placement , imagetype)
 
-        adjust_override = dict()
-        if config.has_section('Service'):
-            service_test = True
-            if config.has_option('Service', 'test'):
-                service_test = config.getboolean('Service', 'test')
-            installpath = "..\\service\\dist"
-            if config.has_option('Service', 'installpath'):
-                service_test = config.getboolean('Service', 'installpath')
-            
-            adjust_override = self.getServiceOverrides(config , configfile, installpath , test=service_test)
-
-
         # Azure-specific
         user = config.get('CloudSigma', 'user')
 
@@ -231,7 +219,8 @@ class MigratorConfigurer(object):
 
         region = config.get('CloudSigma', 'region')
         arch = config.get('CloudSigma', 'target-arch')
-            
+   
+        adjust_override = self.getOverrides(config , configfile)         
    
         image = CloudSigmaConfigs.CloudSigmaMigrateConfig(volumes , factory, arch , imagetype)
         cloud = CloudSigmaConfigs.CloudSigmaCloudOptions( region, user , password, "cloudscraper"+datetime.date.today().__str__())
@@ -244,17 +233,6 @@ class MigratorConfigurer(object):
         (imagedir, image_placement, imagetype) = self.getImageOptions(config)
         volumes = self.createVolumesList(config , configfile, imagedir, imagetype)        
         factory = self.createImageFactory(config , image_placement , imagetype)
-
-        adjust_override = dict()
-        if config.has_section('Service'):
-            service_test = True
-            if config.has_option('Service', 'test'):
-                service_test = config.getboolean('Service', 'test')
-            installpath = "..\\service\\dist"
-            if config.has_option('Service', 'installpath'):
-                service_test = config.getboolean('Service', 'installpath')
-            
-            adjust_override = self.getServiceOverrides(config , configfile, installpath , test=service_test)
 
 
         # Azure-specific
@@ -278,6 +256,7 @@ class MigratorConfigurer(object):
         if config.has_option('Azure', 'certificate-selection'):
            certpath = config.get('Azure', 'certificate-selection')
 
+        adjust_override = self.getOverrides(config , configfile)
    
         image = AzureConfigs.AzureMigrateConfig(volumes , factory, 'x86_64' , imagetype)
         cloud = AzureConfigs.AzureCloudOptions(account , password, container_name , region , subscription, certpath, instancetype)
@@ -311,6 +290,10 @@ class MigratorConfigurer(object):
         s3prefix = ""
         if config.has_option('EC2', 's3prefix'):
            s3prefix = config.get('EC2', 's3prefix') 
+       
+        vpcsubnet = ""
+        if config.has_option('EC2', 'vpcsubnet'):
+           vpcsubnet = config.get('EC2', 'vpcsubnet') 
        
         
         try:
@@ -347,21 +330,10 @@ class MigratorConfigurer(object):
         newsize = imagesize
         installservice = None;
 
-
-        adjust_override = dict()
-        if config.has_section('Service'):
-            service_test = True
-            if config.has_option('Service', 'test'):
-                service_test = config.getboolean('Service', 'test')
-            installpath = "..\\service\\dist"
-            if config.has_option('Service', 'installpath'):
-                service_test = config.getboolean('Service', 'installpath')
-            
-            adjust_override = self.getServiceOverrides(config , configfile, installpath , test=service_test)
-
+        adjust_override = self.getOverrides(config , configfile)
 
         image = AmazonConfigs.AmazonMigrateConfig(volumes , factory, imagearch , imagetype)
-        cloud = AmazonConfigs.AmazonCloudOptions(bucket , user , password , newsize , arch , zone , region, security , instancetype, disktype = imagetype , keyname_prefix = s3prefix)
+        cloud = AmazonConfigs.AmazonCloudOptions(bucket , user , password , newsize , arch , zone , region, security , instancetype, disktype = imagetype , keyname_prefix = s3prefix , vpc=vpcsubnet)
 
         return (image,adjust_override,cloud)
 
@@ -398,8 +370,17 @@ class MigratorConfigurer(object):
       
         newsize = imagesize
         
+        adjust_override = self.getOverrides(config , configfile)
+
+        image = EHConfigs.EHMigrateConfig(volumes , factory, 'x86_64' , imagetype)
+        cloud = EHConfigs.EHCloudOptions( user , password , newsize , 'x86_64' , region, avoiddisks)
+
+        return (image,adjust_override,cloud)
+
+    def getOverrides(self, config , configfile):
+        """returns dict() of overrides"""
+        #override copy-paste
         adjust_override = dict()
-        
         if config.has_section('Service'):
             service_test = True
             if config.has_option('Service', 'test'):
@@ -410,10 +391,11 @@ class MigratorConfigurer(object):
             
             adjust_override = self.getServiceOverrides(config , configfile, installpath , test=service_test)
 
-        image = EHConfigs.EHMigrateConfig(volumes , factory, 'x86_64' , imagetype)
-        cloud = EHConfigs.EHCloudOptions( user , password , newsize , 'x86_64' , region, avoiddisks)
+        if config.has_section('Fixes'):
+            # not very nice but should work
+            adjust_override.update(config._sections['Fixes'])
 
-        return (image,adjust_override,cloud)
+        return adjust_override
 
     def createVolumesList(self , config, configfile, imagedir , imagetype , upload_prefix = ""):
         """creates volume list"""

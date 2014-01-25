@@ -21,6 +21,12 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
          self.__fixRdp = True
          self.__rdpPort = 3389
          self.__turnHyperV = enable_hyperv
+         self.__adjustPageFile = True
+         
+         originalwindir = os.environ['windir']
+         windir = originalwindir.split(":\\")[-1] #get substring after X:\
+         self.__systemHiveFilePath = windir+"\\system32\\config\\system"
+         self.__softwareHiveFilePath = windir+"\\system32\\config\\SOFTWARE"
          
      def __getValue(self , config , key , default = None):
          """auxillary to read data from dict-like config with no exceptions"""
@@ -45,6 +51,9 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
          self.__detectHal = self.__getValue(config , 'detect-hal' , self.__detectHal)
          self.__rdpPort = self.__getValue(config , 'rdp-port' , self.__rdpPort)
          self.__turnHyperV = self.__getValue(config , 'turn-hyperv' , self.__turnHyperV)
+         self.__systemHiveFilePath = self.__getValue(config , 'system-hive-file' , self.__systemHiveFilePath)
+         self.__softwareHiveFilePath = self.__getValue(config , 'software-hive-file' , self.__softwareHiveFilePath)
+         self.__adjustPageFile = self.__getValue(config , 'adjust-pagefile' , self.__adjustPageFile)
 
          #TODO: load ini config setting these values
          #get config class from the service
@@ -93,3 +102,15 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
      def turnOnHyperV(self):
          """Turn if internal hyperV bus should be enabled by default"""
          return self.__turnHyperV
+
+     def systemHivePath(self):
+         """Returns the file path relative to system drive where the system registry hive is located. Could be used to set alternative initial registry"""
+         return self.__systemHiveFilePath
+
+     def softwareHivePath(self):
+         """Returns the file path relative to system drive where the system registry hive is located. Could be used to set alternative initial registry"""
+         return self.__softwareHiveFilePath
+
+     def adjustPageFile(self):
+         """returns if to adjust pagefile so it will reside on system volume"""
+         return self.__adjustPageFile

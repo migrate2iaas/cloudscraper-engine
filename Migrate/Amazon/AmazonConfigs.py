@@ -16,7 +16,8 @@ import os
 
 class AmazonCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self, bucket , user , password , newsize , arch , zone , region , machinename , securityid='' , instancetype='m1.small' , chunksize = 10*1024*1024 , disktype='VHD' , keyname_prefix = ''):
+    def __init__(self, bucket , user , password , newsize , arch , zone , region , machinename , securityid='' , instancetype='m1.small' , chunksize = 10*1024*1024 , disktype='VHD' , keyname_prefix = '' , vpc = ""):
+        """inits with options"""
         super(AmazonCloudOptions, self).__init__()
         self.__bucket = bucket
         self.__user = user
@@ -31,10 +32,11 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         self.__machineName = machinename
         self.__diskType = disktype
         self.__keynamePrefix = keyname_prefix
+        self.__vpc = vpc
         #TODO: more amazon-specfiic configs needed
     
     def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):   
-        return S3UploadChannel.S3UploadChannel(self.__bucket , self.__user , self.__pass , targetsize, self.__region , self.__keynamePrefix, self.__diskType , resume , self.__chunkSize)
+        return S3UploadChannel.S3UploadChannel(self.__bucket , self.__user , self.__pass , targetsize, self.__region , targetid or self.__keynamePrefix , self.__diskType , resume_upload = resume , chunksize = self.__chunkSize)
          
     def generateInstanceFactory(self):
         """returns object of InstanceFactory type to create servers from uploaded images"""
@@ -77,7 +79,7 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         return  self.__machineName
 
     def getSubnet(self):
-        return ""
+        return self.__vpc
 
 class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
 
