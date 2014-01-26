@@ -128,7 +128,7 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
                     logging.debug ("Current import task is " + repr(import_task)) 
 
                     if importstatus == "active" or importstatus == "pending":
-                       # logging.info("% Conversion Progress: " + match.group(1) + "%");
+                        logging.info("% Conversion Progress: " + str(import_task.get_message()));
                         time.sleep(30) #30 sec
                         continue
                     if importstatus == "completed":
