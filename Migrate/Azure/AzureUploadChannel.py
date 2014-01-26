@@ -159,9 +159,9 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
         #create\open blob
         if not bolbfound:
             self.__blobService.put_blob(self.__containerName, self.__diskName, '', x_ms_blob_type='PageBlob' , x_ms_blob_content_length = self.getImageSize() , x_ms_blob_content_type="binary/octet-stream")
-            logging.info("Succesfully created an upload channel to Azure container " + self.__storageAccountName  + " at " +  self.__containerName + "\\" + self.__diskName)
+            logging.info(">>>>> Succesfully created an upload channel to Azure container " + self.__storageAccountName  + " at " +  self.__containerName + "\\" + self.__diskName)
         else:
-            logging.info("Blob" + self.__storageAccountName  + " at " +  self.__containerName + "\\" + self.__diskName + " already exists")
+            logging.info(">>>>> Azure blob" + self.__storageAccountName  + " at " +  self.__containerName + "\\" + self.__diskName + " already exists. Resuming the upload")
 
         return True
 

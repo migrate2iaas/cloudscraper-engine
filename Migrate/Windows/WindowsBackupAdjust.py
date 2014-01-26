@@ -24,6 +24,12 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
 
     def __init__(self, adjust_config , windows_version):
+        """Constructor
+
+        Args:
+            adjust_config: WindowsSystemAdjustOptions - configures the adjusts
+            windows_version: int - windows version code adjusts apply as defined in WindowsSystemInfo.py
+        """
         self.__adjustConfig = adjust_config
         self.__windowsVersion = windows_version
         super(WindowsBackupAdjust,self).__init__()        
@@ -108,7 +114,33 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
         return 
 
-    def adjustSystemHive(self ,hiveFilePath):
+    def adjustTcpIp(self, hivekeyname , currentcontrolset):
+        """adjusts tcpip driver settings enabling DHCP and erasing previous leases from all NICs"""
+        tcpipkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\tcpip\\Parameters\\Interfaces" , 0 , win32con.KEY_ALL_ACCESS )
+        
+        guidskeys = win32api.RegEnumKeyEx(tcpipkey)
+        for  (keyname, reserved, classname, modtime) in guidskeys:
+            logging.debug("Enabling lease and deleting lease from " + keyname)
+            interfacekey = win32api.RegOpenKeyEx(tcpipkey, keyname, 0 , win32con.KEY_ALL_ACCESS )
+            try:
+                win32api.RegSetValueEx(interfacekey, "EnableDHCP" , 0, win32con.REG_DWORD, 1) 
+                win32api.RegSetValueEx(interfacekey, "IPEnableRouter" , 0, win32con.REG_DWORD, 0) 
+                win32api.RegDeleteValue(interfacekey, "DhcpDefaultGateway") 
+                win32api.RegDeleteValue(interfacekey, "DhcpIPAddress") 
+                win32api.RegDeleteValue(interfacekey, "Lease" ) 
+                win32api.RegDeleteValue(interfacekey, "LeaseObtainedTime")
+                win32api.RegDeleteValue(interfacekey, "LeaseTerminatesTime") 
+            except Exception as e:
+                logging.debug("Couldn't erase previous DHCP config.") 
+                logging.debug(str(e))
+            finally:
+                interfacekey.close()
+
+        tcpipkey.close()
+       
+
+    def adjustSystemHive(self , hive_file_path):
+        """make some adjusts to a system hive located at hive_file_path"""
         
         logging.info("Adjusting the system hive") 
 
@@ -123,7 +155,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         privid = win32security.LookupPrivilegeValue(None, "SeRestorePrivilege" )
         privilages = win32security.AdjustTokenPrivileges(token, False , [(privid , win32security.SE_PRIVILEGE_ENABLED)])
 
-        win32api.RegLoadKey(win32con.HKEY_LOCAL_MACHINE, hivekeyname, hiveFilePath)
+        win32api.RegLoadKey(win32con.HKEY_LOCAL_MACHINE, hivekeyname, hive_file_path)
 
         # 2) alter it: change keys (they should be in the config: some of keys should be added, some should be deleted)
 
@@ -254,6 +286,11 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             memory_key = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Control\\Session Manager\\Memory Management" , 0 , win32con.KEY_ALL_ACCESS )
             win32api.RegSetValueEx(memory_key, "PagingFiles" , 0, win32con.REG_MULTI_SZ, "C:\\pagefile.sys")
             memory_key.close()
+
+        #--------------- 2k) adjust TcpIp and DHCP
+        adjust_tcpip = self.__adjustConfig.adjustTcpIp()
+        if adjust_tcpip:
+            self.adjustTcpIp(hivekeyname,currentcontrolset)
             
 
         #---------------- 3) inject the service
@@ -287,7 +324,8 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         # 6) maybe find a way to shrink it?
         return
 
-    def adjustSoftwareHive(self ,hiveFilePath):
+    def adjustSoftwareHive(self , hive_file_path):
+        """make some adjusts to a software hive located at hive_file_path"""
         
         logging.info("Adjusting the software hive") 
 
@@ -302,7 +340,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         privid = win32security.LookupPrivilegeValue(None, "SeRestorePrivilege" )
         privilages = win32security.AdjustTokenPrivileges(token, False , [(privid , win32security.SE_PRIVILEGE_ENABLED)])
 
-        win32api.RegLoadKey(win32con.HKEY_LOCAL_MACHINE, hivekeyname, hiveFilePath)
+        win32api.RegLoadKey(win32con.HKEY_LOCAL_MACHINE, hivekeyname, hive_file_path)
 
         # 2) alter it: delete keys if they exist
 
@@ -348,8 +386,8 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         # 5) maybe find a way to shrink it?
         return
 
-    # creates and adjusts new BCD registry hive returning path to it
     def generateBcd(self, backupSource):
+        """creates and adjusts new BCD registry hive returning path to it"""
         # we use pregenerated hive which we alter a bit in here
         originalhivepath = self.__adjustConfig.getPregeneratedBcdHivePath()
         hivepath = os.environ['TEMP']+"\\tempbcdhive"+str(int(time.mktime(time.localtime())))
@@ -369,6 +407,8 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         privid = win32security.LookupPrivilegeValue(None, "SeRestorePrivilege" )
         privilages = win32security.AdjustTokenPrivileges(token, False , [(privid , win32security.SE_PRIVILEGE_ENABLED)])
 
+        # TODO: make a check on recovery env!
+
         win32api.RegLoadKey(win32con.HKEY_LOCAL_MACHINE, bcdkeyname, hivepath)
         logging.debug("Openning " + bcdkeyname+"\\Objects" ) 
         objectskey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, bcdkeyname+"\\Objects" , 0 , win32con.KEY_ALL_ACCESS )
@@ -385,6 +425,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
                     if valtype != win32con.REG_BINARY:
                         #TODO: err here
                         return
+                    #changing boot entry to the new (target) drive mbr
                     newvalue_part1 = value[0:0x20] + struct.pack('=q',self.__adjustConfig.getNewSysPartStart()) 
                     newvalue = newvalue_part1 + value[0x28:0x38] + struct.pack('=i',self.__adjustConfig.getNewMbrId()) + value[0x3c:] 
                     logging.debug("From " + value + "to " + newvalue) 

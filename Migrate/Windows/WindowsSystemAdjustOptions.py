@@ -22,6 +22,7 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
          self.__rdpPort = 3389
          self.__turnHyperV = enable_hyperv
          self.__adjustPageFile = True
+         self.__adjustTcpIp = True
          
          originalwindir = os.environ['windir']
          windir = originalwindir.split(":\\")[-1] #get substring after X:\
@@ -54,6 +55,7 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
          self.__systemHiveFilePath = self.__getValue(config , 'system-hive-file' , self.__systemHiveFilePath)
          self.__softwareHiveFilePath = self.__getValue(config , 'software-hive-file' , self.__softwareHiveFilePath)
          self.__adjustPageFile = self.__getValue(config , 'adjust-pagefile' , self.__adjustPageFile)
+         self.__adjustTcpIp = self.__getValue(config , 'adjust-tcpip' , self.__adjustTcpIp)
 
          #TODO: load ini config setting these values
          #get config class from the service
@@ -114,3 +116,7 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
      def adjustPageFile(self):
          """returns if to adjust pagefile so it will reside on system volume"""
          return self.__adjustPageFile
+
+     def adjustTcpIp(self):
+         """returns if system tcpip options including dhcp has to be adjusted to boot on new DHCP enabled network"""
+         return self.__adjustTcpIp

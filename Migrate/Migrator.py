@@ -367,7 +367,7 @@ class Migrator(object):
         if self.__skipUpload:
             logging.info("\n>>>>>>>>>>>>>>>>> Skipping the system image upload\n") 
         else:
-            logging.info("\n>>>>>>>>>>>>>>>>> Started the system image upload\n") 
+            logging.info("\n>>>>>>>>>>>>>>>>> Upload of the system image started\n") 
             channel = self.__systemTransferChannel
             media = self.__systemMedia
             imagesize = media.getImageSize()
@@ -400,7 +400,7 @@ class Migrator(object):
         dataplace = 0
         datasent = 0
 
-        logging.info(">>>>>>>>>> Image size to upload: " + str(imagesize/1024/1024) + " MB")
+        logging.info(">>>>>>>>>> Data size to upload: " + str(imagesize/1024/1024) + " MB")
 
         timestart = datetime.datetime.now()
         while dataplace < imagesize:
@@ -411,7 +411,7 @@ class Migrator(object):
                 logmsg = " Progress:  " + str(percentcomplete) + "% - "
                 logmsg = logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded. " ;
                 if channel.getOverallDataSkipped():
-                    logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB of data upload skipped. "
+                    logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB was already in the cloud. "
 
                 #NOTE: this is a very rough estimate
                 timenow = datetime.datetime.now()
