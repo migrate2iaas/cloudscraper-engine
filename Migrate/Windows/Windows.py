@@ -36,6 +36,7 @@ class Windows(object):
     # TODO: some init configs could be read here, e.g. Windows configs
     def __init__(self):
         self.__filesToDelete = set()
+        self.__filesToRename = dict() # key is old name and value is a new one
         self.__vss = VssThruVshadow.VssThruVshadow()
         #note: better to load from conf
         self.__halList = ["halacpi.dll", "halmacpi.dll", "halaacpi.dll"]
@@ -77,6 +78,13 @@ class Windows(object):
     def makeSystemVolumeBootable(self):
         originalwindir = os.environ['windir']
         windrive = originalwindir.split("\\")[0] #get C: substring
+        wininstall = os.getenv('SystemRoot', windrive+"\\windows")
+
+        # that's Amazon small hack, needed to bypass EC2Service installation
+        conflicting_file = wininstall+"\\setup\\scripts\\SetupComplete.cmd"
+        if os.path.exists(conflicting_file):
+            self.__filesToRename[conflicting_file] = conflicting_file + "-renamed"
+            os.rename(conflicting_file , self.__filesToRename[conflicting_file])
 
         if self.getVersion() >= WindowsSystemInfo.WindowsSystemInfo.Win2008:
 
@@ -170,6 +178,8 @@ class Windows(object):
             logging.debug("Deleting temporary file" + file)       
             shutil.rmtree(file , True , None)
             #TODO: log failures
+        for (oldfile , newfile) in self.__filesToRename.items():
+            os.rename(newfile , oldfile)
 
         
     def createSystemAdjustOptions(self , config = dict()):
