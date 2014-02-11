@@ -106,7 +106,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
     def __createDisk(self):
         self.__vdiskDll.CreateExpandingVhd.restype = c_void_p
         if self.__fixedType:
-            logging.info(">>>>>>>>>> Initializing new fixed size VHD of " +str(self.__maxSizeMb)+ " MBs. Please, wait...")
+            logging.info(">>>>>>>>>> Creating new pre-allocated VHD of " +str(self.__maxSizeMb)+ " MBs. It'll take some time. Please, wait...")
         self.__hVirtDisk = self.__vdiskDll.CreateVhd(c_wchar_p(unicode(self.__fileName)) , c_ulonglong(self.__maxSizeMb*1024*1024) , c_int(self.__fixedType))
         if (self.__hVirtDisk == 0 or self.__hVirtDisk == -1):
            logging.error("!!!ERROR: Failed to create virtual disk to store data, error = 0x" + hex(self.__vdiskDll.GetLastVhdError(None)))

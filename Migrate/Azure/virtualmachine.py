@@ -14,6 +14,12 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 import logging
 import traceback
 
+from azure import *
+from azure.servicemanagement import *
+
+import string
+from random import sample, choice
+
 from win32com.client import Dispatch
 
 
@@ -60,8 +66,7 @@ class azure_mgmt_response(object):
             raise RuntimeError(http_error_msg)
 
 
-# Note that the last component is the Subject, not the Friendly Name.
-
+# seems like no more need in this kind of certs, Python API has the appropriate calls (maybe implemented in the same way, not sure)
 def send_cert_request(url, verb, body, cert_selection = "", parms = dict() , x_ms_version = "2012-03-01" , content_type="application/xml"):
     """
     Auxillary method to send HTTP requests thru Windows COM-library.
@@ -134,3 +139,48 @@ class virtualmachine(object):
 
         return send_cert_request(url , verb , xml , self.__certSelection)
 
+    def create_vm(self , new_vm_name, region , disk_name , affinity_group = None , network = None, subnet = None):
+        """
+        Creates VM thru Python API
+        Args:
+            new_vm_name: str - new VM name, should be unique for the user
+            region: str - region where to create the machine
+            disk_name: str - os disk name
+            affinity_group: str - guid of affinity group if specified
+            network: str - virtual network to create VM
+            subnet: str - subnet in the network. use it only if network was specified
+        """
+        sms = ServiceManagementService(self.__subscription, self.__certSelection)
+
+        name = new_vm_name
+        location = region
+        # You can either set the location or an affinity_group
+        
+        if affinity_group:
+            sms.create_hosted_service(service_name=name,
+                label=name,
+                affinity_group=affinity_group)
+        else:
+            # You can either set the location or an affinity_group
+            sms.create_hosted_service(service_name=name,
+                label=name,
+                location=location)
+
+        # Name of an os image as returned by list_os_images
+        image_name = disk_name
+        network_config = ConfigurationSet();
+        network_config.subnet_names = subnet
+        network_config.configuration_set_type = "NetworkConfiguration"
+
+        os_hd = OSVirtualHardDisk(disk_name = disk_name , disk_label = disk_name)
+
+        return sms.create_virtual_machine_deployment(service_name=name,
+            deployment_name=name,
+            deployment_slot='production',
+            label=name,
+            role_name=name,
+            os_virtual_hard_disk=os_hd,
+            system_config = None,
+            network_config = network_config,
+            role_size='Small', 
+            virtual_network_name = network)

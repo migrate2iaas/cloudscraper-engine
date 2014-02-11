@@ -27,7 +27,7 @@ import os
 
 class AzureCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self,  account , storage_key, container_name , region, subscription = "" , certpath = "" , instance_type="small", chunksize = 1024*1024):
+    def __init__(self,  account , storage_key, container_name , region, subscription = "" , certpath = "" , instance_type="small", affinity="", subnet="", chunksize = 1024*1024):
         """
         Constructor
 
@@ -39,6 +39,8 @@ class AzureCloudOptions(CloudConfig.CloudConfig):
             subscription: str - Azure subscription GUID. This one is used to create VMs
             certpath: str - Azure subscription management certificate selection string\path. See help on WinHttp.WinHttpRequest for more info.
             instance_type: str - instance type to create
+            affinity: str - affinity group or network
+            subnet: str - subnetwork
             chunksize: int - size of one upload chunk
         """
         super(AzureCloudOptions, self).__init__()
@@ -50,6 +52,8 @@ class AzureCloudOptions(CloudConfig.CloudConfig):
         self.__chunkSize = chunksize
         self.__certPath = certpath
         self.__subscription = subscription
+        self.__affinityGroup = affinity
+        self.__subnet = subnet
         #self.__machinename = machinename
         
     def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):   
@@ -82,7 +86,8 @@ class AzureCloudOptions(CloudConfig.CloudConfig):
         return "x86_64"
 
     def getZone(self):
-        return ""
+        """returns affinity group or subnet name, check subnet parm to decide"""
+        return self.__affinityGroup
 
     def getRegion(self):
         return self.__region
@@ -100,7 +105,7 @@ class AzureCloudOptions(CloudConfig.CloudConfig):
         return ""
 
     def getSubnet(self):
-        return ""
+        return  self.__subnet 
 
 class AzureMigrateConfig(MigrateConfig.MigrateConfig):
 

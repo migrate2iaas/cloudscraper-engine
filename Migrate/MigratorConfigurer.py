@@ -256,10 +256,23 @@ class MigratorConfigurer(object):
         if config.has_option('Azure', 'certificate-selection'):
            certpath = config.get('Azure', 'certificate-selection')
 
+        affinity = ""
+        if config.has_option('Azure', 'affinity-group'):
+           affinity = config.get('Azure', 'affinity-group')
+
+        network = ""
+        if config.has_option('Azure', 'virtual-network'):
+           network = config.get('Azure', 'virtual-network')
+
+        subnet = ""
+        if config.has_option('Azure', 'virtual-subnet'):
+           subnet = config.get('Azure', 'virtual-subnet')
+        
+
         adjust_override = self.getOverrides(config , configfile)
    
         image = AzureConfigs.AzureMigrateConfig(volumes , factory, 'x86_64' , imagetype)
-        cloud = AzureConfigs.AzureCloudOptions(account , password, container_name , region , subscription, certpath, instancetype)
+        cloud = AzureConfigs.AzureCloudOptions(account , password, container_name , region , subscription, certpath, instancetype , affinity=affinity or network , subnet=subnet)
 
         return (image,adjust_override,cloud)
 

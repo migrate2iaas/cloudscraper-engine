@@ -25,12 +25,35 @@ class AzureInstanceGenerator(InstanceGenerator.InstanceGenerator):
    
 
     def makeInstanceFromImage(self , imageid , initialconfig, instancename):
-        """marks the data uploaded as system disk, should be called(?) after the upload is confirmed"""
-       
-        return self.makeVolumeFromImage(imageid, initialconfig , instancename+"system")
+        """
+        Marks the data uploaded as system disk, should be called(?) after the upload is confirmed
+        Args:
+            imageid :str - hyperlink to page blob vhd media
+            initialconfig: AzureCloudOptions - parameters to create instance
+            instancename: str - the name of volume instance
+        """
+        # create volume (registered disk in disks tab)
+        volume = self.makeVolumeFromImage(imageid, initialconfig , instancename+"system")
+        region = initialconfig.getRegion()
+        subnet = initialconfig.getSubnet()
+        affinity = None
+        network = None
+        if subnet:
+            network = initialconfig.getZone()
+        else:
+            affinity = initialconfig.getZone()
+        self.__vmService.create_vm(instancename , region, volume , affinity , network, subnet)
+        return instancename
 
 
     def makeVolumeFromImage(self , imageid , initialconfig, instancename):
+        """
+        Creates Azure disk
+        Args:
+            imageid :str - hyperlink to page blob vhd media
+            initialconfig: AzureCloudOptions - parameters to create instance
+            instancename: str - the name of volume instance
+        """
         label = instancename  
         medialink = imageid
         name = instancename + "_disk"
