@@ -117,7 +117,8 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
             import_task_id = import_task.conversion_task_id
             if import_task_id:
                 logging.info ("Conversion task "+ str(import_task_id) + " created")
-                logging.info (">>>>>>>>>>>>>>> System volume has been uploaded, now it's converted by the Amazon EC2 to run as EC2 instance (it may take up to hour, be patient).")
+                logging.info (">>>>>>>>>>>>>>> System volume has been uploaded, now it's converted by Amazon EC2")
+                logging.info (">>>>>>>>>>>>>>> It may take up to hour, be patient")
                 logging.info ("Waiting for system volume conversion to complete")
                 #
                 while 1:

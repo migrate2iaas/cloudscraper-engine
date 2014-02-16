@@ -461,7 +461,8 @@ class Migrator(object):
         instancename = os.environ['COMPUTERNAME']+str(datetime.date.today())
 
         if not generator:
-            logging.info(">>>>>>>>>>>>>>>>> The system image is uploaded. You could start your server via " + self.__cloudName + " management console")
+            logging.info(">>>>>>>>>>>>>>>>> The system image is uploaded. ");
+            logging.info("You could start your server via " + self.__cloudName + " management console");
             logging.info(">>>>>>>>>>>>>>>>> Data was uploaded to " + str(imageid))
             self.__resultingInstance = imageid
             return True
@@ -475,7 +476,8 @@ class Migrator(object):
 
             self.__resultingInstance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , instancename , awskey, awssecret , self.__migrateOptions.getSystemImagePath() , imagesize , volumesize , self.__migrateOptions.getImageType())
         elif self.__cloudName == "ElasticHosts":
-            logging.info("\n>>>>>>>>>>>>>>>>> Disk UUID " + imageid + " now contain your server image. Create a new server via ElasticHosts contol panel and attach the disk to ide0:0 port.")
+            logging.info("\n>>>>>>>>>>>>>>>>> Disk UUID " + imageid + " now contain your server image.")
+            logging.info("\n>>>>>>>>>>>>>>>>> Create a new server via ElasticHosts contol panel and attach the disk to ide0:0 port.")
             #TODO: create instance
             self.__resultingInstance = imageid
         else:
@@ -509,7 +511,8 @@ class Migrator(object):
                 vol = generator.makeVolumeFromImage(imageid , self.__cloudOptions , volname)
 
         if not generator:
-            logging.info(">>>>>>>>>>>>>>>>> The data volume image is uploaded. You could add it to your server via " + self.__cloudName + " management console")
+            logging.info(">>>>>>>>>>>>>>>>> The data volume image is uploaded ")
+            logging.info(">>>>>>>>>>>>>>>>> You could add it to your server via " + self.__cloudName + " management console");
             logging.info(">>>>>>>>>>>>>>>>> Data was uploaded to " + str(imageid))
             return True
 
