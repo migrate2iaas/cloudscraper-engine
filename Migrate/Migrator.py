@@ -538,10 +538,15 @@ class Migrator(object):
                     if self.__skipImaging == False:
                        self.__dataTransferTargetList[volinfo.getVolumePath()] = self.createTransferTarget(media , volinfo.getImageSize(), self.__winSystemAdjustOptions)
         
-        if self.__skipUpload == False:
-            description = os.environ['COMPUTERNAME']+"-"+"data"+"-"+str(datetime.date.today())
-            self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , self.__cloudOptions.getServerName() or description,  volinfo.getUploadPath() , self.__resumeUpload , self.__dataMediaList[volinfo.getVolumePath()].getImageSize() )
-            self.__dataChannelList[volinfo.getVolumePath()].initStorage()
+                if self.__skipUpload == False:
+                    description = os.environ['COMPUTERNAME']+"-"+"data"+"-"+str(datetime.date.today())
+                    self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , self.__cloudOptions.getServerName() or description,  volinfo.getUploadPath() , self.__resumeUpload , self.__dataMediaList[volinfo.getVolumePath()].getImageSize() )
+                    self.__dataChannelList[volinfo.getVolumePath()].initStorage()
+
+                    # update the upload path in config in case it was changed or created by the channel
+                    uploadpath = self.__dataChannelList[volinfo.getVolumePath()].getUploadPath()
+                    logging.debug("The upload channel path is: " + uploadpath)
+                    volinfo.setUploadPath(uploadpath)
 
         return True
         
