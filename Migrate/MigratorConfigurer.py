@@ -425,8 +425,8 @@ class MigratorConfigurer(object):
                         volume.setImagePath(imagedir+"\\"+letter+"."+imagetype);
                     if volume.getImageSize() == 0:
                         volume.setImageSize(size)
-                    #if volume.getUploadPath() == '':
-                    #    volume.setUploadPath(upload_prefix+letter)
+                    if volume.getUploadPath() == '':
+                        volume.setUploadPath(upload_prefix+os.environ['COMPUTERNAME']+"-"+letter)
                     volumes.append( volume )
         return volumes
 
