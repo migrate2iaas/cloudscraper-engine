@@ -43,6 +43,7 @@ class AzureInstanceGenerator(InstanceGenerator.InstanceGenerator):
         else:
             affinity = initialconfig.getZone()
         self.__vmService.create_vm(instancename , region, volume , affinity , network, subnet)
+        logging.info(">>>>>>>>>>> New VM " + instancename + " created");
         return instancename
 
 
