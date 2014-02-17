@@ -62,7 +62,7 @@ class AzureInstanceGenerator(InstanceGenerator.InstanceGenerator):
         response = self.__vmService.add_disk(label, medialink, name)
         if response.ok:
             logging.info(">>>>>>>>>>>>>>> Disk " + name + " has been uploaded");
-            logging.info("See \'Disks\' tab in Virtual Machines menu of the management portal");
+            logging.info(">>>>>>>>>>>>>>> See \'Disks\' tab in Virtual Machines menu of the management portal");
             return name
         else:
             logging.error("!!!ERROR Failed to create VM disk from blob. " + str(response.status_code) + " " + response.reason)
