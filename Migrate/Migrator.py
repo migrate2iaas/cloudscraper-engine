@@ -487,7 +487,7 @@ class Migrator(object):
 
     #TODO: make parameters optional, refactor
     # if they are not specified - load imageid
-    def generateVolume(self , imageid , localimagepath , imagesize , volumesize):
+    def generateVolume(self , imageid , localimagepath , imagesize , volumesize , description = ""):
         
         generator = None
         volname = ""
@@ -505,7 +505,10 @@ class Migrator(object):
             import AzureConfigs
             import AzureInstanceGenerator
             generator = self.__cloudOptions.generateInstanceFactory()
-            volname = os.environ['COMPUTERNAME']+str(datetime.date.today())+"_data"
+            if description:
+                volname = description
+            else:
+                volname = os.environ['COMPUTERNAME']+str(datetime.date.today())+"_data"
             #TODO: make it working with two vols
             if generator:
                 vol = generator.makeVolumeFromImage(imageid , self.__cloudOptions , volname)
@@ -539,7 +542,7 @@ class Migrator(object):
                        self.__dataTransferTargetList[volinfo.getVolumePath()] = self.createTransferTarget(media , volinfo.getImageSize(), self.__winSystemAdjustOptions)
         
                 if self.__skipUpload == False:
-                    description = os.environ['COMPUTERNAME']+"-"+"data"+"-"+str(datetime.date.today())
+                    description = os.environ['COMPUTERNAME']+"_"+"data"+"_"+str(datetime.date.today())
                     self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , self.__cloudOptions.getServerName() or description,  volinfo.getUploadPath() , self.__resumeUpload , self.__dataMediaList[volinfo.getVolumePath()].getImageSize() )
                     self.__dataChannelList[volinfo.getVolumePath()].initStorage()
 
@@ -620,7 +623,7 @@ class Migrator(object):
             
             # image size is really size of data, imagesize here is size of image file
             # dammit, needs clarifications
-            self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath() , mediaimagesize , disksize )
+            self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath() , mediaimagesize , disksize , os.environ["COMPUTERNAME"] + str(volinfo.getVolumePath()).replace("\\" , "_").replace("." , "_") + "_" + str(datetime.date.today()) )
 
        
         return True
