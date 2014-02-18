@@ -169,7 +169,7 @@ class virtualmachine(object):
         # Name of an os image as returned by list_os_images
         image_name = disk_name
         network_config = ConfigurationSet();
-        network_config.subnet_names = subnet
+        network_config.subnet_names.append(subnet)
         network_config.configuration_set_type = "NetworkConfiguration"
 
         os_hd = OSVirtualHardDisk(disk_name = disk_name , disk_label = disk_name)
