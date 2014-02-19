@@ -458,7 +458,7 @@ class Migrator(object):
 
     def generateInstance(self , imageid,  imagesize , volumesize):
         generator = self.__cloudOptions.generateInstanceFactory()
-        instancename = os.environ['COMPUTERNAME']+str(datetime.date.today())
+        instancename = self.__migrateOptions.getSystemVolumeConfig().generateMigrationId()
 
         if not generator:
             logging.info(">>>>>>>>>>>>>>>>> The system image is uploaded. ");
@@ -623,7 +623,7 @@ class Migrator(object):
             
             # image size is really size of data, imagesize here is size of image file
             # dammit, needs clarifications
-            self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath() , mediaimagesize , disksize , os.environ["COMPUTERNAME"] + str(volinfo.getVolumePath()).replace("\\" , "_").replace("." , "_") + "_" + str(datetime.date.today()) )
+            self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath() , mediaimagesize , disksize , volinfo.generateMigrationId() )
 
        
         return True

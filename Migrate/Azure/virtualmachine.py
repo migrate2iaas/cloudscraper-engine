@@ -31,6 +31,7 @@ class azure_mgmt_response(object):
         self.status = status_text
         self.headers = response_headers
         self.reason = response_body
+        self.body = response_body
 
     def __repr__(self):
         return '<Response [%s]>' % (self.status)
@@ -43,6 +44,7 @@ class azure_mgmt_response(object):
         """Returns true if :attr:`status_code` is 'OK'."""
         return self.ok
 
+    
     @property
     def ok(self):
         try:
@@ -139,6 +141,24 @@ class virtualmachine(object):
 
         return send_cert_request(url , verb , xml , self.__certSelection)
 
+    def get_network_affinity_group(self, network):
+        """
+        Gets an affinitity group for a virtaal network
+        """
+        operation = "/services/networking/virtualnetwork"
+        verb = "GET"
+
+        response = send_cert_request(url , verb , xml , self.__certSelection)
+
+        logging.debug("Got affinity group: " + str(response.body));
+
+        # this code is a bad way to find descent entry in xml but it should work
+        ntworkpart = response.body.find('<Name>'+network+'</Name>')
+        affinitystart = response.body[ntworkpart:].find('<AffinityGroup>') 
+        affinitystart = affinitystart+len('<AffinityGroup>')
+        group = response.body[affinitystart : response.body[ntworkpart:].find('</AffinityGroup>')]
+        return group
+
     def create_vm(self , new_vm_name, region , disk_name , affinity_group = None , network = None, subnet = None):
         """
         Creates VM thru Python API
@@ -154,8 +174,12 @@ class virtualmachine(object):
 
         name = new_vm_name
         location = region
-        # You can either set the location or an affinity_group
         
+        if network:
+            affinity_group = self.get_network_affinity_group(network)
+            logging.debug("Got affinity group" + affinity_group + " for Network " + network);
+
+        #TODO: check this stuff
         if affinity_group:
             sms.create_hosted_service(service_name=name,
                 label=name,

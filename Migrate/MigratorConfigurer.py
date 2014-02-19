@@ -75,6 +75,9 @@ class VolumeMigrateNoConfig(VolumeMigrateConfig):
     def saveConfig(self):
         return
 
+    def generateMigrationId(self):
+        return
+
 class VolumeMigrateIniConfig(VolumeMigrateConfig):
     """ volume migration parms got from ini file """
 
@@ -153,6 +156,10 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
     # image size here is the size of volume in bytes (not in the image file that could be compressed)
     def setImageSize(self , size):
         self.__imageSize = size
+
+    def generateMigrationId(self):
+        """generates an id to distinguish migration of the same volumes but for different times"""
+        return (os.environ["COMPUTERNAME"] + datetime.date.today().strftime("%Y_%m_%d") + str(self.getVolumePath())).replace("\\" , "_").replace("." , "_").replace(":" , "_")
 
     def saveConfig(self):
         section = self.__section

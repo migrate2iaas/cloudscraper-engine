@@ -33,6 +33,7 @@ class AzureInstanceGenerator(InstanceGenerator.InstanceGenerator):
             instancename: str - the name of volume instance
         """
         # create volume (registered disk in disks tab)
+        logging.debug("Creating new instnace " + str(instancename));
         volume = self.makeVolumeFromImage(imageid, initialconfig , instancename+"system")
         region = initialconfig.getRegion()
         subnet = initialconfig.getSubnet()
@@ -58,6 +59,8 @@ class AzureInstanceGenerator(InstanceGenerator.InstanceGenerator):
         label = instancename  
         medialink = imageid
         name = instancename + "_disk"
+
+        logging.debug("Creating new disk " + str(name));
 
         response = self.__vmService.add_disk(label, medialink, name)
         if response.ok:

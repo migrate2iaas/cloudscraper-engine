@@ -153,13 +153,15 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
 
         bolbfound = False
         blobs = self.__blobService.list_blobs(self.__containerName , self.__diskName) 
+        logging.debug("Seeking for blob " + self.__diskName);
         for blob in blobs:
+            logging.debug("found " + blob.name);
             if blob.name == self.__diskName:
                 bolbfound = True
         #create\open blob
         if not bolbfound:
             self.__blobService.put_blob(self.__containerName, self.__diskName, '', x_ms_blob_type='PageBlob' , x_ms_blob_content_length = self.getImageSize() , x_ms_blob_content_type="binary/octet-stream")
-            logging.info(">>>>> Succesfully created an upload channel to Azure container " + self.__storageAccountName  + " at " +  self.__containerName + "\\" + self.__diskName)
+            logging.info(">>>>> Succesfully created new blob"+  self.__containerName + "\\" + self.__diskName + "  to Azure storage account " + self.__storageAccountName )
         else:
             logging.info(">>>>> Azure blob " + self.__diskName  + " at " +  self.__storageAccountName + "\\" + self.__containerName + " already exists. Resuming the upload")
 
@@ -256,6 +258,7 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
         properties = dict()
         try:
             properties = self.__blobService.get_blob_metadata(self.__containerName, self.__diskName);
+            logging.debug("Got properties: " + properties.__repr__())
             self.__preUpload = properties['x-ms-meta-cloudscraper_uploaded'];
         except Exception as ex:
             logging.warning("!Cannot get amount of data already uploaded to the blob. Gonna make full reupload then.")
