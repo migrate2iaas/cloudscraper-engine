@@ -60,7 +60,7 @@ class AzureCloudOptions(CloudConfig.CloudConfig):
         if targetname:
             if targetname.endswith(".vhd") == False:
                 targetname = targetname + ".vhd"
-        return AzureUploadChannel.AzureUploadChannel(self.__storageAccount ,  self.__storageKey , imagesize , self.__containerName, targetname, resume , self.__chunkSize)
+        return AzureUploadChannel.AzureUploadChannel(self.__storageAccount ,  self.__storageKey , imagesize , self.__containerName, targetid, resume , self.__chunkSize)
 
     def generateInstanceFactory(self):
         if self.__subscription and self.__certPath:
