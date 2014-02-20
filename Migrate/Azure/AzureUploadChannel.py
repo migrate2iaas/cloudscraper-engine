@@ -124,7 +124,6 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
         self.__blobService = BlobService(account_name=storageacc, account_key=accesskey, protocol='https')
         self.__resumeUpload = resume_upload
 
-        #statistics
         self.__preUpload = 0
 
         self.__nullData = bytearray(self.__chunkSize)
@@ -254,6 +253,8 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
 
     def loadDiskUploadedProperty(self):
         logging.debug("Loading disk properties");
+        if self.__preUpload:
+            return self.__preUpload
         self.__preUpload = 0
         properties = dict()
         try:
