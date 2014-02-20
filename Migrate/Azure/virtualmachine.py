@@ -146,9 +146,12 @@ class virtualmachine(object):
         Gets an affinitity group for a virtaal network
         """
         operation = "/services/networking/virtualnetwork"
+
         verb = "GET"
 
-        response = send_cert_request(url , verb , xml , self.__certSelection)
+        url = self.__baseUrl + operation
+
+        response = send_cert_request(url , verb , "" , self.__certSelection)
 
         logging.debug("Got affinity group: " + str(response.body));
 
