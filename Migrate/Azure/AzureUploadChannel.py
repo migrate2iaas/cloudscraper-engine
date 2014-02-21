@@ -255,7 +255,6 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
         logging.debug("Loading disk properties");
         if self.__preUpload:
             return self.__preUpload
-        self.__preUpload = 0
         properties = dict()
         try:
             properties = self.__blobService.get_blob_metadata(self.__containerName, self.__diskName);
@@ -279,8 +278,9 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
             properties = {'cloudscraper_uploaded': str(newvalue)}
             self.__blobService.set_blob_metadata(self.__containerName, self.__diskName, properties);
         except Exception as ex:
-            logging.warning("!Cannot get amount of data already uploaded to the blob. Gonna make full reupload then.")
-            logging.warning("Exception = " + str(ex)) 
+            # it's not error, sometimes we just cannot get the lease for the parallel access
+            logging.debug("Cannot set amount of data already uploaded to the blob.")
+            logging.debug("Exception = " + str(ex)) 
             logging.error(traceback.format_exc())
             return False
         return True
