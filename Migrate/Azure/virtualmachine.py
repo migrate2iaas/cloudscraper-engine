@@ -157,9 +157,16 @@ class virtualmachine(object):
 
         # this code is a bad way to find descent entry in xml but it should work
         ntworkpart = response.body.find('<Name>'+network+'</Name>')
+        if ntworkpart == -1:
+            logging.warning("! Cannot get affinity group for a network");
+            return ""
         affinitystart = response.body[ntworkpart:].find('<AffinityGroup>') 
+        if affinitystart == -1:
+            logging.warning("! Cannot get affinity group for a network");
+            return ""
         affinitystart = affinitystart+len('<AffinityGroup>')
-        group = response.body[affinitystart : response.body[ntworkpart:].find('</AffinityGroup>')]
+        affinityend = response.body[ntworkpart:].find('</AffinityGroup>')
+        group = response.body[affinitystart : affinityend]
         return group
 
     def create_vm(self , new_vm_name, region , disk_name , affinity_group = None , network = None, subnet = None):
@@ -182,16 +189,21 @@ class virtualmachine(object):
             affinity_group = self.get_network_affinity_group(network)
             logging.debug("Got affinity group" + affinity_group + " for Network " + network);
 
+        service_name = name+"_endpoint"
         #TODO: check this stuff
         if affinity_group:
-            sms.create_hosted_service(service_name=name,
+            response = sms.create_hosted_service(service_name=service_name,
                 label=name,
                 affinity_group=affinity_group)
         else:
             # You can either set the location or an affinity_group
-            sms.create_hosted_service(service_name=name,
+            response = sms.create_hosted_service(service_name=service_name,
                 label=name,
                 location=location)
+        if not response.ok:
+            logging.error("!!!ERROR: cannot crate assoviated web service");
+            logging.error("!!!ERROR: " + response.body);
+            return None
 
         # Name of an os image as returned by list_os_images
         image_name = disk_name
