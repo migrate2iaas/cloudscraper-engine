@@ -192,18 +192,15 @@ class virtualmachine(object):
         service_name = name[0:14]+"s"
         #TODO: check this stuff
         if affinity_group:
-            response = sms.create_hosted_service(service_name=service_name,
+            sms.create_hosted_service(service_name=service_name,
                 label=name,
                 affinity_group=affinity_group)
         else:
             # You can either set the location or an affinity_group
-            response = sms.create_hosted_service(service_name=service_name,
+            sms.create_hosted_service(service_name=service_name,
                 label=name,
                 location=location)
-        if not response.ok:
-            logging.error("!!!ERROR: cannot crate assoviated web service");
-            logging.error("!!!ERROR: " + response.body);
-            return None
+        
 
         # Name of an os image as returned by list_os_images
         image_name = disk_name
