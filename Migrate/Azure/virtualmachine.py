@@ -160,12 +160,12 @@ class virtualmachine(object):
         if ntworkpart == -1:
             logging.warning("! Cannot get affinity group for a network");
             return ""
-        affinitystart = response.body[ntworkpart:].find('<AffinityGroup>') 
+        affinitystart = ntworkpart+response.body[ntworkpart:].find('<AffinityGroup>') 
         if affinitystart == -1:
             logging.warning("! Cannot get affinity group for a network");
             return ""
         affinitystart = affinitystart+len('<AffinityGroup>')
-        affinityend = response.body[ntworkpart:].find('</AffinityGroup>')
+        affinityend = ntworkpart + response.body[ntworkpart:].find('</AffinityGroup>')
         group = response.body[affinitystart : affinityend]
         return group
 
@@ -189,7 +189,7 @@ class virtualmachine(object):
             affinity_group = self.get_network_affinity_group(network)
             logging.debug("Got affinity group" + affinity_group + " for Network " + network);
 
-        service_name = name+"_endpoint"
+        service_name = name[0:14]+"s"
         #TODO: check this stuff
         if affinity_group:
             response = sms.create_hosted_service(service_name=service_name,

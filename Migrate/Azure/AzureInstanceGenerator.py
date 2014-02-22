@@ -35,6 +35,8 @@ class AzureInstanceGenerator(InstanceGenerator.InstanceGenerator):
         # create volume (registered disk in disks tab)
         logging.debug("Creating new instnace " + str(instancename));
         volume = self.makeVolumeFromImage(imageid, initialconfig , instancename+"system")
+        if volume == None:
+            return
         region = initialconfig.getRegion()
         subnet = initialconfig.getSubnet()
         affinity = None
