@@ -213,7 +213,7 @@ class virtualmachine(object):
         os_hd = OSVirtualHardDisk(disk_name = disk_name , disk_label = disk_name)
 
         return sms.create_virtual_machine_deployment(service_name=service_name,
-            deployment_name=name,
+            deployment_name=service_name,
             deployment_slot='production',
             label=name,
             role_name=name,
