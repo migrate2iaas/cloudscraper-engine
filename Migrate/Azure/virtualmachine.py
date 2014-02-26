@@ -189,7 +189,7 @@ class virtualmachine(object):
             affinity_group = self.get_network_affinity_group(network)
             logging.debug("Got affinity group " + affinity_group + " for Network " + network);
 
-        service_name = name
+        service_name = name + "cloudapp"
 
         logging.debug("Creating hosted cloud service " + service_name)
         #TODO: check this stuff
