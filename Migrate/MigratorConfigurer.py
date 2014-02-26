@@ -159,7 +159,7 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
 
     def generateMigrationId(self):
         """generates an id to distinguish migration of the same volumes but for different times"""
-        return (os.environ["COMPUTERNAME"] + datetime.date.today().strftime("%Y_%m_%d") + str(self.getVolumePath())).replace("\\" , "_").replace("." , "_").replace(":" , "_")
+        return (os.environ["COMPUTERNAME"] + datetime.date.today().strftime("%Y_%m_%d") + str(self.getVolumePath())).replace("\\" , "_").replace("." , "_").replace(":" , "")
 
     def saveConfig(self):
         section = self.__section
