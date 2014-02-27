@@ -57,15 +57,19 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             
             # assigning profiles
             profstart = newvalue.find("Profile=")
-            profend = newvalue[profstart:].find("|")
-            profentry = newvalue[profstart:profstart+profend]
-            newvalue = newvalue.replace(profentry, "Profile=Domain|Profile=Private|Profile=Public")
+            #means Profile = All is turned on, nothing should be specified
+            if profstart != -1:
+                profend = newvalue[profstart:].find("|")
+                profentry = newvalue[profstart:profstart+profend]
+                newvalue = newvalue.replace(profentry, "Profile=Domain|Profile=Private|Profile=Public")
+
 
             # assigning rdp port
             portstart = newvalue.find("LPort=")
-            portend = newvalue[newvalue.find("LPort="):].find("|")
-            portentry = newvalue[portstart:portstart+portend]
-            newvalue = newvalue.replace(portentry, "LPort="+str(rdpport))
+            if portstart != -1:
+                portend = newvalue[portstart:].find("|")
+                portentry = newvalue[portstart:portstart+portend]
+                newvalue = newvalue.replace(portentry, "LPort="+str(rdpport))
 
             logging.debug("Changing to  " + newvalue)
             win32api.RegSetValueEx(firewallkey, remotedesk_value , 0 , win32con.REG_SZ, newvalue)

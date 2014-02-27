@@ -176,13 +176,15 @@ class virtualmachine(object):
             new_vm_name: str - new VM name, should be unique for the user
             region: str - region where to create the machine
             disk_name: str - os disk name
-            affinity_group: str - guid of affinity group if specified
+            affinity_group: str - name of affinity group if specified (it's got automatically if network is specified)
             network: str - virtual network to create VM
             subnet: str - subnet in the network. use it only if network was specified
         """
         sms = ServiceManagementService(self.__subscription, self.__certSelection)
 
+       
         name = new_vm_name
+        label = new_vm_name.replace("-","").replace(".","").replace(":","").replace("_","")
         location = region
         
         if network:
@@ -190,32 +192,38 @@ class virtualmachine(object):
             logging.debug("Got affinity group " + affinity_group + " for Network " + network);
 
         service_name = name.replace("_","-")+"app"
+        service_label = service_name.replace("-","").replace(".","").replace(":","").replace("_","")
 
         logging.debug("Creating hosted cloud service " + service_name)
         #TODO: check this stuff
         if affinity_group:
             sms.create_hosted_service(service_name=service_name,
-                label=name,
+                label=service_label,
                 affinity_group=affinity_group)
         else:
             # You can either set the location or an affinity_group
             sms.create_hosted_service(service_name=service_name,
-                label=name,
+                label=service_label,
                 location=location)
         
 
         # Name of an os image as returned by list_os_images
         image_name = disk_name
         network_config = ConfigurationSet();
-        network_config.subnet_names.append(subnet)
         network_config.configuration_set_type = "NetworkConfiguration"
+        #TODO: should be customizable
+        endpoint = ConfigurationSetInputEndpoint("RDP" , "TCP", "3389", "3389")
+        network_config.input_endpoints.append(endpoint)
+        if subnet:
+            network_config.subnet_names.append(subnet)
+            
 
         os_hd = OSVirtualHardDisk(disk_name = disk_name , disk_label = disk_name)
 
         return sms.create_virtual_machine_deployment(service_name=service_name,
             deployment_name=service_name,
             deployment_slot='production',
-            label=name,
+            label=label,
             role_name=name,
             os_virtual_hard_disk=os_hd,
             system_config = None,
