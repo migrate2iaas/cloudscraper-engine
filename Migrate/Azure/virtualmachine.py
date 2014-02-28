@@ -173,7 +173,7 @@ class virtualmachine(object):
         """
         Creates VM thru Python API
         Args:
-            new_vm_name: str - new VM name, should be unique for the user
+            new_vm_name: str - new VM name, should be unique for the user, should only contain letters, alphanums and '-' in between
             region: str - region where to create the machine
             disk_name: str - os disk name
             affinity_group: str - name of affinity group if specified (it's got automatically if network is specified)
@@ -194,7 +194,7 @@ class virtualmachine(object):
         service_name = name.replace("_","-")+"app"
         service_label = service_name.replace("-","").replace(".","").replace(":","").replace("_","")
 
-        logging.debug("Creating hosted cloud service " + service_name)
+        logging.info(">>>>>> Creating new cloud service " + service_name)
         #TODO: check this stuff
         if affinity_group:
             sms.create_hosted_service(service_name=service_name,

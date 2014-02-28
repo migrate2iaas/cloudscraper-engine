@@ -33,8 +33,8 @@ class AzureInstanceGenerator(InstanceGenerator.InstanceGenerator):
             instancename: str - the name of volume instance
         """
         # create volume (registered disk in disks tab)
-        logging.debug("Creating new instnace " + str(instancename));
-        volume = self.makeVolumeFromImage(imageid, initialconfig , instancename+"system")
+        logging.debug("Creating new instance " + str(instancename));
+        volume = self.makeVolumeFromImage(imageid, initialconfig , instancename+"_system")
         if volume == None:
             return
         region = initialconfig.getRegion()
@@ -45,9 +45,10 @@ class AzureInstanceGenerator(InstanceGenerator.InstanceGenerator):
             network = initialconfig.getZone()
         else:
             affinity = initialconfig.getZone()
-        self.__vmService.create_vm(instancename , region, volume , affinity , network, subnet)
+        vmname = instancename.replace(".","").replace(":","").replace("_","-")+"-vm"
+        self.__vmService.create_vm(vmname , region, volume , affinity , network, subnet)
         logging.info(">>>>>>>>>>> New VM " + instancename + " created");
-        return instancename
+        return vmname
 
 
     def makeVolumeFromImage(self , imageid , initialconfig, instancename):
