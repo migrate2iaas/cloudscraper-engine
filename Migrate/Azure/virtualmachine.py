@@ -213,7 +213,7 @@ class virtualmachine(object):
         network_config.configuration_set_type = "NetworkConfiguration"
         #TODO: should be customizable
         endpoint = ConfigurationSetInputEndpoint("RDP" , "TCP", "3389", "3389")
-        network_config.input_endpoints.append(endpoint)
+        network_config.input_endpoints.input_endpoints.append(endpoint)
         if subnet:
             network_config.subnet_names.append(subnet)
             
