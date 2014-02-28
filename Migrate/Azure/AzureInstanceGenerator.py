@@ -47,7 +47,7 @@ class AzureInstanceGenerator(InstanceGenerator.InstanceGenerator):
             affinity = initialconfig.getZone()
         vmname = instancename.replace(".","").replace(":","").replace("_","-")+"-vm"
         self.__vmService.create_vm(vmname , region, volume , affinity , network, subnet)
-        logging.info(">>>>>>>>>>> New VM " + instancename + " created");
+        logging.info(">>>>>>>>>>> New VM " + vmname + " created");
         return vmname
 
 
@@ -61,7 +61,7 @@ class AzureInstanceGenerator(InstanceGenerator.InstanceGenerator):
         """
         label = instancename  
         medialink = imageid
-        name = instancename + "_disk"
+        name = instancename + "_drive"
 
         logging.debug("Creating new disk " + str(name));
 
