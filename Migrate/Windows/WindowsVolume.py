@@ -168,7 +168,7 @@ class WindowsVolume(object):
         vcn_input_buffer = struct.pack('=q',0)
 
         #TODO: check on really big files
-        vcn_ouput_buffer_size = 64*1024*1024
+        vcn_ouput_buffer_size = 128*1024*1024
 
         #TODO: handle if buffer was too small
         try:
@@ -217,8 +217,8 @@ class WindowsVolume(object):
     #returns iterable of filled bitmap extents with getData available
     def getFilledVolumeBitmap(self):
         
-        # should be enough to hold a bitmap for 2 Tb disk
-        bitmap_out_buffer_size = 64*1024*1024
+        # should be enough to hold a bitmap for 2 Tb disk, not sure, got some bugs on it
+        bitmap_out_buffer_size = 128*1024*1024
 
         # input
         # STARTING_VCN_INPUT_BUFFER
