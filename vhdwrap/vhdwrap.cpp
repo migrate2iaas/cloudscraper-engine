@@ -14,8 +14,7 @@ DWORD VHDWRAP_CONVENTION GetLastVhdError()
 	return g_dwLastError;
 }
 
-
-HANDLE VHDWRAP_CONVENTION CreateExpandingVhd(PCWSTR path, ULONGLONG size)
+HANDLE VHDWRAP_CONVENTION CreateVhd (PCWSTR path, ULONGLONG size, BOOLEAN fixed)
 {
     VIRTUAL_STORAGE_TYPE storageType =
     {
@@ -33,18 +32,28 @@ HANDLE VHDWRAP_CONVENTION CreateExpandingVhd(PCWSTR path, ULONGLONG size)
     parameters.Version1.SectorSizeInBytes = CREATE_VIRTUAL_DISK_PARAMETERS_DEFAULT_SECTOR_SIZE;
     parameters.Version1.SourcePath = NULL;
 
-	HANDLE disk_handle = NULL;
+    HANDLE disk_handle = NULL;
 
     g_dwLastError = ::CreateVirtualDisk(&storageType,
                                 path,
                                 VIRTUAL_DISK_ACCESS_ALL,
                                 NULL,
-                                CREATE_VIRTUAL_DISK_FLAG_NONE,
+                                (fixed)?CREATE_VIRTUAL_DISK_FLAG_FULL_PHYSICAL_ALLOCATION : CREATE_VIRTUAL_DISK_FLAG_NONE,
                                 0, // no provider-specific flags
                                 &parameters,
                                 NULL,
                                 &disk_handle);
 	return disk_handle;
+}
+
+HANDLE VHDWRAP_CONVENTION CreateExpandingVhd(PCWSTR path, ULONGLONG size)
+{
+    return CreateVhd(path , size, FALSE);
+} 
+
+HANDLE VHDWRAP_CONVENTION CreateFixedVhd(PCWSTR path, ULONGLONG size)
+{
+    return CreateVhd(path , size, TRUE);
 } 
 
 
