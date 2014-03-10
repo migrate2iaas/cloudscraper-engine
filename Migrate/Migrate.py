@@ -155,17 +155,18 @@ if __name__ == '__main__':
 
     try:
         if testrun:
-            import AzureServiceBusResponder
-            respond = AzureServiceBusResponder.AzureServiceBusResponder("cloudscraper-euwest" , 'Pdw8d/kMGqU0d1m99n3sSrepJu1Q61MwjeLmg0o3lJA=', 'owner' , 'server-up')
+            #import AzureServiceBusResponder
+            #respond = AzureServiceBusResponder.AzureServiceBusResponder("cloudscraper-euwest" , 'Pdw8d/kMGqU0d1m99n3sSrepJu1Q61MwjeLmg0o3lJA=', 'owner' , 'server-up')
 
             logging.info("\n>>>>>>>>>>>>>>>>> Making test run for an instance to check it alive\n")
             instance.run()
             logging.info("\n>>>>>>>>>>>>>>>>> Waiting till it responds\n")
-            response = respond.waitResponseByMachineName(platform.node())
+            #response = respond.waitResponseByMachineName(platform.node())
+            response = instance.checkAlive()
             if response:
-                logging.info("\n>>>>>>>>>>>>>>>>> Responded successfully\n")
+                logging.info("\n>>>>>>>>>>>>>>>>> Transfer post-check ended successfully\n")
             else:
-                logging.error("!!!ERROR: Migrated server failed to respond");
+                logging.error("!!!ERROR: Transfer process post-check ended unsuccessfully");
             instance.stop()
 
     except Exception as e:

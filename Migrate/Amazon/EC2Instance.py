@@ -9,6 +9,11 @@ from boto.s3.key import Key
 from boto.s3.bucket import Bucket
 from boto.ec2.instance import *
 
+import logging
+import traceback
+
+import socket
+
 #TODO: make base class for instances
 #it's about to extend
 class EC2Instance(object):
@@ -33,3 +38,30 @@ class EC2Instance(object):
 
     def __str__(self):
         return "EC2 instance ID="+str(self.__instanceId)
+
+    def checkAlive(self, timeout = 180):
+        """
+        Performs RDP check for an instance
+        Args:
+            timeout: int - is timeout to wait in seconds
+        """
+        instance = boto.ec2.instance.Instance(self.__ec2Connnection)
+        instance.id = self.__instanceId
+        instance.update(True)
+        ip = instance.ip_address
+        port = 3389
+
+        try:
+            socket = socket.create_connection((ip,port) , timeout)
+            socket.close()
+            return True
+        except Exception as e:
+            logging.error("!!!ERROR: Failed to probe the remote server for RDP connection!")
+            logging.error("!!!ERROR:" + str(e))
+            logging.error(traceback.format_exc())
+            return False
+
+        return True
+
+    def attachDataVolume(self):
+        return
