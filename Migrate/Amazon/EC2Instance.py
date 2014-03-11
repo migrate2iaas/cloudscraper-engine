@@ -52,8 +52,8 @@ class EC2Instance(object):
         port = 3389
 
         try:
-            socket = socket.create_connection((ip,port) , timeout)
-            socket.close()
+            sock = socket.create_connection((ip,port) , timeout)
+            sock.close()
             return True
         except Exception as e:
             logging.error("!!!ERROR: Failed to probe the remote server for RDP connection!")
