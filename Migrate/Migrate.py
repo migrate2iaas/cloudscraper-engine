@@ -64,7 +64,8 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', help="Path to extra file for non-detalized output")                   
     parser.add_argument('-u', '--resumeupload', help="Resumes the upload of image already created", action="store_true")                   
     parser.add_argument('-s', '--skipupload', help="Skips both imaging and upload. Just start the machine in cloud from the image given", action="store_true")                   
-    parser.add_argument('-t', '--testrun', help="Makes test run on the migrated server to see it responding", action="store_true")                   
+    parser.add_argument('-t', '--testrun', help="Makes test run on the migrated server to see it responding.", action="store_true") 
+    parser.add_argument('-z', '--timeout', help="Specify timeout to wait for test run server to respond", type=int, default=180)                  
     parser.add_argument('-b', '--heartbeat', help="Specifies interval in seconds to write hearbeat messages to stdout. No heartbeat if this flag is ommited")                   
 
     #Turning on the logging
@@ -117,8 +118,11 @@ if __name__ == '__main__':
         cloudsigmapass = parser.parse_args().cloudsigmapass    
 
     testrun = False
+    timeout = 0
     if parser.parse_args().testrun:
         testrun = True
+        timeout = parser.parse_args().timeout
+        print timeout
 
     resumeupload = False
     if parser.parse_args().resumeupload:
@@ -162,7 +166,7 @@ if __name__ == '__main__':
             instance.run()
             logging.info("\n>>>>>>>>>>>>>>>>> Waiting till it responds\n")
             #response = respond.waitResponseByMachineName(platform.node())
-            response = instance.checkAlive()
+            response = instance.checkAlive(timeout)
             if response:
                 logging.info("\n>>>>>>>>>>>>>>>>> Transfer post-check ended successfully\n")
             else:

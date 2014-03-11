@@ -3,7 +3,7 @@ __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
-#NOTE: not all of these options are implemented for a specific cloud
+
 class CloudConfig(object):
     """Config of the cloud to migrate"""
     

@@ -191,7 +191,7 @@ class virtualmachine(object):
             affinity_group = self.get_network_affinity_group(network)
             logging.debug("Got affinity group " + affinity_group + " for Network " + network);
 
-        service_name = name.replace("_","-")+"app"
+        service_name = getVmService(name)
         service_label = service_name.replace("-","").replace(".","").replace(":","").replace("_","")
 
         logging.info(">>>>>> Creating new cloud service " + service_name)
@@ -230,3 +230,26 @@ class virtualmachine(object):
             network_config = network_config,
             role_size='Small', 
             virtual_network_name = network)
+
+    def getVmService(self , vmname):
+        """auxillary function to get service names for vms (in predefined way)"""
+        service_name = vmname.replace("_","-")+"app"
+        return service_name
+
+    def start_vm(self, vmname):
+        """starts vm role"""
+        sms = ServiceManagementService(self.__subscription, self.__certSelection)
+        sms.start_role(self.getVmService(vmname), self.getVmService(vmname), vmname)
+        return True
+
+    def stop_vm(self, vmname):
+        """starts vm role"""
+        sms = ServiceManagementService(self.__subscription, self.__certSelection)
+        sms.shutdown_role(self.getVmService(vmname), self.getVmService(vmname), vmname)
+        return True
+
+
+    def get_vm_info(self, vmname):
+        """gets vm role info"""
+        sms = ServiceManagementService(self.__subscription, self.__certSelection)
+        return sms.get_role(self.getVmService(vmname), self.getVmService(vmname), vmname)

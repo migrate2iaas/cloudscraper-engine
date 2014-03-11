@@ -14,13 +14,13 @@ import logging
 import traceback
 import virtualmachine
 import InstanceGenerator
-
+import AzureVmInstance
 
 class AzureInstanceGenerator(InstanceGenerator.InstanceGenerator):
     """Generates Azure Instances (just links to VM disks for now)"""
 
     def __init__(self , subscription, certpath):
-
+        """inits generatior"""
         self.__vmService = virtualmachine.virtualmachine(certpath , subscription )
    
 
@@ -48,7 +48,7 @@ class AzureInstanceGenerator(InstanceGenerator.InstanceGenerator):
         vmname = instancename.replace(".","").replace(":","").replace("_","-")+"-vm"
         self.__vmService.create_vm(vmname , region, volume , affinity , network, subnet)
         logging.info(">>>>>>>>>>> New VM " + vmname + " created");
-        return vmname
+        return AzureVmInstance.AzureVmInstance(vmname , self.__vmService)
 
 
     def makeVolumeFromImage(self , imageid , initialconfig, instancename):

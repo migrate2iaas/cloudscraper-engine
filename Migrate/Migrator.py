@@ -475,11 +475,6 @@ class Migrator(object):
             awssecret = self.__cloudOptions.getCloudPass()
 
             self.__resultingInstance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , instancename , awskey, awssecret , self.__migrateOptions.getSystemImagePath() , imagesize , volumesize , self.__migrateOptions.getImageType())
-        elif self.__cloudName == "ElasticHosts":
-            logging.info("\n>>>>>>>>>>>>>>>>> Disk UUID " + imageid + " now contain your server image.")
-            logging.info("\n>>>>>>>>>>>>>>>>> Create a new server via ElasticHosts contol panel and attach the disk to ide0:0 port.")
-            #TODO: create instance
-            self.__resultingInstance = imageid
         else:
             self.__resultingInstance = generator.makeInstanceFromImage(imageid , self.__cloudOptions , instancename)
 
