@@ -47,8 +47,11 @@ class AzureInstanceGenerator(InstanceGenerator.InstanceGenerator):
             affinity = initialconfig.getZone()
         vmname = instancename.replace(".","").replace(":","").replace("_","-")+"-vm"
         self.__vmService.create_vm(vmname , region, volume , affinity , network, subnet)
+        instance = AzureVmInstance.AzureVmInstance(vmname , self.__vmService)
+        if self.__vmService.wait_vm_created(vmname):
+            instance.stop()
         logging.info(">>>>>>>>>>> New VM " + vmname + " created");
-        return AzureVmInstance.AzureVmInstance(vmname , self.__vmService)
+        return instance
 
 
     def makeVolumeFromImage(self , imageid , initialconfig, instancename):

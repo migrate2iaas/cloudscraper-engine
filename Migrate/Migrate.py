@@ -151,6 +151,7 @@ if __name__ == '__main__':
     # Doing the task
     instance = __migrator.runFullScenario()
     if instance:
+        logging.info("\n>>>>>>>>>>>>>>>>> The server is in the stopped state, run it via " + str(cloud.getTargetCloud()) + " management console\n")
         logging.info("\n>>>>>>>>>>>>>>>>> Transfer process ended successfully\n")
     else:
        logging.info("\n>>>>>>>>>>>>>>>>>> Transfer process ended unsuccessfully\n")

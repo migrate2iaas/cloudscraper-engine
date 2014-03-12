@@ -13,6 +13,8 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 
 import logging
 import traceback
+import os
+import time
 
 from azure import *
 from azure.servicemanagement import *
@@ -191,7 +193,7 @@ class virtualmachine(object):
             affinity_group = self.get_network_affinity_group(network)
             logging.debug("Got affinity group " + affinity_group + " for Network " + network);
 
-        service_name = getVmService(name)
+        service_name = self.getVmService(name)
         service_label = service_name.replace("-","").replace(".","").replace(":","").replace("_","")
 
         logging.info(">>>>>> Creating new cloud service " + service_name)
@@ -230,6 +232,24 @@ class virtualmachine(object):
             network_config = network_config,
             role_size='Small', 
             virtual_network_name = network)
+
+    def wait_vm_created(self , new_vm_name, timeout_sec = 1000 , recheck_interval = 5):
+        """waits till new vm is created and running"""
+        timeleft = timeout_sec
+        while timeleft > 0:
+            timeleft = timeleft - recheck_interval
+            try:
+                self.get_vm_info(new_vm_name)
+                return True
+            except Exception as e:
+                 logging.debug("Failed to get the machine state")
+                 logging.debug("Exception = " + str(e)) 
+                 logging.debug(traceback.format_exc())
+            time.sleep(recheck_interval)
+
+        logging.warning("!Cannot wait fo new VM to switch to the running state. Timeout")
+        return False
+
 
     def getVmService(self , vmname):
         """auxillary function to get service names for vms (in predefined way)"""
