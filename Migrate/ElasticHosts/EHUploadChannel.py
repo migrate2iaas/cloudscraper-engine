@@ -177,28 +177,31 @@ class EHUploadChannel(UploadChannel.UploadChannel):
         self.__volumeToAllocateBytes = resultDiskSizeBytes
         self.__allocatedDriveSize = resultDiskSizeBytes
 
+        self.__driveId = None
+        self.__allocatedDriveSize = 0
+        
         #check disk is allocated
         #TODO: move it to kinda method
-        # if the drive is already exisits but doesn't fullfill our requirements? 
-        # 
+        # if the drive is already exisits but doesn't fullfill our requirements?  
         if driveid:
             response = self.__EH.get(self.__hostname+"/drives/" + driveid + "/info")
             if response.status_code != 200:
-                logging.warning("!Unexpected status code returned by the ElasticHosts request: " + str(response) + " " + str(response.text))
+                logging.warning("!Drive " + driveid + " not found, creating a new one");
+                logging.warning("Unexpected status code returned by the ElasticHosts request: " + str(response) + " " + str(response.text))
                 logging.warning("Headers: %s \n" , str(response.request.headers) )
-                response.raise_for_status()
-            self.__driveId = response.json()[u'drive']
-            self.__allocatedDriveSize = response.json()[u'size']
-            uploadedsize = response.json().get(UPLOADED_BEFORE_JSON_KEY)
-            if uploadedsize:
-                self.__alreadyUploaded = uploadedsize
-            if resultDiskSizeBytes > self.__allocatedDriveSize:
-                logging.error("\n!!!ERROR: The disk " + str(self.__driveId) + " size is not sufficient to store an image!") 
-                raise IOError
-            logging.info("\n>>>>>>>>>>> Reupload to ElasticHosts drive "+ str(self.__driveId)+ " !")
-            logging.debug(str(self.__alreadyUploaded) + " bytes were already uploaded to the cloud")
-            # TODO: test whether the disk created is compatible
-        else:
+            else:
+                self.__driveId = response.json()[u'drive']
+                self.__allocatedDriveSize = response.json()[u'size']
+                uploadedsize = response.json().get(UPLOADED_BEFORE_JSON_KEY)
+                if uploadedsize:
+                    self.__alreadyUploaded = uploadedsize
+                if resultDiskSizeBytes > self.__allocatedDriveSize:
+                    logging.error("\n!!!ERROR: The disk " + str(self.__driveId) + " size is not sufficient to store an image!") 
+                    raise IOError
+                logging.info("\n>>>>>>>>>>> Reupload to ElasticHosts drive "+ str(self.__driveId)+ " !")
+                logging.debug(str(self.__alreadyUploaded) + " bytes were already uploaded to the cloud")
+                # TODO: test whether the disk created is compatible
+        if not self.__driveId:
             createdata = "name "+str(self.__driveName)+"\nsize "+str(self.__volumeToAllocateBytes)
             if avoid:
                 createdata = createdata + "\navoid " + avoid
