@@ -170,7 +170,7 @@ if __name__ == '__main__':
             if response:
                 logging.info("\n>>>>>>>>>>>>>>>>> Transfer post-check ended successfully\n")
             else:
-                logging.error("!!!ERROR: Transfer process post-check ended unsuccessfully");
+                logging.error("!!!ERROR: Transfer process post-check ended unsuccessfully , " + str(cloud.getTargetCloud()) + " at " + str(cloud.getRegion));
             instance.stop()
 
     except Exception as e:
