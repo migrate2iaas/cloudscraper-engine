@@ -12,7 +12,8 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 
 import logging
 import traceback
-
+import socket
+import time
 
 
 class VmInstance(object):
@@ -27,7 +28,7 @@ class VmInstance(object):
         raise NotImplementedError
 
 
-    def checkAlive(self, timeout = 180):
+    def checkAlive(self, timeout = 500):
         """
         Performs RDP check for an instance
         Args:
@@ -36,15 +37,18 @@ class VmInstance(object):
         ip = self.getIp()
         port = 3389
 
-        try:
-            sock = socket.create_connection((ip,port) , timeout)
-            sock.close()
-            return True
-        except Exception as e:
-            logging.error("!!!ERROR: Failed to probe the remote server for RDP connection!")
-            logging.error("!!!ERROR:" + str(e))
-            logging.error(traceback.format_exc())
-            return False
+        while timeout:
+            try:
+                sock = socket.create_connection((ip,port) , timeout)
+                sock.close()
+                return True
+            except Exception as e:
+                logging.error("!!!ERROR: Failed to probe the remote server for RDP connection!")
+                logging.error("!!!ERROR:" + str(e))
+                logging.error(traceback.format_exc())
+                
+                time.sleep(timeout)
+                timeout = timeout - timeout
 
         return True
 

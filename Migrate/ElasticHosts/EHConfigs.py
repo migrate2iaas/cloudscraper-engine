@@ -8,6 +8,7 @@ import SystemAdjustOptions
 import CloudConfig
 import MigrateConfig
 import EHUploadChannel
+import EHInstanceGenerator
 
 import time
 import os
@@ -34,7 +35,7 @@ class EHCloudOptions(CloudConfig.CloudConfig):
         return EHUploadChannel.EHUploadChannel(targetid, self.__user , self.__pass , targetsize, self.__region , targetname , self , resume)
      
     def generateInstanceFactory(self):
-        return None    
+        return EHInstanceGenerator.EHInstanceGenerator(self.__user, self.__pass , self.__region)    
      
     def getCloudStorage(self):
         return ''

@@ -23,12 +23,13 @@ import requests
 class EHInstance(VmInstance.VmInstance):
     """ElasticHosts server instance"""
 
-    def __init__(self , intanceid, eh_connection):
+    def __init__(self , instanceid, eh_connection , hostname):
         """
         intiializes EH instance via it's id and requests module connection
         """
-        self.__instanceId = instance_id
+        self.__instanceId = instanceid
         self.__EH = eh_connection
+        self.__hostname = hostname
 
     def run(self):
         """starts instance"""
@@ -65,5 +66,5 @@ class EHInstance(VmInstance.VmInstance):
                logging.warning("!Unexpected status code returned by the ElasticHosts request: " + str(response) + " " + str(response.text))
                logging.warning("Headers: %s \n" , str(response.request.headers) )
                response.raise_for_status()
-        ip = response.json()[u'nic:0:dhcp:ip"']
+        ip = response.json()[u'vnc:ip']
         return ip

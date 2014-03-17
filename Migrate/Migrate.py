@@ -166,7 +166,6 @@ if __name__ == '__main__':
             logging.info("\n>>>>>>>>>>>>>>>>> Making test run for an instance to check it alive\n")
             instance.run()
             logging.info("\n>>>>>>>>>>>>>>>>> Waiting till it responds\n")
-            #response = respond.waitResponseByMachineName(platform.node())
             response = instance.checkAlive(timeout)
             if response:
                 logging.info("\n>>>>>>>>>>>>>>>>> Transfer post-check ended successfully\n")
@@ -175,10 +174,10 @@ if __name__ == '__main__':
             instance.stop()
 
     except Exception as e:
-        logging.error("\n!!!ERROR: failed to configurate the process! ")
+        logging.error("\n!!!ERROR: failed tomake a test check! ")
         logging.error("\n!!!ERROR: " + str(e) )
         logging.error(traceback.format_exc())
-        logging.info("\n>>>>>>>>>>>>>>>>>> Transfer process ended unsuccessfully, configuration failed\n")
+        logging.info("\n!!!ERROR: Transfer process post-check ended unsuccessfully\n")
         os._exit(errno.ERANGE)
         #sys.exit(errno.ERANGE)
 

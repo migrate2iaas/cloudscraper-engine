@@ -33,10 +33,10 @@ class EHInstanceGenerator(InstanceGenerator.InstanceGenerator):
             self.__hostname = 'https://api-'+location+'.elastichosts.com'
 
         self.__EH = requests.Session()
-        self.__EH.auth = (userid, apisercret)
+        self.__EH.auth = (apikey, apisecret)
         self.__EH.headers.update({'Content-Type': 'text/plain', 'Accept':'application/json'})
 
-        return super(EHInstanceGenerator, self).__init__()()
+        return super(EHInstanceGenerator, self).__init__()
 
     def makeInstanceFromImage(self , imageid , initialconfig, instancename):
         """
@@ -48,17 +48,17 @@ class EHInstanceGenerator(InstanceGenerator.InstanceGenerator):
         """
         chars = string.letters + string.digits
         length = 8
-        createdata = "name=" + instancename + "\n" + "cpu=1024"+"\n"+"persistent=true"+"\n"+"password="+(''.join(sample(chars,length)))+"\nmem=1024"+\
-            "\nide:0:0=disk"+"\nide:0:0="+imageid+"\nnic:0:model=e1000"+"\nnic:0:dhcp=auto"+"vnc=auto"+"smp=auto";
+        createdata = "name " + instancename + "\n" + "cpu 1000"+"\n"+"persistent true"+"\n"+"password "+(''.join(sample(chars,length)))+"\nmem 1024"+\
+            "\nide:0:0 disk"+"\nboot ide:0:0"+"\nide:0:0 "+imageid+"\nnic:0:model e1000"+"\nnic:0:dhcp auto"+"\nvnc auto"+"\nsmp auto";
 
-        response = self.__EH.post(self.__hostname+"/servers/create/stopped")
+        response = self.__EH.post(self.__hostname+"/servers/create/stopped" , data=createdata)
         if response.status_code != 200:
             logging.warning("!Unexpected status code returned by the ElasticHosts request: " + str(response) + " " + str(response.text))
             logging.warning("Headers: %s \n" , str(response.request.headers) )
             response.raise_for_status()
         instanceid = response.json()[u'server']
         logging.info(">>>>>>>>>>> New server " + instancename + "("+ instanceid +") created");
-        return EHInstance.EHInstance(instanceid, self.__EH)
+        return EHInstance.EHInstance(instanceid, self.__EH, self.__hostname)
 
 
     def makeVolumeFromImage(self , imageid , initialconfig, instancename):
