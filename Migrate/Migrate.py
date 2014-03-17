@@ -65,7 +65,7 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--resumeupload', help="Resumes the upload of image already created", action="store_true")                   
     parser.add_argument('-s', '--skipupload', help="Skips both imaging and upload. Just start the machine in cloud from the image given", action="store_true")                   
     parser.add_argument('-t', '--testrun', help="Makes test run on the migrated server to see it responding.", action="store_true") 
-    parser.add_argument('-z', '--timeout', help="Specify timeout to wait for test run server to respond", type=int, default=180)                  
+    parser.add_argument('-z', '--timeout', help="Specify timeout to wait for test run server to respond", type=int, default=480)                  
     parser.add_argument('-b', '--heartbeat', help="Specifies interval in seconds to write hearbeat messages to stdout. No heartbeat if this flag is ommited")                   
 
     #Turning on the logging
