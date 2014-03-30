@@ -48,6 +48,7 @@ class AzureInstanceGenerator(InstanceGenerator.InstanceGenerator):
         vmname = instancename.replace(".","").replace(":","").replace("_","-")+"-vm"
         self.__vmService.create_vm(vmname , region, volume , affinity , network, subnet)
         instance = AzureVmInstance.AzureVmInstance(vmname , self.__vmService)
+        logging.info(">>>>>>>>> New server instance is being deployed...")
         if self.__vmService.wait_vm_created(vmname):
             instance.stop()
         logging.info(">>>>>>>>>>> New VM " + vmname + " created");

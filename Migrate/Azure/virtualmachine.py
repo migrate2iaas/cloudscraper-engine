@@ -173,7 +173,8 @@ class virtualmachine(object):
 
     def create_vm(self , new_vm_name, region , disk_name , affinity_group = None , network = None, subnet = None):
         """
-        Creates VM thru Python API
+        Creates VM thru Python API. 
+        Returns Azure API request_id of the async deployment or None
         Args:
             new_vm_name: str - new VM name, should be unique for the user, should only contain letters, alphanums and '-' in between
             region: str - region where to create the machine
@@ -222,7 +223,7 @@ class virtualmachine(object):
 
         os_hd = OSVirtualHardDisk(disk_name = disk_name , disk_label = disk_name)
 
-        return sms.create_virtual_machine_deployment(service_name=service_name,
+        result = sms.create_virtual_machine_deployment(service_name=service_name,
             deployment_name=service_name,
             deployment_slot='production',
             label=label,
@@ -232,15 +233,25 @@ class virtualmachine(object):
             network_config = network_config,
             role_size='Small', 
             virtual_network_name = network)
+        if result:
+            return result.request_id
+        return None
 
-    def wait_vm_created(self , new_vm_name, timeout_sec = 1000 , recheck_interval = 5):
+    def wait_vm_created(self , creation_request_id, timeout_sec = 1000 , recheck_interval = 5):
         """waits till new vm is created and running"""
+        sms = ServiceManagementService(self.__subscription, self.__certSelection)
+
         timeleft = timeout_sec
         while timeleft > 0:
             timeleft = timeleft - recheck_interval
             try:
-                self.get_vm_info(new_vm_name)
-                return True
+                status = sms.get_operation_status(request_id)
+                if str(status.status) == "Succeeded":
+                    return True
+                if str(status.status) == "Failed":
+                    logging.error("!!!ERROR: VM Deployment failed : " + status.error)
+                    logging.error(str(vars(status)))
+                    return False
             except Exception as e:
                  logging.debug("Failed to get the machine state")
                  logging.debug("Exception = " + str(e)) 
