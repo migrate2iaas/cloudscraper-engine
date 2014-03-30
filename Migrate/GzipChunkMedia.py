@@ -67,20 +67,23 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
     def readImageData(self , offset , size):
         return self.readDiskData(offset, size)
 
-    # get the next image logical chunk
-    # now it returns data only but really it could return 
-    # more data including chunk special data
     def getImageChunk(self , chunknumber):
+        """
+            gets raw (gzipped) data from file
+        """
         chunkfilename = self.__filename+"offset"+str(chunknumber*self.__chunkSize)+".gz"
-        file = open(chunkfilename, "r")
+        file = open(chunkfilename, "rb")
         chunk = file.read()
         file.close()
         return chunk
 
-    # get the next image logical chunk
-    # now it returns data only but really it could return 
-    # more data including chunk special data
-    def getUnzippedChunk(self , chunknumber):
+    def getUnzippedChunk(self , chunknumber, skip_non_existing = False):
+        """
+            gets the next image logical chunk
+            Args:
+            chunknumber : int - a chunk index to get
+            skip_non_existing: Boolean - skipe chunk if it doesn't exists and return nulls instead of it
+        """
 
         if chunknumber*self.__chunkSize >= self.__diskSize:
             logging.warning("!Trying to access disk location above the disk size limits. Offset = " + str(chunknumber*self.__chunkSize) + " , disk size = " + str(self.__diskSize))
@@ -88,13 +91,15 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
 
         chunkfilename = self.__filename+"offset"+str(chunknumber*self.__chunkSize)+".gz"
 
-        # TODO: rewrite this part
+        
         if (os.path.exists(chunkfilename) == False):
             #fails in case there were kinda error in here.
             #e.g. system crashed when this file was just created
             logging.debug(chunkfilename+" created \n")
             file = open(chunkfilename, "wb")
             nullbytes = bytearray(self.__chunkSize)
+            if skip_non_existing:
+                return str(nullbytes)
             gzipfile = gzip.GzipFile("offset"+str(chunknumber*self.__chunkSize), "wb" , self.__compression , file)
             gzipfile.write(str(nullbytes))
             gzipfile.close()
@@ -173,7 +178,7 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
         currentchunk = firstchunk
         data = str()
         while currentchunk <= lastchunk:
-            chunk = self.getUnzippedChunk(currentchunk)
+            chunk = self.getUnzippedChunk(currentchunk , True)
             if chunk and len(chunk) > 0:
                 data = data + chunk
             else:
