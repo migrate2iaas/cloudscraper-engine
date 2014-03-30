@@ -197,22 +197,33 @@ class virtualmachine(object):
         service_name = self.getVmService(name)
         service_label = service_name.replace("-","").replace(".","").replace(":","").replace("_","")
 
-        logging.info(">>>>>> Creating new cloud service " + service_name)
-        
+        #check if hosted service already exist
+        create_new_service = False
         try:
-            #TODO: check this stuff
-            if affinity_group:
-                sms.create_hosted_service(service_name=service_name,
-                    label=service_label,
-                    affinity_group=affinity_group)
-            else:
-                # You can either set the location or an affinity_group
-                sms.create_hosted_service(service_name=service_name,
-                    label=service_label,
-                    location=location)
-        except WindowsAzureConflictError as conflict:
-            logging.error("!!!ERROR: Cloud service " + service_name + " already exists. Please delete " + service_name + " in the management console and retry")
-            raise conflict
+            sms.get_hosted_service_properties(service_name)
+        except Exception as e:
+            create_new_service = True
+            logging.debug("Failed to get the hosted service " + service_name + " , creating a new one")
+            logging.debug("Exception = " + str(e)) 
+            logging.debug(traceback.format_exc())
+
+        #create a new service if necessary
+        if create_new_service:
+            logging.info(">>>>>> Creating new cloud service " + service_name)
+            try:
+                #TODO: check this stuff
+                if affinity_group:
+                    sms.create_hosted_service(service_name=service_name,
+                        label=service_label,
+                        affinity_group=affinity_group)
+                else:
+                    # You can either set the location or an affinity_group
+                    sms.create_hosted_service(service_name=service_name,
+                        label=service_label,
+                        location=location)
+            except WindowsAzureConflictError as conflict:
+                logging.error("!!!ERROR: Cloud service " + service_name + " already exists. Please delete " + service_name + " in the management console and retry")
+                raise conflict
 
         # Name of an os image as returned by list_os_images
         image_name = disk_name
