@@ -51,7 +51,11 @@ class AzureVmInstance(VmInstance.VmInstance):
     def getIp(self):
         """gets public ip"""
         info =  self.__vmConnection.get_vm_info(self.__instanceId)
-        for endpoint in info.configuration_sets['NetworkConfiguration'].input_endpoints:
-            if endpoint.Vip:
-                return endpoint.Vip
+        for conf_set in info.configuration_sets:
+            logging.debug("Got Azure configuration set from VM " + str(self.__instanceId))
+            logging.debug("Configuration set: " + str(vars(conf_set)))
+            if str(conf_set.configuration_set_type) == 'NetworkConfiguration':
+                for endpoint in conf_set.input_endpoints:
+                    if endpoint.Vip:
+                        return endpoint.Vip
         return None
