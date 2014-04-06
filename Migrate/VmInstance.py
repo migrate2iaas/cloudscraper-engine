@@ -60,4 +60,10 @@ class VmInstance(object):
         """returns public ip string"""
         raise NotImplementedError
 
+    def deallocate(self , subresources=True):
+        """deallocates a VM
+            Args:
+            subresources: Boolean - if True, deallocates all associated resources (disks, ips). Deallocates only the vm itself otherwise
+        """
+        raise NotImplementedError
 
