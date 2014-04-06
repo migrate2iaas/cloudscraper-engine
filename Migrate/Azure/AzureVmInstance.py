@@ -60,13 +60,9 @@ class AzureVmInstance(VmInstance.VmInstance):
             for deployment in svc.deployments:
                 logging.debug("Got Azure cloud service deployment from VM " + str(self.__instanceId))
                 logging.debug("Deployment: " + str(vars(deployment)))
-                if deployment.input_endpoint_list == None:
-                    continue
-                for endpoint in deployment.input_endpoint_list:
-                    logging.debug("Endpoint: " + str(vars(endpoint)))
-                    if endpoint.vip:
-                        logging.info("Got VM public ip:" + str(endpoint.vip));
-                        return str(endpoint.vip)
+                for role in deployment.role_instance_list:
+                    logging.debug("Role: " + str(vars(role)))
+                    return str(role.ip_address)
             time.sleep(recheck_interval)
 
         logging.debug("!!!ERROR failed to find machine ip to test it's work")
