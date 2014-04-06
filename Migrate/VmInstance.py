@@ -49,11 +49,10 @@ class VmInstance(object):
                 logging.error("!!!ERROR: Failed to probe the remote server for RDP connection!")
                 logging.error("!!!ERROR:" + str(e))
                 logging.error(traceback.format_exc())
-                
                 time.sleep(timeout)
                 timeout = timeout - timeout
 
-        return True
+        return False
 
     def attachDataVolume(self):
         """attach data volume"""
