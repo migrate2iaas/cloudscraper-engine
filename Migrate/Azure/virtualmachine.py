@@ -254,8 +254,13 @@ class virtualmachine(object):
 
     def wait_vm_created(self , creation_request_id, timeout_sec = 1000 , recheck_interval = 5):
         """waits till new vm is created and running"""
+        if self.wait_operation(creation_request_id , timeout_sec , recheck_interval) == False:
+            logging.warning("!Cannot wait fo new VM to switch to the running state. Timeout")
+            return False
+        return True
+
+    def wait_operation(self , request_id, timeout_sec = 1000 , recheck_interval = 5):
         sms = ServiceManagementService(self.__subscription, self.__certSelection)
-        request_id = creation_request_id
         timeleft = timeout_sec
         while timeleft > 0:
             timeleft = timeleft - recheck_interval
@@ -264,7 +269,7 @@ class virtualmachine(object):
                 if str(status.status) == "Succeeded":
                     return True
                 if str(status.status) == "Failed":
-                    logging.error("!!!ERROR: VM Deployment failed : " + status.error)
+                    logging.error("!!!ERROR: Operation failed : " + status.error)
                     logging.error(str(vars(status)))
                     return False
             except Exception as e:
@@ -276,7 +281,6 @@ class virtualmachine(object):
         logging.warning("!Cannot wait fo new VM to switch to the running state. Timeout")
         return False
 
-
     def getVmService(self , vmname):
         """auxillary function to get service names for vms (in predefined way)"""
         service_name = vmname.replace("_","-")+"app"
@@ -285,15 +289,18 @@ class virtualmachine(object):
     def start_vm(self, vmname):
         """starts vm role"""
         sms = ServiceManagementService(self.__subscription, self.__certSelection)
-        sms.start_role(self.getVmService(vmname), self.getVmService(vmname), vmname)
-        return True
+        result = sms.start_role(self.getVmService(vmname), self.getVmService(vmname), vmname)
+        if result:
+            return self.wait_operation(result.request_id)
+        return False
 
     def stop_vm(self, vmname):
         """starts vm role"""
         sms = ServiceManagementService(self.__subscription, self.__certSelection)
-        sms.shutdown_role(self.getVmService(vmname), self.getVmService(vmname), vmname)
-        return True
-
+        result = sms.shutdown_role(self.getVmService(vmname), self.getVmService(vmname), vmname)
+        if result:
+            return self.wait_operation(result.request_id)
+        return False
 
     def get_vm_info(self, vmname):
         """gets vm role info"""
