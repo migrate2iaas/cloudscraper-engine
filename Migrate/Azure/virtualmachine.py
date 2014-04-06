@@ -255,7 +255,7 @@ class virtualmachine(object):
     def wait_vm_created(self , creation_request_id, timeout_sec = 1000 , recheck_interval = 5):
         """waits till new vm is created and running"""
         sms = ServiceManagementService(self.__subscription, self.__certSelection)
-
+        request_id = creation_request_id
         timeleft = timeout_sec
         while timeleft > 0:
             timeleft = timeleft - recheck_interval
@@ -299,3 +299,9 @@ class virtualmachine(object):
         """gets vm role info"""
         sms = ServiceManagementService(self.__subscription, self.__certSelection)
         return sms.get_role(self.getVmService(vmname), self.getVmService(vmname), vmname)
+
+
+    def get_vm_service(self, vmname):
+        """gets info on service associated with vm"""
+        sms = ServiceManagementService(self.__subscription, self.__certSelection)
+        return sms.get_hosted_service_properties( self.getVmService(vmname) , True)

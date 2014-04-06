@@ -50,12 +50,16 @@ class AzureVmInstance(VmInstance.VmInstance):
 
     def getIp(self):
         """gets public ip"""
-        info =  self.__vmConnection.get_vm_info(self.__instanceId)
-        for conf_set in info.configuration_sets:
-            logging.debug("Got Azure configuration set from VM " + str(self.__instanceId))
-            logging.debug("Configuration set: " + str(vars(conf_set)))
-            if str(conf_set.configuration_set_type) == 'NetworkConfiguration':
-                for endpoint in conf_set.input_endpoints:
-                    if endpoint.Vip:
-                        return endpoint.Vip
+        svc = self.__vmConnection.get_vm_service(self.__instanceId)
+        for deployment in svc.deployments:
+            logging.debug("Got Azure cloud service deployment from VM " + str(self.__instanceId))
+            logging.debug("Deployment: " + str(vars(deployment)))
+            if deployment.input_endpoint_list == None:
+                continue
+            for endpoint in deployment.input_endpoint_list:
+                logging.debug("Endpoint: " + str(vars(endpoint)))
+                if endpoint.vip:
+                    logging.info("Got VM public ip:" + str(endpoint.vip));
+                    return str(endpoint.vip)
+        logging.debug("!!!ERROR failed to find machine ip to test it's work")
         return None
