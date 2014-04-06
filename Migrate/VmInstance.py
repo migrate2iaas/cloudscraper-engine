@@ -37,6 +37,9 @@ class VmInstance(object):
         ip = self.getIp()
         port = 3389
 
+        if not ip:
+            return False
+
         while timeout:
             try:
                 sock = socket.create_connection((ip,port) , timeout)

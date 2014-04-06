@@ -16,7 +16,7 @@ import traceback
 import VmInstance
 import socket
 import virtualmachine
-
+import time
 
 class AzureVmInstance(VmInstance.VmInstance):
     """Class representing EC2 virutal server (instance)"""
@@ -50,16 +50,24 @@ class AzureVmInstance(VmInstance.VmInstance):
 
     def getIp(self):
         """gets public ip"""
-        svc = self.__vmConnection.get_vm_service(self.__instanceId)
-        for deployment in svc.deployments:
-            logging.debug("Got Azure cloud service deployment from VM " + str(self.__instanceId))
-            logging.debug("Deployment: " + str(vars(deployment)))
-            if deployment.input_endpoint_list == None:
-                continue
-            for endpoint in deployment.input_endpoint_list:
-                logging.debug("Endpoint: " + str(vars(endpoint)))
-                if endpoint.vip:
-                    logging.info("Got VM public ip:" + str(endpoint.vip));
-                    return str(endpoint.vip)
+
+        timeleft = 600
+        recheck_interval = 20
+        #try to check several times until ip is allocated
+        while timeleft > 0:
+            timeleft = timeleft - recheck_interval
+            svc = self.__vmConnection.get_vm_service(self.__instanceId)
+            for deployment in svc.deployments:
+                logging.debug("Got Azure cloud service deployment from VM " + str(self.__instanceId))
+                logging.debug("Deployment: " + str(vars(deployment)))
+                if deployment.input_endpoint_list == None:
+                    continue
+                for endpoint in deployment.input_endpoint_list:
+                    logging.debug("Endpoint: " + str(vars(endpoint)))
+                    if endpoint.vip:
+                        logging.info("Got VM public ip:" + str(endpoint.vip));
+                        return str(endpoint.vip)
+            time.sleep(recheck_interval)
+
         logging.debug("!!!ERROR failed to find machine ip to test it's work")
         return None
