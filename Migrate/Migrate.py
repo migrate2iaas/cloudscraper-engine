@@ -158,6 +158,7 @@ if __name__ == '__main__':
        #sys.exit(errno.EFAULT)
        os._exit(errno.EFAULT)
 
+    # check if server responds in the test scenario
     try:
         if testrun:
             #import AzureServiceBusResponder
@@ -170,8 +171,10 @@ if __name__ == '__main__':
             if response:
                 logging.info("\n>>>>>>>>>>>>>>>>> Transfer post-check ended successfully\n")
             else:
-                logging.error("!!!ERROR: Transfer process post-check ended unsuccessfully , " + str(cloud.getTargetCloud()) + " at " + str(cloud.getRegion));
+                logging.error("!!!ERROR: Transfer process post-check ended unsuccessfully for " + str(instance) + " at " + str(cloud.getTargetCloud()) + " , " + str(cloud.getRegion()));
             instance.stop()
+
+            # TOOD: maybe to notify the service here?
 
     except Exception as e:
         logging.error("\n!!!ERROR: failed tomake a test check! ")

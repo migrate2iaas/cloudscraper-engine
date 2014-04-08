@@ -37,11 +37,15 @@ class VmInstance(object):
         ip = self.getIp()
         port = 3389
 
+        time_retry = 90
+
         if not ip:
             return False
 
-        while timeout:
+        # ugly c-style loop 
+        while 1:
             try:
+                logging.info("Probing " + str(ip) + ":" + str(port) + " for connectivity")
                 sock = socket.create_connection((ip,port) , timeout)
                 sock.close()
                 return True
@@ -49,8 +53,12 @@ class VmInstance(object):
                 logging.error("!!!ERROR: Failed to probe the remote server for RDP connection!")
                 logging.error("!!!ERROR:" + str(e))
                 logging.error(traceback.format_exc())
-                time.sleep(timeout)
-                timeout = timeout - timeout
+                timeout = timeout - time_retry
+                if timeout > 0:
+                    logging.info("Waiting more " + str(timeout) + " for it to respond");
+                    time.sleep(time_retry)
+                else:
+                    break
 
         return False
 
