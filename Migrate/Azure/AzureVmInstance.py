@@ -62,6 +62,11 @@ class AzureVmInstance(VmInstance.VmInstance):
                 logging.debug("Deployment: " + str(vars(deployment)))
                 for role in deployment.role_instance_list:
                     logging.debug("Role: " + str(vars(role)))
+                    for instance_endpoint in role.instance_endpoints:
+                        if instance_endpoint.vip:
+                            # try to get public ip
+                            return str(instance_endpoint.vip)
+                    # if ip couldn't be got try getting any address we could get
                     return str(role.ip_address)
             time.sleep(recheck_interval)
 
