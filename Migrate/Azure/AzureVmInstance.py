@@ -60,9 +60,15 @@ class AzureVmInstance(VmInstance.VmInstance):
             for deployment in svc.deployments:
                 logging.debug("Got Azure cloud service deployment from VM " + str(self.__instanceId))
                 logging.debug("Deployment: " + str(vars(deployment)))
+                for endpoint in deployment.input_endpoint_list:
+                    logging.debug("Got endpoint: " + str(endpoint))
+                    if endpoint.vip:
+                        return str(endpoint.vip)
+
                 for role in deployment.role_instance_list:
                     logging.debug("Role: " + str(vars(role)))
                     for instance_endpoint in role.instance_endpoints:
+                        logging.debug("Endpoint: " + str(vars(instance_endpoint)))
                         if instance_endpoint.vip:
                             # try to get public ip
                             return str(instance_endpoint.vip)
