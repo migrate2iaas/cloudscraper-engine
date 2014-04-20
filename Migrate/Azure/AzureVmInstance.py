@@ -61,10 +61,15 @@ class AzureVmInstance(VmInstance.VmInstance):
                 logging.debug("Got Azure cloud service deployment from VM " + str(self.__instanceId))
                 logging.debug("Deployment: " + str(vars(deployment)))
                 dns = str(deployment.url).replace("http://" , "").strip("/")
-                logging.debug("Resolving service DNS: " + str(dns))
-                (hostname, alias, ip) = socket.gethostbyname(dns) 
-                if ip:
-                    return ip
+                try:
+                    logging.debug("Resolving service DNS: " + str(dns))
+                    ip = socket.gethostbyname(dns) 
+                    if ip:
+                        return ip
+                except Exception as e:
+                     logging.debug("Failed to resolve dns address")
+                     logging.debug("Exception = " + str(e)) 
+                     logging.debug(traceback.format_exc())
                 #for instance in deployment.role_instance_list:
                 #    logging.debug("Role instance: " + str(vars(instance)))
 
