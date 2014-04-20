@@ -50,7 +50,7 @@ class AzureVmInstance(VmInstance.VmInstance):
 
     def getIp(self):
         """gets public ip"""
-
+        #Note: right now it just get dns and associates IP with it. no very smart
         timeleft = 600
         recheck_interval = 20
         #try to check several times until ip is allocated
@@ -60,20 +60,21 @@ class AzureVmInstance(VmInstance.VmInstance):
             for deployment in svc.deployments:
                 logging.debug("Got Azure cloud service deployment from VM " + str(self.__instanceId))
                 logging.debug("Deployment: " + str(vars(deployment)))
-                for endpoint in deployment.input_endpoint_list:
-                    logging.debug("Got endpoint: " + str(endpoint))
-                    if endpoint.vip:
-                        return str(endpoint.vip)
+                dns = str(deployment.url).replace("http://" , "").strip("/")
+                logging.debug("Resolving service DNS: " + str(dns))
+                (hostname, alias, ip) = socket.gethostbyname(dns) 
+                if ip:
+                    return ip
+                #for instance in deployment.role_instance_list:
+                #    logging.debug("Role instance: " + str(vars(instance)))
 
-                for role in deployment.role_instance_list:
-                    logging.debug("Role: " + str(vars(role)))
-                    for instance_endpoint in role.instance_endpoints:
-                        logging.debug("Endpoint: " + str(vars(instance_endpoint)))
-                        if instance_endpoint.vip:
-                            # try to get public ip
-                            return str(instance_endpoint.vip)
-                    # if ip couldn't be got try getting any address we could get
-                    return str(role.ip_address)
+               # if deployment.input_endpoint_list:
+               #     for endpoint in deployment.input_endpoint_list:
+               #         logging.debug("Endpoint: " + str(vars(endpoint)))
+               #         if endpoint.vip:
+               #             return str(endpoint.vip)
+               # else: 
+               #     logging.debug("Couldn't get deployment ip, make a retry..")
             time.sleep(recheck_interval)
 
         logging.debug("!!!ERROR failed to find machine ip to test it's work")
