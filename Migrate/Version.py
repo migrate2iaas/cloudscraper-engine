@@ -14,7 +14,7 @@ branch = "(none)"
 revision = "0"
 
 def getFullVersionString():
-    return "v"+str(majorVersion)+"."+str(minorVersion) + "." + revision + " built on " + str(buildtime) + " (" + str(branch) + " " + str(revisionhash) + ")"
+    return "v"+str(majorVersion)+"."+str(minorVersion) + "." + revision + " built on " + str(buildtime) + " ( branch: " + str(branch) + " hash:" + str(revisionhash) + ")"
 
 def getShortVersionString():
     return "v"+str(majorVersion)+"."+str(minorVersion) + "." + revision 
