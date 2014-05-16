@@ -19,10 +19,10 @@ class CloudConfig(object):
 
         Args:
             targetsize - size of resulting object (disk) in the target cloud in bytes
-            targetname - optional name to describe target
-            targetid - id of already uploaded target. needed for resume upload operations
+            targetname - optional name to describe target disk
+            targetid - cloud id of already uploaded target. 
             resume_upload - whether to resume previous upload
-            imagesize - size of the image file (not resulting disk size) to upload. Could be 0. (used for Azure only atm)
+            imagesize - size of the image file (not resulting disk size) to upload. Could be 0. 
         """
         raise NotImplementedError
         

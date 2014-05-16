@@ -56,10 +56,20 @@ class AzureCloudOptions(CloudConfig.CloudConfig):
         self.__subnet = subnet
         #self.__machinename = machinename
         
-    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):   
-        if targetname:
-            if targetname.endswith(".vhd") == False:
-                targetname = targetname + ".vhd"
+    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):
+        """
+        Generates new upload channel
+
+        Args:
+            targetsize: long - target cloud disk size in bytes
+            targetname: str - arbitrary description to mark the disk after migration (ignored)
+            targetid: str - a cloud-defined path describing the upload (blob-name for Azure)
+            resume: Boolean - to recreate disk representation (False) or to reupload (True)
+            imagesize: long - image file size in bytes
+        """
+        if targetid:
+            if targetid.endswith(".vhd") == False:
+                targetid = targetname + ".vhd"
         return AzureUploadChannel.AzureUploadChannel(self.__storageAccount ,  self.__storageKey , imagesize , self.__containerName, targetid, resume , self.__chunkSize)
 
     def generateInstanceFactory(self):

@@ -48,14 +48,15 @@ class VmInstance(object):
                 logging.info("Probing " + str(ip) + ":" + str(port) + " for connectivity")
                 sock = socket.create_connection((ip,port) , timeout)
                 sock.close()
+                logging.info("Server " + str(ip) + ":" + str(port) + " successfully responded")
                 return True
             except Exception as e:
-                logging.error("!!!ERROR: Failed to probe the remote server for RDP connection!")
-                logging.error("!!!ERROR:" + str(e))
+                logging.error("!: Failed to probe the remote server for RDP connection!")
+                logging.error("!:" + str(e))
                 logging.error(traceback.format_exc())
                 timeout = timeout - time_retry
                 if timeout > 0:
-                    logging.info("Waiting more " + str(timeout) + " for it to respond");
+                    logging.info("--- Waiting more " + str(timeout) + " for it to respond");
                     time.sleep(time_retry)
                 else:
                     break

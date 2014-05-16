@@ -36,6 +36,16 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         #TODO: more amazon-specfiic configs needed
     
     def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):   
+        """
+        Generates new upload channel
+
+        Args:
+            targetsize: long - target cloud disk size in bytes
+            targetname: str - arbitrary description to mark the disk after migration (ignored)
+            targetid: str - a cloud-defined path describing the upload (path to key in the bucket)
+            resume: Boolean - to recreate disk representation or to reupload
+            imagesize: long - image file size in bytes
+        """
         return S3UploadChannel.S3UploadChannel(self.__bucket , self.__user , self.__pass , targetsize, self.__region , targetid or self.__keynamePrefix , self.__diskType , resume_upload = resume , chunksize = self.__chunkSize)
          
     def generateInstanceFactory(self):

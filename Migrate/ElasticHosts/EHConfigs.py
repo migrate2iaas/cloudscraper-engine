@@ -31,7 +31,17 @@ class EHCloudOptions(CloudConfig.CloudConfig):
         
         super(EHCloudOptions, self).__init__()
 
-    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):   
+    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):  
+        """
+        Generates new upload channel
+
+        Args:
+            targetsize: long - target cloud disk size in bytes
+            targetname: str - arbitrary description to mark the disk after migration (User-visible name for a disk)
+            targetid: str - a cloud-defined path describing the upload (ElasticHosts disk UUID)
+            resume: Boolean - to recreate disk representation (False) or to reupload (True)
+            imagesize: long - image file size in bytes (ignored)
+        """ 
         return EHUploadChannel.EHUploadChannel(targetid, self.__user , self.__pass , targetsize, self.__region , targetname , self , resume)
      
     def generateInstanceFactory(self):
