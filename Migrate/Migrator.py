@@ -439,7 +439,8 @@ class Migrator(object):
             dataext = DataExtent.DataExtent(dataplace , len(data))
             dataplace = dataplace + len(data)
             dataext.setData(data)
-            channel.uploadData(dataext)
+            if channel.uploadData(dataext) == False:
+                return None
             datasent = datasent + 1
             
         channel.waitTillUploadComplete()
