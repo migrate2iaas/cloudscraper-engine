@@ -269,6 +269,8 @@ class MultithreadUpoadChannel(UploadChannel.UploadChannel):
 
        if self.__syncCount > self.__syncEvery:
              self.__uploadQueue.join()
+             if self.unsuccessfulUpload():
+                 return False
              self.notifyThreadsSynced(start)
              self.__syncCount = 0
 
@@ -277,7 +279,7 @@ class MultithreadUpoadChannel(UploadChannel.UploadChannel):
        # TODO: add something (identifier?) from uploadtask here
        self.__fragmentDictionary[start] = (size) 
 
-       return 
+       return (self.unsuccessfulUpload() == False)
 
 
     def getTransferChunkSize(self):
