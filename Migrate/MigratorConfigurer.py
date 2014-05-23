@@ -353,7 +353,10 @@ class MigratorConfigurer(object):
         adjust_override = self.getOverrides(config , configfile)
 
         image = AmazonConfigs.AmazonMigrateConfig(volumes , factory, imagearch , imagetype)
-        cloud = AmazonConfigs.AmazonCloudOptions(bucket , user , password , newsize , arch , zone , region, security , instancetype, disktype = imagetype , keyname_prefix = s3prefix , vpc=vpcsubnet)
+        #TODO: add machine name
+        cloud = AmazonConfigs.AmazonCloudOptions(bucket = bucket , user=user , password=password , newsize=newsize , arch=arch , zone= zone , region=region , machinename="" , securityid=security , instancetype=instancetype \
+                                                , disktype = imagetype , keyname_prefix = s3prefix , vpc=vpcsubnet)
+        
 
         return (image,adjust_override,cloud)
 

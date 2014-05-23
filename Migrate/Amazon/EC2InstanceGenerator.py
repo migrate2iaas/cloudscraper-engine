@@ -100,8 +100,9 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
             # waiting till the process completes        
             import_task = None
             try:
-                import_task = connection.import_instance(xmlurl, image_file_size , imagetype , ec2zone ,\
-                                                         newvolsize , securitygroup , instancetype , machine_arch , "cloudscraper-"+str(datetime.date.today()) , vpcsubnet ) 
+                import_task = connection.import_instance( import_manifest_xml = xmlurl, imagesize_bytes = image_file_size , image_format = imagetype \
+                                                         , availability_zone = ec2zone , volume_size_gb = newvolsize , security_group = securitygroup , instance_type = instancetype \
+                                                         , architecture=machine_arch , description="cloudscraper-"+str(datetime.date.today()) , vpc_subnet= vpcsubnet)
             
             except BotoServerError as botoex:
                 logging.error("!!!ERROR: AWS reported an error when trying the conversion")
