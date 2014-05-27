@@ -79,6 +79,7 @@
     <Compile Include="TransferTarget.py" />
     <Compile Include="UploadChannel.py" />
     <Compile Include="Version.py" />
+    <Compile Include="VmInstance.py" />
     <Compile Include="VolumeInfo.py" />
     <Compile Include="Windows\cabinet.py" />
     <Compile Include="Windows\VSS.py" />

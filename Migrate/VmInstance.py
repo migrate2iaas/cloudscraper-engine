@@ -42,6 +42,7 @@ class VmInstance(object):
         if not ip:
             return False
 
+        logging.info(">>>>>>>>>>> Probing " + str(ip) + ":" + str(port) )
         # ugly c-style loop 
         while 1:
             try:
