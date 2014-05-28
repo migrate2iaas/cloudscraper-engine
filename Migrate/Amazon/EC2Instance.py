@@ -54,5 +54,4 @@ class EC2Instance(VmInstance.VmInstance):
         instance = boto.ec2.instance.Instance(self.__ec2Connnection)
         instance.id = self.__instanceId
         instance.update(True)
-        ip = instance.ip_address
         return ip

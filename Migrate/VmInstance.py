@@ -34,33 +34,30 @@ class VmInstance(object):
         Args:
             timeout: int - is timeout to wait in seconds
         """
-        ip = self.getIp()
-        port = 3389
-
         time_retry = 90
-
-        if not ip:
-            return False
-
-        logging.info(">>>>>>>>>>> Probing " + str(ip) + ":" + str(port) )
         # ugly c-style loop 
         while 1:
             try:
-                logging.info("Probing " + str(ip) + ":" + str(port) + " for connectivity")
-                sock = socket.create_connection((ip,port) , timeout)
-                sock.close()
-                logging.info("Server " + str(ip) + ":" + str(port) + " successfully responded")
-                return True
+                ip = self.getIp()
+                port = 3389
+                if not ip:
+                    logging.warning("!Failed to obtain ip address")
+                else:
+                    logging.info("Probing " + str(ip) + ":" + str(port) + " for connectivity")
+                    sock = socket.create_connection((ip,port) , timeout)
+                    sock.close()
+                    logging.info("Server " + str(ip) + ":" + str(port) + " successfully responded")
+                    return True
             except Exception as e:
                 logging.error("!: Failed to probe the remote server for RDP connection!")
                 logging.error("!:" + str(e))
                 logging.error(traceback.format_exc())
-                timeout = timeout - time_retry
-                if timeout > 0:
-                    logging.info("--- Waiting more " + str(timeout) + " for it to respond");
-                    time.sleep(time_retry)
-                else:
-                    break
+            timeout = timeout - time_retry
+            if timeout > 0:
+                logging.info("--- Waiting more " + str(timeout) + " for it to respond");
+                time.sleep(time_retry)
+            else:
+                break
 
         return False
 
