@@ -172,10 +172,6 @@ if __name__ == '__main__':
                 logging.info("\n>>>>>>>>>>>>>>>>> Transfer post-check ended successfully\n")
             else:
                 logging.error("!!!ERROR: Transfer process post-check ended unsuccessfully for " + str(instance) + " at " + str(cloud.getTargetCloud()) + " , " + str(cloud.getRegion()));
-            instance.stop()
-
-            # TOOD: maybe to notify the service here?
-
     except Exception as e:
         logging.error("\n!!!ERROR: failed tomake a test check! ")
         logging.error("\n!!!ERROR: " + str(e) )
@@ -183,5 +179,7 @@ if __name__ == '__main__':
         logging.info("\n!!!ERROR: Transfer process post-check ended unsuccessfully\n")
         os._exit(errno.ERANGE)
         #sys.exit(errno.ERANGE)
+    finally:
+        instance.stop()
 
     os._exit(0)
