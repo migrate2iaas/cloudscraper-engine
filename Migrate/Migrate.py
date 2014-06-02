@@ -44,6 +44,7 @@ MigrateVersionLow = Version.minorVersion
 
 def heartbeat(interval_sec):
     while 1:
+        logging.info(".")
         print('.')
         time.sleep(int(interval_sec))
 
