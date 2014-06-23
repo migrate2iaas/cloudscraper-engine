@@ -294,6 +294,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         #--------------- 2k) adjust TcpIp and DHCP
         adjust_tcpip = self.__adjustConfig.adjustTcpIp()
         if adjust_tcpip:
+            logging.info("Adjusting TCP/IP settings") 
             self.adjustTcpIp(hivekeyname,currentcontrolset)
             
 
@@ -477,7 +478,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             logging.debug("BCD found, making replacement for it") 
             sizedelta = int(bcd_size - os.path.getsize(newbcd))
             if sizedelta > 0:
-                logging.debug("New bcd is larger " + str(sizedelta) + " bytes than the new generated one") 
+                logging.debug("Current bcd is larger " + str(sizedelta) + " bytes than the new generated one") 
                 logging.debug("Appending nulls") 
                 #pad new bcd with 0 to fit the original size
                 bcdfile = open(newbcd, "a+b")

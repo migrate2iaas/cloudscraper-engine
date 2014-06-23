@@ -21,7 +21,7 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
          self.__fixRdp = True
          self.__rdpPort = 3389
          self.__turnHyperV = enable_hyperv
-         self.__adjustPageFile = True
+         self.__adjustPageFile = False
          self.__adjustTcpIp = True
          
          originalwindir = os.environ['windir']

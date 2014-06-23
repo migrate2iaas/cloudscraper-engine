@@ -80,11 +80,16 @@ class Windows(object):
         windrive = originalwindir.split("\\")[0] #get C: substring
         wininstall = os.getenv('SystemRoot', windrive+"\\windows")
 
-        # that's Amazon small hack, needed to bypass EC2Service installation
-        conflicting_file = wininstall+"\\setup\\scripts\\SetupComplete.cmd"
-        if os.path.exists(conflicting_file):
-            self.__filesToRename[conflicting_file] = conflicting_file + "-renamed"
-            os.rename(conflicting_file , self.__filesToRename[conflicting_file])
+        # Amazon hack. 
+        # These files are needed to be renamed in order amazon conversion script (C:\EC2VmConversion\install.bat) won't hang
+        conflicting_files = [wininstall+"\\setup\\scripts\\SetupComplete.cmd", \
+                             windrive+"\\Program Files\\Citrix\\XenTools\\XenDpriv.exe.Config" , windrive+"\\Program Files\\Citrix\\XenTools\\XenGuestAgent.exe.Config" , \
+                             windrive+"\\Program Files(x86)\\Citrix\\XenTools\\XenDpriv.exe.Config" , windrive+"\\Program Files(x86)\\Citrix\\XenTools\\XenGuestAgent.exe.Config" ]
+        for conflicting_file in conflicting_files:
+            if os.path.exists(conflicting_file):
+                self.__filesToRename[conflicting_file] = conflicting_file + "-renamed"
+                os.rename(conflicting_file , self.__filesToRename[conflicting_file])
+
 
         if self.getVersion() >= WindowsSystemInfo.WindowsSystemInfo.Win2008:
 
