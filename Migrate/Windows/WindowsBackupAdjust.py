@@ -124,7 +124,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         
         guidskeys = win32api.RegEnumKeyEx(tcpipkey)
         for  (keyname, reserved, classname, modtime) in guidskeys:
-            logging.debug("Enabling lease and deleting lease from " + keyname)
+            logging.debug("Enabling lease and deleting old lease from " + keyname)
             interfacekey = win32api.RegOpenKeyEx(tcpipkey, keyname, 0 , win32con.KEY_ALL_ACCESS )
             try:
                 win32api.RegSetValueEx(interfacekey, "EnableDHCP" , 0, win32con.REG_DWORD, 1) 

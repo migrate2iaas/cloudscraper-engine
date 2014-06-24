@@ -22,7 +22,7 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
          self.__rdpPort = 3389
          self.__turnHyperV = enable_hyperv
          self.__adjustPageFile = False
-         self.__adjustTcpIp = True
+         self.__adjustTcpIp = False
          
          originalwindir = os.environ['windir']
          windir = originalwindir.split(":\\")[-1] #get substring after X:\
