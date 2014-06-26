@@ -292,8 +292,16 @@ class WindowsVolume(object):
     def readExtent(self, volextent):
         filename = self.__volumeName
         try:
+            # we should read several blocks. Big chunks of data read could cause vss to fail
+            size = volextent.getSize()
             win32file.SetFilePointer(self.__hfile, volextent.getStart(), win32con.FILE_BEGIN)
-            (result , output) = win32file.ReadFile(self.__hfile,volextent.getSize(),None)
+            output = bytearray("")
+            while size > self.__maxReportedExtentSize:
+                (result , partoutput) = win32file.ReadFile(self.__hfile,self.__maxReportedExtentSize,None)
+                output.append(partoutput)
+                size = size - self.__maxReportedExtentSize
+            (result , partoutput) = win32file.ReadFile(self.__hfile,size,None)
+            output.append(partoutput)
         except Exception as ex:
             raise FileException(filename , ex)
         return output
