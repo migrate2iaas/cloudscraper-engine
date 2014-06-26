@@ -295,7 +295,7 @@ class WindowsVolume(object):
             # we should read several blocks. Big chunks of data read could cause vss to fail
             size = volextent.getSize()
             win32file.SetFilePointer(self.__hfile, volextent.getStart(), win32con.FILE_BEGIN)
-            output = bytearray("")
+            output = ""
             while size > self.__maxReportedExtentSize:
                 (result , partoutput) = win32file.ReadFile(self.__hfile,self.__maxReportedExtentSize,None)
                 output = output + partoutput
