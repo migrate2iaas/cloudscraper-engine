@@ -298,10 +298,10 @@ class WindowsVolume(object):
             output = bytearray("")
             while size > self.__maxReportedExtentSize:
                 (result , partoutput) = win32file.ReadFile(self.__hfile,self.__maxReportedExtentSize,None)
-                output.append(partoutput)
+                output = output + partoutput
                 size = size - self.__maxReportedExtentSize
             (result , partoutput) = win32file.ReadFile(self.__hfile,size,None)
-            output.append(partoutput)
+            output = output + partoutput
         except Exception as ex:
             raise FileException(filename , ex)
         return output
