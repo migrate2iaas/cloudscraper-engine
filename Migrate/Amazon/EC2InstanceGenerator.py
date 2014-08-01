@@ -14,6 +14,7 @@ from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 from boto.s3.bucket import Bucket
 from boto.exception import BotoServerError
+from boto.s3.connection import OrdinaryCallingFormat
 
 import logging
 import EC2Instance
@@ -30,6 +31,11 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
     """generator class for ec2 instances"""
 
     def __init__(self , region, retries=1):
+        """
+        Params:
+            region: str - AWS region or Walrus hostname
+            retries: int - number of retries before creation failure
+        """
 
         self.__region = region
         self.__retryCount = retries
@@ -37,7 +43,7 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
 
     # marks the data uploaded as system disk, should be called(?) after the upload is confirmed
     
-    def makeInstanceFromImage(self , imageid , initialconfig , instancename, s3owner, s3key, temp_local_image_path , image_file_size = 0, volume_size_bytes = 0, imagetype='VHD'):
+    def makeInstanceFromImage(self , imageid , initialconfig , instancename, s3owner, s3key, temp_local_image_path , image_file_size = 0, volume_size_bytes = 0, imagetype='VHD', walrus = False , eucalyptus_host="" , walrus_path = "/services/WalrusBackend"  , walrus_port = 8773 ,eucalyptus_port = 8773 , eucalyptus_path = "/services/compute"):
         """creates instance from image uploaded to S3"""
 
         #TODO: add machine name so it could be added via tags
@@ -48,7 +54,18 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
         xml = imageid
         linktimeexp_seconds = 60*60*24*15 # 15 days
 
-        S3 = S3Connection(s3owner, s3key, is_secure=True)
+        S3 = None
+        if walrus:
+            S3 = boto.connect_s3(aws_access_key_id=s3owner,
+            aws_secret_access_key=s3key,
+            is_secure=False,
+            host=self.__region,
+            port=walrus_port,
+            path=walrus_path,
+            calling_format=OrdinaryCallingFormat())
+        else:
+            S3 = S3Connection(s3owner, s3key, is_secure=True)
+
         parsedurl = xml[xml.find('.com'):].split('/' , 2)
         bucketname = parsedurl[1]
         keyname = parsedurl[2]
@@ -88,8 +105,9 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
 
         tmp_vmdk_file = temp_local_image_path
      
-
-        connection = EC2ImportConnection.EC2ImportConnection(s3owner, s3key, ec2region)
+        connection = EC2ImportConnection.EC2ImportConnection(s3owner, s3key, ec2region , host = eucalyptus_host , port = eucalyptus_port , path = eucalyptus_path , eucalyptus = walrus , is_secure=False)
+        #if walrus:
+        #    connection.APIVersion = "2013-02-01"
 
         retry = 0
         # trying to get the import working for the several times

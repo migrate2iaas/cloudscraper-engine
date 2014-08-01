@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>ElasticHosts\EHUploadChannel_test.py</StartupFile>
+    <StartupFile>Amazon\EC2Instance_test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -74,6 +74,7 @@
     <Compile Include="SimpleDataTransferProto.py" />
     <Compile Include="SimpleDiskParser.py" />
     <Compile Include="SimpleTransferTarget.py" />
+    <Compile Include="StreamVmdkMedia.py" />
     <Compile Include="SystemAdjustOptions.py" />
     <Compile Include="SystemInfo.py" />
     <Compile Include="TransferTarget.py" />

@@ -56,6 +56,9 @@ class ConfigTest(CloudConfig.CloudConfig):
 
     def getInstanceType(self):
         return "m1.medium"
+    
+    def getSubnet(self):
+        return ""
 
 class EC2Instance_test(unittest.TestCase):
     
@@ -140,6 +143,50 @@ class EC2Instance_test(unittest.TestCase):
         
         generator = EC2InstanceGenerator.EC2InstanceGenerator("eu-west-1")
         instance = generator.makeInstanceFromImage(image_id, ConfigTest("i386", "eu-west-1a" , filename) , "unittest" , self.__key , self.__secret , filename)
+        self.assertIsNotNone(instance)
+
+        return
+
+    def test_a_vhd_walrus(self):
+        """tests full vhd upload and convert in euro region"""
+        
+        walrus_key = 'AKIZ3MSXOHGBC2CKSP5D'
+        walrus_secret = 'U8rpHdjzthsAz9Ng55aHIpdsh488XrBdcSXuMZFl'
+
+        filename = 'E:\\vms\\2008_shared.vhd'
+        size = 136365211648 
+
+        # TDOO: should be 10 mb-aligned
+
+        bucket = 'walrus-imaging-autotest'
+        channel = S3UploadChannel.S3UploadChannel(bucket , walrus_key , walrus_secret ,  size , "192.168.0.38" , walrus=True)
+        self.__channel = channel
+        
+        #TODO: make more different sizes
+        file = open(filename , "rb")
+        datasize = 10*1024*1024 #mb
+        dataplace = 0
+        while 1:
+            try:
+                data = file.read(datasize)
+            except EOFError:
+                break
+            if len(data) == 0:
+                break
+            dataext = DataExtent.DataExtent(dataplace , len(data))
+            dataplace = dataplace + len(data)
+            dataext.setData(data)
+            channel.uploadData(dataext)
+
+        channel.waitTillUploadComplete()
+        image_id = channel.confirm()
+        
+        generator = EC2InstanceGenerator.EC2InstanceGenerator("192.168.0.38")
+        conf = ConfigTest("i386", "192.168.0.38" , filename)
+        try:
+            instance = generator.makeInstanceFromImage(image_id, conf , "unittest" , walrus_key, walrus_secret , filename , walrus=True , eucalyptus_host="192.168.0.38")
+        except Exception as e:
+            logger.error("Cannot create instance: " + str(e));
         self.assertIsNotNone(instance)
 
         return

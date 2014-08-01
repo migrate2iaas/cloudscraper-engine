@@ -13,6 +13,7 @@ from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 from boto.s3.bucket import Bucket
 from boto.exception import BotoServerError
+from boto.s3.connection import OrdinaryCallingFormat
 
 import threading
 import Queue
@@ -287,7 +288,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
     #TODO: we need kinda open method for the channel
     #TODO: need kinda doc
     #chunk size means one data element to be uploaded. it waits till all the chunk is transfered to the channel than makes an upload (not fully implemented)
-    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resume_upload = False , chunksize=10*1024*1024 , upload_threads=4 , queue_size=16):
+    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resume_upload = False , chunksize=10*1024*1024 , upload_threads=4 , queue_size=16 , walrus = False , walrus_path = "/services/WalrusBackend"):
         self.__uploadQueue = Queue.Queue(queue_size)
         self.__statLock = threading.Lock()
         self.__prevUploadTime = None 
@@ -303,10 +304,19 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         offline = False # to do some offline testing
         #TODO: catch kinda exception here if not connected. shouldn't last too long
         if offline == False:
-            hostname = 's3.amazonaws.com'
-            if awsregion:
-                hostname = 's3-'+awsregion+'.amazonaws.com'
-            self.__S3 = S3Connection(awskey, awssercret, is_secure=True, host=hostname)
+            if walrus:
+                self.__S3 = boto.connect_s3(aws_access_key_id=awskey,
+                aws_secret_access_key=awssercret,
+                is_secure=False,
+                host=location,
+                port=8773,
+                path=walrus_path,
+                calling_format=OrdinaryCallingFormat())
+            else:
+                hostname = 's3.amazonaws.com'
+                if awsregion:
+                    hostname = 's3-'+awsregion+'.amazonaws.com'
+                self.__S3 = S3Connection(awskey, awssercret, is_secure=True, host=hostname)
         
             self.__bucketName = bucket
             try:

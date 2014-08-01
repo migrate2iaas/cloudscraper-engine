@@ -32,6 +32,7 @@ import GzipChunkMedia
 import GzipChunkMediaFactory
 import RawGzipMediaFactory
 import datetime
+import StreamVmdkMediaFactory
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
     def __init__(self, volumename, imagepath , imagesize):
@@ -459,6 +460,9 @@ class MigratorConfigurer(object):
         if (imagetype == "raw.tar" or imagetype == "RAW") and image_placement == "local":
             chunk = 4096*1024
             factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
+        if (imagetype == "stm.vmdk" or imagetype == "vmdk") and image_placement == "local":
+            chunk = 4096*1024
+            factory = StreamVmdkImageFactory.StreamVmdkImageFactory(chunk , compression) 
         return factory
 
     def getImageOptions(self , config):

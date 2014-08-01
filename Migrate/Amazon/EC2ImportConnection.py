@@ -1,5 +1,6 @@
 from boto.ec2.connection import *
 from boto.ec2.volume import *
+from boto.ec2.regioninfo import *
 from boto.resultset import ResultSet
 # boto code-style is used in this file
 
@@ -223,6 +224,97 @@ class ConversionTask(dict):
             self[name] = self._current_value
 
 
+class EucaConversionTask(dict):
+
+    ValidValues = ['euca:conversionTaskId', 'euca:expirationTime', 'euca:importVolume', 'euca:state',
+                   'euca:statusMessage']
+
+    def __init__(self, parent=None):
+        dict.__init__(self)
+        self.connection = parent
+        self.conversion_task_id = None
+        self.expiration_time = None
+        self.import_volume = None
+        self.state = None
+        self.status_message = None
+       
+        self._current_value = None
+
+    # dumb if-polymorphism, thought nothing can be done to improve it
+
+    def is_volume(self):
+        return self.has_key('euca:importVolume')
+
+    def is_instance(self):
+        return self.has_key('euca:importInstance')
+
+    def get_resulting_id(self):
+        if self.is_volume():
+            return self['euca:importVolume'].volume.id
+        if self.is_instance():
+            return self['euca:importInstance'].instance_id
+
+    def get_status(self):
+        return self.state
+
+    def get_message(self):
+        return self.status_message
+
+    def _update(self, updated):
+        #NOTE: seems like child elements are not updated
+        self.__dict__.update(updated.__dict__)
+
+    def update(self, validate=False):
+        """
+        Update the data associated with this task by querying EC2.
+
+        :type validate: bool
+        :param validate: By default, if EC2 returns no data about the
+                         task the update method returns quietly.  If
+                         the validate param is True, however, it will
+                         raise a ValueError exception if no data is
+                         returned from EC2.
+        """
+        # CHILD ELEMENTS ARE NOT UPDATED, needs some fixes
+        unfiltered_rs = self.connection.get_import_tasks([self.conversion_task_id])
+        rs = [x for x in unfiltered_rs if x.conversion_task_id == self.conversion_task_id]
+        if len(rs) > 0:
+            self._update(rs[0])
+        elif validate:
+            raise ValueError('%s is not a valid Conversion Task ID' % self.conversion_task_id)
+        return
+
+    def startElement(self, name, attrs, connection):
+        if name == 'euca:image':
+            self[name] = ConversionImage(self)
+            return self[name]
+        elif name == 'euca:importVolume':
+            self[name] = VolumeConversionTask(self)
+            return self[name]
+        elif name == 'euca:importInstance':
+            self[name] = InstanceConversionTask(self)
+            return self[name]
+        else:
+            return None
+
+    def endElement(self, name, value, connection):
+        if name == 'euca:conversionTaskId':
+            self.conversion_task_id = value
+        elif name == 'euca:expirationTime':
+            self.expiration_time = value
+        elif name == 'euca:state':
+            self.state = value
+        elif name == 'euca:statusMessage':
+            self.status_message = value
+        elif name in self.ValidValues:
+            self[name] = self._current_value
+
+
+
+class EucaRegion(boto.ec2.regioninfo.EC2RegionInfo):
+    def __init__(self , host):
+        EC2RegionInfo.__init__(self , None , host , host)
+
 class EC2ImportConnection(boto.ec2.connection.EC2Connection):
     """ Class contatining all EC2 VM import API calls """
 
@@ -232,12 +324,17 @@ class EC2ImportConnection(boto.ec2.connection.EC2Connection):
                  proxy_user=None, proxy_pass=None, debug=0,
                  https_connection_factory=None, region=None, path='/',
                  api_version=None, security_token=None,
-                 validate_certs=True):
+                 validate_certs=True, eucalyptus=False):
         """
         Init method to create a new connection to EC2.
         """
-        if region == None:
+        self.__eucalyptus = False
+        if region == None and eucalyptus == False:
             region = boto.ec2.get_region(regionname , aws_access_key_id=aws_access_key_id , aws_secret_access_key=aws_secret_access_key )
+        if eucalyptus:
+            region = EucaRegion(host)
+            self.__eucalyptus = True
+        #    api_version = '2014-02-14'
         EC2Connection.__init__(self, aws_access_key_id, aws_secret_access_key,
                               is_secure, host, port, proxy, proxy_port, proxy_user, proxy_pass, debug,
                               https_connection_factory, region, path, api_version, security_token, validate_certs)
@@ -248,15 +345,23 @@ class EC2ImportConnection(boto.ec2.connection.EC2Connection):
         params = {'AvailabilityZone': availability_zone , 'Image.Format': image_format, 'Image.Bytes' : str(imagesize_bytes) , 'Image.ImportManifestUrl' : import_manifest_xml, 'Volume.Size' : str(volume_size_gb)}
         if description:
             params['Description']=description
+        task_class = ConversionTask
+        if self.__eucalyptus:
+            task_class = EucaConversionTask
         return self.get_object('ImportVolume', params,
-                               ConversionTask, verb='POST')
+                               task_class, verb='POST')
 
     def get_import_tasks(self , import_task_ids=None):
         params = dict()
         if import_task_ids:
             self.build_list_params(params, import_task_ids, 'ConversionTaskId')
+        task_class = ConversionTask
+        itemname = 'item'
+        if self.__eucalyptus:
+            task_class = EucaConversionTask
+            itemname = 'euca:item'
         return self.get_list('DescribeConversionTasks', params,
-                               [('item' , ConversionTask)], verb='POST')
+                               [(itemname , task_class)], verb='POST')
 
     def import_instance(self, import_manifest_xml, imagesize_bytes , image_format , availability_zone , volume_size_gb , security_group , instance_type , architecture='x86_64' , description="" , vpc_subnet=""):
         #TODO: make extra checks
@@ -265,7 +370,10 @@ class EC2ImportConnection(boto.ec2.connection.EC2Connection):
             params['LaunchSpecification.SubnetId'] = vpc_subnet
         if description:
             params['Description']=description
+        task_class = ConversionTask
+        if self.__eucalyptus:
+            task_class = EucaConversionTask
         return self.get_object('ImportInstance', params,
-                               ConversionTask, verb='POST')
+                               task_class, verb='POST')
 
 

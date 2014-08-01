@@ -5,13 +5,14 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 
 import sys
 
+# should replace it with more python-like stuff like having __init__.py for each subdir and importing it
 sys.path.append('.\Windows')
 sys.path.append('.\Amazon')
 sys.path.append('.\ElasticHosts')
 sys.path.append('.\Azure')
 sys.path.append('.\CloudSigma')
 sys.path.append('.\SelfTest')
-
+sys.path.append('.\Images')
 
 import unittest
 import WindowsVolume

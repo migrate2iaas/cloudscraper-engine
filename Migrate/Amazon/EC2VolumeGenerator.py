@@ -76,14 +76,25 @@ class EC2VolumeGenerator(object):
         self.__retryCount = retries
 
     # makes volume from upload id (xml)
-    def makeVolumeFromImage(self, imageid, initialconfig, s3owner, s3key, temp_local_image_path , image_file_size = 0 , volume_size_bytes = 0 , imagetype = 'VHD'):
+    def makeVolumeFromImage(self, imageid, initialconfig, s3owner, s3key, temp_local_image_path , image_file_size = 0 , volume_size_bytes = 0 , imagetype = 'VHD', walrus = False , walrus_path = "/services/WalrusBackend" , eucalypus_host="" , eucalyptus_port = 8773 , eucalyptus_path = "/services/Imaging"):
 
         windir = os.environ['windir']
 
         xml = imageid
         linktimeexp_seconds = 60*60*24*15 # 15 days
 
-        S3 = S3Connection(s3owner, s3key, is_secure=True)
+        S3 = None
+        if walrus:
+            S3 = boto.connect_s3(aws_access_key_id=s3owner,
+            aws_secret_access_key=s3key,
+            is_secure=False,
+            host=location,
+            port=8773,
+            path=walrus_path,
+            calling_format=OrdinaryCallingFormat())
+        else:
+            S3 = S3Connection(s3owner, s3key, is_secure=True)
+
         parsedurl = xml[xml.find('.com'):].split('/' , 2)
         bucketname = parsedurl[1]
         keyname = parsedurl[2]
@@ -114,7 +125,7 @@ class EC2VolumeGenerator(object):
         tmp_vmdk_file = temp_local_image_path
      
 
-        connection = EC2ImportConnection.EC2ImportConnection(s3owner, s3key, ec2region)
+        connection = EC2ImportConnection.EC2ImportConnection(s3owner, s3key, ec2region , host = eucalypus_host , port = eucalyptus_port , path = eucalyptus_path )
 
         retry = 0
         # trying to get the import working for the several times

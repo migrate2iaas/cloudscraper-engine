@@ -21,7 +21,7 @@ class InstanceGenerator(object):
     def __init__(self):
         pass
 
-    def makeInstanceFromImage(self , imageid):
+    def makeInstanceFromImage(self , imageid, initialconfig, instancename):
         """generates cloud server instances from uploaded images"""
         raise NotImplementedError
 

@@ -474,7 +474,7 @@ class Migrator(object):
             import EC2Instance
             awskey = self.__cloudOptions.getCloudUser()
             awssecret = self.__cloudOptions.getCloudPass()
-
+            #TODO: refactor this stuff
             self.__resultingInstance = generator.makeInstanceFromImage(imageid, self.__cloudOptions , instancename , awskey, awssecret , self.__migrateOptions.getSystemImagePath() , imagesize , volumesize , self.__migrateOptions.getImageType())
         else:
             self.__resultingInstance = generator.makeInstanceFromImage(imageid , self.__cloudOptions , instancename)
