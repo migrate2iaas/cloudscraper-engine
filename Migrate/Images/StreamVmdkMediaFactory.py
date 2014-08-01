@@ -15,7 +15,7 @@ class StreamVmdkMediaFactory(ImageMediaFactory.ImageMediaFactory):
     def createMedia(self , imagepath , imagesize):
         if imagesize:
             if not(imagesize % StreamVmdkMedia.GRAIN_SIZE == 0):
-                imagesize = (int(imagesize / StreamVmdkMedia.GRAIN_SIZE)) + 1) * StreamVmdkMedia.GRAIN_SIZE
+                imagesize = (int(imagesize / StreamVmdkMedia.GRAIN_SIZE) + 1) * StreamVmdkMedia.GRAIN_SIZE
         media = StreamVmdkMedia.StreamVmdkMedia(imagepath , imagesize)
         return media
 
