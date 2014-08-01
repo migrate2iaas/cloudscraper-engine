@@ -9,6 +9,8 @@ import string
 import zlib
 import logging
 
+import ImageMedia
+
 # Header Constants
 MAGIC_NUMBER = 0x564D444B # 'V' 'M' 'D' 'K'
 EXPECTED_FLAGS = 196609 #bits 0, 16 and 17
@@ -175,7 +177,7 @@ def divro(num, den):
 
 
         
-class StreamVmdkMedia(object):
+class StreamVmdkMedia(ImageMedia.ImageMedia):
     """Media representing the stream-optimized VMDK media format"""
     __zeroGrain = ""
     __zeroGT = []
