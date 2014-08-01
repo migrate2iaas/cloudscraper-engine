@@ -461,7 +461,7 @@ class MigratorConfigurer(object):
             chunk = 4096*1024
             factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
         if (imagetype == "stm.vmdk" or imagetype == "vmdk") and image_placement == "local":
-            factory = StreamVmdkImageFactory.StreamVmdkImageFactory() 
+            factory = StreamVmdkMediaFactory.StreamVmdkMediaFactory() 
         return factory
 
     def getImageOptions(self , config):
