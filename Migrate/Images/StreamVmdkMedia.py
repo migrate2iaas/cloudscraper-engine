@@ -234,9 +234,7 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
                 if created with size > 0: returns size
             For image that already existed:
                 returns image size (read form header)  
-            Throws:
-                VMDKStreamException
-                    if image is not opened yet"""
+            """
        # if not self.__opened:
        #     raise VMDKStreamException("cannot get disk size: image not opened")
         if self.__readOnly:
@@ -262,7 +260,8 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
                 VMDKStreamException
                     if image is not yet opened"""
         if not self.__opened:
-            raise VMDKStreamException("cannot flush: image not opened")
+            return
+        #    raise VMDKStreamException("cannot flush: image not opened")
         self.__file.flush()
     
     def reopen(self):
@@ -280,14 +279,27 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
                     if image is not yet opened
                     if offset + size > self.getImageSize(): trying to read past end of file
                      """
-       # if not self.__opened:
-       #      raise VMDKStreamException("cannot read: image not opened")
+        #if not self.__opened:
+        #    raise VMDKStreamException("cannot read: image not opened")
         if size + offset > self.getImageSize():
             raise VMDKStreamException("Trying to read past end of file")
         if not self.__readOnly and offset < SECTOR_SIZE + self.__parsedHeader.descriptorSize * SECTOR_SIZE:
             logging.warning("Reading from part of file that is still subject to change! the first %s bytes of the file will be overwritten on file close. Using this data to copy this disk WILL result in a corrupted file"%(SECTOR_SIZE + self.__parsedHeader.descriptorSize * SECTOR_SIZE))
+        
+        #if the file is opened, but the file is closed already, than close() has been called.
+        #this means we have to make sure that we leave the file closed when we are done to avoid resource leaking
+        closeWhenDone = False
+        if self.__file.closed:
+            closeWhenDone = True
+            self.__reopenFile()
+        
+        
         self.__file.seek(offset)
-        return self.__file.read(size)
+        data = self.__file.read(size)
+        
+        if closeWhenDone:
+            self.__file.close()
+        return data
         
     
     def readDiskData(self, offset, size):

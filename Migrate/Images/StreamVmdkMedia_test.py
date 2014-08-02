@@ -245,5 +245,40 @@ class diskConvTest(unittest.TestCase):
         
         image.close()
          
+     
+    def test_correctFilePos(self):
+        self.removeFile()
+        image = StreamVmdkMedia(streamImage)
+        image.open()
+        image.writeDiskData(0,"test")
+        image.writeDiskData(GRAIN_SIZE, "test")
+        image.readDiskData(0,SECTOR_SIZE)
+        image.writeDiskData(GRAIN_SIZE*2,"test")
+        image.close()
+        self.assertEqual(GRAIN_SIZE*3, image.getMaxSize())
+        data = image.readDiskData(0, GRAIN_SIZE*3)
+        self.assertTrue(all(v == '\0' for v in data[4:GRAIN_SIZE]) )        
+        self.assertTrue(all(v == '\0' for v in data[GRAIN_SIZE + 4:2*GRAIN_SIZE]) )   
+        self.assertTrue(all(v == '\0' for v in data[GRAIN_SIZE*2+4:3*GRAIN_SIZE]) )
+        self.assertEqual(data[0:4], "test")
+        self.assertEqual(data[GRAIN_SIZE:GRAIN_SIZE+4], "test")
+        self.assertEqual(data[GRAIN_SIZE*2:GRAIN_SIZE*2 + 4], "test")
+    
+    def test_operationsAfterClose(self):
+        self.removeFile()
+        image = StreamVmdkMedia(streamImage)
+        image.open()
+        image.writeDiskData(0,"test")
+        image.close()
+        try:
+            self.assertEqual(image.getMaxSize(), GRAIN_SIZE)#might as well do some assertions while we are testing for exceptions
+            self.assertEqual(image.getImageSize(), 15*SECTOR_SIZE)
+            self.assertEqual(image.readDiskData(0,GRAIN_SIZE)[:4], "test")
+            self.assertEqual(struct.unpack("=Q",image.readImageData(0,SECTOR_SIZE)[12:20])[0],128) 
+        except:
+            self.fail("exception raised on permitted opeteration after close() is called")
+            
+        
+
          
  
