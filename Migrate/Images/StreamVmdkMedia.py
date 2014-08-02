@@ -237,8 +237,8 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
             Throws:
                 VMDKStreamException
                     if image is not opened yet"""
-        if not self.__opened:
-            raise VMDKStreamException("cannot get disk size: image not opened")
+       # if not self.__opened:
+       #     raise VMDKStreamException("cannot get disk size: image not opened")
         if self.__readOnly:
             return self.__parsedHeader.capacity * SECTOR_SIZE    
         if self.__size == -1:
@@ -251,8 +251,8 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
     def getImageSize(self):
         """ returns image file size in bytes.
             flushes the file first"""
-        if not self.__opened:
-            raise VMDKStreamException("cannot get image size: image not opened")
+      #  if not self.__opened:
+      #      raise VMDKStreamException("cannot get image size: image not opened")
         self.flush()
         return os.path.getsize(self.__filePath)
     
@@ -280,8 +280,8 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
                     if image is not yet opened
                     if offset + size > self.getImageSize(): trying to read past end of file
                      """
-        if not self.__opened:
-            raise VMDKStreamException("cannot read: image not opened")
+       # if not self.__opened:
+       #      raise VMDKStreamException("cannot read: image not opened")
         if size + offset > self.getImageSize():
             raise VMDKStreamException("Trying to read past end of file")
         if not self.__readOnly and offset < SECTOR_SIZE + self.__parsedHeader.descriptorSize * SECTOR_SIZE:
@@ -527,7 +527,9 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
                 VMDKStreamException
                     if image is not yet opened"""
         if not self.__opened:
-            raise VMDKStreamException("cannot close: image not opened")
+       #     raise VMDKStreamException("cannot close: image not opened")
+            logging.warn("Try to close iamge already closed");
+            return 
         if self.__readOnly:
             self.__file.close()
             return
