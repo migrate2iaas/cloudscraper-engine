@@ -124,8 +124,10 @@ class EC2VolumeGenerator(object):
 
         tmp_vmdk_file = temp_local_image_path
      
-
-        connection = EC2ImportConnection.EC2ImportConnection(s3owner, s3key, ec2region , host = eucalypus_host , port = eucalyptus_port , path = eucalyptus_path )
+        if walrus:
+            connection = EC2ImportConnection.EC2ImportConnection(s3owner, s3key, ec2region , host = eucalyptus_host , port = eucalyptus_port , path = eucalyptus_path , eucalyptus = walrus , is_secure=False)
+        else:
+            connection = EC2ImportConnection.EC2ImportConnection(s3owner, s3key, ec2region)
 
         retry = 0
         # trying to get the import working for the several times
@@ -134,7 +136,7 @@ class EC2VolumeGenerator(object):
 
             import_task = None
             try:
-                import_task = connection.import_volume(xmlurl, image_file_size , imagetype, ec2zone , newvolsize , "cloudscraper"+str(datetime.date.today()) )
+                import_task = connection.import_volume(xmlurl, image_file_size , imagetype.upper(), ec2zone , newvolsize , "cloudscraper"+str(datetime.date.today()) )
             except Exception as e:
                 logging.error("!!!ERROR: Couldn't start volume conversion!")
                 logging.error("!!!ERROR:" + str(e))

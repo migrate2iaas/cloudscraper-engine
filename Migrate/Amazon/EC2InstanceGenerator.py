@@ -121,7 +121,7 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
             # waiting till the process completes        
             import_task = None
             try:
-                import_task = connection.import_instance( import_manifest_xml = xmlurl, imagesize_bytes = image_file_size , image_format = imagetype \
+                import_task = connection.import_instance( import_manifest_xml = xmlurl, imagesize_bytes = image_file_size , image_format = imagetype.upper() \
                                                          , availability_zone = ec2zone , volume_size_gb = newvolsize , security_group = securitygroup , instance_type = instancetype \
                                                          , architecture=machine_arch , description="cloudscraper-"+str(datetime.date.today()) , vpc_subnet= vpcsubnet)
             
