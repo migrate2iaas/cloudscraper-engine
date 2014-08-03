@@ -105,7 +105,10 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
 
         tmp_vmdk_file = temp_local_image_path
      
-        connection = EC2ImportConnection.EC2ImportConnection(s3owner, s3key, ec2region , host = eucalyptus_host , port = eucalyptus_port , path = eucalyptus_path , eucalyptus = walrus , is_secure=False)
+        if walrus:
+            connection = EC2ImportConnection.EC2ImportConnection(s3owner, s3key, ec2region , host = eucalyptus_host , port = eucalyptus_port , path = eucalyptus_path , eucalyptus = walrus , is_secure=False)
+        else:
+            connection = EC2ImportConnection.EC2ImportConnection(s3owner, s3key, ec2region)
         #if walrus:
         #    connection.APIVersion = "2013-02-01"
 
