@@ -280,11 +280,11 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
             Throws:
                 VMDKStreamException
                     if image is not yet opened
-                    if offset + size > self.getImageSize(): trying to read past end of file
+                    if offset> self.getImageSize(): trying to read past end of file
                      """
         #if not self.__opened:
         #    raise VMDKStreamException("cannot read: image not opened")
-        if size + offset > self.getImageSize():
+        if offset > self.getImageSize():
             raise VMDKStreamException("Trying to read past end of file")
         if not self.__readOnly and offset < SECTOR_SIZE + self.__parsedHeader.descriptorSize * SECTOR_SIZE:
             logging.warning("Reading from part of file that is still subject to change! the first %s bytes of the file will be overwritten on file close. Using this data to copy this disk WILL result in a corrupted file"%(SECTOR_SIZE + self.__parsedHeader.descriptorSize * SECTOR_SIZE))
