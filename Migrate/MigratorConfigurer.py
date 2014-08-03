@@ -443,7 +443,7 @@ class MigratorConfigurer(object):
 
     def createImageFactory(self , config , image_placement , imagetype):
         """generates factory to create media (virtual disk files) to store image before upload"""
-        compression = 1
+        compression = 2
         if config.has_option('Image', 'compression'):
             compression =  config.getint('Image', 'compression')
         
@@ -461,7 +461,7 @@ class MigratorConfigurer(object):
             chunk = 4096*1024
             factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
         if (imagetype == "stm.vmdk" or imagetype == "vmdk") and image_placement == "local":
-            factory = StreamVmdkMediaFactory.StreamVmdkMediaFactory() 
+            factory = StreamVmdkMediaFactory.StreamVmdkMediaFactory(compression) 
         return factory
 
     def getImageOptions(self , config):

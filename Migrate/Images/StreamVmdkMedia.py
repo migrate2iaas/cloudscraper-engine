@@ -183,7 +183,7 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
     __zeroGT = []
     __initialized = False
 
-    def __init__(self, filePath, size = -1, bufferSize = GRAIN_SIZE * 100):
+    def __init__(self, filePath, size = -1, bufferSize = GRAIN_SIZE * 100 , compression = 4):
         """ constructor
             Args:
                 filePath: path to the image the be created/read
@@ -206,7 +206,7 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
         self.__filePath = filePath
         self.__opened = False
         self.__bufferSize = bufferSize
-
+        self.__compressionLevel = compression
         
         
             
@@ -497,7 +497,7 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
     def __writeNonNullGrain(self, data):
         fileSectorPos = StreamVmdkMedia.__fileToSectorPointer(self.__file)
         
-        compressData = zlib.compress(data)
+        compressData = zlib.compress(data , self.__compressionLevel)
         dataToWrite = StreamVmdkMedia.__createGrainMarker( len( self.__fullGT ) * SECTORS_PER_GRAIN, len(compressData) )
         
         dataToWrite += compressData
