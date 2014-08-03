@@ -225,6 +225,9 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
         else:
             self.__createOpenNew()
         self.__opened = True
+
+
+
      
         
     def getMaxSize(self):
@@ -531,7 +534,10 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
         dataToWrite = struct.pack("=" + str( len( self.__currentGT )) + "I", *self.__currentGT)
         self.__file.write(dataToWrite)
         self.__currentGT = []
-            
+
+    def __reopenFile(self):
+        self.__file = open(self.__filePath, "rb")
+ 
     def close(self):
         """ closes the file. Writes the GD, footer, all relevant markers and updates the header and descriptor. 
             After closing the file cannot be written to anymore. 
