@@ -341,7 +341,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         self.__chunkSize = chunksize 
         self.__region = awsregion
 
-        self.__diskType = diskType
+        self.__diskType = diskType.upper()
         self.__resumeUpload = resume_upload
         self.__errorUploading = False
 

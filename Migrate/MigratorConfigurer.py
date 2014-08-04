@@ -460,7 +460,7 @@ class MigratorConfigurer(object):
         if (imagetype == "raw.tar" or imagetype == "RAW") and image_placement == "local":
             chunk = 4096*1024
             factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
-        if (imagetype == "stm.vmdk" or imagetype == "vmdk") and image_placement == "local":
+        if (imagetype == "stm.vmdk" or imagetype == "vmdk" or imagetype == "VMDK") and image_placement == "local":
             factory = StreamVmdkMediaFactory.StreamVmdkMediaFactory(compression) 
         return factory
 
