@@ -228,23 +228,19 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
             self.__createOpenNew()
         self.__opened = True
      
-    def release(self):
-        """Override relase so it's not calling close"""
-        return
          
     def getMaxSize(self):
-        """ Returns the virtual disks size in bytes.
+        """ Returns the virtual disks size in bytes. Note: it couldn't be called before open() but could be called after close()
             For newly created image:
                 if created with size = -1: returns highest offset that has been written to, round up to nearest multiple of GRAIN_SIZE
                 if created with size > 0: returns size
             For image that already existed:
                 returns image size (read form header)  
             Throws:
-                VMDKStreamException
-                    if image is not opened yet"""
+                """
         
-        if not self.__opened:
-            raise VMDKStreamException("cannot get disk size: image not opened")
+       # if not self.__opened:
+       #     raise VMDKStreamException("cannot get disk size: image not opened")
             
         if self.__readOnly:
             return self.__parsedHeader.capacity * SECTOR_SIZE    
