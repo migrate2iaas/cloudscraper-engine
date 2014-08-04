@@ -1,6 +1,8 @@
 #created by Robin van der Veer
 #18-07-2014
 
+import ImageMedia
+
 import struct
 import sys
 import os
@@ -9,12 +11,10 @@ import string
 import zlib
 import logging
 
-import ImageMedia
-
 # Header Constants
 MAGIC_NUMBER = 0x564D444B # 'V' 'M' 'D' 'K'
 EXPECTED_FLAGS = 196609 #bits 0, 16 and 17
-EXPECTED_VERSION = 1
+EXPECTED_VERSION = 3
 EXPECTED_COMPRESS_ALGORITHM = 1
 EXPECTED_GTE_PER_GT = 512
 
@@ -61,7 +61,7 @@ ddb.geometry.heads = "255"
 ddb.geometry.sectors = "63"
 # Believe this is random
 ddb.longContentID = "8f15b3d0009d9a3f456ff7b28d324d2a"
-ddb.virtualHWVersion = "7"'''
+ddb.virtualHWVersion = "6"'''
 
 class VMDKStreamException(Exception):
     def __init__(self, msg):
@@ -183,13 +183,14 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
     __zeroGT = []
     __initialized = False
 
-    def __init__(self, filePath, size = -1, bufferSize = GRAIN_SIZE * 100 , compression = 4):
+    def __init__(self, filePath, size = -1, bufferSize = GRAIN_SIZE * 100 , compression = 6):
         """ constructor
             Args:
                 filePath: path to the image the be created/read
                 size: (only used when creating a new image!) (NOTE: SIZE IN BYTES!)
                    if not specified (-1): this disk will just grow as much as is necacery to hold all written data
                    if specified (>0): this disk will have a fix size, and writing too much data to it will raise an exception
+                compression: from (0 to 9) zlib compression rate. Lower rates will use fewer CPU
             Throws: 
                 ValueError:
                     if size specified and size != -1 and size<=0
@@ -206,7 +207,8 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
         self.__filePath = filePath
         self.__opened = False
         self.__bufferSize = bufferSize
-        self.__compressionLevel = compression
+        self.__compression = compression
+
         
         
             
@@ -225,11 +227,11 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
         else:
             self.__createOpenNew()
         self.__opened = True
-
-
-
      
-        
+    def release(self):
+        """Override relase so it's not calling close"""
+        return
+         
     def getMaxSize(self):
         """ Returns the virtual disks size in bytes.
             For newly created image:
@@ -237,9 +239,13 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
                 if created with size > 0: returns size
             For image that already existed:
                 returns image size (read form header)  
-            """
-       # if not self.__opened:
-       #     raise VMDKStreamException("cannot get disk size: image not opened")
+            Throws:
+                VMDKStreamException
+                    if image is not opened yet"""
+        
+        if not self.__opened:
+            raise VMDKStreamException("cannot get disk size: image not opened")
+            
         if self.__readOnly:
             return self.__parsedHeader.capacity * SECTOR_SIZE    
         if self.__size == -1:
@@ -252,8 +258,8 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
     def getImageSize(self):
         """ returns image file size in bytes.
             flushes the file first"""
-      #  if not self.__opened:
-      #      raise VMDKStreamException("cannot get image size: image not opened")
+        #if not self.__opened:
+        #    raise VMDKStreamException("cannot get image size: image not opened")
         self.flush()
         return os.path.getsize(self.__filePath)
     
@@ -264,7 +270,9 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
                     if image is not yet opened"""
         if not self.__opened:
             return
-        #    raise VMDKStreamException("cannot flush: image not opened")
+            #raise VMDKStreamException("cannot flush: image not opened")
+        if self.__readOnly: #if we are in read only mode, flushing the file does nothing
+            return
         self.__file.flush()
     
     def reopen(self):
@@ -280,10 +288,10 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
             Throws:
                 VMDKStreamException
                     if image is not yet opened
-                    if offset> self.getImageSize(): trying to read past end of file
+                    if offset + size > self.getImageSize(): trying to read past end of file
                      """
-        #if not self.__opened:
-        #    raise VMDKStreamException("cannot read: image not opened")
+       # if not self.__opened:
+       #     raise VMDKStreamException("cannot read: image not opened")
         if offset > self.getImageSize():
             raise VMDKStreamException("Trying to read past end of file")
         if not self.__readOnly and offset < SECTOR_SIZE + self.__parsedHeader.descriptorSize * SECTOR_SIZE:
@@ -318,7 +326,17 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
         """       
         if not self.__opened:
             raise VMDKStreamException("cannot read: image not opened")
+        #if the file is opened, but the file is closed already, than close() has been called.
+        #this means we have to make sure that we leave the file closed when we are done to avoid resource leaking
+        closeWhenDone = False
+        if self.__file.closed:
+            closeWhenDone = True
+            self.__reopenFile() 
+        
         return self.__readDiskData(offset, size)#don't expose the check argument; should not be used by user.
+        
+        if closeWhenDone:
+            self.__file.close()
     
     def __readDiskData(self, offset, size, check = True):
         """ internaly used. the check argument must be used for preset size initialized images. 
@@ -370,6 +388,9 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
         
         return readData
     
+    def __reopenFile(self):
+        self.__file = open(self.__filePath, "rb")
+    
     def __readGrain(self, offset):
         """ Read one grain of data from the disk """
         sectorOffset = StreamVmdkMedia.__byteOffsetToSectorOffset(offset) #translate the offset in bytes to an offset in sectors
@@ -377,8 +398,8 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
         
         if grainOffset == len(self.__fullGT):
             return self.__incompleteWrittenGrain + StreamVmdkMedia.__padToGrain(self.__incompleteWrittenGrain)
-        
         fileLocation = self.__fullGT[ grainOffset ] * SECTOR_SIZE#get the location in the file where we can find the grain
+        
         if fileLocation:
             self.__file.seek( fileLocation + UINT64_BYTE_SIZE)#set the file position to point to the data-length byte of the marker
             compressedLength = struct.unpack("=I", self.__file.read(UINT32_BYTE_SIZE))[0]#extract the required number of bytes
@@ -497,7 +518,7 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
     def __writeNonNullGrain(self, data):
         fileSectorPos = StreamVmdkMedia.__fileToSectorPointer(self.__file)
         
-        compressData = zlib.compress(data , self.__compressionLevel)
+        compressData = zlib.compress(data , self.__compression)
         dataToWrite = StreamVmdkMedia.__createGrainMarker( len( self.__fullGT ) * SECTORS_PER_GRAIN, len(compressData) )
         
         dataToWrite += compressData
@@ -534,10 +555,7 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
         dataToWrite = struct.pack("=" + str( len( self.__currentGT )) + "I", *self.__currentGT)
         self.__file.write(dataToWrite)
         self.__currentGT = []
-
-    def __reopenFile(self):
-        self.__file = open(self.__filePath, "rb")
- 
+            
     def close(self):
         """ closes the file. Writes the GD, footer, all relevant markers and updates the header and descriptor. 
             After closing the file cannot be written to anymore. 
@@ -545,11 +563,10 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
                 VMDKStreamException
                     if image is not yet opened"""
         if not self.__opened:
-       #     raise VMDKStreamException("cannot close: image not opened")
-            logging.warn("Try to close iamge already closed");
-            return 
+            raise VMDKStreamException("cannot close: image not opened")
         if self.__readOnly:
-            self.__file.close()
+            if not self.__file.closed:
+                self.__file.close()
             return
         self.__file.seek(0,2)#seek to end of file
         if len(self.__incompleteWrittenGrain) != 0:
@@ -602,9 +619,9 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
         dataToWrite += StreamVmdkMedia.__zeroGrain[:SECTOR_SIZE]
         self.__file.write(dataToWrite)
         
+        self.__readOnly = True
         self.__file.close()
-        self.__opened = False
-    
+        
     @staticmethod    
     def __createMarker(numSectors, marker_type):
         marker_list = [ numSectors, 0, marker_type ]
