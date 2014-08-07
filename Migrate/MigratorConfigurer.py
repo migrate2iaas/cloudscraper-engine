@@ -33,6 +33,7 @@ import GzipChunkMediaFactory
 import RawGzipMediaFactory
 import datetime
 import StreamVmdkMediaFactory
+import ProfitBricksConfig
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
     def __init__(self, volumename, imagepath , imagesize):
@@ -204,7 +205,29 @@ class MigratorConfigurer(object):
         if config.has_section('CloudSigma'):
             return self.configCloudSigma(configfile, config , password )
 
+        if config.has_section('ProfitBricks'):
+            return self.configProfitBricks(configfile, config , password )
+
         return None
+
+    def configProfitBricks(self, configfile, config, password):
+         # generic for other clouds
+        (imagedir, image_placement, imagetype) = self.getImageOptions(config)
+        volumes = self.createVolumesList(config , configfile, imagedir, imagetype)        
+        factory = self.createImageFactory(config , image_placement , imagetype)
+
+
+        # Azure-specific
+        account = config.get('ProfitBricks', 'user')
+
+        region = config.get('ProfitBricks', 'region')
+
+        adjust_override = self.getOverrides(config , configfile)
+   
+        image = ProfitBricksConfig.ProfitBricksMigrateConfig(volumes , factory, 'x86_64' , imagetype)
+        cloud = ProfitBricksConfig.ProfitBricksCloudOptions(account , password, region , imagetype)
+
+        return (image,adjust_override,cloud)
 
 
     def configCloudSigma(self, configfile, config, password):

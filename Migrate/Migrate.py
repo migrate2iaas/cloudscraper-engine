@@ -13,6 +13,7 @@ sys.path.append('.\Azure')
 sys.path.append('.\CloudSigma')
 sys.path.append('.\SelfTest')
 sys.path.append('.\Images')
+sys.path.append('.\ProfitBricks')
 
 import unittest
 import WindowsVolume
@@ -62,6 +63,7 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--ehkey', help="Your ElasicHosts API secret key.")
     parser.add_argument('-i', '--cloudsigmapass', help="Your CloudSigma password.")
     parser.add_argument('-a', '--azurekey', help="Your Azure storage account primary key.")
+    parser.add_argument('-w', '--apikey', help="Your generic API key: the cloud will be choosen according to the config file.")
     parser.add_argument('-c', '--config', help="Path to copy config file")
     parser.add_argument('-o', '--output', help="Path to extra file for non-detalized output")                   
     parser.add_argument('-u', '--resumeupload', help="Resumes the upload of image already created", action="store_true")                   
@@ -110,6 +112,7 @@ if __name__ == '__main__':
     ehkey=''
     azurekey=''
     cloudsigmapass=''
+    apikey = ''
     if parser.parse_args().ehkey:
         ehkey = parser.parse_args().ehkey
     if parser.parse_args().amazonkey:
@@ -118,6 +121,8 @@ if __name__ == '__main__':
         azurekey = parser.parse_args().azurekey    
     if parser.parse_args().cloudsigmapass:
         cloudsigmapass = parser.parse_args().cloudsigmapass    
+    if parser.parse_args().apikey:
+        apikey = parser.parse_args().apikey  
 
     testrun = False
     timeout = 0
@@ -136,7 +141,7 @@ if __name__ == '__main__':
         #NOTE: skip upload is not yet good enough! 
         # it needs saving of 1) image-id (xml-key) for each volume imported previously 2) instance-id
 
-    password = s3key or ehkey or azurekey or cloudsigmapass
+    password = s3key or ehkey or azurekey or cloudsigmapass or apikey
     try:
         #configuring the process
         (image,adjust,cloud) = config.configAuto(configpath , password)

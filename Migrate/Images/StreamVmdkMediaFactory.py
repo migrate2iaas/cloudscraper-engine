@@ -17,7 +17,7 @@ class StreamVmdkMediaFactory(ImageMediaFactory.ImageMediaFactory):
         if imagesize:
             if not(imagesize % StreamVmdkMedia.GRAIN_SIZE == 0):
                 imagesize = (int(imagesize / StreamVmdkMedia.GRAIN_SIZE) + 1) * StreamVmdkMedia.GRAIN_SIZE
-        media = StreamVmdkMedia.StreamVmdkMedia(imagepath , imagesize , compression = self.__compression)
+        media = StreamVmdkMedia.StreamVmdkMedia(imagepath , imagesize, compression = self.__compression)
         return media
 
 

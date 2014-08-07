@@ -43,25 +43,24 @@ DESCRIPTOR_SIZE = 3 #this will always be enough
 image_descriptor_template= \
 '''# Disk DescriptorFile
 version=1
-# Believe this is random
 CID=7e5b80a7
-# Indicates no parent
 parentCID=ffffffff
 createType= "streamOptimized"
 
 # Extent description
 RDONLY #SECTORS# SPARSE "#FILEPATH#"
 
-# The Disk Data Base
+# The Disk Data Base 
 #DDB
-ddb.adapterType = "lsilogic"
-# #SECTORS# / 63 / 255 rounded up
+
+ddb.virtualHWVersion = "4"
+ddb.adapterType = "ide"
 ddb.geometry.cylinders = "#CYLINDERS#"
 ddb.geometry.heads = "255"
 ddb.geometry.sectors = "63"
 # Believe this is random
 ddb.longContentID = "8f15b3d0009d9a3f456ff7b28d324d2a"
-ddb.virtualHWVersion = "6"'''
+'''
 
 class VMDKStreamException(Exception):
     def __init__(self, msg):
@@ -564,6 +563,7 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
             if not self.__file.closed:
                 self.__file.close()
             return
+        logging.info("Completing steam VMDK file header..")
         self.__file.seek(0,2)#seek to end of file
         if len(self.__incompleteWrittenGrain) != 0:
             self.__incompleteWrittenGrain += StreamVmdkMedia.__padToGrain(self.__incompleteWrittenGrain)

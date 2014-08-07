@@ -129,6 +129,7 @@ class EHUploadThread(threading.Thread):
             if failed:
                 logging.error("!!! ERROR failed to upload data: disk %s at offser %s, please make a reupload!", str(driveid), str(start) )
                 self.__uploadQueue.task_done()
+                self.__errorUpload = True
 
 
 
@@ -173,6 +174,7 @@ class EHUploadChannel(UploadChannel.UploadChannel):
         self.__overallSize = 0
         self.__chunkSize = chunksize
         self.__alreadyUploaded = 0
+        self.__errorUpload = False
        
         self.__volumeToAllocateBytes = resultDiskSizeBytes
         self.__allocatedDriveSize = resultDiskSizeBytes
@@ -244,7 +246,7 @@ class EHUploadChannel(UploadChannel.UploadChannel):
        if self.__overallSize < start + size:
            self.__overallSize = start + size       
 
-       return 
+       return (self.__errorUpload == False)
 
     def getUploadPath(self):
         return self.__driveId
@@ -265,6 +267,9 @@ class EHUploadChannel(UploadChannel.UploadChannel):
     # gets overall data skipped from uploading if resume upload is set
     def getOverallDataSkipped(self):
         return self.__uploadSkippedSize
+
+    def notifyError(self):
+        self.__errorUpload = True
 
     # The assumption is data is uploaded lineary. 
     # it's true due to use of one uploading thread 

@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Amazon\EC2Instance_test.py</StartupFile>
+    <StartupFile>ProfitBricks\FtpUploadChannel_test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -48,14 +48,23 @@
     <Compile Include="DataExtent.py" />
     <Compile Include="DataTransferProto.py" />
     <Compile Include="ElasticHosts\EHConfigs.py" />
+    <Compile Include="ElasticHosts\EHInstance.py" />
+    <Compile Include="ElasticHosts\EHInstanceGenerator.py" />
     <Compile Include="ElasticHosts\EHUploadChannel.py" />
     <Compile Include="ElasticHosts\EHUploadChannel_test.py" />
-    <Compile Include="GzipChunkMedia.py" />
-    <Compile Include="GzipChunkMediaFactory.py" />
-    <Compile Include="GzipChunkMedia_test.py" />
     <Compile Include="Helper\UnicodeConfigParser.py" />
-    <Compile Include="ImageMediaFactory.py" />
-    <Compile Include="ImageMedia.py" />
+    <Compile Include="Images\StreamVmdkMedia.py" />
+    <Compile Include="Images\diskConvUsage_test.py" />
+    <Compile Include="Images\StreamVmdkMediaFactory.py" />
+    <Compile Include="Images\StreamVmdkMedia_test.py" />
+    <Compile Include="Images\GzipChunkMedia.py" />
+    <Compile Include="Images\GzipChunkMediaFactory.py" />
+    <Compile Include="Images\GzipChunkMedia_test.py" />
+    <Compile Include="Images\ImageMedia.py" />
+    <Compile Include="Images\ImageMediaFactory.py" />
+    <Compile Include="Images\RawGzipMedia.py" />
+    <Compile Include="Images\RawGzipMediaFactory.py" />
+    <Compile Include="Images\RawGzipMedia_test.py" />
     <Compile Include="InstanceGenerator.py" />
     <Compile Include="Migrate.py" />
     <Compile Include="MigrateConfig.py" />
@@ -66,15 +75,14 @@
     <Compile Include="MigratorConfigurer.py" />
     <Compile Include="Migrator_test.py" />
     <Compile Include="MultithreadUpoadChannel.py" />
-    <Compile Include="RawGzipMediaFactory.py" />
-    <Compile Include="RawGzipMedia.py" />
-    <Compile Include="RawGzipMedia_test.py" />
+    <Compile Include="ProfitBricks\FtpUploadChannel.py" />
+    <Compile Include="ProfitBricks\FtpUploadChannel_test.py" />
+    <Compile Include="ProfitBricks\ProfitBricksConfig.py" />
     <Compile Include="SelfTest\AzureServiceBusResponder.py" />
     <Compile Include="SelfTest\ServerResponder.py" />
     <Compile Include="SimpleDataTransferProto.py" />
     <Compile Include="SimpleDiskParser.py" />
     <Compile Include="SimpleTransferTarget.py" />
-    <Compile Include="StreamVmdkMedia.py" />
     <Compile Include="SystemAdjustOptions.py" />
     <Compile Include="SystemInfo.py" />
     <Compile Include="TransferTarget.py" />
@@ -113,6 +121,8 @@
     <Folder Include="Azure\" />
     <Folder Include="Helper\" />
     <Folder Include="CloudSigma\" />
+    <Folder Include="Images\" />
+    <Folder Include="ProfitBricks\" />
     <Folder Include="SelfTest\" />
     <Folder Include="Windows" />
   </ItemGroup>
