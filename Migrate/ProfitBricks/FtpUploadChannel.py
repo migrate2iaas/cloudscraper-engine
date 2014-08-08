@@ -27,6 +27,7 @@ class DefferedFTPFile(file):
     def __init__(self,  *args):
         self.__lock = threading.Lock()
         self.__queue = Queue.Queue(1)
+        self.__cancelled = False
         #return super(DefferedFTPFile, self).__init__(*args)
         
 
@@ -49,6 +50,12 @@ class DefferedFTPFile(file):
 
     def write(self, str):
         self.__queue.put(str)
+
+    def cancel(self):
+        self.__cancelled = True
+
+    def cancelled(self):
+        return self.__cancelled
 
     def readinto(self):
         return super(DefferedFTPFile, self).readinto()
@@ -108,7 +115,8 @@ class FtpUploadChannel(UploadChannel.UploadChannel):
        """Note: should be sequental"""
        
        if self.__proxyFileObj == None:
-           #run the transfer in separate thread
+           #reconnect
+           self.__ftp.connect()
            self.__proxyFileObj = DefferedFTPFile()
            self.__thread = threading.Thread(target = readThreadRoutine, args=(self.__ftp,self.__filepath,self.__proxyFileObj,self.__chunkSize,) )
            self.__thread.start()
@@ -117,7 +125,7 @@ class FtpUploadChannel(UploadChannel.UploadChannel):
 
        self.__uploadedSize = self.__uploadedSize + extent.getSize()
 
-       return 
+       return self.cancelled() == False
 
     def getUploadPath(self):
         return self.__filepath
