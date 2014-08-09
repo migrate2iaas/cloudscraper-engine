@@ -102,7 +102,7 @@ class FtpUploadChannel(UploadChannel.UploadChannel):
         self.__uploadSkippedSize = 0
         self.__uploadedSize  = 0
         logging.info ("Connecting host " + self.__hostname)
-        self.__ftp = ftplib.FTP(self.__hostname , user, password) 
+        self.__ftp = ftplib.FTP(self.__hostname , self.__user, self.__password) 
         self.__proxyFileObj = None
         self.__thread = None
 
@@ -116,7 +116,7 @@ class FtpUploadChannel(UploadChannel.UploadChannel):
        
        if self.__proxyFileObj == None:
            #reconnect
-           self.__ftp.connect()
+           self.__ftp = ftplib.FTP(self.__hostname , self.__user, self.__password) 
            self.__proxyFileObj = DefferedFTPFile()
            self.__thread = threading.Thread(target = readThreadRoutine, args=(self.__ftp,self.__filepath,self.__proxyFileObj,self.__chunkSize,) )
            self.__thread.start()
@@ -166,9 +166,6 @@ class FtpUploadChannel(UploadChannel.UploadChannel):
         return self.__filepath
 
     def close(self):
-        if self.__proxyFileObj:
-            self.__proxyFileObj.complete()
-            self.__proxyFileObj = None
         return
   
 
