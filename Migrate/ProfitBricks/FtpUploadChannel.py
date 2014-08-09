@@ -125,7 +125,7 @@ class FtpUploadChannel(UploadChannel.UploadChannel):
 
        self.__uploadedSize = self.__uploadedSize + extent.getSize()
 
-       return self.cancelled() == False
+       return self.__proxyFileObj.cancelled() == False
 
     def getUploadPath(self):
         return self.__filepath
