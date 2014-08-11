@@ -26,7 +26,7 @@ class DefferedFTPFile(file):
 
     def __init__(self,  *args):
         self.__lock = threading.Lock()
-        self.__queue = Queue.Queue(1)
+        self.__queue = Queue.Queue(4)
         self.__cancelled = False
         #return super(DefferedFTPFile, self).__init__(*args)
         
@@ -85,6 +85,7 @@ def readThreadRoutine(ftp , filepath , fileobj , chunksize):
          logging.warning("!Failed to upload data: %s", filepath)
          logging.warning("Exception = " + str(e)) 
          logging.error(traceback.format_exc())
+         fileobj.cancel()
          
 
 class FtpUploadChannel(UploadChannel.UploadChannel):
