@@ -21,6 +21,16 @@ import threading
 import UploadChannel
 import Queue
 import DataExtent
+import socket
+
+class MyFTP(ftplib.FTP):
+    def storbinary(self, command, f, blocksize=8192, callback=None, timeout=0):
+        """
+        Override the storbinary method to make the socket.connection()
+object available outside the object, and to set the timeout of the socket
+        """
+        socket.timeout = timeout
+        return super(MyFTP, self).__init__(command, f, blocksize , callback)
 
 class DefferedFTPFile(file):
 
@@ -28,6 +38,7 @@ class DefferedFTPFile(file):
         self.__lock = threading.Lock()
         self.__queue = Queue.Queue(4)
         self.__cancelled = False
+        self.__readPosition = 0
         #return super(DefferedFTPFile, self).__init__(*args)
         
 
@@ -36,8 +47,9 @@ class DefferedFTPFile(file):
         logging.info("Requested " + str(size) + " bytes to transfer via FTP")
         data = self.__queue.get()
         if data == None:
-            return ""
+            return None
         logging.info("Transfering " + str(len(data)) + " bytes via FTP")
+        self.__readPosition = self.__readPosition  + len(data)
         return data
 
     def complete(self):
@@ -67,11 +79,13 @@ class DefferedFTPFile(file):
     def writelines(self, sequence_of_strings):
         return super(DefferedFTPFile, self).writelines(sequence_of_strings)
     def seek(self, offset, whence):
+        logging.debug("!!! seek called by ftp")
         return super(DefferedFTPFile, self).seek(offset, whence)
     def readline(self, size):
         return super(DefferedFTPFile, self).readline(size)
     def tell(self):
-        return super(DefferedFTPFile, self).tell()
+        logging.debug("tell called by ftp")
+        return self.__readPosition 
     
     def readlines(self, size):
         return super(DefferedFTPFile, self).readlines(size)
