@@ -33,15 +33,15 @@ class DefferedFTPFile(file):
 
     def read(self, size):
         """emulate read"""
-        logging.debug("Requested " + str(size) + " bytes to transfer via FTP")
+        logging.info("Requested " + str(size) + " bytes to transfer via FTP")
         data = self.__queue.get()
         if data == None:
             return ""
-        logging.debug("Transfering " + str(len(data)) + " bytes via FTP")
+        logging.info("Transfering " + str(len(data)) + " bytes via FTP")
         return data
 
     def complete(self):
-        logging.debug("completing the transfer")
+        logging.info("completing the ftp transfer")
         self.__queue.put(None)
 
     def close(self):
@@ -161,8 +161,6 @@ class FtpUploadChannel(UploadChannel.UploadChannel):
 
     def confirm(self):
         """confirm good upload. just close connection"""
-        if self.__proxyFileObj:
-            self.__proxyFileObj.complete()
         return self.__filepath
 
     def close(self):
