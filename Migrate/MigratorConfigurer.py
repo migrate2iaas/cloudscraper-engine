@@ -192,8 +192,13 @@ class MigratorConfigurer(object):
 
     #automcatically chooses which cloud to generate the config for
     def configAuto(self , configfile, password = ''):
-        config = UnicodeConfigParser.UnicodeConfigParser()
-        config.readfp(codecs.open(configfile, "r", "utf16"))
+        try:
+            config = UnicodeConfigParser.UnicodeConfigParser()
+            config.readfp(codecs.open(configfile, "r", "utf16"))
+        except Exception as e:
+            logging.info("Couldn't read an config as unicode file due to " + str(e) + " . Reading as ascii")
+            config = ConfigParser.RawConfigParser()
+            config.read(configfile)
         if config.has_section('EC2'):
             return self.configAmazon(configfile , '' , password)
         if config.has_section('ElasticHosts'):
