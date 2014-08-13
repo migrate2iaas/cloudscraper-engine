@@ -563,7 +563,7 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
             if not self.__file.closed:
                 self.__file.close()
             return
-        logging.info("Completing steam VMDK file header..")
+        logging.info("Completing stream VMDK file header..")
         self.__file.seek(0,2)#seek to end of file
         if len(self.__incompleteWrittenGrain) != 0:
             self.__incompleteWrittenGrain += StreamVmdkMedia.__padToGrain(self.__incompleteWrittenGrain)

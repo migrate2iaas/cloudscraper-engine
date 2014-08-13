@@ -23,14 +23,6 @@ import Queue
 import DataExtent
 import socket
 
-class MyFTP(ftplib.FTP):
-    def storbinary(self, command, f, blocksize=8192, callback=None, timeout=0):
-        """
-        Override the storbinary method to make the socket.connection()
-object available outside the object, and to set the timeout of the socket
-        """
-        socket.timeout = timeout
-        return super(MyFTP, self).__init__(command, f, blocksize , callback)
 
 class DefferedFTPFile(file):
 
@@ -112,7 +104,7 @@ class FtpUploadChannel(UploadChannel.UploadChannel):
         self.__password = password
         self.__hostname = hostname
         self.__resume = resume
-        self.__chunkSize = 1*1024*1024
+        self.__chunkSize = 512*1024
         self.__transferRate = 0
         self.__uploadSkippedSize = 0
         self.__uploadedSize  = 0
@@ -120,6 +112,7 @@ class FtpUploadChannel(UploadChannel.UploadChannel):
         self.__ftp = ftplib.FTP(self.__hostname , self.__user, self.__password) 
         self.__proxyFileObj = None
         self.__thread = None
+        self.__timeout = 60*5
 
         
         return
@@ -170,7 +163,10 @@ class FtpUploadChannel(UploadChannel.UploadChannel):
         if self.__proxyFileObj:
             self.__proxyFileObj.complete()
             if self.__thread:
-                self.__thread.join()
+                self.__thread.join(self.__timeout)
+                if self.__thread.isAlive():
+                    logging.warn("! FTP connection hanged, terminating FTP connection");
+                    #Note, there is no official thread terminate rountine. it's ok to just ignore it for now
             self.__proxyFileObj = None
         return
 

@@ -26,6 +26,7 @@ import traceback
 import sys
 import FtpUploadChannel
 import DataExtent
+import time
 
 #import CLASS
 
@@ -40,7 +41,7 @@ class FtpUploadChannel_test(unittest.TestCase):
     def test_small_vhd(self):
         """test1 desctiption"""
 
-        channel = FtpUploadChannel.FtpUploadChannel("hdd-images/test.vhd", self.__user , self.__password, self.__host)
+        channel = FtpUploadChannel.FtpUploadChannel("hdd-images/test"+str(time.time())+".vhd", self.__user , self.__password, self.__host)
         
         filename = 'E:\\vhdtest.vhd'
         file = open(filename , "rb")
@@ -66,7 +67,7 @@ class FtpUploadChannel_test(unittest.TestCase):
     def test_tiny_vmdk(self):
         """test2 desctiption"""
         
-        channel = FtpUploadChannel.FtpUploadChannel("hdd-images/test.vmdk", self.__user , self.__password, self.__host)
+        channel = FtpUploadChannel.FtpUploadChannel("hdd-images/test"+str(time.time())+".vmdk", self.__user , self.__password, self.__host)
         
         filename = 'E:\\J.vmdk'
         file = open(filename , "rb")
@@ -94,7 +95,7 @@ class FtpUploadChannel_test(unittest.TestCase):
     def setUp(self):
         """sets up the object before any single test"""
         self.__user = "feoff@migrate2iaas.com"
-        self.__password = "pherexia"
+        self.__password = "BolshoyAdmin123"
         self.__host = "ftp-fkb.profitbricks.com"
         
         return
