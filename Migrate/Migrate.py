@@ -58,6 +58,10 @@ if __name__ == '__main__':
     if os.name == 'nt':
         import Windows
         sys.argv = Windows.win32_unicode_argv()
+    else:
+        #temp
+        os.environ["windir"]='/dev/sda'
+        os.environ["COMPUTERNAME"]=os.uname()[1]
 
     #parsing extra option
     parser = argparse.ArgumentParser(description="This script performs creation of virtualized images from the local server, uploading them to S3, converting them to EC2 instances. See http://www.migrate2iaas.com for more details.")
