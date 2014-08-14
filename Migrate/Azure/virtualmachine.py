@@ -22,7 +22,9 @@ from azure.servicemanagement import *
 import string
 from random import sample, choice
 
-from win32com.client import Dispatch
+#TODO: should make code crossplatform
+if os.name == 'nt':
+    from win32com.client import Dispatch
 
 
 class azure_mgmt_response(object):
