@@ -365,7 +365,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         # creating null block to optimize downloads
         self.__nullData = bytearray(self.__chunkSize)
         md5encoder = md5()
-        md5encoder.update(self.__nullData)
+        md5encoder.update(str(self.__nullData))
         self.__nullMd5 = md5encoder.hexdigest()
         self.__nullKey = self.__keyBase + "NullBlock"
         try:
