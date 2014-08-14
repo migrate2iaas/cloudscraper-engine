@@ -46,11 +46,11 @@ class LinuxSystemInfo(SystemInfo.SystemInfo):
 
     #gets system volume info, one where kernel/drivers is situated
     def getSystemVolumeInfo(self):
-        return LinuxVolumeInfo.WindowsVolumeInfo("/dev/sda")
+        return LinuxVolumeInfo.LinuxVolumeInfo("/dev/sda")
 
     #gets the volume info by its path
     def getVolumeInfo(self , path):
-        return LinuxVolumeInfo.WindowsVolumeInfo(path)
+        return LinuxVolumeInfo.LinuxVolumeInfo(path)
 
     # gets iterable to iterate thru volumes in system
     def getDataVolumesInfo(self):
