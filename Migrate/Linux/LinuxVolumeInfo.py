@@ -18,6 +18,9 @@ from MigrateExceptions import FileException
 import struct
 import VolumeInfo
 
+import logging
+import traceback
+
 class LinuxVolumeInfo(VolumeInfo.VolumeInfo):
     """Description of one FS volume in a system: Windows implementation"""
     
