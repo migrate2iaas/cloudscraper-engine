@@ -318,8 +318,14 @@ class MigratorConfigurer(object):
         config = UnicodeConfigParser.UnicodeConfigParser()
         config.readfp(codecs.open(configfile, "r", "utf16"))
 
-        import Windows
-        imagesize = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize()  
+        import os
+        if os.name == 'nt':
+            sys.path.append('./Windows')
+            import Windows
+            imagesize = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize()  
+        else:
+            import Linux
+            imagesize = Linux.Linux().getSystemInfo().getSystemVolumeInfo().getSize() 
 
         #cloud config
         if user == '':
@@ -394,8 +400,14 @@ class MigratorConfigurer(object):
         config = UnicodeConfigParser.UnicodeConfigParser()
         config.readfp(codecs.open(configfile, "r", "utf16"))
 
-        import Windows
-        imagesize = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize()
+        
+        if os.name == 'nt':
+            sys.path.append('./Windows')
+            import Windows
+            imagesize = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize()  
+        else:
+            import Linux
+            imagesize = Linux.Linux().getSystemInfo().getSystemVolumeInfo().getSize() 
         imagetype = 'VHD'      
 
         #cloud config
@@ -478,11 +490,12 @@ class MigratorConfigurer(object):
         # check run on windows flag
         factory = None
         if (imagetype == "VHD" or imagetype == "fixed.VHD") and image_placement == "local":
-            sys.path.append('.\..')
-            sys.path.append('.\..\Windows')
-            sys.path.append('.\Windows')
-            import WindowsVhdMediaFactory
-            factory = WindowsVhdMediaFactory.WindowsVhdMediaFactory(fixed = (imagetype == "fixed.VHD"))
+            if os.name == 'nt':
+                import WindowsVhdMediaFactory
+                factory = WindowsVhdMediaFactory.WindowsVhdMediaFactory(fixed = (imagetype == "fixed.VHD"))
+            else:
+                logging.error("!!!ERROR: Linux doesn't support VHD format");
+            
         #if imagetype == "raw.gz" and image_placement == "local":
         # factory =  RawGzipMediaFactory.RawGzipMediaFactory(imagepath , imagesize)
         if (imagetype == "raw.tar" or imagetype == "RAW") and image_placement == "local":

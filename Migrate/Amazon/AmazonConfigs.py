@@ -105,9 +105,6 @@ class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
     def getSourceOs(self):
         return "local"
 
-    def getHostOs(self):
-        #TODO: should be analyzed by the system
-        return "Windows"
 
     def getSourceArch(self):
         raise self.__imageArch

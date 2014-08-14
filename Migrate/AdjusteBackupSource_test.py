@@ -5,14 +5,17 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 
 import sys
 
-sys.path.append('.\Windows')
-
 import unittest
-import WindowsVolume
-import WindowsBackupSource
 import AdjustedBackupSource
 import BackupAdjust
 import logging
+
+import os
+if os.name == 'nt':
+    sys.path.append('./Windows')
+    import WindowsVolume
+    import WindowsBackupSource
+
 
 class AdjusteBackupSource_test(unittest.TestCase):
 

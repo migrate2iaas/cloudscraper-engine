@@ -87,7 +87,11 @@ class MigrateConfig(object):
         raise NotImplementedError
 
     def getHostOs(self):
-        raise NotImplementedError
+        if os.name == 'nt':
+            return 'Windows'
+        else:
+            return 'Linux'
+
 
     def getImageType(self):
         raise NotImplementedError
