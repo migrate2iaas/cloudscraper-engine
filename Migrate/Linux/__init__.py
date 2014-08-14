@@ -21,6 +21,11 @@ import unittest
 import shutil
 import logging
 
+import LinuxAdjustOptions
+import LinuxBackupSource
+import LinuxSystemInfo
+import LinuxVolumeInfo
+
 class Linux(object):
     
     def createSystemAdjustOptions(self):
