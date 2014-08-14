@@ -5,9 +5,9 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 
 import sys
 
-sys.path.append('.\..')
-sys.path.append('.\..\Helper')
-sys.path.append('.\Helper')
+sys.path.append('./..')
+sys.path.append('./../Helper')
+sys.path.append('./Helper')
 
 
 import AmazonConfigs
