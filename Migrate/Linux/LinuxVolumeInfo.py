@@ -34,7 +34,7 @@ class LinuxVolumeInfo(VolumeInfo.VolumeInfo):
         try:
             #TODO: should use IOCTL instead of this function
 
-            p1 = Popen(["blockdev " , "--getsize64" ,filename], stdout=PIPE)
+            p1 = Popen(["blockdev" , "--getsize64" ,filename], stdout=PIPE)
             output = p1.communicate()[0]
 
             logging.info ("Got " + filename + " size = " + output)
