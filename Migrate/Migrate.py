@@ -28,7 +28,6 @@ import MigratorConfigurer
 import datetime
 import traceback
 import argparse
-import sysconfig
 import time
 import traceback
 import Version
