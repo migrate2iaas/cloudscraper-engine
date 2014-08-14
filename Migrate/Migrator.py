@@ -305,7 +305,7 @@ class Migrator(object):
                 #NOTE: the media should be created nevertheless of the imaging done
                 #so , calls are
                 if self.__skipImaging == False:
-                   self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__winSystemAdjustOptions , random_disk_id=False)
+                   self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__systemAdjustOptions , random_disk_id=False)
             
             description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
             self.__systemTransferChannel = self.__cloudOptions.generateUploadChannel(self.__systemMedia.getMaxSize() , self.__cloudOptions.getServerName() or description, self.__migrateOptions.getSystemVolumeConfig().getUploadPath(), self.__resumeUpload , self.__systemMedia.getImageSize() )
@@ -344,6 +344,7 @@ class Migrator(object):
                 # extra testing
                 if self.__selfChecks:
                     try:
+                        #DEPRICATED, remove
                         logging.info("Making instance self-check") 
                         testmedia = self.__systemTransferTarget.getMedia()
                         import WindowsVhdMedia

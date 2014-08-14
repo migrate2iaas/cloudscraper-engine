@@ -324,6 +324,7 @@ class MigratorConfigurer(object):
             import Windows
             imagesize = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize()  
         else:
+            sys.path.append('./Linux')
             import Linux
             imagesize = Linux.Linux().getSystemInfo().getSystemVolumeInfo().getSize() 
 
@@ -406,6 +407,7 @@ class MigratorConfigurer(object):
             import Windows
             imagesize = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize()  
         else:
+            sys.path.append('./Linux')
             import Linux
             imagesize = Linux.Linux().getSystemInfo().getSystemVolumeInfo().getSize() 
         imagetype = 'VHD'      
@@ -467,10 +469,18 @@ class MigratorConfigurer(object):
         if config.has_section('Volumes') :
             if config.has_option('Volumes', 'letters'):
                 letters = config.get('Volumes', 'letters') 
+               
                 for letter in letters.split(','):
-                    devicepath = '\\\\.\\'+letter+':' 
-                    import Windows
-                    size = Windows.Windows().getSystemInfo().getVolumeInfo(letter+":").getSize()
+                    if os.name == 'nt':
+                        devicepath = '\\\\.\\'+letter+':'
+                        sys.path.append('./Windows')
+                        import Windows
+                        size = Windows.Windows().getSystemInfo().getVolumeInfo(letter+":").getSize()
+                    else:
+                        devicepath = "/dev/"+letter
+                        sys.path.append('./Linux')
+                        import Linux
+                        size = Linux.Linux().getSystemInfo().getVolumeInfo(devicepath).getSize()
                     volume = VolumeMigrateIniConfig(config , configfile , letter , devicepath)
                     if volume.getImagePath() == '':
                         volume.setImagePath(imagedir+"\\"+letter+"."+imagetype);
