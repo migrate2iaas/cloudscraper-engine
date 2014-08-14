@@ -36,7 +36,7 @@ class LinuxVolumeInfo(VolumeInfo.VolumeInfo):
 
             p1 = Popen(["fdisk" , "-l" ,filename], stdout=PIPE)
             p2 = Popen(["grep", "^Disk"], stdin=p1.stdout, stdout=PIPE)
-            p3 = Popen(["awk", "'{print $5}'"], stdin=p2.stdout, stdout=PIPE)
+            p3 = Popen(["awk", "{print $5}"], stdin=p2.stdout, stdout=PIPE)
             output = p2.communicate()[0]
 
             logging.info ("Got " + filename + " size = " + output)
