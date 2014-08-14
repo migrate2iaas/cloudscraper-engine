@@ -199,6 +199,7 @@ class MigratorConfigurer(object):
             logging.info("Couldn't read an config as unicode file due to " + str(e) + " . Reading as ascii")
             config = ConfigParser.RawConfigParser()
             config.read(configfile)
+
         if config.has_section('EC2'):
             return self.configAmazon(configfile , '' , password)
         if config.has_section('ElasticHosts'):
@@ -314,9 +315,13 @@ class MigratorConfigurer(object):
 
     #returns the tuple containing the config info (Image,Fixups,Cloud)
     def configAmazon(self , configfile , user = '' , password = '' , region = '', imagepath = ''):
-
-        config = UnicodeConfigParser.UnicodeConfigParser()
-        config.readfp(codecs.open(configfile, "r", "utf16"))
+        try:
+            config = UnicodeConfigParser.UnicodeConfigParser()
+            config.readfp(codecs.open(configfile, "r", "utf16"))
+        except Exception as e:
+            logging.info("Couldn't read an config as unicode file due to " + str(e) + " . Reading as ascii")
+            config = ConfigParser.RawConfigParser()
+            config.read(configfile)
 
         import os
         if os.name == 'nt':
@@ -398,8 +403,13 @@ class MigratorConfigurer(object):
 
     #TODO: move the common code to one function
     def configElasticHosts(self , configfile , user = '' , password = '' , region = '', imagepath = ''):
-        config = UnicodeConfigParser.UnicodeConfigParser()
-        config.readfp(codecs.open(configfile, "r", "utf16"))
+        try:
+            config = UnicodeConfigParser.UnicodeConfigParser()
+            config.readfp(codecs.open(configfile, "r", "utf16"))
+        except Exception as e:
+            logging.info("Couldn't read an config as unicode file due to " + str(e) + " . Reading as ascii")
+            config = ConfigParser.RawConfigParser()
+            config.read(configfile)
 
         
         if os.name == 'nt':
