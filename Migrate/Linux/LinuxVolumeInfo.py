@@ -34,10 +34,8 @@ class LinuxVolumeInfo(VolumeInfo.VolumeInfo):
         try:
             #TODO: should use IOCTL instead of this function
 
-            p1 = Popen(["fdisk" , "-l" ,filename], stdout=PIPE)
-            p2 = Popen(["grep", "^Disk"], stdin=p1.stdout, stdout=PIPE)
-            p3 = Popen(["awk", "{print $5}"], stdin=p2.stdout, stdout=PIPE)
-            output = p2.communicate()[0]
+            p1 = Popen(["blockdev " , "--getsize64" ,filename], stdout=PIPE)
+            output = p1.communicate()[0]
 
             logging.info ("Got " + filename + " size = " + output)
             
