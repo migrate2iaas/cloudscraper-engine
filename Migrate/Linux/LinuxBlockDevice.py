@@ -17,8 +17,9 @@ import traceback
 
 from MigrateExceptions import *
 import BackupSource
-import WindowsFileToBackup
+
 import subprocess
+import LinuxVolumeInfo
 
 class LinuxBlockDevice(BackupSource.BackupSource):
     """Backup source in Windows OS"""
@@ -47,9 +48,7 @@ class LinuxBlockDevice(BackupSource.BackupSource):
 
     # gets the volume size
     def getVolumeSize(self):
-        command = "fdisk -l " + self.__devName  + " | grep ^Disk | awk '{print $5}'"
-        size = long(subprocess.check_output(["/bin/sh", command]))
-        return size
+        return LinuxVolumeInfo.LinuxVolumeInfo(self.__devName).getSize()
 
     # gets the file enumerator (iterable). each of it's elements represent a filename (unicode string)
     # one may specify another mask

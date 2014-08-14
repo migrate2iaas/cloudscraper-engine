@@ -10,7 +10,7 @@ __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
-import subprocess
+from subprocess import *
 import re
 
 from MigrateExceptions import FileException
@@ -30,8 +30,15 @@ class LinuxVolumeInfo(VolumeInfo.VolumeInfo):
         filename = self.__rootPath
         try:
             #TODO: should use IOCTL instead of this function
-            command = "fdisk -l " + filename  + " | grep ^Disk | awk '{print $5}'"
-            size = long(subprocess.check_output(["/bin/sh", command]))
+
+            p1 = Popen(["fdisk" , "-l" ,filename], stdout=PIPE)
+            p2 = Popen(["grep", "^Disk"], stdin=p1.stdout, stdout=PIPE)
+            p3 = Popen(["awk", "'{print $5}'"], stdin=p2.stdout, stdout=PIPE)
+            output = p2.communicate()[0]
+
+            logging.info ("Got " + filename + " size = " + output)
+            
+            size = long(output)
             return size
         except Exception as ex:
             raise FileException(filename , ex)
