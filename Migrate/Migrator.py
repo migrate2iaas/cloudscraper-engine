@@ -243,7 +243,7 @@ class Migrator(object):
             import Linux
             from Linux.LinuxBackupSource import LinuxBackupSource
             from Linux.LinuxAdjustOptions import LinuxAdjustOptions
-            elf.__systemBackupSource = LinuxBackupSource()
+            self.__systemBackupSource = LinuxBackupSource()
             self.__adjustOption = LinuxAdjustOptions()
 
         self.__systemBackupSource.setBackupDataSource(self.generateSystemDataBackupSource())
