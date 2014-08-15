@@ -80,7 +80,7 @@ class LinuxBlockDevice(BackupSource.BackupSource):
         last_start = 0
         last_size = self.__maxReportedExtentSize
         volextents = list()
-        while last_start < size:
+        while last_start < devsize:
            
            if devsize - last_start > self.__maxReportedExtentSize:
                last_size = self.__maxReportedExtentSize
