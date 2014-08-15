@@ -113,7 +113,7 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
 
         #in case the file is broken, no gzip data is in it
         if len(chunk) == 0:
-            logging.warning("!Warning: Found bad part in archive " + chunkfilename + " , replacing it");
+            #logging.warning("!Warning: Found bad part in archive " + chunkfilename + " , replacing it");
             os.remove(chunkfilename)
             return self.getUnzippedChunk(chunknumber)
 

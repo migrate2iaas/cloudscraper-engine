@@ -88,6 +88,7 @@ class LinuxBlockDevice(BackupSource.BackupSource):
                last_size = devsize - last_start
            volextent = DataExtent(last_start, last_size)
            volextent.setData(DeferedReader(volextent, self) )
+           volextents.append(volextent)
            last_start = last_start + last_size
         
         return volextents
