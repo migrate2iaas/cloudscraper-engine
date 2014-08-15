@@ -12,7 +12,7 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 
 import logging
 import traceback
-import DataExtent
+from DataExtent import DataExtent
 
 
 from MigrateExceptions import *
