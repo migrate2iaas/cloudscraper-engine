@@ -25,6 +25,7 @@ import LinuxAdjustOptions
 import LinuxBackupSource
 import LinuxSystemInfo
 import LinuxVolumeInfo
+import LinuxBlockDevice
 
 class Linux(object):
     
