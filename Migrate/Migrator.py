@@ -298,7 +298,7 @@ class Migrator(object):
             random_disk_id: bool - if we use random disk id for the disk or get it from adjustoptions. Generally it's False for system disks but True for non-system ones
         """
         if self.__runOnWindows == False:
-            return ProxyTransferTarget.ProxyTransferTarget(SimpleDataTransferProto(media))
+            return ProxyTransferTarget.ProxyTransferTarget(SimpleDataTransferProto.SimpleDataTransferProto(media))
 
         if newtarget:
             mbr = adjustoptions.getNewMbrId();
