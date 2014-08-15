@@ -23,6 +23,7 @@ import CloudConfig
 import SystemAdjustOptions
 import GzipChunkMedia
 import SimpleTransferTarget
+import ProxyTransferTarget
 
 class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT"""
@@ -296,6 +297,9 @@ class Migrator(object):
             newtarget: bool - if the target should be new one or old one could be used (not used, needed to signal the existing container should be re-created)
             random_disk_id: bool - if we use random disk id for the disk or get it from adjustoptions. Generally it's False for system disks but True for non-system ones
         """
+        if self.__runOnWindows == False:
+            return ProxyTransferTarget.ProxyTransferTarget(SimpleDataTransferProto(media))
+
         if newtarget:
             mbr = adjustoptions.getNewMbrId();
             if random_disk_id:
@@ -312,11 +316,11 @@ class Migrator(object):
             if self.__systemMedia == None:
                 logging.error("!!!ERROR: Cannot create/open intermediate image (media) for an operation")
                 return
-            if self.__runOnWindows:
-                #NOTE: the media should be created nevertheless of the imaging done
-                #so , calls are
-                if self.__skipImaging == False:
-                   self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__systemAdjustOptions , random_disk_id=False)
+            
+            #NOTE: the media should be created nevertheless of the imaging done
+            #so , calls are
+            if self.__skipImaging == False:
+                self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__systemAdjustOptions , random_disk_id=False)
             
             description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
             self.__systemTransferChannel = self.__cloudOptions.generateUploadChannel(self.__systemMedia.getMaxSize() , self.__cloudOptions.getServerName() or description, self.__migrateOptions.getSystemVolumeConfig().getUploadPath(), self.__resumeUpload , self.__systemMedia.getImageSize() )
