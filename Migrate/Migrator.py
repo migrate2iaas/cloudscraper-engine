@@ -242,9 +242,9 @@ class Migrator(object):
         else:
             import Linux
             from Linux.LinuxBackupSource import LinuxBackupSource
-            from Linux.LinuxAdjustOptions import LinuxAdjustOptions
+            from Linux.LinuxBackupAdjust import LinuxBackupAdjust
             self.__systemBackupSource = LinuxBackupSource()
-            self.__adjustOption = LinuxAdjustOptions()
+            self.__adjustOption = LinuxBackupAdjust()
 
         self.__systemBackupSource.setBackupDataSource(self.generateSystemDataBackupSource())
         
