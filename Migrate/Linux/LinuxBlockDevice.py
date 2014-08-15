@@ -95,7 +95,7 @@ class LinuxBlockDevice(BackupSource.BackupSource):
 
     #returns bytes read
     def readExtent(self, volextent):
-        filename = self.__volumeName
+        filename = self.__devName
         output = ""
         try:
             # we should read several blocks. Big chunks of data read could cause vss to fail
