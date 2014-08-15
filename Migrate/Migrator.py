@@ -434,7 +434,8 @@ class Migrator(object):
                 timedelta = datetime.timedelta()
                 timedelta = timenow - timestart
                 if dataplace and channel.getOverallDataTransfered():
-                    secondsleft = int(float(imagesize - dataplace)/float(dataplace/timedelta.total_seconds()))
+                    totalsec = timedelta.seconds + long(timedelta.days) * 24*60*60
+                    secondsleft = int(float(imagesize - dataplace)/float(dataplace/totalsec))
                     days = secondsleft / (3600*24)
                     hours = secondsleft % (3600*24) / 3600
                     minutes = (secondsleft % (3600*24) % 3600) / 60
