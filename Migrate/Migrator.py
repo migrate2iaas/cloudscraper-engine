@@ -70,7 +70,7 @@ class Migrator(object):
 
         #extra megabyte of additional size to store mbr, etc on the image
         self.__additionalMediaSize = 0x800*0x200
-
+        self.__os = None
         
         
         #TODO: analyze both host and source systems
@@ -80,7 +80,13 @@ class Migrator(object):
             self.__runOnWindows = True
             self.__winSystemAdjustOptions = self.__windows.createSystemAdjustOptions(sys_adjust_overrides)
             self.__systemAdjustOptions = self.__winSystemAdjustOptions
+            self.__os = self.__windows
             #self.__winSystemAdjustOptions
+        else:
+            import Linux
+            self.__linux = Linux.Linux()
+            self.__systemAdjustOptions = Linux.LinuxAdjustOptions.LinuxAdjustOptions()
+            self.__os = self.__linux
 
         if self.__cloudOptions.getTargetCloud() == "EC2":
             import S3UploadChannel
@@ -219,12 +225,10 @@ class Migrator(object):
         return True
 
     def generateSystemDataBackupSource(self):
-        if self.__runOnWindows:
-            return self.__windows.getSystemDataBackupSource()
+        return self.__os.getSystemDataBackupSource()
 
     def generateDataBackupSource(self , volume):
-        if self.__runOnWindows:
-            return self.__windows.getDataBackupSource(volume)
+        return self.__os.getDataBackupSource(volume)
 
     def createSystemBackupSource(self):
         """creates the system backup source, inits the system disk snapshot"""
@@ -235,6 +239,12 @@ class Migrator(object):
             import WindowsBackupAdjust
             self.__systemBackupSource = WindowsBackupSource.WindowsBackupSource()
             self.__adjustOption = WindowsBackupAdjust.WindowsBackupAdjust(self.__winSystemAdjustOptions , self.__windows.getVersion())
+        else:
+            import Linux
+            from Linux.LinuxBackupSource import LinuxBackupSource
+            from Linux.LinuxAdjustOptions import LinuxAdjustOptions
+            elf.__systemBackupSource = LinuxBackupSource.LinuxBackupSource()
+            self.__adjustOption = LinuxAdjustOptions()
 
         self.__systemBackupSource.setBackupDataSource(self.generateSystemDataBackupSource())
         

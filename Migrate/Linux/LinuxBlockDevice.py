@@ -21,6 +21,14 @@ import BackupSource
 import subprocess
 import LinuxVolumeInfo
 
+class DeferedReader(object):
+    """Defers reading extent from the volume extent"""
+    def __init__(self, volExtent, volume):
+        self.__volExtent = volExtent
+        self.__volume = volume
+    def __str__(self):
+        return self.__volume.readExtent(self.__volExtent)
+
 class LinuxBlockDevice(BackupSource.BackupSource):
     """Backup source in Windows OS"""
     
