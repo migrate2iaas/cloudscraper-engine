@@ -551,6 +551,10 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
         self.__file.write(dataToWrite)
         self.__currentGT = []
             
+    def release(self):
+        """dumb impl for now"""
+        return self.close()
+
     def close(self):
         """ closes the file. Writes the GD, footer, all relevant markers and updates the header and descriptor. 
             After closing the file cannot be written to anymore. 
