@@ -365,7 +365,7 @@ class EC2ImportConnection(boto.ec2.connection.EC2Connection):
 
     def import_instance(self, import_manifest_xml, imagesize_bytes , image_format , availability_zone , volume_size_gb , security_group , instance_type , architecture='x86_64' , description="" , vpc_subnet="" , os_platform='Windows'):
         #TODO: make extra checks
-        params = {'LaunchSpecification.Placement.AvailabilityZone': availability_zone ,  'LaunchSpecification.Architecture':  architecture , 'LaunchSpecification.InstanceType' : instance_type , 'LaunchSpecification.GroupName.1' : security_group , 'DiskImage.1.Image.Format': image_format, 'DiskImage.1.Image.Bytes' : str(imagesize_bytes) , 'DiskImage.1.Image.ImportManifestUrl' : import_manifest_xml, 'DiskImage.1.Volume.Size' : str(volume_size_gb) , os_platform : 'Windows'}
+        params = {'LaunchSpecification.Placement.AvailabilityZone': availability_zone ,  'LaunchSpecification.Architecture':  architecture , 'LaunchSpecification.InstanceType' : instance_type , 'LaunchSpecification.GroupName.1' : security_group , 'DiskImage.1.Image.Format': image_format, 'DiskImage.1.Image.Bytes' : str(imagesize_bytes) , 'DiskImage.1.Image.ImportManifestUrl' : import_manifest_xml, 'DiskImage.1.Volume.Size' : str(volume_size_gb) , 'Platform' : os_platform}
         if vpc_subnet:
             params['LaunchSpecification.SubnetId'] = vpc_subnet
         if description:
