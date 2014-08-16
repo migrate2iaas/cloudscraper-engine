@@ -76,7 +76,7 @@ class Linux(object):
         return voldev
 
     def __findLvmDev(self , volgroup):
-        p1 = Popen(["pvdisplay" , "-m", 'volgroup'], stdout=PIPE)
+        p1 = Popen(["pvdisplay" , "-m", volgroup], stdout=PIPE)
         output = p1.communicate()[0]
         
         if str(output).count("Physical volume") > 1:
