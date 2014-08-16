@@ -72,7 +72,7 @@ class Linux(object):
         p1 = Popen(["df" , path], stdout=PIPE)
         output = p1.communicate()[0]
         lastline = output.split("\n")[-1]
-        voldev = lastline[:lastline.find(" ")]
+        voldev = lastline[:lastline.find("\t")]
         return voldev
 
     def __findLvmDev(self , volgroup):
@@ -89,7 +89,7 @@ class Linux(object):
 
     def getSystemDriveName(self):
         rootdev = self.findDeviceForPath("/")
-        bootdev = self.findDeviceForPath("/")
+        bootdev = self.findDeviceForPath("/boot")
 
         
         logging.info("The root device is " + rootdev);
