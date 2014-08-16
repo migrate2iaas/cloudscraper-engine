@@ -97,7 +97,7 @@ class Linux(object):
 
         # try to see where it resides. it's possible to be an lvm drive
         if rootdev.count("mapper/VolGroup-") > 0: 
-             volgroup = str(rootdev).replace('mapper/VolGroup-', 'VolumeGroup/')
+             volgroup = str(rootdev).replace('mapper/VolGroup-', 'VolGroup/')
              rootdev = self.__findLvmDev(volgroup)
              logging.info("LVM " + volgroup + " resides on " + rootdev);
 
