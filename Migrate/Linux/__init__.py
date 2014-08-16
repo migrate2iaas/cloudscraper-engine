@@ -96,8 +96,8 @@ class Linux(object):
         logging.info("The boot device is " + bootdev);
 
         # try to see where it resides. it's possible to be an lvm drive
-        if rootdev.count("mapper") > 0: 
-             volgroup = str(rootdev).replace('mapper', 'VolumeGroup')
+        if rootdev.count("mapper/VolGroup-") > 0: 
+             volgroup = str(rootdev).replace('mapper/VolGroup-', 'VolumeGroup/')
              rootdev = self.__findLvmDev(volgroup)
              logging.info("LVM " + volgroup + " resides on " + rootdev);
 
