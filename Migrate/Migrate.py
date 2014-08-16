@@ -55,6 +55,12 @@ def heartbeat(interval_sec):
 
 if __name__ == '__main__':
     
+    #Turning on the logging
+    logging.basicConfig(format='%(asctime)s %(message)s' , filename='..\\..\\logs\\migrate.log',level=logging.DEBUG)    
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.INFO)
+    logging.getLogger().addHandler(handler)
+
     # little hacks to pre-configure env and args
     if os.name == 'nt':
         import Windows
@@ -80,12 +86,6 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--testrun', help="Makes test run on the migrated server to see it responding.", action="store_true") 
     parser.add_argument('-z', '--timeout', help="Specify timeout to wait for test run server to respond", type=int, default=480)                  
     parser.add_argument('-b', '--heartbeat', help="Specifies interval in seconds to write hearbeat messages to stdout. No heartbeat if this flag is ommited", type=int)                   
-
-    #Turning on the logging
-    logging.basicConfig(format='%(asctime)s %(message)s' , filename='..\\..\\logs\\migrate.log',level=logging.DEBUG)    
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.INFO)
-    logging.getLogger().addHandler(handler)
     
     #new random seed
     random.seed()
