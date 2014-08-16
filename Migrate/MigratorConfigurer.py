@@ -477,28 +477,42 @@ class MigratorConfigurer(object):
         """creates volume list"""
         volumes = list()
         if config.has_section('Volumes') :
+            
+            #check what volumes to migrate
+            letters=""
             if config.has_option('Volumes', 'letters'):
-                letters = config.get('Volumes', 'letters') 
-               
-                for letter in letters.split(','):
-                    if os.name == 'nt':
-                        devicepath = '\\\\.\\'+letter+':'
-                        sys.path.append('./Windows')
-                        import Windows
-                        size = Windows.Windows().getSystemInfo().getVolumeInfo(letter+":").getSize()
-                    else:
-                        devicepath = "/dev/"+letter
-                        sys.path.append('./Linux')
-                        import Linux
-                        size = Linux.Linux().getSystemInfo().getVolumeInfo(devicepath).getSize()
-                    volume = VolumeMigrateIniConfig(config , configfile , letter , devicepath)
-                    if volume.getImagePath() == '':
-                        volume.setImagePath(imagedir+"\\"+letter+"."+imagetype);
-                    if volume.getImageSize() == 0:
-                        volume.setImageSize(size)
-                    if volume.getUploadPath() == '':
-                        volume.setUploadPath(upload_prefix+os.environ['COMPUTERNAME']+"-"+letter)
-                    volumes.append( volume )
+                letters = config.get('Volumes', 'letters')                 
+            letterslist = letters.split(',')
+
+            # if system is set , add autolocated system volume by default
+            if config.has_option('Volumes', 'system'):
+                addsys = config.getboolean('Volumes', 'system') 
+                if addsys:
+                    sysvol = os.environ['windir'].split(':')[0] #todo: change to cross-platform way
+                    if not sysvol in letterlist:
+                        letterslist.append(sysvol)
+
+            for letter in letterslist:
+                if not latter:
+                    continue
+                if os.name == 'nt':
+                    devicepath = '\\\\.\\'+letter+':'
+                    sys.path.append('./Windows')
+                    import Windows
+                    size = Windows.Windows().getSystemInfo().getVolumeInfo(letter+":").getSize()
+                else:
+                    devicepath = "/dev/"+letter
+                    sys.path.append('./Linux')
+                    import Linux
+                    size = Linux.Linux().getSystemInfo().getVolumeInfo(devicepath).getSize()
+                volume = VolumeMigrateIniConfig(config , configfile , letter , devicepath)
+                if volume.getImagePath() == '':
+                    volume.setImagePath(imagedir+"\\"+letter+"."+imagetype);
+                if volume.getImageSize() == 0:
+                    volume.setImageSize(size)
+                if volume.getUploadPath() == '':
+                    volume.setUploadPath(upload_prefix+os.environ['COMPUTERNAME']+"-"+letter)
+                volumes.append( volume )
         return volumes
 
     def createImageFactory(self , config , image_placement , imagetype):

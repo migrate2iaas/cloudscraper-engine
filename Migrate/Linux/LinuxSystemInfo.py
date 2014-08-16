@@ -16,6 +16,7 @@ import traceback
 
 import LinuxVolumeInfo
 import SystemInfo
+import Linux
 
 #TODO; inherit from the common system info class
 class LinuxSystemInfo(SystemInfo.SystemInfo):
@@ -46,7 +47,7 @@ class LinuxSystemInfo(SystemInfo.SystemInfo):
 
     #gets system volume info, one where kernel/drivers is situated
     def getSystemVolumeInfo(self):
-        return LinuxVolumeInfo.LinuxVolumeInfo("/dev/sda")
+        return LinuxVolumeInfo.LinuxVolumeInfo(Linux.Linux().getSystemDriveName())
 
     #gets the volume info by its path
     def getVolumeInfo(self , path):
