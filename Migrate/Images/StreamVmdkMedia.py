@@ -172,7 +172,7 @@ class GrainMarker:
 
 #round up divide
 def divro(num, den):
-    return long(math.ceil((1.0*num)/(1.0*den)))
+    return int(math.ceil((1.0*num)/(1.0*den)))
 
 
         
@@ -550,9 +550,10 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
         dataToWrite = struct.pack("=" + str( len( self.__currentGT )) + "I", *self.__currentGT)
         self.__file.write(dataToWrite)
         self.__currentGT = []
-    
+            
     def release(self):
-        self.close()        
+        """dumb impl for now"""
+        return self.close()
 
     def close(self):
         """ closes the file. Writes the GD, footer, all relevant markers and updates the header and descriptor. 
@@ -568,8 +569,6 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
             return
         logging.info("Completing stream VMDK file header..")
         self.__file.seek(0,2)#seek to end of file
-        last_pos = self.__file.tell()
-        logging.debug("The file size before completion by footer is " + str(last_pos))
         if len(self.__incompleteWrittenGrain) != 0:
             self.__incompleteWrittenGrain += StreamVmdkMedia.__padToGrain(self.__incompleteWrittenGrain)
             self.__writeData(self.__incompleteWrittenGrain)
@@ -604,6 +603,7 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
         self.__file.write(descriptor)
         self.__file.seek(returnPos)
         
+        
         dataToWrite = StreamVmdkMedia.__createMarker( max(1,divro( len(self.__GD) * UINT32_BYTE_SIZE , SECTOR_SIZE)),  MARKER_GD)
         self.__file.write(dataToWrite)
         self.__parsedFooter.gdOffset = StreamVmdkMedia.__fileToSectorPointer( self.__file)
@@ -617,8 +617,6 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
         dataToWrite += StreamVmdkMedia.__createMarker( 1 ,  MARKER_FOOTER)
         dataToWrite += self.__parsedFooter.toRawHeader()
         dataToWrite += StreamVmdkMedia.__zeroGrain[:SECTOR_SIZE]
-
-        logging.debug("Writing data to disk footer at offset " + str(returnPos) + " of len " + str(len(dataToWrite)) )
         self.__file.write(dataToWrite)
         
         self.__readOnly = True
@@ -669,12 +667,12 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
     #convert from offset in bytes to offset in sectors
     @staticmethod           
     def __byteOffsetToSectorOffset(offset):
-        return long( offset / SECTOR_SIZE )      
+        return int( offset / SECTOR_SIZE )      
     
     #convert from offset in sectors to offset in grains
     @staticmethod
     def __sectorOffsetToGrainOffset(offset):
-        return long( offset / SECTORS_PER_GRAIN)
+        return int( offset / SECTORS_PER_GRAIN)
     
     
     def __createOpenNew(self):
