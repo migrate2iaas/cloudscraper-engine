@@ -29,6 +29,7 @@ import LinuxBlockDevice
 import LinuxBackupAdjust
 
 import re
+from subprocess import *
 
 class Linux(object):
     
