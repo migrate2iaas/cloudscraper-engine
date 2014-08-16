@@ -71,8 +71,8 @@ class Linux(object):
     def findDeviceForPath(self , path):
         p1 = Popen(["df" , path], stdout=PIPE)
         output = p1.communicate()[0]
-        lastline = output.split("\n")[-1]
-        voldev = lastline[:lastline.find("\t")]
+        lastline = output.split("\n")[1]
+        voldev = lastline[:lastline.find(" ")]
         return voldev
 
     def __findLvmDev(self , volgroup):

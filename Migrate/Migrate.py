@@ -56,7 +56,7 @@ def heartbeat(interval_sec):
 if __name__ == '__main__':
     
     #Turning on the logging
-    logging.basicConfig(format='%(asctime)s %(message)s' , filename='..\\..\\logs\\migrate.log',level=logging.DEBUG)    
+    logging.basicConfig(format='%(asctime)s %(message)s' , filename='../../logs/migrate.log',level=logging.DEBUG)    
     handler = logging.StreamHandler()
     handler.setLevel(logging.INFO)
     logging.getLogger().addHandler(handler)
