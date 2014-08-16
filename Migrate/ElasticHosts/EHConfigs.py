@@ -95,7 +95,8 @@ class EHMigrateConfig(MigrateConfig.MigrateConfig):
         self.__imageType = image_type
 
     def getSourceOs(self):
-        return "local"
+        #should make it more flexible
+        return self.getHostOs()
 
 
     def getSourceArch(self):

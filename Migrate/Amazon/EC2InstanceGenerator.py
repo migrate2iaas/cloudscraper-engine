@@ -81,6 +81,7 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
         securitygroup = initialconfig.getSecurity()
         instancetype = initialconfig.getInstanceType()
         vpcsubnet = initialconfig.getSubnet()
+        osplatform = initialconfig.getTargetOS()
 
         tmp_vmdk_file = temp_local_image_path
       
@@ -123,7 +124,7 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
             try:
                 import_task = connection.import_instance( import_manifest_xml = xmlurl, imagesize_bytes = image_file_size , image_format = imagetype.upper() \
                                                          , availability_zone = ec2zone , volume_size_gb = newvolsize , security_group = securitygroup , instance_type = instancetype \
-                                                         , architecture=machine_arch , description="cloudscraper-"+str(datetime.date.today()) , vpc_subnet= vpcsubnet)
+                                                         , architecture=machine_arch , description="cloudscraper-"+str(datetime.date.today()) , vpc_subnet= vpcsubnet , os_platform = osplatform)
             
             except BotoServerError as botoex:
                 logging.error("!!!ERROR: AWS reported an error when trying the conversion")

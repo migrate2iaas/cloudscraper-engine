@@ -81,3 +81,10 @@ class CloudConfig(object):
     def getSubnet(self):
         """gets subnet\vpc identifier"""
         raise NotImplementedError
+
+    def getTargetOS(self):
+        """by default it's the same as ours"""
+        if os.name == 'nt':
+            return 'Windows'
+        else:
+            return 'Linux'

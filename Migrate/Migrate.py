@@ -162,6 +162,7 @@ if __name__ == '__main__':
     __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload)
     logging.info("Migrator test started")
     # Doing the task
+    instance = None
     try:
         instance = __migrator.runFullScenario()
         if instance:
@@ -171,7 +172,6 @@ if __name__ == '__main__':
         logging.error("\n!!!ERROR: Severe error while making the migration")
         logging.error("\n!!!ERROR: " + str(e) )
         logging.error(traceback.format_exc())
-        logging.info("\n!!!ERROR: Transfer process post-check ended unsuccessfully\n")
 
     if not instance:
            logging.info("\n>>>>>>>>>>>>>>>>>> Transfer process ended unsuccessfully\n")

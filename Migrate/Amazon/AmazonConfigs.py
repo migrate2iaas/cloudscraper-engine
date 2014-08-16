@@ -103,7 +103,8 @@ class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
         self.__imageType = imagetype
 
     def getSourceOs(self):
-        return "local"
+        #should make it more flexible
+        return self.getHostOs()
 
 
     def getSourceArch(self):
