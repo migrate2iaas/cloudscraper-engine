@@ -83,9 +83,10 @@ class Linux(object):
             logging.error("!!!ERROR: LVM config is too complex to parse!")
             raise LookupError()
 
-        match = re.search( "Physical volume ([^\n]*)", output )
+        match = re.search( "Physical volume([^\n]*)", output )
         if match == None:
-            logging.error("!!!ERROR: Couldn't parse LVM config!")
+            logging.error("!!!ERROR: Couldn't parse LVM config! ")
+            logging.error("Config " + output)
             raise LookupError()
 
         volume = match.group(1)
