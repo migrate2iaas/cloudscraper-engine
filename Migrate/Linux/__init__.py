@@ -28,6 +28,8 @@ import LinuxVolumeInfo
 import LinuxBlockDevice
 import LinuxBackupAdjust
 
+import re
+
 class Linux(object):
     
     def createSystemAdjustOptions(self):
@@ -46,7 +48,7 @@ class Linux(object):
         logging.debug("Getting the system backup source") 
         
         #get system disk
-        systemdisk = "/dev/sda"
+        systemdisk = self.getSystemDriveName()
 
         lindisk = LinuxBlockDevice.LinuxBlockDevice(systemdisk)
 
@@ -64,3 +66,45 @@ class Linux(object):
 
     def getSystemInfo(self):
         return LinuxSystemInfo.LinuxSystemInfo()
+
+    def findDeviceForPath(self , path):
+        p1 = Popen(["df" , path], stdout=PIPE)
+        output = p1.communicate()[0]
+        lastline = output.split("\n")[-1]
+        voldev = lastline[:lastline.find(" ")]
+        return voldev
+
+    def __findLvmDev(self , volgroup):
+        p1 = Popen(["pvdisplay" , "-m", 'volgroup'], stdout=PIPE)
+        output = p1.communicate()[0]
+        
+        if str(output).count("Physical volume") > 1:
+            logging.error("!!!ERROR: LVM config is too complex to parse!")
+            raise LookupError()
+
+        match = re.search( "Physical volume {[a-z/]*}", output )
+        volume = match.group()
+        return volume
+
+    def getSystemDriveName(self):
+        rootdev = self.findDeviceForPath("/")
+        bootdev = self.findDeviceForPath("/")
+
+        logging.info("The root device is " + voldev);
+        logging.info("The boot device is " + bootdev);
+
+        # try to see where it resides. it's possible to be an lvm drive
+        if voldev.contains("mapper") > 0: 
+             volgroup = str(voldev).replace('mapper', 'VolumeGroup')
+             rootdev = self.__findLvmDev(volgroup)
+             logging.info("LVM " + volgroup + " resides on " + rootdrive);
+
+        rootdrive = rootdev[:-1]
+        bootdrive = bootdev[:-1]
+
+        if rootdrive != bootdrive:
+            logging.warn("!Root and boot drives are on different physical disks. The configuration could lead to boot failures.")
+       
+        #substract the last number making /dev/sda from /dev/sda1. 
+        # In the current impl we do full disk backup
+        return rootdrive

@@ -54,13 +54,16 @@ def heartbeat(interval_sec):
 #TODO: make versioning and expiration time!!
 
 if __name__ == '__main__':
-    #converting to unicode, add "CheckWindows" option
+    
+    # little hacks to pre-configure env and args
     if os.name == 'nt':
         import Windows
+        #converting to unicode, add "CheckWindows" option
         sys.argv = Windows.win32_unicode_argv()
     else:
-        #temp
-        os.environ["windir"]='/dev/sda'
+        import Linux
+        #making it windows-compatible, should refactor then
+        os.environ["windir"]=Linux.Linux().getSystemDriveName()
         os.environ["COMPUTERNAME"]=os.uname()[1]
 
     #parsing extra option
@@ -187,7 +190,10 @@ if __name__ == '__main__':
             logging.info("\n>>>>>>>>>>>>>>>>> Making test run for an instance to check it alive\n")
             instance.run()
             logging.info("\n>>>>>>>>>>>>>>>>> Waiting till it responds\n")
-            response = instance.checkAlive(timeout)
+            port = 22
+            if os.name == 'nt':
+                port = 3389
+            response = instance.checkAlive(timeout , port)
             if response:
                 logging.info("\n>>>>>>>>>>>>>>>>> Transfer post-check ended successfully\n")
             else:

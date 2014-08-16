@@ -28,18 +28,18 @@ class VmInstance(object):
         raise NotImplementedError
 
 
-    def checkAlive(self, timeout = 500):
+    def checkAlive(self, timeout = 500 , port = 3389):
         """
-        Performs RDP check for an instance
+        Performs RDP\ssh probe for an instance
         Args:
             timeout: int - is timeout to wait in seconds
+            port: int - port to check
         """
         time_retry = 90
         # ugly c-style loop 
         while 1:
             try:
                 ip = self.getIp()
-                port = 3389
                 if not ip:
                     logging.warning("!Failed to obtain ip address")
                 else:
@@ -49,7 +49,7 @@ class VmInstance(object):
                     logging.info("Server " + str(ip) + ":" + str(port) + " successfully responded")
                     return True
             except Exception as e:
-                logging.error("!: Failed to probe the remote server for RDP connection!")
+                logging.error("!: Failed to probe the remote server for a connection!")
                 logging.error("!:" + str(e))
                 logging.error(traceback.format_exc())
             timeout = timeout - time_retry
