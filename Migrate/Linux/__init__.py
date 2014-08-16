@@ -83,8 +83,12 @@ class Linux(object):
             logging.error("!!!ERROR: LVM config is too complex to parse!")
             raise LookupError()
 
-        match = re.search( "Physical volume {[^\n]*}", output )
-        volume = match.group()
+        match = re.search( "Physical volume ([^\n]*)", output )
+        if match == None:
+            logging.error("!!!ERROR: Couldn't parse LVM config!")
+            raise LookupError()
+
+        volume = match.group(1)
         return volume.strip()
 
     def getSystemDriveName(self):
