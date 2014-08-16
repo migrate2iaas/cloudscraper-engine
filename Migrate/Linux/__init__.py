@@ -91,7 +91,8 @@ class Linux(object):
         rootdev = self.findDeviceForPath("/")
         bootdev = self.findDeviceForPath("/")
 
-        logging.info("The root device is " + voldev);
+        
+        logging.info("The root device is " + rootdev);
         logging.info("The boot device is " + bootdev);
 
         # try to see where it resides. it's possible to be an lvm drive
@@ -102,6 +103,7 @@ class Linux(object):
 
         rootdrive = rootdev[:-1]
         bootdrive = bootdev[:-1]
+
 
         if rootdrive != bootdrive:
             logging.warn("!Root and boot drives are on different physical disks. The configuration could lead to boot failures.")
