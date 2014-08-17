@@ -502,7 +502,10 @@ class MigratorConfigurer(object):
                     import Windows
                     size = Windows.Windows().getSystemInfo().getVolumeInfo(letter+":").getSize()
                 else:
-                    devicepath = "/dev/"+letter
+                    if not "/dev/" in letter: 
+                        devicepath = "/dev/"+letter
+                    else:
+                        devicepath = letter
                     sys.path.append('./Linux')
                     import Linux
                     size = Linux.Linux().getSystemInfo().getVolumeInfo(devicepath).getSize()
