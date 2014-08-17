@@ -124,8 +124,8 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
             else:
                 logging.debug("excludedir was not found in the config for volume " + str(self.__volumeName)) 
         else:
-            logging.error("!!!ERROR: bad config file. Section for drive letter cannot be found") 
-            raise LookupError
+            logging.warn("! Section for drive letter cannot be found") 
+            return
 
 
     def getImagePath(self):
