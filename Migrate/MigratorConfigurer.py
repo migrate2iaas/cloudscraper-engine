@@ -490,7 +490,7 @@ class MigratorConfigurer(object):
                 addsys = config.getboolean('Volumes', 'system') 
                 if addsys:
                     sysvol = os.environ['windir'].split(':')[0] #todo: change to cross-platform way
-                    if not sysvol in letterlist:
+                    if not sysvol in letterslist:
                         letterslist.append(sysvol)
 
             for letter in letterslist:
