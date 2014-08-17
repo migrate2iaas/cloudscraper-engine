@@ -493,7 +493,7 @@ class MigratorConfigurer(object):
                         letterslist.append(sysvol)
 
             for letter in letterslist:
-                if not latter:
+                if not letter:
                     continue
                 if os.name == 'nt':
                     devicepath = '\\\\.\\'+letter+':'
