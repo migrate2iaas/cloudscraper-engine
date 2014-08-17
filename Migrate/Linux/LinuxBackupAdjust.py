@@ -7,6 +7,13 @@ class LinuxBackupAdjust(BackupAdjust.BackupAdjust):
         super(LinuxBackupAdjust, self).__init__()
 
     def configureBackupAdjust(self , backupSource):
+        # TODO: add service stop here
+
+        # TODO: add sync here
+        
+
+        # TODO: add service restart later
+        # add generic post-backup code
         pass
 
 

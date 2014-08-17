@@ -480,6 +480,7 @@ class MigratorConfigurer(object):
             
             #check what volumes to migrate
             letters=""
+            letterslist = list()
             if config.has_option('Volumes', 'letters'):
                 letters = config.get('Volumes', 'letters')                 
             letterslist = letters.split(',')

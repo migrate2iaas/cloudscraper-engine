@@ -115,10 +115,13 @@ class Linux(object):
         if rootdrive != bootdrive:
             logging.warn("!Root and boot drives are on different physical disks. The configuration could lead to boot failures.")
         
-        # In the current impl we do full disk backup
-        if os.path.exists(rootdrive):
-            return rootdrive
-        else: #case of supper-floppy like installation
+        try:
+            # In the current impl we do full disk backup
+            if os.stat(rootdrive):
+                return rootdrive
+        except Exception as e:
+            #supper-floppy like disk then
+            logging.info("There is no " + rootdrive + " device, treating " +  rootdev+ " as system disk")
             return rootdev
 
         
