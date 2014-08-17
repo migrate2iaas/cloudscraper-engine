@@ -20,6 +20,7 @@ import filecmp
 import unittest
 import shutil
 import logging
+import os
 
 import LinuxAdjustOptions
 import LinuxBackupSource
