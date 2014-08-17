@@ -106,13 +106,18 @@ class Linux(object):
              rootdev = self.__findLvmDev(volgroup)
              logging.info("LVM " + volgroup + " resides on " + rootdev);
 
+        #substract the last number making /dev/sda from /dev/sda1. 
         rootdrive = rootdev[:-1]
         bootdrive = bootdev[:-1]
 
 
         if rootdrive != bootdrive:
             logging.warn("!Root and boot drives are on different physical disks. The configuration could lead to boot failures.")
-       
-        #substract the last number making /dev/sda from /dev/sda1. 
+        
         # In the current impl we do full disk backup
-        return rootdrive
+        if os.path.exists(rootdrive):
+            return rootdrive
+        else: #case of supper-floppy like installation
+            return rootdev
+
+        
