@@ -511,7 +511,7 @@ class MigratorConfigurer(object):
                     size = Linux.Linux().getSystemInfo().getVolumeInfo(devicepath).getSize()
                 volume = VolumeMigrateIniConfig(config , configfile , letter , devicepath)
                 if volume.getImagePath() == '':
-                    volume.setImagePath(imagedir+"\\"+letter+"."+imagetype);
+                    volume.setImagePath(imagedir+"/"+letter+"."+imagetype);
                 if volume.getImageSize() == 0:
                     volume.setImageSize(size)
                 if volume.getUploadPath() == '':
