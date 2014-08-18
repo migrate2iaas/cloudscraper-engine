@@ -252,7 +252,7 @@ class S3UploadThread(threading.Thread):
 
                     if upload:
                         md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest) 
-                        s3key.set_contents_from_string(data, replace=True, policy=None, md5=(md5digest, base64md5), reduced_redundancy=False, encrypt_key=False)
+                        s3key.set_contents_from_string(str(data), replace=True, policy=None, md5=(md5digest, base64md5), reduced_redundancy=False, encrypt_key=False)
                         uploadtask.notifyDataTransfered()
                     else:
                         logging.debug("Skipped the data upload: %s/%s " , str(bucket), keyname) 
@@ -370,7 +370,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         self.__nullKey = self.__keyBase + "NullBlock"
         try:
             nullkey = Key(self.__bucket , self.__nullKey)    
-            nullkey.set_contents_from_string(self.__nullData, replace=False, policy=None)
+            nullkey.set_contents_from_string(str(self.__nullData), replace=False, policy=None)
         except Exception as ex:
             logging.error("!!!ERROR: Failed to make a test upload to bucket " + self.__bucketName)
             logging.error("Exception = " + str(ex)) 
