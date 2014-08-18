@@ -20,12 +20,17 @@ import os
 class LinuxAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):    
      """class extending the basic interface of SystemAdjusts so specific Linux options are included"""
      
-     def __init__(self):
+     def __init__(self , is_full_disk = True):
          """Constructor. Inits adjust options with default values"""
          super(LinuxAdjustOptions,self).__init__()
          random.seed()
-         self.__systemPartStart = long(0x0100000);
-         self.__newMbr = int(random.randint(1, 0x0FFFFFFF))
+         if is_full_disk == False:
+            self.__systemPartStart = long(0x0100000);
+            self.__newMbr = int(random.randint(1, 0x0FFFFFFF))
+         else:
+            self.__systemPartStart = long(0);
+            self.__newMbr = 0
+         
          
          # stop some services
          self.__stopServices = list()
