@@ -297,15 +297,15 @@ class Migrator(object):
             newtarget: bool - if the target should be new one or old one could be used (not used, needed to signal the existing container should be re-created)
             random_disk_id: bool - if we use random disk id for the disk or get it from adjustoptions. Generally it's False for system disks but True for non-system ones
         """
-        if self.__runOnWindows == False:
-            return ProxyTransferTarget.ProxyTransferTarget(SimpleDataTransferProto.SimpleDataTransferProto(media))
-
         if newtarget:
+            if self.__runOnWindows == False and adjustoptions.getNewSysPartStart() == 0:
+                return ProxyTransferTarget.ProxyTransferTarget(SimpleDataTransferProto.SimpleDataTransferProto(media))
+
             mbr = adjustoptions.getNewMbrId();
             if random_disk_id:
                 mbr = int(random.randint(1, 0x0FFFFFFF))
             parser = SimpleDiskParser.SimpleDiskParser(SimpleDataTransferProto.SimpleDataTransferProto(media) , mbr_id = mbr , default_offset = self.__additionalMediaSize)
-            return parser.createTransferTarget(size)
+            return parser.createTransferTarget(size , fix_nt_boot=(self.__runOnWindows==True))
         return SimpleTransferTarget.SimpleTransferTarget( self.__additionalMediaSize , SimpleDataTransferProto.SimpleDataTransferProto(media) )
         
 

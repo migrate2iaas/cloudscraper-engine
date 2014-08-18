@@ -119,7 +119,7 @@ eb f7 b0 42 e8 80 00 8b \
 #pragma pack(pop)
 
     # the disk is formated and new volume is generated
-    def createTransferTarget(self, size):
+    def createTransferTarget(self, size, fix_nt_boot = True):
         #TODO: test self.__partitionsCreated < 4
         mbr = self.__mbr
         sectoroffset = self.__currentOffset/0x200
@@ -153,7 +153,7 @@ eb f7 b0 42 e8 80 00 8b \
         self.__currentOffset = self.__currentOffset + size
         self.__partitionsCreated = self.__partitionsCreated + 1
 
-        return SimpleTransferTarget.SimpleTransferTarget(sectoroffset*0x200 , self.__backingStore)
+        return SimpleTransferTarget.SimpleTransferTarget(sectoroffset*0x200 , self.__backingStore , fix_nt_boot)
 
     
 
