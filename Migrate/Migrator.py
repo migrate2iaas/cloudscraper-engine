@@ -86,7 +86,7 @@ class Migrator(object):
         else:
             import Linux
             self.__linux = Linux.Linux()
-            self.__systemAdjustOptions = Linux.Linux.createSystemAdjustOptions()
+            self.__systemAdjustOptions = self.__linux.createSystemAdjustOptions()
             self.__os = self.__linux
 
         if self.__cloudOptions.getTargetCloud() == "EC2":
