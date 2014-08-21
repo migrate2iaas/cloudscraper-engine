@@ -299,6 +299,7 @@ class Migrator(object):
         """
         if newtarget:
             if self.__runOnWindows == False and adjustoptions.getNewSysPartStart() == 0:
+                logging.info("Initializing a transfer task of the whole disk")
                 return ProxyTransferTarget.ProxyTransferTarget(SimpleDataTransferProto.SimpleDataTransferProto(media))
 
             mbr = adjustoptions.getNewMbrId();

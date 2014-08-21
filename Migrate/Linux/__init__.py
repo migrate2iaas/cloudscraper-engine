@@ -37,7 +37,8 @@ class Linux(object):
     def createSystemAdjustOptions(self):
 
         is_fulldisk = not str(self.getSystemDriveName())[-1].isdigit()
-
+        if not is_fulldisk:
+            logging.info("Create a disk based on single partition")
          # we should get specific configs here to generate the correct config
         options = LinuxAdjustOptions.LinuxAdjustOptions(is_fulldisk) 
                

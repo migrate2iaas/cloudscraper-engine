@@ -33,8 +33,7 @@ class SimpleTransferTarget(TransferTarget.TransferTarget):
         #TODO: move to specialized (NTFS) transfer target
         bootsector = DataExtent.DataExtent(0,512)
         extentswritten = 0
-        
-        logging.debug("Found the boot sector, altering it a bit")
+       
         for extent in volExtents:
             logging.debug("Transfering " + str(extent) + "...");
             #special handling for a boot options
