@@ -437,6 +437,7 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
                     if image is created with pre set size and trying to write past end of disk
                     if trying to write to part of disk that has already been written to
                     if something went horribly wrong (a bug occured) (should never happen)"""
+        logging.info('image size: %s (mod SECTOR_SIZE: %s), disk size: %s (mod SECTOR_SIZE: %s)'%(self.getImageSize(), self.getImageSize() % SECTOR_SIZE, self.getMaxSize(), self.getMaxSize() % SECTOR_SIZE))
         if not self.__opened:
             raise VMDKStreamException("cannot read: image not opened")
         if self.__readOnly:
@@ -561,6 +562,7 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
             Throws:
                 VMDKStreamException
                     if image is not yet opened"""
+        logging.info('pre-close image size: %s (mod SECTOR_SIZE: %s), disk size: %s (mod SECTOR_SIZE: %s)'%(self.getImageSize(), self.getImageSize() % SECTOR_SIZE, self.getMaxSize(), self.getMaxSize() % SECTOR_SIZE))
         if not self.__opened:
             raise VMDKStreamException("cannot close: image not opened")
         if self.__readOnly:
@@ -608,7 +610,7 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
         self.__file.write(dataToWrite)
         self.__parsedFooter.gdOffset = StreamVmdkMedia.__fileToSectorPointer( self.__file)
         
-        GDSize = max(1,divro( len(self.__GD),SECTOR_SIZE)) * SECTOR_SIZE / UINT32_BYTE_SIZE
+        GDSize = max(1,divro( len(self.__GD) * UINT32_BYTE_SIZE , SECTOR_SIZE)) * SECTOR_SIZE / UINT32_BYTE_SIZE
         initGDSize = len(self.__GD)
         for i in range( GDSize - initGDSize):
             self.__GD.append(0)
@@ -621,7 +623,8 @@ class StreamVmdkMedia(ImageMedia.ImageMedia):
         
         self.__readOnly = True
         self.__file.close()
-        
+        logging.info('post-close image size: %s (mod SECTOR_SIZE: %s), disk size: %s (mod SECTOR_SIZE: %s)'%(self.getImageSize(), self.getImageSize() % SECTOR_SIZE, self.getMaxSize(), self.getMaxSize() % SECTOR_SIZE))
+
     @staticmethod    
     def __createMarker(numSectors, marker_type):
         marker_list = [ numSectors, 0, marker_type ]
