@@ -40,7 +40,7 @@ class Linux(object):
         if not_full_disk:
             logging.info("Create a disk based on single partition")
          # we should get specific configs here to generate the correct config
-        options = LinuxAdjustOptions.LinuxAdjustOptions(is_fulldisk) 
+        options = LinuxAdjustOptions.LinuxAdjustOptions(is_full_disk = (not_full_disk == False)) 
                
 
         return options
