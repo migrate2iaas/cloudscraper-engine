@@ -89,10 +89,6 @@ class Migrator(object):
             self.__systemAdjustOptions = self.__linux.createSystemAdjustOptions()
             self.__os = self.__linux
 
-        if self.__cloudOptions.getTargetCloud() == "EC2":
-            import S3UploadChannel
-        if self.__cloudOptions.getTargetCloud() == "ElasticHosts":
-            import EHUploadChannel
 
     # runs full scenario from the start to the upload
     def runFullScenario(self):
