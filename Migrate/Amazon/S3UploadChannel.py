@@ -418,6 +418,8 @@ class S3UploadChannel(UploadChannel.UploadChannel):
        if size != self.__chunkSize:
            logging.warning("Bad chunk size for upload , should be " + str(self.__chunkSize) ) 
 
+       if self.__errorUploading == True:
+           return False
        
        uploadtask = UploadQueueTask(self.__bucket , keyname, size, extent.getData() , self )
        if uploadtask.getDataMd5() == self.__nullMd5:

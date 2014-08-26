@@ -302,7 +302,13 @@ class Migrator(object):
             if random_disk_id:
                 mbr = int(random.randint(1, 0x0FFFFFFF))
             parser = SimpleDiskParser.SimpleDiskParser(SimpleDataTransferProto.SimpleDataTransferProto(media) , mbr_id = mbr , default_offset = self.__additionalMediaSize)
-            return parser.createTransferTarget(size , fix_nt_boot=(self.__runOnWindows==True))
+            
+            part_type = SimpleDiskParser.SimpleDiskParser.PART_TYPE_NTFS
+            fix_nt_boot = True
+            if self.__runOnWindows == False:
+                part_type = SimpleDiskParser.SimpleDiskParser.PART_TYPE_EXT
+                fix_nt_boot = False
+            return parser.createTransferTarget(size , fix_nt_boot, part_type)
         return SimpleTransferTarget.SimpleTransferTarget( self.__additionalMediaSize , SimpleDataTransferProto.SimpleDataTransferProto(media) )
         
 

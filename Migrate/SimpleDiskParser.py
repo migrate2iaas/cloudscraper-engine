@@ -117,10 +117,13 @@ eb f7 b0 42 e8 80 00 8b \
 #  ULONG partsize;    // 0C partition size in sectors
 #} PARTITION,*PPARTITION;
 #pragma pack(pop)
-
-    # the disk is formated and new volume is generated
-    def createTransferTarget(self, size, fix_nt_boot = True):
-        #TODO: test self.__partitionsCreated < 4
+    PART_TYPE_NTFS = 0x07
+    PART_TYPE_EXT = 0x83
+    
+    def createTransferTarget(self, size, fix_nt_boot = True , part_type = 0x07):
+        """
+            Formats disk, generates new volume 
+        """
         mbr = self.__mbr
         sectoroffset = self.__currentOffset/0x200
         #set the mbr-id
@@ -132,7 +135,7 @@ eb f7 b0 42 e8 80 00 8b \
         mbr[partentry+1] = 0x20
         mbr[partentry+2] = 0x21
         mbr[partentry+3] = 0x0
-        mbr[partentry+4] = 0x7
+        mbr[partentry+4] = part_type
         #end for lba-mode
         mbr[partentry+5] = 0xFE
         mbr[partentry+6] = 0xFF
