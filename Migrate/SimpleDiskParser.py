@@ -94,7 +94,12 @@ eb f7 b0 42 e8 80 00 8b \
         self.__mbrId = int(mbr_id)
         #NOTE: alternatively, these parms could be re-loaded from backing store
         #TODO: make the reload
-        self.__mbr = bytearray.fromhex(SimpleDiskParser.builtin_mbr_hex_str)
+        try:
+            self.__mbr = bytearray.fromhex(SimpleDiskParser.builtin_mbr_hex_str)
+        except TypeError:
+            # Work-around for Python 2.6 bug 
+            self.__mbr = bytearray.fromhex(unicode(SimpleDiskParser.builtin_mbr_hex_str))
+        
         self.__defaultOffset = default_offset
         self.__currentOffset = self.__defaultOffset
         self.__partitionsCreated = 0
