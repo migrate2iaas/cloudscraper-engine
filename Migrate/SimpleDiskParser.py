@@ -134,7 +134,7 @@ e8 7d 00 2e 18 cd fe eb 52 47 42 55 00 20 65 47 \
         #TODO: make the reload
         if windows:
             self.__grub = False
-            builtin_mbr_hex_str = SimpleDiskParser.builtin_mbr_hex_str
+            builtin_mbr_hex_str = SimpleDiskParser.nt_mbr_hex_str
         else:
             self.__grub = True
             builtin_mbr_hex_str = SimpleDiskParser.grub_mbr_hex_str
