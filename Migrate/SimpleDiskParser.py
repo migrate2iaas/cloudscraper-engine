@@ -15,11 +15,13 @@ import DataExtent
 import SimpleTransferTarget
 
 
+
+
 #TODO: to implement base class
 class SimpleDiskParser(object):
     """The simpliest MBR container parser"""
 
-    builtin_mbr_hex_str = '\
+    nt_mbr_hex_str = '\
 fa ea 06 00 c0 07 8c c8 \
 8e d8 8e d0 bc fc ff fb \
 b0 53 e8 e2 00 b8 a0 07 \
@@ -86,19 +88,62 @@ eb f7 b0 42 e8 80 00 8b \
 00 00 00 00 00 00 55 aa \
 '
 
+#Grub boot code
+    grub_mbr_hex_str = '\
+63 eb 00 90 00 00 00 00 00 00 00 00 00 00 00 00 \
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 \
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 \
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 \
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 \
+00 00 00 00 00 00 00 00 00 00 80 00 00 01 00 00 \
+00 00 00 00 fa ff 90 90 c2 f6 74 80 f6 05 70 c2 \
+02 74 80 b2 79 ea 00 7c 31 00 8e c0 8e d8 bc d0 \
+20 00 a0 fb 7c 64 ff 3c 02 74 c2 88 bb 52 04 17 \
+07 f6 74 03 be 06 7d 88 17 e8 be 01 7c 05 41 b4 \
+aa bb cd 55 5a 13 72 52 81 3d 55 fb 75 aa 83 37 \
+01 e1 32 74 c0 31 44 89 40 04 44 88 89 ff 02 44 \
+04 c7 00 10 8b 66 5c 1e 66 7c 5c 89 66 08 1e 8b \
+7c 60 89 66 0c 5c 44 c7 00 06 b4 70 cd 42 72 13 \
+bb 05 70 00 76 eb 08 b4 13 cd 0d 73 84 5a 0f d2 \
+d0 83 be 00 7d 93 82 e9 66 00 b6 0f 88 c6 ff 64 \
+66 40 44 89 0f 04 d1 b6 e2 c1 88 02 88 e8 40 f4 \
+44 89 0f 08 c2 b6 e8 c0 66 02 04 89 a1 66 7c 60 \
+09 66 75 c0 66 4e 5c a1 66 7c d2 31 f7 66 88 34 \
+31 d1 66 d2 74 f7 3b 04 08 44 37 7d c1 fe c5 88 \
+c0 30 e8 c1 08 02 88 c1 5a d0 c6 88 00 bb 8e 70 \
+31 c3 b8 db 02 01 13 cd 1e 72 c3 8c 1e 60 00 b9 \
+8e 01 31 db bf f6 80 00 c6 8e f3 fc 1f a5 ff 61 \
+5a 26 be 7c 7d 8e 03 eb 9d be e8 7d 00 34 a2 be \
+e8 7d 00 2e 18 cd fe eb 52 47 42 55 00 20 65 47 \
+6d 6f 48 00 72 61 20 64 69 44 6b 73 52 00 61 65 \
+00 64 45 20 72 72 72 6f 0a 0d bb 00 00 01 0e b4 \
+10 cd 3c ac 75 00 c3 f4 00 00 00 00 00 00 00 00 \
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 \
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 \
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 \
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 55 aa'
 
-    def __init__(self , backing_store , mbr_id = int(random.randint(1, 0x0FFFFFFF)), default_offset = 0x800*0x200):
+
+    def __init__(self , backing_store , mbr_id = int(random.randint(1, 0x0FFFFFFF)), default_offset = 0x800*0x200 , windows = True):
         self.__backingStore = backing_store
         self.__freeSize = self.__backingStore.getSize()
         self.__wholeSize = self.__backingStore.getSize()
         self.__mbrId = int(mbr_id)
+        self.__grubPath = "..\\resources\\boot\\grub\\core.img"
         #NOTE: alternatively, these parms could be re-loaded from backing store
         #TODO: make the reload
+        if windows:
+            self.__grub = False
+            builtin_mbr_hex_str = SimpleDiskParser.builtin_mbr_hex_str
+        else:
+            self.__grub = True
+            builtin_mbr_hex_str = SimpleDiskParser.grub_mbr_hex_str
+
         try:
-            self.__mbr = bytearray.fromhex(SimpleDiskParser.builtin_mbr_hex_str)
+            self.__mbr = bytearray.fromhex(builtin_mbr_hex_str)
         except TypeError:
             # Work-around for Python 2.6 bug 
-            self.__mbr = bytearray.fromhex(unicode(SimpleDiskParser.builtin_mbr_hex_str))
+            self.__mbr = bytearray.fromhex(unicode(builtin_mbr_hex_str))
         
         self.__defaultOffset = default_offset
         self.__currentOffset = self.__defaultOffset
@@ -153,13 +198,21 @@ eb f7 b0 42 e8 80 00 8b \
         
         #NOTE: nevertheless we track it several volumes on the same disk case was not tested
         
+        #write mbr
         ext = DataExtent.DataExtent(0 , 0x200)
         ext.setData(mbr)
         self.writeRawMetaData(ext)
-        
+
         self.__mbr = mbr
         self.__currentOffset = self.__currentOffset + size
         self.__partitionsCreated = self.__partitionsCreated + 1
+
+        #write grub image
+        grubfile = open(self.__grubPath, "rb")
+        grubdata = grubfile.read()
+        ext = DataExtent.DataExtent(0x200 , len(grubdata))
+        ext.setData(grubdata)
+        self.writeRawMetaData(ext)
 
         return SimpleTransferTarget.SimpleTransferTarget(sectoroffset*0x200 , self.__backingStore , fix_nt_boot)
 
