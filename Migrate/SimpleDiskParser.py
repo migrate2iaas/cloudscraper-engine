@@ -129,7 +129,7 @@ e8 7d 00 2e 18 cd fe eb 52 47 42 55 00 20 65 47 \
         self.__freeSize = self.__backingStore.getSize()
         self.__wholeSize = self.__backingStore.getSize()
         self.__mbrId = int(mbr_id)
-        self.__grubPath = "..\\resources\\boot\\grub\\core.img"
+        self.__grubPath = "../resources/boot/grub/core.img"
         #NOTE: alternatively, these parms could be re-loaded from backing store
         #TODO: make the reload
         if windows:
