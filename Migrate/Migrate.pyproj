@@ -66,6 +66,13 @@
     <Compile Include="Images\RawGzipMediaFactory.py" />
     <Compile Include="Images\RawGzipMedia_test.py" />
     <Compile Include="InstanceGenerator.py" />
+    <Compile Include="Linux\LinuxAdjustOptions.py" />
+    <Compile Include="Linux\LinuxBackupAdjust.py" />
+    <Compile Include="Linux\LinuxBackupSource.py" />
+    <Compile Include="Linux\LinuxBlockDevice.py" />
+    <Compile Include="Linux\LinuxSystemInfo.py" />
+    <Compile Include="Linux\LinuxVolumeInfo.py" />
+    <Compile Include="Linux\__init__.py" />
     <Compile Include="Migrate.py" />
     <Compile Include="MigrateConfig.py" />
     <Compile Include="MigrateExceptions.py" />
@@ -122,6 +129,7 @@
     <Folder Include="Helper\" />
     <Folder Include="CloudSigma\" />
     <Folder Include="Images\" />
+    <Folder Include="Linux\" />
     <Folder Include="ProfitBricks\" />
     <Folder Include="SelfTest\" />
     <Folder Include="Windows" />
