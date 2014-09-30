@@ -26,7 +26,7 @@ import SimpleTransferTarget
 import ProxyTransferTarget
 
 class Migrator(object):
-    """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT"""
+    """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT reside"""
 
     def __init__(self , cloud_options , migrate_options, sys_adjust_overrides , skip_imaging=False, resume_upload=False, skip_upload=False , self_checks=False):
         """

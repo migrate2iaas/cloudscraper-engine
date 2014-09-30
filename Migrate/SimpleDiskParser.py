@@ -130,6 +130,8 @@ cd 10 ac 3c 00 75 f4 c3 00 00 00 00 00 00 00 00 \
         self.__wholeSize = self.__backingStore.getSize()
         self.__mbrId = int(mbr_id)
         self.__grubPath = "../resources/boot/grub/core.img"
+
+        self.__windows = windows
         #NOTE: alternatively, these parms could be re-loaded from backing store
         #TODO: make the reload
         if windows:
@@ -208,11 +210,15 @@ cd 10 ac 3c 00 75 f4 c3 00 00 00 00 00 00 00 00 \
         self.__partitionsCreated = self.__partitionsCreated + 1
 
         #write grub image
-        grubfile = open(self.__grubPath, "rb")
-        grubdata = grubfile.read()
-        ext = DataExtent.DataExtent(0x200 , len(grubdata))
-        ext.setData(grubdata)
-        self.writeRawMetaData(ext)
+        if self.__windows == False:
+            grubfile = open(self.__grubPath, "rb")
+            grubdata = grubfile.read()
+            #PAD to sector size
+            while len(grubdata) % 512:
+                grubdata += '\0'
+            ext = DataExtent.DataExtent(0x200 , len(grubdata))
+            ext.setData(grubdata)
+            self.writeRawMetaData(ext)
 
         return SimpleTransferTarget.SimpleTransferTarget(sectoroffset*0x200 , self.__backingStore , fix_nt_boot)
 
