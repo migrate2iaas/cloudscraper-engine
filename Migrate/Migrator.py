@@ -508,15 +508,18 @@ class Migrator(object):
         generator = None
         volname = ""
         vol = None
+        #TODO: make volume generator separate class
         if self.__cloudName == "EC2":
             import EC2VolumeGenerator
             import EC2Instance
             import EC2Volume
             awskey = self.__cloudOptions.getCloudUser()
             awssecret = self.__cloudOptions.getCloudPass()
-            generator = EC2VolumeGenerator.EC2VolumeGenerator(self.__cloudOptions.getRegion())
-
-            vol = generator.makeVolumeFromImage(imageid, self.__cloudOptions , awskey, awssecret , localimagepath , imagesize , volumesize , self.__migrateOptions.getImageType())
+            if self.__cloudOptions.generateInstanceFactory():
+                generator = EC2VolumeGenerator.EC2VolumeGenerator(self.__cloudOptions.getRegion())
+                vol = generator.makeVolumeFromImage(imageid, self.__cloudOptions , awskey, awssecret , localimagepath , imagesize , volumesize , self.__migrateOptions.getImageType())
+            else:
+                generator = None
         if self.__cloudName == "Azure":
             import AzureConfigs
             import AzureInstanceGenerator

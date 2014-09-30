@@ -288,7 +288,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
     #TODO: we need kinda open method for the channel
     #TODO: need kinda doc
     #chunk size means one data element to be uploaded. it waits till all the chunk is transfered to the channel than makes an upload (not fully implemented)
-    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resume_upload = False , chunksize=10*1024*1024 , upload_threads=4 , queue_size=16 , walrus = False , walrus_path = "/services/WalrusBackend"):
+    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resume_upload = False , chunksize=10*1024*1024 , upload_threads=4 , queue_size=16 , use_ssl = True , walrus = False , walrus_path = "/services/WalrusBackend" , walrus_port = 8773):
         self.__uploadQueue = Queue.Queue(queue_size)
         self.__statLock = threading.Lock()
         self.__prevUploadTime = None 
@@ -307,16 +307,16 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             if walrus:
                 self.__S3 = boto.connect_s3(aws_access_key_id=awskey,
                 aws_secret_access_key=awssercret,
-                is_secure=False,
+                is_secure=use_ssl,
                 host=location,
-                port=8773,
+                port=walrus_port,
                 path=walrus_path,
                 calling_format=OrdinaryCallingFormat())
             else:
                 hostname = 's3.amazonaws.com'
                 if awsregion:
                     hostname = 's3-'+awsregion+'.amazonaws.com'
-                self.__S3 = S3Connection(awskey, awssercret, is_secure=True, host=hostname)
+                self.__S3 = S3Connection(awskey, awssercret, is_secure=use_ssl, host=hostname)
         
             self.__bucketName = bucket
             try:

@@ -355,14 +355,25 @@ class MigratorConfigurer(object):
         vpcsubnet = ""
         if config.has_option('EC2', 'vpcsubnet'):
            vpcsubnet = config.get('EC2', 'vpcsubnet') 
-       
         
         try:
             zone = config.get('EC2', 'zone')
         except ConfigParser.NoOptionError as exception:
             zone = region+"a"
+
+        #custom S3\EC2 compatible clouds
+        custom_host = ""
+        if config.has_option('EC2', 'host'):
+           custom_host = config.get('EC2', 'host') 
         
+        custom_port = 80
+        if config.has_option('EC2', 'port'):
+           custom_port = config.get('EC2', 'port') 
        
+        custom_suffix = ""
+        if config.has_option('EC2', 'suffix'):
+           custom_suffix = config.get('EC2', 'suffix') 
+
         bucket = ''
 
         try:
@@ -375,7 +386,6 @@ class MigratorConfigurer(object):
             bucket = "cloudscraper-" + str(int(time.mktime(time.localtime())))+"-"+region 
             #NOTE: it'll be saved on the next ocassion
             config.set('EC2', 'bucket' , bucket)
-            #TODO: the next ocassion is somewhere after the imaging passed 
 
         
         security = "default"
@@ -396,7 +406,7 @@ class MigratorConfigurer(object):
         image = AmazonConfigs.AmazonMigrateConfig(volumes , factory, imagearch , imagetype)
         #TODO: add machine name
         cloud = AmazonConfigs.AmazonCloudOptions(bucket = bucket , user=user , password=password , newsize=newsize , arch=arch , zone= zone , region=region , machinename="" , securityid=security , instancetype=instancetype \
-                                                , disktype = imagetype , keyname_prefix = s3prefix , vpc=vpcsubnet)
+                                                , disktype = imagetype , keyname_prefix = s3prefix , vpc=vpcsubnet , custom_host = custom_host , custom_port = custom_port , custom_suffix = custom_suffix)
         
 
         return (image,adjust_override,cloud)
