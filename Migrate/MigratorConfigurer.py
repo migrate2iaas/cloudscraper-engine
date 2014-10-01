@@ -368,11 +368,15 @@ class MigratorConfigurer(object):
         
         custom_port = 80
         if config.has_option('EC2', 'port'):
-           custom_port = config.get('EC2', 'port') 
+           custom_port = int(config.get('EC2', 'port'))
        
         custom_suffix = ""
         if config.has_option('EC2', 'suffix'):
            custom_suffix = config.get('EC2', 'suffix') 
+
+        use_ssl = ""
+        if config.has_option('EC2', 'ssl'):
+           use_ssl = config.get('EC2', 'ssl') 
 
         bucket = ''
 
@@ -406,7 +410,7 @@ class MigratorConfigurer(object):
         image = AmazonConfigs.AmazonMigrateConfig(volumes , factory, imagearch , imagetype)
         #TODO: add machine name
         cloud = AmazonConfigs.AmazonCloudOptions(bucket = bucket , user=user , password=password , newsize=newsize , arch=arch , zone= zone , region=region , machinename="" , securityid=security , instancetype=instancetype \
-                                                , disktype = imagetype , keyname_prefix = s3prefix , vpc=vpcsubnet , custom_host = custom_host , custom_port = custom_port , custom_suffix = custom_suffix)
+                                                , disktype = imagetype , keyname_prefix = s3prefix , vpc=vpcsubnet , custom_host = custom_host , custom_port = custom_port , custom_suffix = custom_suffix , use_ssl = use_ssl )
         
 
         return (image,adjust_override,cloud)

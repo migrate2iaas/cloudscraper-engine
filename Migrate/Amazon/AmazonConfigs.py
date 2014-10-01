@@ -16,7 +16,7 @@ import os
 
 class AmazonCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self, bucket , user , password , newsize , arch , zone , region , machinename , securityid='' , instancetype='m1.small' , chunksize = 10*1024*1024 , disktype='VHD' , keyname_prefix = '' , vpc = "" , custom_host = "", custom_port=80 , custom_suffix=""):
+    def __init__(self, bucket , user , password , newsize , arch , zone , region , machinename , securityid='' , instancetype='m1.small' , chunksize = 10*1024*1024 , disktype='VHD' , keyname_prefix = '' , vpc = "" , custom_host = "", custom_port=80 , custom_suffix="" , use_ssl = True):
         """inits with options"""
         super(AmazonCloudOptions, self).__init__()
         self.__bucket = bucket
@@ -36,6 +36,7 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         self.__custom_host = custom_host 
         self.__custom_port = custom_port
         self.__custom_suffix = custom_suffix
+        self.__use_ssl = bool(use_ssl)
         #TODO: more amazon-specfiic configs needed
     
     def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):   
@@ -56,7 +57,7 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
 
         return S3UploadChannel.S3UploadChannel(self.__bucket , self.__user , self.__pass , targetsize, self.__custom_host or self.__region , targetid or self.__keynamePrefix , self.__diskType , \
             resume_upload = resume , chunksize = self.__chunkSize, \
-            walrus = custom , walrus_path = self.__custom_suffix , walrus_port = self.__custom_port)
+            walrus = custom , walrus_path = self.__custom_suffix , walrus_port = self.__custom_port , use_ssl = self.__use_ssl)
          
     def generateInstanceFactory(self):
         """returns object of InstanceFactory type to create servers from uploaded images"""
