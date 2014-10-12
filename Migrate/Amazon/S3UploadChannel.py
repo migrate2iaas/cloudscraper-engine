@@ -327,7 +327,10 @@ class S3UploadChannel(UploadChannel.UploadChannel):
                     self.__bucket = self.__S3.create_bucket(self.__bucketName , location=awsregion)
                 except BotoServerError as botoex:
                     logging.error("!!!ERROR: Wasn't able to find or create bucket " + self.__bucketName + " in region " + location + " .")
-                    logging.error("!!!ERROR: " + botoex.error_message) 
+                    if botoex.error_message:
+                        logging.error("!!!ERROR: " + botoex.error_message) 
+                    else:
+                        logging.error("!!!Unknown errror: ") 
                     logging.error(traceback.format_exc()) 
                     raise botoex
                 except Exception as ex:
