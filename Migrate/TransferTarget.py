@@ -9,25 +9,30 @@ class TransferTarget(object):
 
     # TODO: change coding styles
 
-    # writes the file
-    # need file metadata\permissions too
     def transferFile(self , fileToBackup):
+        """
+         writes the file
+         need file metadata\permissions too
+        """
         raise NotImplementedError
 
-    # transfers file data only, no metadata should be written
     def transferFileData(self, fileName, fileExtentsData):
+        """
+            transfers file data only, no metadata should be written
+        """
         raise NotImplementedError
 
-    # transfers file data only
+
     def transferRawData(self, volExtents):
+        """    transfers file data only"""
         raise NotImplementedError
 
-    # transfers raw metadata, it should be precached
     def transferRawMetadata(self, volExtents):
+        """transfers raw metadata, it should be precached"""
         raise NotImplementedError
 
-    #deletes file transfered
     def deleteFileTransfer(self , filename):
+        """deletes file transfered"""
         raise NotImplementedError
 
     #cancels the transfer and deletes the transfer target
@@ -36,3 +41,6 @@ class TransferTarget(object):
 
     def getMedia(self):
         raise NotImplementedError
+
+    def close(self):
+        return None
