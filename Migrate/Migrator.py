@@ -88,8 +88,12 @@ class Migrator(object):
             self.__os = self.__windows
             #self.__winSystemAdjustOptions
         else:
-            import Linux
-            self.__linux = Linux.Linux()
+            if self.__linuxGC:
+                import Linux_GC
+                self.__linux = Linux_GC.Linux()
+            else:
+                import Linux
+                self.__linux = Linux.Linux()
             self.__systemAdjustOptions = self.__linux.createSystemAdjustOptions()
             self.__os = self.__linux
 
