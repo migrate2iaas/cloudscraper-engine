@@ -195,7 +195,7 @@ class Linux(object):
             target_filename = scratch_dir + "/disk.raw.tar"
         # TODO: should tie up with dir
         bundle_object.SetScratchDirectory(scratch_dir)
-        bundle_object.SetTarfile(temp_file_name)
+        bundle_object.SetTarfile(target_filename)
         bundle_object.SetKey(options.key)
 
         return BundleTransferTarget(bundle_object , media , self , guest_platform)
