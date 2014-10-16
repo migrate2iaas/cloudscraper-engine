@@ -131,6 +131,11 @@ class BundleTransferTarget(TransferTarget.TransferTarget):
         return self.__media
         
 
+class AttrDict(dict):
+    """helper class for attr dictionary to make things comaptible with config code """
+    def __init__(self, *args, **kwargs):
+        super(AttrDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
 
 class Linux(object):
     """
@@ -145,13 +150,11 @@ class Linux(object):
         """a specific GCE method"""
 
         #TODO: make assert media size equals file size
-        options.fs_size  = size
-        options = list() 
-
-        options.fs_size = syssize;
-        options.skip_disk_space_check = True;
+        options = AttrDict()
+        options['fs_size']  = size
+        options['skip_disk_space_check'] = True;
         #TODO: Should pass somehow
-        options.file_system = "ext3"
+        options['file_system'] = "ext3"
 
         
         try:
