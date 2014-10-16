@@ -22,6 +22,7 @@ from gcimagebundlelib import platform_factory
 from gcimagebundlelib import block_disk
 from gcimagebundlelib import exclude_spec
 from gcimagebundlelib import os_platform
+from gcimagebundlelib import imagebundle
 
 
 import filecmp
@@ -86,6 +87,7 @@ class BundleTransferTarget(TransferTarget.TransferTarget):
         
         #Setting the root dir as only file to backup
         rootdir = str(fileToBackup)
+        mount_points = ""
 
         # Merge platform specific exclude list, mounts points
         # and user specified excludes
@@ -98,9 +100,9 @@ class BundleTransferTarget(TransferTarget.TransferTarget):
         self.__bundle.AppendExcludes(excludes)
         if not self.__include_mounts:
             mount_points = utils.GetMounts(rootdir)
-        logging.info('ignoring mounts %s', ' '.join(mount_points))
-        self.__bundle.AppendExcludes([exclude_spec.ExcludeSpec(x, preserve_dir=True) for x
-                                in utils.GetMounts(rootdir)])
+            logging.info('ignoring mounts %s', ' '.join(mount_points))
+            self.__bundle.AppendExcludes([exclude_spec.ExcludeSpec(x, preserve_dir=True) for x \
+                                    in utils.GetMounts(rootdir)])
         self.__bundle.SetPlatform(self.__guest_platform)
 
         #Do bundling
@@ -171,7 +173,7 @@ class Linux(object):
             raise RuntimeError("Linux distro is not supported");
 
         # if options.file_system is not set - sets it to prefered guest
-        file_system = GetTargetFilesystem(options, guest_platform)
+        file_system = imagebundle.GetTargetFilesystem(options, guest_platform)
 
         #it's the transfer target
         bundle_object = block_disk.RootFsRaw(options.fs_size, file_system, options.skip_disk_space_check)
