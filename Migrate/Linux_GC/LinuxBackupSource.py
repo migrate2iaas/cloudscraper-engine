@@ -14,11 +14,68 @@ import logging
 import traceback
 
 import gcimagebundlelib
-
+import FileToBackup
 
    
 from MigrateExceptions import *
 import BackupSource
+
+
+
+class LinuxFileToBackup(FileToBackup.FileToBackup):
+    """FileToBackup standard implementation for Windows system"""
+
+    def __init__(self, srcPath , backupSource):
+
+        self.__name = srcPath
+        self.__srcPath = srcPath
+        self.__backupSource = backupSource
+        
+
+        #TODO: set dest path
+        self.__destPath = None
+        self.__transferDest = None
+        return
+
+    def __str__(self):
+        return self.getName()
+
+    def getName(self):
+        return self.__name
+
+    def getDestPath(self):
+        return self.__destPath
+
+    def getSourcePath(self):
+        return self.__srcPath
+
+    def getBackupSource(self):
+        return self.__backupSource
+
+    def getTransferDest(self):
+        return self.__transferDest
+
+    def setDestPath(self , path):
+        self.__destPath = path
+
+    def setTransferDest(self , dest):
+        self.__transferDest = dest
+
+
+    def getChangedExtents(self):
+        raise NotImplementedError
+
+    #returns data read
+    def readData(self,volextent):
+        raise NotImplementedError
+
+    #reopens source file if needed
+    def __reopen(self):
+        raise NotImplementedError
+            
+    
+    def __close(self):
+        raise NotImplementedError
 
 
 class LinuxBackupSource(BackupSource.BackupSource):
@@ -41,7 +98,7 @@ class LinuxBackupSource(BackupSource.BackupSource):
                 if enum:
                     return enum
          #TODO: Just workaround, should rebuild
-        return [str(root)].__iter__()
+        return [LinuxFileToBackup(str(root), self)].__iter__()
 
     # gets block range list for all the files. Note: it should be ordered
     def getFilesBlockRange(self):
