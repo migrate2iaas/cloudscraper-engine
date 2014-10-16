@@ -316,7 +316,8 @@ class Migrator(object):
                 import Linux_GC
                 if ( self.__os is Linux_GC.Linux ):
                     self.__os.createBundleTransferTarget(media , size);
-                raise AssertionError("Linux set to Linux GC but __os is not of Linux_GC.Linux type")
+                else:
+                    raise AssertionError("Linux set to Linux GC but __os is not of Linux_GC.Linux type")
 
             if self.__runOnWindows == False and adjustoptions.getNewSysPartStart() == 0:
                 logging.info("Initializing a transfer task of the whole disk")
