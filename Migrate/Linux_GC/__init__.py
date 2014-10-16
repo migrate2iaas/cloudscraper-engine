@@ -165,7 +165,7 @@ class Linux(object):
         #TODO: Should pass somehow
         options['file_system'] = "ext3"
         options['root_directory'] = "/"
-
+        options['key'] = "nebula"
         
         try:
             guest_platform = platform_factory.PlatformFactory(
@@ -182,17 +182,21 @@ class Linux(object):
         bundle_object = block_disk.RootFsRaw(options.fs_size, file_system, options.skip_disk_space_check)
 
         scratch_dir = None
+        target_filename = None
         try:
-            scratch_dir = media.getFilePath()
+            target_filename = media.getFilePath()
             if os.path.isdir(scratch_dir) == False:
-                scratch_dir = os.path.pardir(scratch_dir)
+                scratch_dir = os.path.pardir(target_filename)
         except NotImplementedError as e:
             scratch_dir = None
 
         if not scratch_dir:
             scratch_dir = tempfile.mkdtemp()
+            target_filename = scratch_dir + "/disk.raw.tar"
         # TODO: should tie up with dir
         bundle_object.SetScratchDirectory(scratch_dir)
+        bundle_object.SetTarfile(temp_file_name)
+        bundle_object.SetKey(options.key)
 
         return BundleTransferTarget(bundle_object , media , self , guest_platform)
 
