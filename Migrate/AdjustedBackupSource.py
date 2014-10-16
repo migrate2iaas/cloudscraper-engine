@@ -29,7 +29,7 @@ class ReplacedData(object):
 #for nner use only
 # it uses simple file io to read files
 class AdjustedFileToBackup(FileToBackup.FileToBackup):
-     """Adjusted file enumerator"""
+     """ for Adjusted file enumerator"""
     
      def getName(self):
         return self.__name
