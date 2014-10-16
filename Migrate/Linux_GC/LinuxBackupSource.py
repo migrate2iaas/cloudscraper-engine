@@ -41,7 +41,7 @@ class LinuxBackupSource(BackupSource.BackupSource):
                 if enum:
                     return enum
          #TODO: Just workaround, should rebuild
-        return [str(root)]
+        return [str(root)].__iter__()
 
     # gets block range list for all the files. Note: it should be ordered
     def getFilesBlockRange(self):
