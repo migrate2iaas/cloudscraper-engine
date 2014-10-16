@@ -191,7 +191,7 @@ class Linux(object):
         # TODO: should tie up with dir
         bundle_object.SetScratchDirectory(scratch_dir)
 
-        return BundleTransferTarget(bundle_object , media , self)
+        return BundleTransferTarget(bundle_object , media , self , guest_platform)
 
     
     def createSystemAdjustOptions(self):
