@@ -30,7 +30,7 @@ class DeferedReader(object):
         return self.__volume.readExtent(self.__volExtent)
 
 class LinuxBlockDevice(BackupSource.BackupSource):
-    """Backup source in Linux OS"""
+    """Backup source in Windows OS"""
     
     
     def __init__(self, dev_name , max_reported_extent_size=16*1024*1024):

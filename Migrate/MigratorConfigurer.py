@@ -34,6 +34,7 @@ import RawGzipMediaFactory
 import datetime
 import StreamVmdkMediaFactory
 import ProfitBricksConfig
+import SparseRawMediaFactory
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
     def __init__(self, volumename, imagepath , imagesize):
@@ -555,6 +556,8 @@ class MigratorConfigurer(object):
             factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
         if (imagetype == "stm.vmdk" or imagetype == "vmdk" or imagetype == "VMDK") and image_placement == "local":
             factory = StreamVmdkMediaFactory.StreamVmdkMediaFactory(compression) 
+        if (imagetype == "sparsed" or imagetype == "sparsed.raw"):
+            factory = SparsedRawMediaFactory.SparsedRawMediaFactory()
         return factory
 
     def getImageOptions(self , config):

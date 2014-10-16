@@ -117,7 +117,11 @@ class AdjustedFileEnum(object):
 
 
 class AdjustedBackupSource(BackupSource.BackupSource):
-    """Adjusted backup source. Impements BackupSource interface with all the adjusts needed. It bridges (pointer to impl) the backup source"""
+    """
+    Adjusted backup source. Thea adjusts are: file removal, renaming, replacing contents
+    Impements BackupSource interface with all the adjusts needed. 
+    It bridges (pointer to impl) the backup source
+    """
 
     def __init__ (self):
         """default constructor"""
