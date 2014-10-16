@@ -73,6 +73,10 @@ class Migrator(object):
         self.__additionalMediaSize = 0x800*0x200
         self.__os = None
         
+        self.__fileBackup = False
+
+        #TODO: pass this parm somehow. Thru migrate\adjust overrides?
+        self.__linuxGC = True
         
         #TODO: analyze both host and source systems
         if self.__migrateOptions.getHostOs() == "Windows":
@@ -237,11 +241,19 @@ class Migrator(object):
             self.__systemBackupSource = WindowsBackupSource.WindowsBackupSource()
             self.__adjustOption = WindowsBackupAdjust.WindowsBackupAdjust(self.__winSystemAdjustOptions , self.__windows.getVersion())
         else:
-            import Linux
-            from Linux.LinuxBackupSource import LinuxBackupSource
-            from Linux.LinuxBackupAdjust import LinuxBackupAdjust
-            self.__systemBackupSource = LinuxBackupSource()
-            self.__adjustOption = LinuxBackupAdjust()
+            if self.__linuxGC:
+                import Linux_GC
+                from Linux_GC.LinuxBackupSource import LinuxBackupSource
+                from Linux_GC.LinuxBackupAdjust import LinuxBackupAdjust
+                self.__systemBackupSource = LinuxBackupSource("/")
+                self.__adjustOption = LinuxBackupAdjust()
+                self.__fileBackup = True
+            else:
+                import Linux
+                from Linux.LinuxBackupSource import LinuxBackupSource
+                from Linux.LinuxBackupAdjust import LinuxBackupAdjust
+                self.__systemBackupSource = LinuxBackupSource()
+                self.__adjustOption = LinuxBackupAdjust()
 
         self.__systemBackupSource.setBackupDataSource(self.generateSystemDataBackupSource())
         
@@ -294,6 +306,13 @@ class Migrator(object):
             random_disk_id: bool - if we use random disk id for the disk or get it from adjustoptions. Generally it's False for system disks but True for non-system ones
         """
         if newtarget:
+
+            if self.__linuxGC:
+                #then create a linux bundle targer
+                if ( self.__os is Linux_GC.Linux ):
+                    self.__os.createBundleTransferTarget(media , size);
+                raise AssertionError("Linux set to Linux GC but __os is not of Linux_GC.Linux type")
+
             if self.__runOnWindows == False and adjustoptions.getNewSysPartStart() == 0:
                 logging.info("Initializing a transfer task of the whole disk")
                 return ProxyTransferTarget.ProxyTransferTarget(SimpleDataTransferProto.SimpleDataTransferProto(media))
@@ -346,35 +365,27 @@ class Migrator(object):
         if self.__skipImaging:
             logging.info("\n>>>>>>>>>>>>>>>>> Skipping the system imaging\n") 
         else:
-            #TODO: log and profile
             logging.info("\n>>>>>>>>>>>>>>>>> Started the system imaging\n") 
+            #HERE we create an alternative backup mechanism: that is file backup
+            if self.__fileBackup:
+                logging.info("\n>>>>>>>>>>>>>>>> Performing file level transfer");
+                files = self.__adjustedSystemBackupSource.getFileEnum(root="/")
+                for file in files:
+                    self.__systemTransferTarget.transferFile(file)
+            else:
+                logging.info("\n>>>>>>>>>>>>>>>> Performing block level transfer");
         
-            #get data
-            extents = self.__adjustedSystemBackupSource.getFilesBlockRange()
+                #get data
+                extents = self.__adjustedSystemBackupSource.getFilesBlockRange()
             
-            #TODO: create kinda callbacks for transfers to monitor them
-            self.__systemTransferTarget.transferRawData(extents)
+                #TODO: create kinda callbacks for transfers to monitor them
+                self.__systemTransferTarget.transferRawData(extents)
 
-            self.__systemTransferTarget.close()
-            # TODO: better release options are needed
-            if self.__runOnWindows:
-                self.__windows.freeDataBackupSource(self.__systemBackupSource.getBackupDataSource())
-                # extra testing
-                if self.__selfChecks:
-                    try:
-                        #DEPRICATED, remove
-                        logging.info("Making instance self-check") 
-                        testmedia = self.__systemTransferTarget.getMedia()
-                        import WindowsVhdMedia
-                        if isinstance(testmedia, WindowsVhdMedia.WindowsVhdMedia):
-                            testmedia.open()
-                            mediapath = testmedia.getWindowsDevicePath()+"\\Partition1"
-                            self.__adjustedSystemBackupSource.replacementSelfCheck(mediapath)
-                            testmedia.close()
-                    except Exception as e:
-                        logging.warning("!Image self-check couldn't be done") 
-                        logging.error("Exception occured = " + str(e)) 
-                        logging.error(traceback.format_exc())
+                self.__systemTransferTarget.close()
+
+                # free VSS snapshot if Windows
+                if self.__runOnWindows:
+                    self.__windows.freeDataBackupSource(self.__systemBackupSource.getBackupDataSource())
             
         
         # we save the config to reflect the image generated is ready. 

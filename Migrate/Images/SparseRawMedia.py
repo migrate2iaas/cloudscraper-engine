@@ -3,9 +3,16 @@ __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
+import ImageMedia
+
 # the base class for all the media (VHD,raw files etc) to contain a system or data image
-class ImageMedia(object):
-    """Base class to represent media to store an image"""
+class SparseRawMedia(ImageMedia.ImageMedia):
+    """Media representing one big but sparsed raw file"""
+
+    def __init__(self, filename, size):
+        """ """
+        self.__filename = filename
+        self.__size = size
 
     def open(self):
         """
@@ -13,13 +20,14 @@ class ImageMedia(object):
             Does nothing if already opened
             retuns None, throws and error if any   
         """
-        return None
+        file = open(self.__filename, 'wb')
+        file.truncate(self.__size)
 
     def getMaxSize(self):
         """
             Returns the size (in bytes) of virtual disk represented by the image.
         """
-        return 0
+        return self.__size
 
     #gets the overall image size available for writing. Note: it is subject to grow when new data is written
     def getImageSize(self):
@@ -27,7 +35,7 @@ class ImageMedia(object):
             Gets the overall virtual container file size. 
             Note: it is subject to grow when new data is written
         """
-        raise NotImplementedError
+        return self.__size
 
     def reopen(self):
         """
@@ -69,7 +77,11 @@ class ImageMedia(object):
         Returns str() or bytearray() buffer with binary data read
         Throws an error if any
         """
-        raise NotImplementedError
+        file = open(self.__filename , "rb")
+        file.seek(offset)
+        data = file.read(size)
+        file.close()
+        return data
 
    
     def writeDiskData(self, offset, data):
@@ -85,13 +97,17 @@ class ImageMedia(object):
 
         Returns None, throws an error if any
         """
-        raise NotImplementedError
+        file = open(self.__filename , "w+b")
+        file.seek(offset)
+        file.write(size)
+        file.close()
+
 
     def getFilePath(self):
         """
             Returns the file path associated with the image or None if there is no associated local path
         """
-        raise NotImplementedError
+        return self.__filename
     
     def readDiskData(self , offset , size):
         """
@@ -104,7 +120,7 @@ class ImageMedia(object):
         StreamVmdkMedia: IS NOT IMPLEMENTED, throw sNotImplementedError
 
         """
-        raise NotImplementedError
+        return self.readImageData(offset, size)
 
     #sets the channel so the data may be sent simultaniously. Not implemented for now
     def setChannel(self):
