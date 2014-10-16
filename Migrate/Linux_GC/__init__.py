@@ -88,6 +88,7 @@ class BundleTransferTarget(TransferTarget.TransferTarget):
         #Setting the root dir as only file to backup
         rootdir = str(fileToBackup)
         mount_points = ""
+        guest_platform = self.__guest_platform
 
         # Merge platform specific exclude list, mounts points
         # and user specified excludes
@@ -136,6 +137,8 @@ class BundleTransferTarget(TransferTarget.TransferTarget):
     def getMedia(self):
         return self.__media
         
+    def close(self):
+        return None
 
 class AttrDict(dict):
     """helper class for attr dictionary to make things comaptible with config code """
