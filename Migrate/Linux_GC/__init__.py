@@ -159,6 +159,7 @@ class Linux(object):
         options['skip_disk_space_check'] = True;
         #TODO: Should pass somehow
         options['file_system'] = "ext3"
+        options['root_directory'] = "/"
 
         
         try:
