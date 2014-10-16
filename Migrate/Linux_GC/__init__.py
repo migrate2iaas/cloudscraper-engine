@@ -20,7 +20,7 @@ from gcimagebundlelib import *
 from gcimagebundlelib import utils
 from gcimagebundlelib import platform_factory
 from gcimagebundlelib import block_disk
-from gcimagebundlelib import exclude_specs
+from gcimagebundlelib import exclude_spec
 from gcimagebundlelib import os_platform
 
 
