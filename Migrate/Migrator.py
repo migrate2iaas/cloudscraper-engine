@@ -315,7 +315,7 @@ class Migrator(object):
                 #then create a linux bundle targer
                 import Linux_GC
                 if ( isinstance(self.__os , Linux_GC.Linux) ):
-                    self.__os.createBundleTransferTarget(media , size);
+                    return self.__os.createBundleTransferTarget(media , size);
                 else:
                     raise AssertionError("Linux set to Linux GC but __os is not of Linux_GC.Linux type")
 
