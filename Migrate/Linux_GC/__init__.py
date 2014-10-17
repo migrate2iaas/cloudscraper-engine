@@ -78,7 +78,7 @@ class BundleTransferTarget(TransferTarget.TransferTarget):
         """
         #TODO: kinda interface transfering data on file lists not files only
         # the adapter could just accumulate number of file then start syncing...
-        device = self.__linux.findDeviceForPath(str(fileToBackup))
+        device = self.__linux.getDriveForMountPoint(str(fileToBackup) , str(fileToBackup)=="/")
         if not device:
             logging.error("!!!ERROR: Cannot find corresponding device for "  + str(fileToBackup) );
 
@@ -267,12 +267,16 @@ class Linux(object):
         return str(mnt).strip()
 
     def getSystemDriveName(self):
-        rootdev = self.findDeviceForPath("/")
-        bootdev = self.findDeviceForPath("/boot")
+        return self.getDriveForMountPoint("/" , True)
 
-        
+    def getDriveForMountPoint(self , mnt , checkboot = False):
+        rootdev = self.findDeviceForPath(mnt)
         logging.info("The root device is " + rootdev);
-        logging.info("The boot device is " + bootdev);
+        if checkboot:
+            bootdev = self.findDeviceForPath("/boot")
+            logging.info("The boot device is " + bootdev);
+        else:
+            bootdev = rootdev
 
         # try to see where it resides. it's possible to be an lvm drive
         if rootdev.count("mapper/VolGroup-") > 0: 
