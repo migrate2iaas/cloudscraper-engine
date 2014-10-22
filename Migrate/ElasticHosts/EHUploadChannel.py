@@ -62,13 +62,16 @@ class EHUploadThread(threading.Thread):
             (driveid , start, size, data_getter) = self.__uploadQueue.get()
 
             # NOTE: its ok since we have only one thread
-            if iterations % update_size_every == 0:
-                self.__channel.updateDiskUploadedProperty()
-            # means it's time to exit
-            if driveid == None:
-                self.__channel.updateDiskUploadedProperty()
-                return
-            #NOTE: consider to use multi-upload in case of large chunk sizes
+            try:
+                if iterations % update_size_every == 0:
+                    self.__channel.updateDiskUploadedProperty()
+                # means it's time to exit
+                if driveid == None:
+                    self.__channel.updateDiskUploadedProperty()
+                    return
+                #NOTE: consider to use multi-upload in case of large chunk sizes
+            except Exception as e:
+                logging.warning("Failed to update disk property... proceeding")
             
             #NOTE: kinda dedup could be added here!
             #NOTE: we should able to change the initial keyname here so the data'll be redirected 
