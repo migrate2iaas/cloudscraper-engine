@@ -49,7 +49,7 @@ from subprocess import *
 def RenameFile(src_files , dest):
     """a small hack function"""
     for file in src_files:
-        logging.info("Renaming output" + file + "to the image file");
+        logging.info("Renaming output" + file + " to the image file " + dest);
         os.rename(file , dest)
         #touch() -like command. just create an empty file so google code could delete it afterwards
         with open(file, 'a'):
@@ -188,7 +188,7 @@ class Linux(object):
         try:
             target_filename = media.getFilePath()
             if os.path.isdir(scratch_dir) == False:
-                scratch_dir = os.path.pardir(target_filename)
+                scratch_dir = os.path.dirname(target_filename)
         except NotImplementedError as e:
             logging.warning("Cannot get file path for the image, generating new one");
             scratch_dir = None
