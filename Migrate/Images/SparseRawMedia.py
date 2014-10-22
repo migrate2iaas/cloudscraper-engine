@@ -10,7 +10,8 @@ class SparseRawMedia(ImageMedia.ImageMedia):
     """Media representing one big but sparsed raw file"""
 
     def __init__(self, filename, size):
-        """ """
+        """constructor"""
+        super(SparseRawMedia,self).__init__() 
         self.__filename = filename
         self.__size = size
 
