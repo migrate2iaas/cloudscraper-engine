@@ -279,9 +279,9 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
             self.__blobService.set_blob_metadata(self.__containerName, self.__diskName, properties);
         except Exception as ex:
             # it's not error, sometimes we just cannot get the lease for the parallel access
-            logging.debug("Cannot set amount of data already uploaded to the blob.")
-            logging.debug("Exception = " + str(ex)) 
-            logging.error(traceback.format_exc())
+            logging.warning("Cannot set amount of data already uploaded to the blob.")
+            logging.warning("Exception = " + str(ex)) 
+            logging.warning(traceback.format_exc())
             return False
         return True
         

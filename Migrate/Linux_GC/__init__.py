@@ -187,10 +187,12 @@ class Linux(object):
         target_filename = None
         try:
             target_filename = media.getFilePath()
-            if os.path.isdir(scratch_dir) == False:
+            if os.path.isdir(target_filename) == False:
                 scratch_dir = os.path.dirname(target_filename)
         except NotImplementedError as e:
-            logging.warning("Cannot get file path for the image, generating new one");
+            logging.warning("!Cannot get file path for the image, generating new one");
+            logging.warning("! Error: " + str(e) )
+            logging.warning(traceback.format_exc())
             scratch_dir = None
 
         if not scratch_dir:
