@@ -36,7 +36,7 @@ import math
 from md5 import md5
 
 
-UPLOADED_BEFORE_JSON_KEY = u'user:uploaded'
+UPLOADED_BEFORE_JSON_KEY = u'user:cloudscraperuploaded'
 
 # NOTE: only one thread does really work. EH doesn't support concurent access
 class EHUploadThread(threading.Thread):
@@ -95,7 +95,7 @@ class EHUploadThread(threading.Thread):
                         # seems like python has troubels comparing longs and ints
                         if long(already_uploaded) >= long(start + size):
                             upload = False
-                            logging.debug("Skipped the uploading of data at offset " + str(start) + " because " + str(already_uploaded) + "bytes were already uploaded")
+                            logging.info("Skipped the uploading of data at offset " + str(start) + " because " + str(already_uploaded) + "bytes were already uploaded")
 
                     if upload:
                         # we create in-memory gzip file and upload it
@@ -301,8 +301,10 @@ class EHUploadChannel(UploadChannel.UploadChannel):
 
     # confirm good upload. uploads resulting xml then, returns the id of the upload done
     def confirm(self):
-        self.updateDiskUploadedProperty()
-        #TODO: here we may generate kinda crc32 map for faster uploading
+        try:
+            self.updateDiskUploadedProperty()
+        except Exception as e:
+            logging.warning("Failed to set disk property. No reuploads possible");
         return self.__driveId
 
     def close(self):
