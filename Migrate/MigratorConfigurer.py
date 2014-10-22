@@ -557,7 +557,7 @@ class MigratorConfigurer(object):
         if (imagetype == "stm.vmdk" or imagetype == "vmdk" or imagetype == "VMDK") and image_placement == "local":
             factory = StreamVmdkMediaFactory.StreamVmdkMediaFactory(compression) 
         if (imagetype == "sparsed" or imagetype == "sparsed.raw"):
-            factory = SparsedRawMediaFactory.SparsedRawMediaFactory()
+            factory = SparseRawMediaFactory.SparseRawMediaFactory()
         return factory
 
     def getImageOptions(self , config):

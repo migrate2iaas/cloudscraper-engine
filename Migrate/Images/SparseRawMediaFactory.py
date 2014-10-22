@@ -10,9 +10,9 @@ class SparseRawMediaFactory(ImageMediaFactory.ImageMediaFactory):
     """Abstract factory to create images"""
     
     def __init__(self):
-        pass
+        super(SparseRawMediaFactory,self).__init__()
+        
         
     def createMedia(self , imagepath , imagesize):
-
         return SparseRawMedia.SparseRawMedia(imagepath, imagesize)
 

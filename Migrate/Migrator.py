@@ -296,6 +296,7 @@ class Migrator(object):
             media.open()
         else:
             logging.error("Cannot open or create intermediate media to save the machine state")
+        logging.info("Created new media " + repr(media));
         return media
 
     def createTransferTarget(self , media , size , adjustoptions, newtarget = True, random_disk_id=True):
