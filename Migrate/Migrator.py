@@ -473,7 +473,7 @@ class Migrator(object):
             data = media.readImageData(dataplace, datasize)
             if len(data) == 0:
                 logging.warning("!Warning: the source archive has ended unexpectedly while uploading...");
-                continue
+                break
             dataext = DataExtent.DataExtent(dataplace , len(data))
             dataplace = dataplace + len(data)
             dataext.setData(data)
