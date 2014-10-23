@@ -188,7 +188,8 @@ class Linux(object):
         try:
             target_filename = media.getFilePath()
             if os.path.isdir(target_filename) == False:
-                scratch_dir = os.path.dirname(target_filename)
+                scratch_dir = os.path.dirname(target_filename) + "/"
+            logging.info("Preparing bundle file " + target_filename + " and temp dir" + scratch_dir)
         except NotImplementedError as e:
             logging.warning("!Cannot get file path for the image, generating new one , media class " + repr(media));
             logging.warning("! Error: " + str(e) )
