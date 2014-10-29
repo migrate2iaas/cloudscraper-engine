@@ -31,6 +31,9 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         self.__instanceType = instancetype
         self.__machineName = machinename
         self.__diskType = disktype
+        #small fix to recognize more raw types
+        if "RAW" in str(disktype):
+            self.__diskType = "RAW"
         self.__keynamePrefix = keyname_prefix
         self.__vpc = vpc
         self.__custom_host = custom_host 
