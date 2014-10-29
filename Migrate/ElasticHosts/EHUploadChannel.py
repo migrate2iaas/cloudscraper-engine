@@ -42,7 +42,7 @@ UPLOADED_BEFORE_JSON_KEY = u'user:cloudscraperuploaded'
 class EHUploadThread(threading.Thread):
     """thread making all uploading works"""
     #skip existing is ignored right now
-    def __init__(self , queue , threadId , hostname , ehSession , skipExisting = False , channel = None , retries = 3 , compression = 3):
+    def __init__(self , queue , threadId , hostname , ehSession , skipExisting = False , channel = None , retries = 6 , compression = 3):
         self.__uploadQueue = queue
         #thread id , for troubleshooting purposes
         self.__threadId = threadId
@@ -133,6 +133,7 @@ class EHUploadThread(threading.Thread):
                 logging.error("!!! ERROR failed to upload data: disk %s at offser %s, please make a reupload!", str(driveid), str(start) )
                 self.__uploadQueue.task_done()
                 self.__errorUpload = True
+                self.__channel.notifyError(size)
 
 
 
