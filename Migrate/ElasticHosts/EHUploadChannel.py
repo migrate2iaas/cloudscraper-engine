@@ -133,7 +133,7 @@ class EHUploadThread(threading.Thread):
                 logging.error("!!! ERROR failed to upload data: disk %s at offser %s, please make a reupload!", str(driveid), str(start) )
                 self.__uploadQueue.task_done()
                 self.__errorUpload = True
-                self.__channel.notifyError(size)
+                self.__channel.notifyError()
 
 
 
