@@ -551,12 +551,12 @@ class MigratorConfigurer(object):
             
         #if imagetype == "raw.gz" and image_placement == "local":
         # factory =  RawGzipMediaFactory.RawGzipMediaFactory(imagepath , imagesize)
-        if (imagetype == "raw.tar" or imagetype == "RAW") and image_placement == "local":
+        if (imagetype == "raw.tar" or imagetype.lower() == "raw") and image_placement == "local":
             chunk = 4096*1024
             factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
-        if (imagetype == "stm.vmdk" or imagetype == "vmdk" or imagetype == "VMDK") and image_placement == "local":
+        if (imagetype == "stm.vmdk" or imagetype.lower() == "vmdk") and image_placement == "local":
             factory = StreamVmdkMediaFactory.StreamVmdkMediaFactory(compression) 
-        if (imagetype == "sparsed" or imagetype == "sparsed.raw"):
+        if (str(imagetype).lower() == "sparsed" or imagetype.lower() == "sparsed.raw"):
             factory = SparseRawMediaFactory.SparseRawMediaFactory()
         return factory
 
