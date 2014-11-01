@@ -456,17 +456,18 @@ class Migrator(object):
                 timedelta = timenow - timestart
                 if dataplace and channel.getOverallDataTransfered():
                     totalsec = timedelta.seconds + long(timedelta.days) * 24*60*60
-                    secondsleft = int(float(imagesize - dataplace)/float(dataplace/totalsec))
-                    days = secondsleft / (3600*24)
-                    hours = secondsleft % (3600*24) / 3600
-                    minutes = (secondsleft % (3600*24) % 3600) / 60
-                    if days:
-                        logmsg = logmsg + str(days) + " days "
-                    if hours:
-                        logmsg = logmsg + str(hours) + " hrs "
-                    if minutes:
-                        logmsg = logmsg + str(minutes) + " mins "
-                    logmsg = logmsg + "left." 
+                    if totalsec:
+                        secondsleft = int(float(imagesize - dataplace)/float(dataplace/totalsec))
+                        days = secondsleft / (3600*24)
+                        hours = secondsleft % (3600*24) / 3600
+                        minutes = (secondsleft % (3600*24) % 3600) / 60
+                        if days:
+                            logmsg = logmsg + str(days) + " days "
+                        if hours:
+                            logmsg = logmsg + str(hours) + " hrs "
+                        if minutes:
+                            logmsg = logmsg + str(minutes) + " mins "
+                        logmsg = logmsg + "left." 
 
                 logging.info( "% "+ logmsg )
 
