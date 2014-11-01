@@ -53,6 +53,8 @@
     <Compile Include="ElasticHosts\EHUploadChannel.py" />
     <Compile Include="ElasticHosts\EHUploadChannel_test.py" />
     <Compile Include="Helper\UnicodeConfigParser.py" />
+    <Compile Include="Images\SparseRawMedia.py" />
+    <Compile Include="Images\SparseRawMediaFactory.py" />
     <Compile Include="Images\StreamVmdkMedia.py" />
     <Compile Include="Images\diskConvUsage_test.py" />
     <Compile Include="Images\StreamVmdkMediaFactory.py" />
