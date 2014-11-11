@@ -205,6 +205,7 @@ class Linux(object):
         bundle_object.SetScratchDirectory(scratch_dir)
         bundle_object.SetTarfile(target_filename)
         bundle_object.SetKey(options.key)
+        bundle_object.AppendExcludes([exclude_spec.ExcludeSpec(scratch_dir, preserve_dir=True)])
 
         return BundleTransferTarget(bundle_object , media , self , guest_platform)
 
