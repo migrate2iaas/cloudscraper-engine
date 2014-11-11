@@ -71,6 +71,7 @@ class MigrateConfig(object):
 
         #TODO: make cross-system
         for config in images:
+            # we emulate 'windir' for linux too
             originalwindir = os.environ['windir']
             windrive = originalwindir.split("\\")[0] #get C: substring
             if windrive in config.getVolumePath():

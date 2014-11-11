@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
 import ImageMedia
+import os
 
 # the base class for all the media (VHD,raw files etc) to contain a system or data image
 class SparseRawMedia(ImageMedia.ImageMedia):
@@ -30,13 +31,12 @@ class SparseRawMedia(ImageMedia.ImageMedia):
         """
         return self.__size
 
-    #gets the overall image size available for writing. Note: it is subject to grow when new data is written
     def getImageSize(self):
         """
             Gets the overall virtual container file size. 
-            Note: it is subject to grow when new data is written
+            Note: it is subject to change cause the image file is used by other modules
         """
-        return self.__size
+        return os.stat(self.__filename).st_size
 
     def reopen(self):
         """
