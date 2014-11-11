@@ -65,7 +65,7 @@ utils.TarAndGzipFile = RenameFile
 class BundleTransferTarget(TransferTarget.TransferTarget):
     """Target to pass file data to the target"""
 
-    def __init__ (self , bundle_object, media , linux , guest_platform , include_mounts = False):
+    def __init__ (self , bundle_object, media , linux , guest_platform , include_mounts = True):
         self.__bundle = bundle_object
         self.__media = media
         self.__linux = linux
@@ -84,7 +84,9 @@ class BundleTransferTarget(TransferTarget.TransferTarget):
         if not device:
             logging.error("!!!ERROR: Cannot find corresponding device for "  + str(fileToBackup) );
 
-        self.__bundle.AddDisk(device)
+        # we avoid disk creation, thus transferring the whole file tree
+        #self.__bundle.AddDisk(device)
+
         self.__bundle.AddSource(str(fileToBackup))
         
         #Setting the root dir as only file to backup
