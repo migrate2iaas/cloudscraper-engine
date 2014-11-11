@@ -65,7 +65,7 @@ utils.TarAndGzipFile = RenameFile
 class BundleTransferTarget(TransferTarget.TransferTarget):
     """Target to pass file data to the target"""
 
-    def __init__ (self , bundle_object, media , linux , guest_platform , include_mounts = False):
+    def __init__ (self , bundle_object, media , linux , guest_platform , include_mounts = True):
         self.__bundle = bundle_object
         self.__media = media
         self.__linux = linux
@@ -206,7 +206,7 @@ class Linux(object):
         bundle_object.SetScratchDirectory(scratch_dir)
         bundle_object.SetTarfile(target_filename)
         bundle_object.SetKey(options.key)
-        bundle_object.AppendExcludes([exclude_spec.ExcludeSpec(scratch_dir, preserve_dir=True)])
+        bundle_object.AppendExcludes([exclude_spec.ExcludeSpec(scratch_dir, preserve_dir=False)])
 
         return BundleTransferTarget(bundle_object , media , self , guest_platform)
 
