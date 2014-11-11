@@ -118,6 +118,9 @@ class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
         self.__imageArch = source_arch
         #do we need few images? dunno...
         self.__imageType = imagetype
+        #small fix to recognize more raw types
+        if "RAW" in str(imagetype).upper():
+            self.__imageType = "RAW"
 
     def getSourceOs(self):
         #should make it more flexible

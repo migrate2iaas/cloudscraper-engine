@@ -111,6 +111,7 @@ class BundleTransferTarget(TransferTarget.TransferTarget):
 
         self.__bundle.SetPlatform(self.__guest_platform)
 
+        # NOTE: SELinux should be turned off via: echo 0 > /selinux/enforce
         #Do bundling
         self.__bundle.Verify()
         (fs_size, digest) = self.__bundle.Bundleup()
