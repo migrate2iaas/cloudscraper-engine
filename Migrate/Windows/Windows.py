@@ -33,6 +33,13 @@ import logging
 class Windows(object):
     """factory class for generating objects of Windows subsystem"""
 
+    # path on C:\ where the service is stored
+    adjustServiceDir = "CloudscraperBootAdjust"
+    
+    # pathes to resource directories
+    virtRelIoDir = "..\\resources\\virtio\\1.65"  #TODO: make customizeable
+    adjustRelSvcDir = "..\\resources\\CloudscraperBootAdjust"
+
     # TODO: some init configs could be read here, e.g. Windows configs
     def __init__(self):
         self.__filesToDelete = set()
@@ -40,8 +47,31 @@ class Windows(object):
         self.__vss = VssThruVshadow.VssThruVshadow()
         #note: better to load from conf
         self.__halList = ["halacpi.dll", "halmacpi.dll", "halaacpi.dll"]
+        self.__copyVirtIo = True
+        self.__adjustSvcDir = Windows.adjustRelSvcDir
+        self.__windowsVersion = self.getVersion()
+        self.__virtIoDir = self.__setVirtIoSourceDir()
+        
+
         return
     
+    def __setVirtIoSourceDir(self):
+        virtiodir = Windows.virtRelIoDir
+        if self.__windowsVersion == WindowsSystemInfo.WindowsSystemInfo.Win2003:
+            virtiodir = virtiodir + "\\WNET"
+        if self.__windowsVersion == WindowsSystemInfo.WindowsSystemInfo.Win2008:
+            virtiodir = virtiodir + "\\WLH"
+        if self.__windowsVersion == WindowsSystemInfo.WindowsSystemInfo.Win2008R2:
+            virtiodir = virtiodir + "\\WIN7"
+        if self.__windowsVersion >= WindowsSystemInfo.WindowsSystemInfo.Win2012:
+            virtiodir = virtiodir + "\\WIN8"
+
+        if WindowsSystemInfo.WindowsSystemInfo().getSystemArcheticture() == WindowsSystemInfo.WindowsSystemInfo.Archx8664:
+            virtiodir = virtiodir + "\\AMD64"
+        else:
+            virtiodir = virtiodir + "\\X86"
+        return virtiodir
+
     # volume should be in "\\.\X:" form
     def getDataBackupSource(self , volume):
         
@@ -61,6 +91,7 @@ class Windows(object):
         system_vol = "\\\\.\\"+windrive_letter+":"
 
         self.makeSystemVolumeBootable()
+        self.copyExtraFiles()
 
         snapname = self.__vss.createSnapshot(system_vol)
       
@@ -74,6 +105,20 @@ class Windows(object):
         
         volumename = vol.getVolumeName()
         self.__vss.deleteSnapshot(volumename)
+
+    def copyExtraFiles(self):
+        """copies extra files: virtio drivers and autoadjust service """
+        # copies whole virtio to Windows\System32\drivers
+        originalwindir = os.environ['windir']
+        windrive = originalwindir.split("\\")[0] #get C: substring
+        wininstall = os.getenv('SystemRoot', windrive+"\\windows")
+        # locate virt-io 
+        shutil.copytree(self.__virtIoDir , wininstall + "\\system32\\drivers\\virtio")
+        self.__filesToDelete.add(wininstall + "\\system32\\drivers\\virtio")
+        # copies adjust service
+        shutil.copytree(self.__adjustSvcDir , windrive + "\\" + Windows.adjustServiceDir)
+        self.__filesToDelete.add(windrive + "\\" + Windows.adjustServiceDir)
+
 
     def makeSystemVolumeBootable(self):
         originalwindir = os.environ['windir']
@@ -91,6 +136,7 @@ class Windows(object):
                 os.rename(conflicting_file , self.__filesToRename[conflicting_file])
 
 
+        #manage bcd
         if self.getVersion() >= WindowsSystemInfo.WindowsSystemInfo.Win2008:
 
             bootdir = windrive+"\\Boot"
@@ -182,6 +228,8 @@ class Windows(object):
         for file in  self.__filesToDelete:
             logging.debug("Deleting temporary file" + file)       
             shutil.rmtree(file , True , None)
+            if os.path.exists(file) and os.path.isdir(file):
+                os.rmdir(file)
             #TODO: log failures
         for (oldfile , newfile) in self.__filesToRename.items():
             os.rename(newfile , oldfile)

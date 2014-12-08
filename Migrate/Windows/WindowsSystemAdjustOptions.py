@@ -23,6 +23,8 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
          self.__turnHyperV = enable_hyperv
          self.__adjustPageFile = False
          self.__adjustTcpIp = False
+         self.__virtIoPath = ""
+         self.__injectPostprocess = False
          
          originalwindir = os.environ['windir']
          windir = originalwindir.split(":\\")[-1] #get substring after X:\
@@ -56,6 +58,8 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
          self.__softwareHiveFilePath = self.__getValue(config , 'software-hive-file' , self.__softwareHiveFilePath)
          self.__adjustPageFile = self.__getValue(config , 'adjust-pagefile' , self.__adjustPageFile)
          self.__adjustTcpIp = self.__getValue(config , 'adjust-tcpip' , self.__adjustTcpIp)
+         self.__virtIoPath = self.__getValue(config , 'virtio' , self.__virtIoPath)
+         self.__injectPostprocess = self.__getValue(config , 'postprocess' , self.__injectPostprocess)
 
          #TODO: load ini config setting these values
          #get config class from the service
@@ -120,3 +124,15 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
      def adjustTcpIp(self):
          """returns if system tcpip options including dhcp has to be adjusted to boot on new DHCP enabled network"""
          return self.__adjustTcpIp
+
+     def injectVirtIo(self):
+         """returns if to inject virtio drivers"""
+         return not (self.__virtIoPath == "")
+
+     def virtIoPath(self):
+         """returns virtio version"""
+         return self.__virtIoPath
+
+     def injectPostprocess(self):
+         """checks if postprocess service is needed to be injected"""
+         return self.__injectPostprocess

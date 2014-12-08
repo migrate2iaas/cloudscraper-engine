@@ -16,8 +16,11 @@ import win32file
 import struct
 
 import logging
+import subprocess
+import re
 import time
 import WindowsSystemInfo
+import Windows
 
 class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
     """Backupa adjust for Windows OS"""
@@ -141,6 +144,72 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
                 interfacekey.close()
 
         tcpipkey.close()
+
+    def prepareRegFile(self, hivekeyname , currentcontrolset, regfile , infpath = None , syspath = None ,  reghive = "SYSTEM" , controlset="CurrentControlSet"):
+        """ 
+         prepares new regfile from template and returns its path
+         if syspath (or infpath) is available the file is searched for any sys (or inf) file reference which is redirected from systemroot to the syspath (infpath)
+        """
+        regfile = open(regfile , "r")
+        regdata = regfile.read()
+        regdata = str(regdata).replace(controlset , currentcontrolset)
+        regdata = str(regdata).replace(reghive , hivekeyname)
+        regfile.close()
+        newreg_filepath = os.environ['TEMP']+"\\tempreg"+str(int(time.mktime(time.localtime())))+".reg"
+        
+        if infpath:
+            regdata = re.sub("([a-z_A-Z]+)\.inf" , infpath+"\1.inf" , regdata)
+
+        if syspath:
+            syspath = re.sub("([a-z_A-Z]+)\.sys" , syspath+"\1.sys" , regdata)
+
+        
+        newreg = open(newreg_filepath , "w")
+        newreg.write(regdata)
+        newreg.close()
+
+        return newreg_filepath
+
+    def mergeReg(self , newreg):
+        p1 = subprocess.check_call(["regedit" , "/s" , newreg])
+        return
+
+    def injectVirtIo(self, hivekeyname , currentcontrolset , virtio_path):
+        """
+        
+        injects virtio drivers adding them to the corresponding hives
+        note: reg file should be available under virtio_path
+        actual drives should be found under <OSver>/<Arch> dir , e.g. WIN7/AMD64
+        
+        """
+        
+        root_virtio = Windows.Windows.virtRelIoDir # + virtio_path
+        virtiodir="%SystemRoot%\\system32\\drivers\\virtio"
+
+        # 2) open reg file, replace data with corresponding values, inject it to our hive
+        # the injection reg file is found in corresponding resource directory
+        newreg = self.prepareRegFile(hivekeyname , "ControlSet00"+str(currentcontrolset) , root_virtio + "\\virtio.reg" ,  virtiodir , virtiodir )
+        self.mergeReg(newreg)     
+
+        return True
+
+    def injectPostprocess(self , hivekeyname , currentcontrolset , postprocess_service_dir):
+        """
+        inject postprocess service using the corresponding 
+        Note: it's assumed that the service is copied to "C:\\CloudscraperBootAdjust" (see Windows.Windows.adjustServiceDir)
+        """
+        postprocess_service_path = postprocess_service_dir + "\\nssm"
+
+        if WindowsSystemInfo.WindowsSystemInfo().getSystemArcheticture() == WindowsSystemInfo.WindowsSystemInfo.Archx8664:
+            postprocess_service_path = postprocess_service_path + "\\win64"
+        else:
+            postprocess_service_path = postprocess_service_path + "\\win32"
+
+        postprocess_service_exe = postprocess_service_path + "\\nssm.exe"
+        postprocess_service_reg = postprocess_service_path + "\\nssm.reg"
+
+        newreg = self.prepareRegFile(hivekeyname , "ControlSet00"+str(currentcontrolset) , postprocess_service_reg)
+        self.mergeReg(newreg)   
        
 
     def adjustSystemHive(self , hive_file_path):
@@ -297,6 +366,18 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             logging.info("Adjusting TCP/IP settings") 
             self.adjustTcpIp(hivekeyname,currentcontrolset)
             
+        #--------------- 2l) inject virtui
+        virtio = self.__adjustConfig.injectVirtIo()
+        if virtio:
+            logging.info("Injecting-virtio") 
+            virtio_path = self.__adjustConfig.virtIoPath()
+            self.injectVirtIo(hivekeyname,currentcontrolset, virtio_path)
+
+        postprocess = self.__adjustConfig.injectPostprocess()
+        if postprocess:
+            logging.info("Injecting postprocessing service");
+            postprocess_service_path = Windows.Windows.adjustRelSvcDir
+            self.injectPostprocess(hivekeyname,currentcontrolset, postprocess_service_path)
 
         #---------------- 3) inject the service
         #Note: the service should be placed on windrive!

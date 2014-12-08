@@ -312,7 +312,7 @@ class Migrator(object):
         """
         if newtarget:
 
-            if self.__linuxGC:
+            if self.__runOnWindows == False and self.__linuxGC == True:
                 #then create a linux bundle targer
                 import Linux_GC
                 if ( isinstance(self.__os , Linux_GC.Linux) ):

@@ -1,0 +1,29 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\CloudscraperBoot]
+"Type"=dword:00000010
+"Start"=dword:00000002
+"ErrorControl"=dword:00000001
+"ImagePath"=hex(2):43,00,3a,00,5c,00,43,00,6c,00,6f,00,75,00,64,00,73,00,63,00,\
+  72,00,61,00,70,00,65,00,72,00,42,00,6f,00,6f,00,74,00,41,00,64,00,6a,00,75,\
+  00,73,00,74,00,5c,00,6e,00,73,00,73,00,6d,00,5c,00,77,00,69,00,6e,00,33,00,\
+  32,00,5c,00,6e,00,73,00,73,00,6d,00,2e,00,65,00,78,00,65,00,00,00
+"DisplayName"="CloudscraperNetwork"
+"WOW64"=dword:00000001
+"ObjectName"="LocalSystem"
+"DelayedAutostart"=dword:00000000
+"FailureActionsOnNonCrashFailures"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\CloudscraperBoot\Parameters]
+"Application"=hex(2):43,00,3a,00,5c,00,43,00,6c,00,6f,00,75,00,64,00,73,00,63,\
+  00,72,00,61,00,70,00,65,00,72,00,42,00,6f,00,6f,00,74,00,41,00,64,00,6a,00,\
+  75,00,73,00,74,00,5c,00,61,00,64,00,6a,00,75,00,73,00,74,00,5c,00,61,00,64,\
+  00,6a,00,75,00,73,00,74,00,2e,00,63,00,6d,00,64,00,00,00
+"AppParameters"=hex(2):00,00
+"AppDirectory"=hex(2):43,00,3a,00,5c,00,43,00,6c,00,6f,00,75,00,64,00,73,00,63,\
+  00,72,00,61,00,70,00,65,00,72,00,42,00,6f,00,6f,00,74,00,41,00,64,00,6a,00,\
+  75,00,73,00,74,00,5c,00,61,00,64,00,6a,00,75,00,73,00,74,00,00,00
+
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\CloudscraperBoot\Parameters\AppExit]
+@="Exit"
