@@ -1,5 +1,7 @@
 Windows Registry Editor Version 5.00
 
+; VIOSCSI
+
 [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4D36E97B-E325-11CE-BFC1-08002BE10318}\0000]
 "InfPath"="vioscsi.inf"
 "InfSection"="rhelscsi_inst"
@@ -30,5 +32,37 @@ Windows Registry Editor Version 5.00
 "Group"="Scsi Miniport"
 
 
+; VIOSTOR
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\viostor]
+"Type"=dword:00000001
+"Start"=dword:00000000
+"ErrorControl"=dword:00000001
+"Tag"=dword:00000040
+"ImagePath"=hex(2):73,00,79,00,73,00,74,00,65,00,6d,00,33,00,32,00,5c,00,64,00,\
+  72,00,69,00,76,00,65,00,72,00,73,00,5c,00,76,00,69,00,6f,00,73,00,74,00,6f,\
+  00,72,00,2e,00,73,00,79,00,73,00,00,00
+"Group"="SCSI miniport"
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\viostor\Parameters]
+"BusType"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\viostor\Parameters\PnpInterface]
+"5"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4D36E97B-E325-11CE-BFC1-08002BE10318}\0000]
+"InfPath"="oem3.inf"
+"InfSection"="rhelscsi_inst"
+"ProviderName"="Red Hat, Inc."
+"DriverDateData"=hex:00,c0,d8,6b,33,f8,cd,01
+"DriverDate"="6-19-2013"
+"DriverVersion"="52.65.104.6500"
+"MatchingDeviceId"="pci\\ven_1af4&dev_1001&subsys_00021af4"
+"DriverDesc"="Red Hat VirtIO SCSI controller"
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#VEN_1AF4&DEV_1001&SUBSYS_00021AF4]
+"ClassGUID"="{4d36e97b-e325-11ce-bfc1-08002be10318}"
+"Service"="viostor"
+;"DriverPackageId"="viostor.inf_amd64_neutral_8281dafe602ac3b3"
 
 

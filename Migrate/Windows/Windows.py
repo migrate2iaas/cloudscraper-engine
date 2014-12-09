@@ -51,12 +51,13 @@ class Windows(object):
         self.__adjustSvcDir = Windows.adjustRelSvcDir
         self.__windowsVersion = self.getVersion()
         self.__virtIoDir = self.__setVirtIoSourceDir()
-        
+        self.__bootDriverName = "viostor.sys"
 
         return
     
     def __setVirtIoSourceDir(self):
         virtiodir = Windows.virtRelIoDir
+       
         if self.__windowsVersion == WindowsSystemInfo.WindowsSystemInfo.Win2003:
             virtiodir = virtiodir + "\\WNET"
         if self.__windowsVersion == WindowsSystemInfo.WindowsSystemInfo.Win2008:
@@ -115,6 +116,22 @@ class Windows(object):
         # locate virt-io 
         shutil.copytree(self.__virtIoDir , wininstall + "\\system32\\drivers\\virtio")
         self.__filesToDelete.add(wininstall + "\\system32\\drivers\\virtio")
+        
+        #TODO: make more modular early boot code
+        # here we add early boot driver to system32\drivers checking it not exists
+        # if it exists, renaming for the short period of time
+        # note: the deletion is executed in cleanup before the renaming
+        bootdriver_name = self.__bootDriverName
+        conflicting_file = wininstall + "\\system32\\drivers\\"+bootdriver_name
+        if os.path.exists(conflicting_file):
+            logging.debug("Virt-IO vioscsi driver detected on the machine!")
+            logging.debug("Renaming it to add target Virt-IO driver")
+            os.rename(conflicting_file, conflicting_file+"-renamed")
+            self.__filesToRename[conflicting_file] = conflicting_file+"-renamed"
+
+        shutil.copy(wininstall + "\\system32\\drivers\\virtio\\"+bootdriver_name , wininstall + "\\system32\\drivers")
+        self.__filesToDelete.add(conflicting_file)
+
         # copies adjust service
         shutil.copytree(self.__adjustSvcDir , windrive + "\\" + Windows.adjustServiceDir)
         self.__filesToDelete.add(windrive + "\\" + Windows.adjustServiceDir)
