@@ -52,6 +52,7 @@ class Windows(object):
         self.__windowsVersion = self.getVersion()
         self.__virtIoDir = self.__setVirtIoSourceDir()
         self.__bootDriverName = "viostor.sys"
+        self.__bootDriverInf = "viostor.inf"
 
         return
     
@@ -121,16 +122,17 @@ class Windows(object):
         # here we add early boot driver to system32\drivers checking it not exists
         # if it exists, renaming for the short period of time
         # note: the deletion is executed in cleanup before the renaming
-        bootdriver_name = self.__bootDriverName
-        conflicting_file = wininstall + "\\system32\\drivers\\"+bootdriver_name
-        if os.path.exists(conflicting_file):
-            logging.debug("Virt-IO vioscsi driver detected on the machine!")
-            logging.debug("Renaming it to add target Virt-IO driver")
-            os.rename(conflicting_file, conflicting_file+"-renamed")
-            self.__filesToRename[conflicting_file] = conflicting_file+"-renamed"
+        files_to_copy = [wininstall + "\\system32\\drivers\\"+self.__bootDriverName, wininstall + "\\inf\\"+ self.__bootDriverInf ]
+        
+        for conflicting_file in files_to_copy:
+            if os.path.exists(conflicting_file):
+                logging.debug("Virt-IO vioscsi driver detected on the machine!")
+                logging.debug("Renaming it to add target Virt-IO driver")
+                os.rename(conflicting_file, conflicting_file+"-renamed")
+                self.__filesToRename[conflicting_file] = conflicting_file+"-renamed"
 
-        shutil.copy(wininstall + "\\system32\\drivers\\virtio\\"+bootdriver_name , wininstall + "\\system32\\drivers")
-        self.__filesToDelete.add(conflicting_file)
+            shutil.copy(wininstall + "\\system32\\drivers\\virtio\\"+os.path.basename(conflicting_file) , conflicting_file)
+            self.__filesToDelete.add(conflicting_file)
 
         # copies adjust service
         shutil.copytree(self.__adjustSvcDir , windrive + "\\" + Windows.adjustServiceDir)
