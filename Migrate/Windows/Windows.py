@@ -92,14 +92,17 @@ class Windows(object):
         windrive_letter = windir[0] 
         system_vol = "\\\\.\\"+windrive_letter+":"
 
-        self.makeSystemVolumeBootable()
-        self.copyExtraFiles()
+        try:
+            self.makeSystemVolumeBootable()
+            self.copyExtraFiles()
 
-        snapname = self.__vss.createSnapshot(system_vol)
-      
-        WinVol = WindowsVolume.WindowsVolume(snapname)
-
-        self.rollbackSystemVolumeChanges()
+            snapname = self.__vss.createSnapshot(system_vol)
+            WinVol = WindowsVolume.WindowsVolume(snapname)
+        except Exception as e:
+            logging.error("!!!ERROR: Cannot prepare source system!")
+            raise
+        finally:
+            self.rollbackSystemVolumeChanges()
         return WinVol
 
     #frees the snapshot
@@ -114,29 +117,36 @@ class Windows(object):
         originalwindir = os.environ['windir']
         windrive = originalwindir.split("\\")[0] #get C: substring
         wininstall = os.getenv('SystemRoot', windrive+"\\windows")
-        # locate virt-io 
-        shutil.copytree(self.__virtIoDir , wininstall + "\\system32\\drivers\\virtio")
-        self.__filesToDelete.add(wininstall + "\\system32\\drivers\\virtio")
+        system32_folder = wininstall+"\\system32"
+        # to check whether we are executed under 64-bit and WOW64 emulates system32 for us , see http://www.xyplorer.com/faq-topic.php?id=wow64
+        if os.path.exists(wininstall + "\\SysWOW64"):
+            logging.debug("Writing to sysnative instead of WOW64-emulated system32")
+            system32_folder = wininstall + "\\sysnative"
         
         #TODO: make more modular early boot code
         # here we add early boot driver to system32\drivers checking it not exists
         # if it exists, renaming for the short period of time
         # note: the deletion is executed in cleanup before the renaming
-        files_to_copy = [wininstall + "\\system32\\drivers\\"+self.__bootDriverName, wininstall + "\\inf\\"+ self.__bootDriverInf ]
+        files_to_copy = [system32_folder + "\\drivers\\"+self.__bootDriverName, wininstall + "\\inf\\"+ self.__bootDriverInf ]
         
         for conflicting_file in files_to_copy:
             if os.path.exists(conflicting_file):
-                logging.debug("Virt-IO vioscsi driver detected on the machine!")
-                logging.debug("Renaming it to add target Virt-IO driver")
+                logging.debug("Virt-IO file " + conflicting_file + " detected on the machine!")
+                logging.debug("Renaming it temporary to add target Virt-IO driver")
                 os.rename(conflicting_file, conflicting_file+"-renamed")
                 self.__filesToRename[conflicting_file] = conflicting_file+"-renamed"
 
-            shutil.copy(wininstall + "\\system32\\drivers\\virtio\\"+os.path.basename(conflicting_file) , conflicting_file)
+            shutil.copy(self.__virtIoDir+"\\"+os.path.basename(conflicting_file) , conflicting_file)
             self.__filesToDelete.add(conflicting_file)
 
         # copies adjust service
         shutil.copytree(self.__adjustSvcDir , windrive + "\\" + Windows.adjustServiceDir)
         self.__filesToDelete.add(windrive + "\\" + Windows.adjustServiceDir)
+
+        # copies virtio dir
+        logging.debug("Copy virtio dir");
+        virtio_copy_path = windrive + "\\" + Windows.adjustServiceDir+"\\virtio"; #wininstall + "\\system32\\drivers\\virtio"
+        shutil.copytree(self.__virtIoDir , virtio_copy_path)
 
 
     def makeSystemVolumeBootable(self):
