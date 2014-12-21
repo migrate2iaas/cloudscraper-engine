@@ -12,4 +12,6 @@ if defined ProgramFiles(x86) (
   set DEVCON=devcon_32
 )
 
+certutil -addstore TrustedPublisher redhat.cer >> C:\adjustlog.txt
+
 %~dp0\%DEVCON% install "%DRVPATH%\netkvm.inf" "PCI\VEN_1AF4&DEV_1000&SUBSYS_00011AF4&REV_00" >> C:\adjustlog.txt
