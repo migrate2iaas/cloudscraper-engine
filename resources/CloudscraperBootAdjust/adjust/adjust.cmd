@@ -4,11 +4,11 @@ echo "Preved!" >> C:\adjustlog.txt
 
 if defined ProgramFiles(x86) (
     @echo Some 64-bit work
-  set DRVPATH=%~dp0\..\VirtIO\XP\AMD64
+  set DRVPATH=%~dp0\..\VirtIO\
   set DEVCON=devcon_64
 ) else (
     @echo Some 32-bit work
-  set DRVPATH=%~dp0\..\VirtIO\XP\X86
+  set DRVPATH=%~dp0\..\VirtIO\
   set DEVCON=devcon_32
 )
 
