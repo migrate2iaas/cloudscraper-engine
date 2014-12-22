@@ -261,6 +261,10 @@ class Windows(object):
                 os.rmdir(file)
             #TODO: log failures
         for (oldfile , newfile) in self.__filesToRename.items():
+            logging.debug("Renaming " + newfile + " file to " + oldfile)
+            if os.path.exists(oldfile):
+                logging.debug("Rewriting " + oldfile)
+                os.remove(oldfile)
             os.rename(newfile , oldfile)
 
         
