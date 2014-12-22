@@ -255,16 +255,15 @@ class Windows(object):
 
     def rollbackSystemVolumeChanges(self):
         for file in  self.__filesToDelete:
-            logging.debug("Deleting temporary file" + file)       
+            logging.debug("Deleting temporary file " + file)       
             shutil.rmtree(file , True , None)
             if os.path.exists(file) and os.path.isdir(file):
                 os.rmdir(file)
+            if os.path.exists(file) and os.path.isfile(file):
+                os.remove(file)
             #TODO: log failures
         for (oldfile , newfile) in self.__filesToRename.items():
             logging.debug("Renaming " + newfile + " file to " + oldfile)
-            if os.path.exists(oldfile):
-                logging.debug("Rewriting " + oldfile)
-                os.remove(oldfile)
             os.rename(newfile , oldfile)
 
         
