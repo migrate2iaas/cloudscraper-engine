@@ -28,6 +28,7 @@ import WindowsSystemInfo
 import filecmp
 import unittest
 import shutil
+import time
 import logging
 
 class Windows(object):
@@ -132,9 +133,10 @@ class Windows(object):
         for conflicting_file in files_to_copy:
             if os.path.exists(conflicting_file):
                 logging.debug("Virt-IO file " + conflicting_file + " detected on the machine!")
-                logging.debug("Renaming it temporary to add target Virt-IO driver")
-                os.rename(conflicting_file, conflicting_file+"-renamed")
-                self.__filesToRename[conflicting_file] = conflicting_file+"-renamed"
+                tempname = conflicting_file+"-renamed"+str(int(time.time()))
+                logging.debug("Renaming it to " + tempname + " temporary!")
+                os.rename(conflicting_file, tempname)
+                self.__filesToRename[conflicting_file] = tempname
 
             shutil.copy(self.__virtIoDir+"\\"+os.path.basename(conflicting_file) , conflicting_file)
             self.__filesToDelete.add(conflicting_file)
