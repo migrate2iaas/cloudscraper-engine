@@ -13,6 +13,9 @@ import DataExtent
 import os
 import sys
 
+#TODO: move to configs
+debug_replacepent = True
+
 #NOTE: defred read could also be used when filesize is too large to keep in memory
 class ReplacedData(object):
     """Reader for replaced data, needed for debug purposes"""
@@ -22,8 +25,10 @@ class ReplacedData(object):
         self.__filename = filename
         self.__fileoffset = fileoffset
         logging.debug("\t Seting replaced data for file " + self.__filename + " at offset " + str(self.__fileoffset) + " of size " + str(self.__size))
+        logging.debug()
     def __str__(self):
         logging.debug("\t Getting replaced data for file " + self.__filename + " at offset " + str(self.__fileoffset) + " of size " + str(self.__size))
+        logging.debug()
         return self.__data
 
 #for nner use only
@@ -229,7 +234,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                         pieces = block.substract(replacedext)
                         #TODO: checks and logging here
 
-                        logging.debug("Changing block " + str(replacedpart) + " by data from offset " + str(replacedoffset) + " of replacement file " + str(replacement)) 
+                        logging.debug("\tChanging block " + str(replacedpart) + " by data from offset " + str(replacedoffset) + " of replacement file " + str(replacement)) 
                         filereplacement = open(replacement, "rb")
                         
                         filereplacement.seek(replacedoffset)
@@ -240,6 +245,13 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                         replacedpart.setData(replaceddata) 
 
                         replacedoffset = replacedoffset + len(data)
+
+                        if debug_replacepent:
+                            filereplacement_copy = open(replacement+"copy", "r+b")
+                            filereplacement_copy.seek(replacedoffset)
+                            filereplacement_copy.write(data)
+                            filereplacement_copy.close()
+
                         filereplacement.close()
 
                         pieces.append(replacedpart)
