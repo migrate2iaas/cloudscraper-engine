@@ -242,8 +242,6 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                         replaceddata = ReplacedData(data , len(data) , removed , replacedoffset)
                         replacedpart.setData(replaceddata) 
 
-                        replacedoffset = replacedoffset + len(data)
-
                         if debug_replacepent:
                             debug_copy_name = replacement+"copy"
                             if os.path.exists(debug_copy_name):
@@ -253,6 +251,9 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                             filereplacement_copy.seek(replacedoffset)
                             filereplacement_copy.write(data)
                             filereplacement_copy.close()
+
+                        replacedoffset = replacedoffset + len(data)
+                        
 
                         filereplacement.close()
 
