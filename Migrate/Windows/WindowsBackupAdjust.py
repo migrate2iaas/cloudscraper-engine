@@ -171,7 +171,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         return newreg_filepath
 
     def mergeReg(self , newreg):
-        p1 = subprocess.check_call(["regedit" , "/s" , newreg])
+        p1 = subprocess.check_call(["reg" , "import" , newreg])
         return
 
     def injectVirtIo(self, hivekeyname , currentcontrolset , virtio_path):
