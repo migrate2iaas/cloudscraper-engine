@@ -123,6 +123,8 @@ class Windows(object):
         if os.path.exists(wininstall + "\\SysWOW64"):
             logging.debug("Writing to sysnative instead of WOW64-emulated system32")
             system32_folder = wininstall + "\\sysnative"
+            if os.path.exists(system32_folder) == False:
+               logging.error("!!!ERROR: Please install the following MS KB http://support.microsoft.com/kb/942589 to run on Win2003 64-bit servers!")
         
         #TODO: make more modular early boot code
         # here we add early boot driver to system32\drivers checking it not exists
