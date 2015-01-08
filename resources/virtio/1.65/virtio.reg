@@ -25,7 +25,7 @@ Windows Registry Editor Version 5.00
 "NextInstance"=dword:00000001
 
 
-[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4D36E97B-E325-11CE-BFC1-08002BE10318}\0000]
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4D36E97B-E325-11CE-BFC1-08002BE10318}\1000]
 "InfPath"="viostor.inf"
 "InfSection"="rhelscsi_inst"
 "ProviderName"="Red Hat, Inc."
