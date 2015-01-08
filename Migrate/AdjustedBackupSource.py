@@ -12,6 +12,7 @@ import difflib
 import DataExtent
 import os
 import sys
+import md5
 
 #TODO: move to configs
 debug_replacepent = True
@@ -25,8 +26,18 @@ class ReplacedData(object):
         self.__filename = filename
         self.__fileoffset = fileoffset
         logging.debug("\t Seting replaced data for file " + self.__filename + " at offset " + str(self.__fileoffset) + " of size " + str(self.__size))
+
+        if debug_replacepent:
+            md5encoder = md5.md5()
+            md5encoder.update(self.__data)
+            logging.debug("\t Md5 = " + str(md5encoder.hexdigest()))
+
     def __str__(self):
         logging.debug("\t Getting replaced data for file " + self.__filename + " at offset " + str(self.__fileoffset) + " of size " + str(self.__size))
+        if debug_replacepent:
+            md5encoder = md5.md5()
+            md5encoder.update(self.__data)
+            logging.debug("\t Md5 = " + str(md5encoder.hexdigest()))
         return self.__data
 
 #for nner use only
