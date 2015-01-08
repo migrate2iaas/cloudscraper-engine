@@ -30,6 +30,7 @@ import unittest
 import shutil
 import time
 import logging
+import subprocess
 
 class Windows(object):
     """factory class for generating objects of Windows subsystem"""
@@ -94,8 +95,12 @@ class Windows(object):
         system_vol = "\\\\.\\"+windrive_letter+":"
 
         try:
-            self.makeSystemVolumeBootable()
-            self.copyExtraFiles()
+            self.__makeSystemVolumeBootable()
+
+            #TODO: add extra config flags for this! 
+            #TODO: make use of this singleton class more consistent
+            self.__copyExtraFiles()
+            self.__prepareRegistry()
 
             snapname = self.__vss.createSnapshot(system_vol)
             WinVol = WindowsVolume.WindowsVolume(snapname)
@@ -103,7 +108,7 @@ class Windows(object):
             logging.error("!!!ERROR: Cannot prepare source system!")
             raise
         finally:
-            self.rollbackSystemVolumeChanges()
+            self.__rollbackSystemVolumeChanges()
         return WinVol
 
     #frees the snapshot
@@ -112,7 +117,7 @@ class Windows(object):
         volumename = vol.getVolumeName()
         self.__vss.deleteSnapshot(volumename)
 
-    def copyExtraFiles(self):
+    def __copyExtraFiles(self):
         """copies extra files: virtio drivers and autoadjust service """
         # copies whole virtio to Windows\System32\drivers
         originalwindir = os.environ['windir']
@@ -153,7 +158,7 @@ class Windows(object):
         shutil.copytree(self.__virtIoDir , virtio_copy_path)
 
 
-    def makeSystemVolumeBootable(self):
+    def __makeSystemVolumeBootable(self):
         originalwindir = os.environ['windir']
         windrive = originalwindir.split("\\")[0] #get C: substring
         wininstall = os.getenv('SystemRoot', windrive+"\\windows")
@@ -257,7 +262,12 @@ class Windows(object):
                
         return True
 
-    def rollbackSystemVolumeChanges(self):
+    def __prepareRegistry(self):
+        self.__injectVirtIo()
+        self.__injectPostprocess(adjustRelSvcDir)
+        return
+
+    def __rollbackSystemVolumeChanges(self):
         for file in  self.__filesToDelete:
             logging.debug("Deleting temporary file " + file)       
             shutil.rmtree(file , True , None)
@@ -287,6 +297,46 @@ class Windows(object):
 
     def getSystemInfo(self):
         return WindowsSystemInfo.WindowsSystemInfo()
+
+
+    def __mergeReg(self , newreg):
+        p1 = subprocess.check_call(["reg" , "import" , newreg])
+        return
+
+    def __injectVirtIo(self):
+        """
+        
+        injects virtio drivers adding them to the corresponding hives
+        
+        """
+        
+        root_virtio = virtRelIoDir # + virtio_path
+        virtiodir="%SystemRoot%\\system32\\drivers\\virtio"
+
+        # 2) open reg file, replace data with corresponding values, inject it to our hive
+        # the injection reg file is found in corresponding resource directory
+        #newreg = self.prepareRegFile(hivekeyname , "ControlSet00"+str(currentcontrolset) ,  ,  virtiodir , virtiodir )
+        self.__mergeReg(root_virtio + "\\virtio.reg")     
+
+        return True
+
+    def __injectPostprocess(self , postprocess_service_dir):
+        """
+        inject postprocess service using the corresponding 
+        Note: it's assumed that the service is copied to "C:\\CloudscraperBootAdjust" (see Windows.Windows.adjustServiceDir)
+        """
+        postprocess_service_path = postprocess_service_dir + "\\nssm"
+
+        if WindowsSystemInfo.WindowsSystemInfo().getSystemArcheticture() == WindowsSystemInfo.WindowsSystemInfo.Archx8664:
+            postprocess_service_path = postprocess_service_path + "\\win64"
+        else:
+            postprocess_service_path = postprocess_service_path + "\\win32"
+
+        postprocess_service_exe = postprocess_service_path + "\\nssm.exe"
+        postprocess_service_reg = postprocess_service_path + "\\nssm.reg"
+
+       # newreg = self.prepareRegFile(hivekeyname , "ControlSet00"+str(currentcontrolset) , postprocess_service_reg)
+        self.__mergeReg(postprocess_service_reg)   
 
 
 # Some helpers here
