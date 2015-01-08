@@ -21,7 +21,7 @@ debug_replacepent = True
 class ReplacedData(object):
     """Reader for replaced data, needed for debug purposes"""
     def __init__(self, data, size, filename, fileoffset):
-        self.__data = data
+        self.__data = str(data)
         self.__size = size
         self.__filename = filename
         self.__fileoffset = fileoffset
@@ -261,6 +261,11 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                                 filereplacement_copy = open(debug_copy_name, "w+b")
                             filereplacement_copy.seek(replacedoffset)
                             filereplacement_copy.write(data)
+
+                            md5encoder = md5.md5()
+                            md5encoder.update(data)
+                            logging.debug("\t Data copy Md5 = " + str(md5encoder.hexdigest()))
+
                             filereplacement_copy.close()
 
                         replacedoffset = replacedoffset + len(data)
