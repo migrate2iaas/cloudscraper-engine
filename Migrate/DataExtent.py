@@ -23,9 +23,11 @@ class DataExtent(object):
         return self.__startInBytes
     
     def getData(self):
+        """gets data as byte array"""
         return str(self.__data)
-    # the data might be defered, it's stringizing (__str__) method should read the data
+    
     def setData(self, data):
+        """ the subsequental data read might be defered, it's stringizing (__str__) method should read the data"""
         self.__data = data
 
     def __iter__(self):
@@ -118,6 +120,7 @@ class DataExtent(object):
         
 
 class SplittedDataExtent(DataExtent):
+    """the part of one original extent"""
 
     def __init__(self, start, size, originalext):
         self.__originalExt = originalext
