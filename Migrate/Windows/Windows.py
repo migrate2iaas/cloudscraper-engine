@@ -264,7 +264,7 @@ class Windows(object):
 
     def __prepareRegistry(self):
         self.__injectVirtIo()
-        self.__injectPostprocess(adjustRelSvcDir)
+        self.__injectPostprocess(Windows.adjustRelSvcDir)
         return
 
     def __rollbackSystemVolumeChanges(self):
@@ -310,7 +310,7 @@ class Windows(object):
         
         """
         
-        root_virtio = virtRelIoDir # + virtio_path
+        root_virtio = Windows.virtRelIoDir # + virtio_path
         virtiodir="%SystemRoot%\\system32\\drivers\\virtio"
 
         # 2) open reg file, replace data with corresponding values, inject it to our hive
