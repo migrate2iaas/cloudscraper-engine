@@ -317,6 +317,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             servicekeyname = hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\CloudscraperBoot"
             servicekey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, servicekeyname , 0 , win32con.KEY_ALL_ACCESS )
             win32api.RegSetValueEx(servicekey, "Start" , 0, win32con.REG_DWORD, 2)
+            servicekey.close()
             #postprocess_service_path = Windows.Windows.adjustRelSvcDir
             #self.injectPostprocess(hivekeyname,currentcontrolset, postprocess_service_path)
 
