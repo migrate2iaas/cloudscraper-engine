@@ -15,6 +15,7 @@
 *.png binary
 *.jpg binary
 *.ini binary
+*.inf binary
 *.cat binary
 *.sys binary
 
