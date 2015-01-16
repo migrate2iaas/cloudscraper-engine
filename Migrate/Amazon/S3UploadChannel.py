@@ -220,14 +220,18 @@ class S3UploadThread(threading.Thread):
                 try:
                 # s3 key is kinda file in the bucket (directory)           
                     upload = True
-                    s3key = bucket.get_key(keyname)
+                    try:
+                        s3key = bucket.get_key(keyname)
+                    except Exception as e:
+                        logging.debug("Failed to get key. Got exception from the source server. Sometimes it means errors from not fully s3 compatible sources " + repr(e))
+                        s3key = None
                 
                     # Note: it seems there should be a better (more generic and extendable way) to implement strategies to reduce the overall upload size
 
                     if s3key == None:
                         if self.__copySimilar and uploadtask.isAlternitiveAvailable():
                             source3key = uploadtask.getAlternativeKey()
-                            # extra check. could be avoided
+                            # extra check. can be avoided
                             existing_md5 = source3key.etag
                             if '"'+str(md5_hexdigest)+'"' == existing_md5:
                                  logging.debug("key with same md5 and length already exisits, skip uploading") 
