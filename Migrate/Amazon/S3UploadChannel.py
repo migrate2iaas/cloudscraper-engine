@@ -220,7 +220,11 @@ class S3UploadThread(threading.Thread):
                 try:
                 # s3 key is kinda file in the bucket (directory)           
                     upload = True
-                    s3key = bucket.get_key(keyname)
+                    try:
+                        s3key = bucket.get_key(keyname)
+                    except Exception as e:
+                        logging.debug("Failed to get key. Got exception from the source server. Sometimes it means errors from not fully s3 compatible sources " + repr(e))
+                        s3key = None
                 
                     # Note: it seems there should be a better (more generic and extendable way) to implement strategies to reduce the overall upload size
 
