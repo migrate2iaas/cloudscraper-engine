@@ -83,7 +83,6 @@ class Windows(object):
       
         WinVol = WindowsVolume.WindowsVolume(snapname)
 
-        self.rollbackSystemVolumeChanges()
         return WinVol
         
 
