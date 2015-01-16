@@ -231,7 +231,7 @@ class S3UploadThread(threading.Thread):
                     if s3key == None:
                         if self.__copySimilar and uploadtask.isAlternitiveAvailable():
                             source3key = uploadtask.getAlternativeKey()
-                            # extra check. could be avoided
+                            # extra check. can be avoided
                             existing_md5 = source3key.etag
                             if '"'+str(md5_hexdigest)+'"' == existing_md5:
                                  logging.debug("key with same md5 and length already exisits, skip uploading") 
