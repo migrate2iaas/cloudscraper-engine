@@ -39,9 +39,10 @@ class OnAppBase:
                         self.conn.request(type, page, requestData, headers);
                 response = self.conn.getresponse()
                 if response.status >= 400:
-                    logging.error("!!!ERROR: Http request to onApp cloud failed!")
-                    logging.error(str(response.read()))
+                    logging.error("!!!ERROR: Http request " + str(type) + " " + str(page) + " to onApp cloud failed!")
+                    logging.error(str(response.status)+":"+ str(response.read()))
                     raise IOError("Http operation failed!")
+                return response
 
 
         def getVersion(self):
@@ -65,7 +66,7 @@ class OnAppBase:
 
         def createDisk(self , vmid , params):
             request = json.dumps({"disk": params});
-            response = self.sendRequest("POST", "/"+vmid+"/disks.json", request);
+            response = self.sendRequest("POST", "/virtual_machines/"+str(vmid)+"/disks.json", request);
             data = json.loads(response.read());
             if 'disk' in data:
                 return data['disk'];
@@ -76,7 +77,7 @@ class OnAppBase:
 
         def backupDisk(self , diskid):
             #TODO: analyze responses
-            response = self.sendRequest("POST", "/settings/disks/"+diskid+"/backups.json");
+            response = self.sendRequest("POST", "/settings/disks/"+str(diskid)+"/backups.json");
             data = json.loads(response.read());
             if 'backups' in data:
                 return data['backups'];
@@ -88,7 +89,7 @@ class OnAppBase:
         def createTemplate(self , backup_id , label, disksize, min_memory_size=512):
             params = {"label" : label , "min_disk_size" : disksize , "min_memory_size" : min_memory_size}
             request = json.dumps({"disk": params});
-            response = self.sendRequest("POST", "/settings/disks/"+backup_id+"/convert.json");
+            response = self.sendRequest("POST", "/settings/disks/"+str(backup_id)+"/convert.json");
             data = json.loads(response.read());
             if 'image_template' in data:
                 return data['image_template'];
@@ -96,20 +97,29 @@ class OnAppBase:
                 return data;
             return
 
+        def backupVM(self , vmid):
+            response = self.sendRequest("POST", "/virtual_machines/"+str(vmid)+"/backups.json");
+            data = json.loads(response.read());
+            if 'backup' in data:
+                return data['backup'];
+            else:
+                return data;
+
+            return
 
 class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
     """on app generator"""
 
     def createDisk(self):
-        return "primary_boot_disk"
-
-    def attachDiskToMinipad(self, disk):
-
         label = str(disk)
         size = 100;
-        parms = {"label":disk , "disk-size" : str(self.__diskSize) , "data_store_id" : str(self.__datastore) }
+        parms = {"label":"Cloudscraper Transfered Volume" , "disk_size" : self.__diskSize , "data_store_id" : self.__datastore }
         disk_out = self.__onapp.createDisk(self.__minipadId , parms)
-        self.__diskId = disk_out.id
+        logging.debug(repr(disk_out))
+        #self.__diskId = 
+        return disk_out['id']
+
+    def attachDiskToMinipad(self, disk):
 
         return
 
@@ -127,7 +137,8 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         return server ip
         """
         #TODO: customize VM size
-        vmParams = { "template_id" : self.__templateId , "label" : name , "hostname" : name , "memory" : 1024 , "cpus" : 1 , "cpu_shares" : 1 , primary_disk_size : str(self.__diskSize)}
+        vmParams = { "template_id" : self.__templateId , "label" : name , "hostname" : name , "memory" : 1024 , "cpus" : 1 , "cpu_shares" : 1 , primary_disk_size : self.__diskSize}
+        self.__onapp.createVM(vmParams)
         
         #TODO return object of VM type
         return 
@@ -136,13 +147,14 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         """ to implement in the inherited class """
         #Create Disk Backup  https://docs.onapp.com/display/31API/Create+Disk+Backup
         #Convert Backup to Template https://docs.onapp.com/display/31API/Convert+Backup+to+Template
-        backups = self.__onapp.backupDisk(self.__diskId)
+               
+        backups = self.__onapp.backupVM(self.__minipadId)#self.__onapp.backupDisk(disk)
         if len(backups) == 0:
             logging.error("!!!ERROR: disk template creation failed (backup failed)")
         for backup in backups:
             # assume the last one is ours (it should be one of them all the times, by the way)
-            bu_id = backup.id
-        template_id = self.__onapp.createTemplate(self).id
+            bu_id = backup['id']
+        template_id = self.__onapp.createTemplate(self)['id']
         self.__templateId = template_id
         return
 
