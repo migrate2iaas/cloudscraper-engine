@@ -41,9 +41,13 @@ class onAppInstanceGenerator_test(unittest.TestCase):
     #--------------------- Tests:
     
     def test_create(self):
-        """test1 desctiption"""
+        """creates new VM"""
         
         generator = onAppInstanceGenerator.onAppInstanceGenerator("oadev.xfernet.net" , "feoff@migrate2iaas.com", "autotestCS@1" , 1 , preset_ip = "67.43.162.108" , minipad_vm_id = "b841dyafc8e6a2")
+
+        #extra test
+        generator.detachDiskFromMinipad(74)
+
         instance = generator.makeInstanceFromImage("http://cloudscraper-1420772751-eu-west-1.s3.amazonaws.com/WIN-9RJUUDQ3A9F-Cmanifest.xml" , None, "autotest")
 
         return
