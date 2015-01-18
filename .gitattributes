@@ -18,4 +18,8 @@
 *.inf binary
 *.cat binary
 *.sys binary
+*.dll binary
+*.exe binary
+
+
 
