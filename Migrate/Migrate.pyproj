@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>ProfitBricks\FtpUploadChannel_test.py</StartupFile>
+    <StartupFile>onApp\onAppInstanceGenerator_test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -90,7 +90,12 @@
     <Compile Include="Migrator.py" />
     <Compile Include="MigratorConfigurer.py" />
     <Compile Include="Migrator_test.py" />
+    <Compile Include="MiniPad\MiniPadInstanceGenerator.py" />
+    <Compile Include="MiniPad\__init__.py" />
     <Compile Include="MultithreadUpoadChannel.py" />
+    <Compile Include="onApp\onAppInstanceGenerator.py" />
+    <Compile Include="onApp\onAppInstanceGenerator_test.py" />
+    <Compile Include="onApp\__init__.py" />
     <Compile Include="ProfitBricks\FtpUploadChannel.py" />
     <Compile Include="ProfitBricks\FtpUploadChannel_test.py" />
     <Compile Include="ProfitBricks\ProfitBricksConfig.py" />
@@ -140,6 +145,8 @@
     <Folder Include="Images\" />
     <Folder Include="Linux\" />
     <Folder Include="Linux_GC" />
+    <Folder Include="MiniPad\" />
+    <Folder Include="onApp\" />
     <Folder Include="ProfitBricks\" />
     <Folder Include="SelfTest\" />
     <Folder Include="Windows" />
