@@ -63,6 +63,16 @@ class OnAppBase:
             else:
                 return data;
 
+         # should split into several classes if needed
+        def editVM(self, vmid, vmParams):
+            request = json.dumps({"virtual_machine": vmParams});
+            response = self.sendRequest("POST", "/virtual_machines/"+str(vmid)+".json", request);
+            data = json.loads(response.read());
+            if 'virtual_machine' in data:
+                return data['virtual_machine'];
+            else:
+                return data;
+
 
         def createDisk(self , vmid , params):
             request = json.dumps({"disk": params});
@@ -110,10 +120,9 @@ class OnAppBase:
 class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
     """on app generator"""
 
-    def createDisk(self):
-        label = str(disk)
+    def createDisk(self , name):
         size = 100;
-        parms = {"label":"Cloudscraper Transfered Volume" , "disk_size" : self.__diskSize , "data_store_id" : self.__datastore }
+        parms = {"label":name , "disk_size" : self.__diskSize , "data_store_id" : int(self.__datastore) , "hot_attach" : 1}
         disk_out = self.__onapp.createDisk(self.__minipadId , parms)
         logging.debug(repr(disk_out))
         #self.__diskId = 
@@ -131,14 +140,29 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         self.__diskSize = 100;
         return
 
+    def launchMinipadServer(self):
+        """ to implement in the inherited class """
+        #here we should start minipad from template
+        return
+
+    def destroyMinipadServer(self):
+        """ to implement in the inherited class """
+        # TODO: add it to kinda destructor
+        return
+
     def createVM(self ,disk ,name):
         """ to implement in the inherited class 
         
         return server ip
         """
         #TODO: customize VM size
-        vmParams = { "template_id" : self.__templateId , "label" : name , "hostname" : name , "memory" : 1024 , "cpus" : 1 , "cpu_shares" : 1 , primary_disk_size : self.__diskSize}
-        self.__onapp.createVM(vmParams)
+        # Here we should customize cloudscraper minipad image
+
+        #vmParams = { "template_id" : self.__templateId , "label" : name , "hostname" : name , "memory" : 1024 , "cpus" : 1 , "cpu_shares" : 1 , primary_disk_size : self.__diskSize}
+        #self.__onapp.createVM(vmParams)
+        vmParams = { "label" : name }
+        self.__onapp.editVM(self.__minipadId, vmParams)
+
         
         #TODO return object of VM type
         return 
@@ -148,14 +172,14 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         #Create Disk Backup  https://docs.onapp.com/display/31API/Create+Disk+Backup
         #Convert Backup to Template https://docs.onapp.com/display/31API/Convert+Backup+to+Template
                
-        backups = self.__onapp.backupVM(self.__minipadId)#self.__onapp.backupDisk(disk)
-        if len(backups) == 0:
-            logging.error("!!!ERROR: disk template creation failed (backup failed)")
-        for backup in backups:
+        #backups = self.__onapp.backupVM(self.__minipadId)#self.__onapp.backupDisk(disk)
+        #if len(backups) == 0:
+        #    logging.error("!!!ERROR: disk template creation failed (backup failed)")
+        #for backup in backups:
             # assume the last one is ours (it should be one of them all the times, by the way)
-            bu_id = backup['id']
-        template_id = self.__onapp.createTemplate(self)['id']
-        self.__templateId = template_id
+        #    bu_id = backup['id']
+        #template_id = self.__onapp.createTemplate(self)['id']
+        #self.__templateId = template_id
         return
 
     def __init__(self, onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_name = "" , minipad_vm_id = None):

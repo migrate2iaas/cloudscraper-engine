@@ -14,6 +14,7 @@ import AmazonConfigs
 import EHConfigs
 import AzureConfigs
 import CloudSigmaConfigs
+import onAppConfigs
 
 import platform
 import shutil
@@ -35,6 +36,7 @@ import datetime
 import StreamVmdkMediaFactory
 import ProfitBricksConfig
 import SparseRawMediaFactory
+
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
     def __init__(self, volumename, imagepath , imagesize):
@@ -215,7 +217,52 @@ class MigratorConfigurer(object):
         if config.has_section('ProfitBricks'):
             return self.configProfitBricks(configfile, config , password )
 
+        if config.has_section('onApp'):
+            return self.configOnApp(configfile, config , password )
+
         return None
+
+    def configOnApp(self, configfile, config, password):
+         # generic for other clouds
+        (imagedir, image_placement, imagetype) = self.getImageOptions(config)
+        volumes = self.createVolumesList(config , configfile, imagedir, imagetype)        
+        factory = self.createImageFactory(config , image_placement , imagetype)
+
+        onapp_login = config.get('onApp', 'user')
+        onapp_endpoint = config.get('onApp', 'endpoint')
+        onapp_datastore_id = config.get('onApp' , 'datastore')
+        onapp_port = 80
+        if config.has_option('onApp', 'port'):
+            onapp_port = config.get('onApp', 'port')
+        
+        minipad_ip = None
+        if config.has_option('onApp', 'minipad_ip'):
+            minipad_ip = config.get('onApp', 'minipad_ip') 
+
+        minipad_template = ""
+        if config.has_option('onApp', 'minipad_template'):
+            minipad_template = config.get('onApp', 'minipad_template') 
+
+        minipad_vm_id = "" 
+        if config.has_option('onApp', 'minipad_vm_id'):
+            minipad_vm_id = config.get('onApp', 'minipad_vm_id') 
+
+        onapp_target_account = None
+
+        s3bucket = config.get('onApp', 's3bucket')
+        s3user = config.get('onApp', 's3user')
+        s3secret = config.get('onApp', 's3secret')
+        s3region = config.get('onApp', 's3region')
+
+        adjust_override = self.getOverrides(config , configfile)
+
+        image = onAppConfigs.onAppMigrateConfig(volumes , factory, 'x86_64' , imagetype)
+        cloud = onAppConfigs.onAppCloudOptions(s3bucket , s3user , s3secret , s3region , onapp_endpoint , onapp_login , \
+            password , onapp_datastore_id, onapp_target_account , onapp_port = 80, preset_ip = minipad_ip, \
+            minipad_image_name = minipad_template , minipad_vm_id = minipad_vm_id)
+
+        return (image,adjust_override,cloud)
+
 
     def configProfitBricks(self, configfile, config, password):
          # generic for other clouds

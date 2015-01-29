@@ -25,3 +25,6 @@ class InstanceGenerator(object):
         """generates cloud server instances from uploaded images"""
         raise NotImplementedError
 
+    def makeVolumeFromImage(self , imageid , initialconfig, instancename):
+        """generates cloud server instances from uploaded images"""
+        raise NotImplementedError

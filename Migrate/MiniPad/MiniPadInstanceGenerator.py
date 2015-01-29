@@ -36,7 +36,7 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
         """
         return 
 
-    def createDisk(self):
+    def createDisk(self , name):
         """ to implement in the inherited class """
         return 
 
@@ -87,10 +87,20 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
         else:
             r.raise_for_status()
 
-   
+    def  __getLog(self):
+        url = "http://%s:%d/" % (self.__server_ip, self.__server_port)
+        payload = {'Action' : 'GetImportTargetLogs',}
+        r = requests.post(url, data = payload)
+        if r.status_code < 400:
+            log = open('../../logs/minipad.log.tar.gz', 'wb')
+            log.write(r.content)
+            log.close()
+        else:
+            r.raise_for_status()
+        
 
 
-    def startConversion(self, manifesturl , server_ip, server_port = 80):
+    def startConversion(self, manifesturl , server_ip, import_type = 'ImportInstance' , server_port = 80):
         """Converts the VM"""
          # reset the service into its initial state
         payload = {'Action' : 'Restart'}
@@ -111,7 +121,7 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
         r = self.__post(payload)
 
         ## Import an Instance
-        payload = {'Action' : 'ImportInstance',
+        payload = {'Action' : import_type,
                    'Image.Format' : 'VMDK',
                    'Image.ImportManifestUrl' : manifesturl,
                   }
@@ -143,8 +153,7 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
         self.__post(payload)
 
         # get log file
-        payload = {'Action' : 'GetImportTargetLogs',}
-        self.__post(payload)
+        self.__getLog()
 
         # finalizeimport
         payload = {'Action' : 'FinalizeConversion'}
@@ -169,10 +178,20 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
         ip = self.launchMinipadServer()
         if ip:
             self.__server_ip = ip
-        disk = self.createDisk()
+        disk = self.createDisk(instancename)
         self.attachDiskToMinipad(disk )
         
         self.startConversion(imageid , self.__server_ip)
 
         self.detachDiskFromMinipad(disk)
         vm = self.createVM(disk , instancename)
+
+    def makeVolumeFromImage(self , imageid , initialconfig, instancename):
+        """generates cloud server instances from uploaded images"""
+        self.initCreate(initialconfig)
+        disk = self.createDisk(instancename)
+        self.attachDiskToMinipad(disk )
+        
+        self.startConversion(imageid , self.__server_ip , import_type = "ImportVolume")
+
+        self.detachDiskFromMinipad(disk)

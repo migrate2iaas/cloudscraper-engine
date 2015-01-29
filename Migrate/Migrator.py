@@ -539,7 +539,7 @@ class Migrator(object):
                 vol = generator.makeVolumeFromImage(imageid, self.__cloudOptions , awskey, awssecret , localimagepath , imagesize , volumesize , self.__migrateOptions.getImageType())
             else:
                 generator = None
-        if self.__cloudName == "Azure":
+        elif self.__cloudName == "Azure":
             import AzureConfigs
             import AzureInstanceGenerator
             generator = self.__cloudOptions.generateInstanceFactory()
@@ -547,9 +547,11 @@ class Migrator(object):
                 volname = description
             else:
                 volname = os.environ['COMPUTERNAME']+str(datetime.date.today())+"_data"
-            #TODO: make it working with two vols
-            if generator:
-                vol = generator.makeVolumeFromImage(imageid , self.__cloudOptions , volname)
+        else:
+            generator = self.__cloudOptions.generateInstanceFactory()
+        
+        if generator:
+            vol = generator.makeVolumeFromImage(imageid , self.__cloudOptions , volname)
 
         if not generator:
             logging.info(">>>>>>>>>>>>>>>>> The data volume image is uploaded ")

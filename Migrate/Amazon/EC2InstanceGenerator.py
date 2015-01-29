@@ -66,9 +66,9 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
         else:
             S3 = S3Connection(s3owner, s3key, is_secure=True)
 
-        parsedurl = xml[xml.find('.com'):].split('/' , 2)
-        bucketname = parsedurl[1]
-        keyname = parsedurl[2]
+        parsedurl = xml[xml.find('.com'):].split('/' , 1)
+        keyname = parsedurl[1]
+        bucketname = xml[xml.find("://")+len("://") : xml.find(".s3.amazonaws.com") - 1]
 
         logging.debug("Manifest xml is in bucket " + bucketname + " , key " + keyname) 
 

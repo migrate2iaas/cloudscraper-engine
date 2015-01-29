@@ -12,6 +12,8 @@ sys.path.append('./CloudSigma')
 sys.path.append('./SelfTest')
 sys.path.append('./Images')
 sys.path.append('./ProfitBricks')
+sys.path.append('./onApp')
+sys.path.append('./MiniPad')
 
 import unittest
 

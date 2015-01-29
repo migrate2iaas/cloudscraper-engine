@@ -564,7 +564,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         s3key.set_contents_from_filename(xmltempfile) 
         s3key.close()
         
-        self.__xmlKey = 'https://s3.amazonaws.com/' + str(self.__bucketName) + "/" + xmlkey
+        self.__xmlKey = 'https://'+str(self.__bucketName)+'.s3.amazonaws.com/' + xmlkey
         
         return self.__xmlKey
 
