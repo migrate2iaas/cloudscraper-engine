@@ -66,7 +66,7 @@ class OnAppBase:
          # should split into several classes if needed
         def editVM(self, vmid, vmParams):
             request = json.dumps({"virtual_machine": vmParams});
-            response = self.sendRequest("POST", "/virtual_machines/"+str(vmid)+".json", request);
+            response = self.sendRequest("PUT", "/virtual_machines/"+str(vmid)+".json", request);
             data = json.loads(response.read());
             if 'virtual_machine' in data:
                 return data['virtual_machine'];

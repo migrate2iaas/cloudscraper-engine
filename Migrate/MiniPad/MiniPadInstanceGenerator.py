@@ -161,10 +161,13 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
 
         # get status
         payload = {'Action' : 'GetImportTargetStatus',}
-        self.__post(payload)
+        status = self.__post(payload)
+        
+        if int(status.find("StatusCode").text) >= 400:
+            logging.error("!!!ERROR: Bad import status " + status.find("StatusMessage").text)
+            return False
 
-
-        return
+        return True
 
     def makeInstanceFromImage(self , imageid, initialconfig, instancename):
         """generates cloud server instances from uploaded images
@@ -181,10 +184,12 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
         disk = self.createDisk(instancename)
         self.attachDiskToMinipad(disk )
         
-        self.startConversion(imageid , self.__server_ip)
+        if self.startConversion(imageid , self.__server_ip) == False:
+            return None
 
         self.detachDiskFromMinipad(disk)
         vm = self.createVM(disk , instancename)
+        #TODO: create instance object here
 
     def makeVolumeFromImage(self , imageid , initialconfig, instancename):
         """generates cloud server instances from uploaded images"""
@@ -192,6 +197,8 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
         disk = self.createDisk(instancename)
         self.attachDiskToMinipad(disk )
         
-        self.startConversion(imageid , self.__server_ip , import_type = "ImportVolume")
+        if self.startConversion(imageid , self.__server_ip , import_type = "ImportVolume") == False:
+            return None
 
         self.detachDiskFromMinipad(disk)
+         #TODO: create volume object here

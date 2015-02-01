@@ -173,7 +173,7 @@ class UploadQueueTask(object):
 
 class S3UploadThread(threading.Thread):
     """thread making all uploading works"""
-    def __init__(self , queue , threadid , skipexisting = False , channel = None , copysimilar = True,  retries = 3):
+    def __init__(self , queue , threadid , skipexisting = False , channel = None , copysimilar = True,  retries = 3 ):
         self.__uploadQueue = queue
         #thread id , for troubleshooting purposes
         self.__threadId = threadid
@@ -292,11 +292,12 @@ class S3UploadChannel(UploadChannel.UploadChannel):
     #TODO: we need kinda open method for the channel
     #TODO: need kinda doc
     #chunk size means one data element to be uploaded. it waits till all the chunk is transfered to the channel than makes an upload (not fully implemented)
-    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resume_upload = False , chunksize=10*1024*1024 , upload_threads=4 , queue_size=16 , use_ssl = True , walrus = False , walrus_path = "/services/WalrusBackend" , walrus_port = 8773):
+    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resume_upload = False , chunksize=10*1024*1024 , upload_threads=4 , queue_size=16 , use_ssl = True , walrus = False , walrus_path = "/services/WalrusBackend" , walrus_port = 8773 , make_link_public = False):
         self.__uploadQueue = Queue.Queue(queue_size)
         self.__statLock = threading.Lock()
         self.__prevUploadTime = None 
         self.__transferRate = 0
+        self.__makeLinkPublic = make_link_public
 
         #TODO:need to save it in common log directory
         boto.set_file_logger("boto", "boto.log", level=logging.DEBUG)
@@ -562,9 +563,14 @@ class S3UploadChannel(UploadChannel.UploadChannel):
                
         s3key = Key(self.__bucket , xmlkey)
         s3key.set_contents_from_filename(xmltempfile) 
+
+        self.__xmlKey = 'https://'+str(self.__bucketName)+'.s3.amazonaws.com/' + xmlkey
+        if self.__makeLinkPublic:
+            linktimeexp_seconds = 60*60*100 # 100 hours
+            self.__xmlKey = s3key.generate_url(linktimeexp_seconds, method='GET', force_http=False)
         s3key.close()
         
-        self.__xmlKey = 'https://'+str(self.__bucketName)+'.s3.amazonaws.com/' + xmlkey
+        
         
         return self.__xmlKey
 

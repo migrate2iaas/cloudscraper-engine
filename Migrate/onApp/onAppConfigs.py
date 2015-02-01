@@ -69,7 +69,7 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
             custom = True
 
         return S3UploadChannel.S3UploadChannel(self.__s3bucket , self.__s3user , self.__s3password , targetsize, self.__custom_host or self.__s3region , targetid or self.__keynamePrefix , self.__diskType , \
-            resume_upload = resume , chunksize = self.__chunkSize, walrus = custom )
+            resume_upload = resume , chunksize = self.__chunkSize, walrus = custom , make_link_public=True )
 
     def generateInstanceFactory(self):
         return onAppInstanceGenerator.onAppInstanceGenerator(self.__onapp_endpoint , self.__onapp_login , self.__onapp_password , self.__onapp_datastore_id, self.__onapp_target_account, \
