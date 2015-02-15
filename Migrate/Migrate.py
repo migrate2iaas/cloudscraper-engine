@@ -37,6 +37,28 @@ import random
 import errno
 import threading 
 import os
+import md5
+import sha
+import base64
+
+
+def encode(key, clear):
+    enc = []
+    for i in range(len(clear)):
+        key_c = key[i % len(key)]
+        enc_c = chr((ord(clear[i]) + ord(key_c)) % 256)
+        enc.append(enc_c)
+    return base64.urlsafe_b64encode("".join(enc))
+
+def decode(key, enc):
+    dec = []
+    enc = base64.urlsafe_b64decode(enc)
+    for i in range(len(enc)):
+        key_c = key[i % len(key)]
+        dec_c = chr((256 + ord(enc[i]) - ord(key_c)) % 256)
+        dec.append(dec_c)
+    return "".join(dec)
+
 
 if os.name == 'nt':
     sys.path.append('./Windows')
@@ -53,7 +75,44 @@ def heartbeat(interval_sec):
         print('.')
         time.sleep(int(interval_sec))
 
-#TODO: make versioning and expiration time!!
+
+def get_pkk():
+    """gets packages"""
+    # gets private key to decode licensing
+    # it's so ugly in case to be secret, Arrrgghh!
+    return "0xEDAEDA"
+
+def chk_ver():
+    """checks version"""
+    #checks the license file, returns 
+    #it's so ugly in case to be secret
+    curdir = os.path.dirname(os.path.realpath(__file__))
+    license_path = curdir + "/../../lcns.msg"
+    if os.path.exists(license_path): 
+        file = open(license_path , "r")
+        data = file.readline()
+        pkk = get_pkk()
+        try:
+            decoded = decode(pkk, data)
+            expiration = long(decoded)
+            if long(time.time()) > expiration:
+                logging.info(">>> The license key is expired")
+                return False
+        except Exception as e:
+            logging.error("!!!ERROR: Error occured while reading the licensing info, please visit www.migarte2iaas.com to obtain new license")
+            raise e
+        file.close()
+        return True
+    else:
+        return False
+
+def chk_limits():
+    if chk_ver() == False:
+        logging.info(">>> The version is free but limited")
+        logging.info(">>> The limit is 20 GB data transfered")
+        logging.info(">>> Please visit www.migrate2iaas.com to obtain license")
+        return long(20*1024*1024*1024)
+    return 0
 
 if __name__ == '__main__':
     try:
@@ -154,9 +213,11 @@ if __name__ == '__main__':
             # it needs saving of 1) image-id (xml-key) for each volume imported previously 2) instance-id
 
         password = s3key or ehkey or azurekey or cloudsigmapass or apikey
+        limits = None
         try:
             #configuring the process
             (image,adjust,cloud) = config.configAuto(configpath , password)
+            limits = chk_limits()
 
         except Exception as e:
             logging.error("\n!!!ERROR: failed to configurate the process! ")
@@ -165,7 +226,7 @@ if __name__ == '__main__':
             os._exit(errno.EFAULT)
     
         logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Transfer Process:\n")
-        __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload)
+        __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload , limits = limits)
         logging.info("Migrator test started")
         # Doing the task
         instance = None
