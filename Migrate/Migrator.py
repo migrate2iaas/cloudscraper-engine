@@ -28,7 +28,7 @@ import ProxyTransferTarget
 class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT reside"""
 
-    def __init__(self , cloud_options , migrate_options, sys_adjust_overrides , skip_imaging=False, resume_upload=False, skip_upload=False , self_checks=False):
+    def __init__(self , cloud_options , migrate_options, sys_adjust_overrides , skip_imaging=False, resume_upload=False, skip_upload=False , self_checks=False , limits = None):
         """
         Inits the Migrator mega-class. 
 
@@ -40,6 +40,7 @@ class Migrator(object):
             resume_upload: bool - flag to resume upload instead of starting new one. Needed primarily for resume-upload scenarios
             skip_upload: bool - flag to skip upload at all. Needed primarily in case when the upload is already done but cloud server is not created yet
             self_checks: bool - some self-checks on images\registry during the Migrator work (doesn't work for now!)
+            limits: ? (currently long) - the limitation of data to be transfered
         """
         self.__adjustedSystemBackupSource = None
         self.__systemBackupSource = None
@@ -48,6 +49,8 @@ class Migrator(object):
         # the channel is underlying connection to transfer the data for system target
         self.__systemTransferChannel = None
         self.__systemMedia = None
+
+        self.__limitUpload = limits
 
         self.__adjustOption = None
         self.__migrateOptions = migrate_options
@@ -452,6 +455,10 @@ class Migrator(object):
                 logmsg = logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB uploaded. " ;
                 if channel.getOverallDataSkipped():
                     logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB was already in the cloud. "
+
+                if self.__limitUpload and channel.getOverallDataTransfered() > self.__limitUpload:
+                    logging.error("!!!ERROR: Upload limit reached. Please upgrade contact sales@migrate2iaas.com to obtain the license.")
+                    return False
 
                 #NOTE: this is a very rough estimate
                 timenow = datetime.datetime.now()

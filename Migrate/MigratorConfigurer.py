@@ -203,6 +203,7 @@ class MigratorConfigurer(object):
             config = ConfigParser.RawConfigParser()
             config.read(configfile)
 
+        logging.debug("Config read:" + repr(config))
         if config.has_section('EC2'):
             return self.configAmazon(configfile , '' , password)
         if config.has_section('ElasticHosts'):
@@ -220,6 +221,7 @@ class MigratorConfigurer(object):
         if config.has_section('onApp'):
             return self.configOnApp(configfile, config , password )
 
+        logging.error("!!!ERROR: No appropriate config entry found. Config is corrupted or target cloud is not supported by the software version")
         return None
 
     def configOnApp(self, configfile, config, password):
