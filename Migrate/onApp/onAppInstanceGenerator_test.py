@@ -43,7 +43,7 @@ class onAppInstanceGenerator_test(unittest.TestCase):
     def test_create(self):
         """creates new VM"""
         
-        generator = onAppInstanceGenerator.onAppInstanceGenerator("oadev.xfernet.net" , "feoff@migrate2iaas.com", "autotestCS@1" , 1 , preset_ip = "67.43.162.108" , minipad_vm_id = "b841dyafc8e6a2")
+        generator = onAppInstanceGenerator.onAppInstanceGenerator("oadev.xfernet.net" , "feoff@migrate2iaas.com", "8493452ecd20400c81d7869854665ba750a2c1c1" , 1 , preset_ip = "67.43.162.108" , minipad_vm_id = "b841dyafc8e6a2")
 
         instance = generator.makeInstanceFromImage("http://cloudscraper-1420772751-eu-west-1.s3.amazonaws.com/WIN-9RJUUDQ3A9F-Cmanifest.xml" , None, "autotest")
 

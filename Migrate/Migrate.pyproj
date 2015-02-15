@@ -93,6 +93,7 @@
     <Compile Include="MiniPad\MiniPadInstanceGenerator.py" />
     <Compile Include="MiniPad\__init__.py" />
     <Compile Include="MultithreadUpoadChannel.py" />
+    <Compile Include="onApp\onAppConfigs.py" />
     <Compile Include="onApp\onAppInstanceGenerator.py" />
     <Compile Include="onApp\onAppInstanceGenerator_test.py" />
     <Compile Include="onApp\__init__.py" />
