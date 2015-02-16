@@ -76,6 +76,17 @@ class Windows(object):
             virtiodir = virtiodir + "\\X86"
         return virtiodir
 
+    def __executePreprocess(self):
+        """executes preprocess bat"""
+        batname = Windows.adjustServiceDir+"\\preprocess.cmd"
+        cmd =  subprocess.Popen(['cmd', '/C', batname ], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        returncode = cmd.wait()
+        if cmd.stdout:
+            logging.debug(cmd.stdout.read())
+        logging.debug(batname + " returned " + str(returncode))
+        return returncode
+
+
     # volume should be in "\\.\X:" form
     def getDataBackupSource(self , volume):
         
@@ -100,6 +111,8 @@ class Windows(object):
             #TODO: make use of this singleton class more consistent
             self.__copyExtraFiles()
             self.__prepareRegistry()
+            self.__executePreprocess()
+            
 
             snapname = self.__vss.createSnapshot(system_vol)
             WinVol = WindowsVolume.WindowsVolume(snapname)
