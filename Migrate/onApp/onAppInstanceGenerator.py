@@ -67,12 +67,12 @@ class OnAppBase:
         def editVM(self, vmid, vmParams):
             request = json.dumps({"virtual_machine": vmParams});
             response = self.sendRequest("PUT", "/virtual_machines/"+str(vmid)+".json", request);
-            data = json.loads(response.read());
-            if 'virtual_machine' in data:
-                return data['virtual_machine'];
-            else:
-                return data;
+            
+        def shutdownVM(self , vmid):
+            response = self.sendRequest("POST", "/virtual_machines/"+str(vmid)+"/stop.json");
 
+        def startVM(self, vmid):
+            response = self.sendRequest("POST", "/virtual_machines/"+str(vmid)+"/startup.json");
 
         def createDisk(self , vmid , params):
             request = json.dumps({"disk": params});
@@ -162,6 +162,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         #self.__onapp.createVM(vmParams)
         vmParams = { "label" : name }
         self.__onapp.editVM(self.__minipadId, vmParams)
+        self.__onapp.shutdownVM(self.__minipadId)
 
         
         #TODO return object of VM type
