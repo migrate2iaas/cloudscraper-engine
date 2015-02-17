@@ -33,7 +33,7 @@ REM Removes the colon from the end of the adapter name
 SET adapterName=!adapterName:~0,-1!
 
 :: renaming the primary ethernet to Local Area Network
-netsh interface set interface name="!adapterName!" newname=”Local Area Connection” >> C:\adjustlog.txt
+netsh interface set interface name="!adapterName!" newname="Local Area Connection" >> C:\adjustlog.txt
 )
 :: executing the adjust script
 echo "Importing tcpip settings" >> C:\adjustlog.txt
