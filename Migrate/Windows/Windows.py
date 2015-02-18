@@ -78,13 +78,18 @@ class Windows(object):
 
     def __executePreprocess(self):
         """executes preprocess bat"""
-        batname = Windows.adjustServiceDir+"\\preprocess.cmd"
+        windir = os.environ['Windir'] 
+        windir = windir.lower()
+        windrive_letter = windir[0] 
+
+        batname = windrive_letter+":\\"+Windows.adjustServiceDir+"\\preprocess.cmd"
         cmd =  subprocess.Popen(['cmd', '/C', batname ], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         returncode = cmd.wait()
         if cmd.stdout:
             logging.debug(cmd.stdout.read())
         logging.debug(batname + " returned " + str(returncode))
-        return returncode
+        if returncode <> 0:
+            raise Exception("Cannot execute PnPutil to add drivers to the store!")
 
 
     # volume should be in "\\.\X:" form

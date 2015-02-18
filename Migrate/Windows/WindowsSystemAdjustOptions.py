@@ -24,7 +24,7 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
          self.__adjustPageFile = False
          self.__adjustTcpIp = False
          self.__virtIoPath = ""
-         self.__injectPostprocess = True
+         self.__injectPostprocess = False
          
          originalwindir = os.environ['windir']
          windir = originalwindir.split(":\\")[-1] #get substring after X:\
