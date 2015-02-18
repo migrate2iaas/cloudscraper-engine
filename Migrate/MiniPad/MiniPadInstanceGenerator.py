@@ -28,7 +28,7 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
         self.__server_ip = preset_ip
         self.__server_port = 80
         super(MiniPadInstanceGenerator, self).__init__()
-        
+
     def createVM(self ,disk ,name):
         """ to implement in the inherited class 
         
