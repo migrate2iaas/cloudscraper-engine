@@ -49,6 +49,7 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
         self.__keynamePrefix = ""
         self.__diskType = "RAW"
         self.__chunkSize = 10*1024*1024
+        self.__instanceFactory = None
         super(onAppCloudOptions, self).__init__()
 
         
@@ -72,8 +73,11 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
             resume_upload = resume , chunksize = self.__chunkSize, walrus = custom , make_link_public=True )
 
     def generateInstanceFactory(self):
-        return onAppInstanceGenerator.onAppInstanceGenerator(self.__onapp_endpoint , self.__onapp_login , self.__onapp_password , self.__onapp_datastore_id, self.__onapp_target_account, \
+        #generate signleton
+        if not self.__instanceFactory:
+            self.__instanceFactory = onAppInstanceGenerator.onAppInstanceGenerator(self.__onapp_endpoint , self.__onapp_login , self.__onapp_password , self.__onapp_datastore_id, self.__onapp_target_account, \
             self.__onapp_port, self.__preset_ip , self.__minipad_image_name , self.__minipad_vm_id )
+        return self.__instanceFactory
 
     def getCloudStorage(self):
         return self.__s3bucket

@@ -17,6 +17,7 @@ import MiniPadInstanceGenerator
 import onApp
 import time
 
+
 import base64, httplib, urllib, urllib2, json, random, string, time, uuid, logging, os, sys;
 
 class OnAppBase:
@@ -152,7 +153,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         # add parms like disk sizes here
 
         # TODO: get from parms
-        self.__diskSize = 100;
+        
         return
 
     def launchMinipadServer(self):
@@ -250,6 +251,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         version = self.__onapp.getVersion()
         logging.debug("onApp connected API version " + version)
 
+        self.__diskSize = 100;
         self.__builtTimeOutSec = 60*30;
         self.__minipadTemplate = minipad_image_id
         self.__minipadId = minipad_vm_id
@@ -264,5 +266,29 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         return super(onAppInstanceGenerator, self).startConversion(image, ip)
 
 
+    def getDiskSize(self, imageid_manifest_link):
+        """downloads image link to get the disk size"""
+        imageid = imageid_manifest_link
+        try:
+            response = urllib2.urlopen(imageid)
+            xmlheader = response.read()
+            (head, sep ,tail) = xmlheader.partition("<volume-size>")
+            if tail:
+                    (head, sep ,tail) = tail.partition("</volume-size>")
+                    self.__diskSize = int(head , base = 10) 
+                    logging.debug("The volume would be of size " + str(self.__diskSize) + " GBs")
+            else:
+                    logging.warning("!Couldn't parse the xml describing the import done")
+        except Exception as e:
+            logging.warning("!Cannot get XML manifest file from intermediate storage. Possibly the storage is inaccessible.")
+
+
     def makeInstanceFromImage(self , imageid, initialconfig, instancename):
+        """makes instance based on image id - link to public image"""
+        self.getDiskSize(imageid)
         return super(onAppInstanceGenerator, self).makeInstanceFromImage(imageid, initialconfig, instancename)
+
+    def makeVolumeFromImage(self , imageid, initialconfig, instancename):
+        """makes volume based on image id - link to public image"""
+        self.getDiskSize(imageid)
+        return super(onAppInstanceGenerator, self).makeVolumeFromImage(imageid, initialconfig, instancename)
