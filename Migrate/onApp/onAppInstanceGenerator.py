@@ -259,7 +259,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
     def startConversion(self,image , ip):
         """override proxy. it waits till server is built and only then starts the conversion"""
         self.waitTillVMBuilt(self.__minipadId, timeout = self.__builtTimeOutSec )
-
+        self.__onapp.startVM(self.__minipadId)
         return super(onAppInstanceGenerator, self).startConversion(image, ip)
 
 
