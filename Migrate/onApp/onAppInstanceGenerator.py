@@ -223,7 +223,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         while timeout > 0:
             vm = self.__onapp.getVM(vmid)
             logging.debug("VM status: " + str(vm))
-            if vm["built"] == 1 and vm["locked"] == False:
+            if vm["built"] == True and vm["locked"] == False:
                 return
             timeout = timeout - sleeptime
             time.sleep(sleeptime)
