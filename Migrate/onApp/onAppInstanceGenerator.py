@@ -16,7 +16,8 @@ import traceback
 import MiniPadInstanceGenerator
 import onApp
 import time
-
+import VmInstance
+import socket
 
 import base64, httplib, urllib, urllib2, json, random, string, time, uuid, logging, os, sys;
 
@@ -81,6 +82,9 @@ class OnAppBase:
         def startVM(self, vmid):
             response = self.sendRequest("POST", "/virtual_machines/"+str(vmid)+"/startup.json");
 
+        def deleteVM(self, vmid , convert_last_backup = 0 , destroy_all_backups = 0):
+            response = self.sendRequest("DELETE", "/virtual_machines/"+str(vmid)+"/startup.json?convert_last_backup="+str(convert_last_backup)+"&destroy_all_backups="+str(destroy_all_backups));
+
         def getVM(self, vmid):
             response = self.sendRequest("GET", "/virtual_machines/"+str(vmid)+".json");
             data = json.loads(response.read());
@@ -132,6 +136,45 @@ class OnAppBase:
                 return data;
 
             return
+
+
+class onAppVM(VmInstance.VmInstance):
+    """class representing onapp vm"""
+    def __init__(self , onapp, vmid):
+        self.__onapp = onapp
+        self.__vmid = vmid
+        
+
+    def run(self):
+        """starts instance"""
+        vm = self.__onapp.getVM(self.__vmid)
+        if vm['booted'] == True:
+            return True
+        self.__onapp.startVM()
+
+    def stop(self):
+        """stops instance"""
+        vm = self.__onapp.getVM(self.__vmid)
+        if vm['booted'] == False:
+            return True
+        self.__onapp.shutdownVM(self.__vmid)
+
+    def attachDataVolume(self):
+        """attach data volume"""
+        raise NotImplementedError
+
+    def getIp(self):
+        """returns public ip string"""
+        vm = self.__onapp.getVM(self.__vmid)
+        ip = vm['ip_addresses'][0]['ip_address']['address']
+        return ip
+
+    def deallocate(self , subresources=True):
+        """deallocates a VM
+            Args:
+            subresources: Boolean - if True, deallocates all associated resources (disks, ips). Deallocates only the vm itself otherwise
+        """
+        self.__onapp.deleteVM(self.__vmid, destroy_all_backups = int(subresources))
 
 class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
     """on app generator"""
@@ -197,11 +240,10 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         
         vmParams = { "label" : name }
         self.__onapp.editVM(self.__minipadId, vmParams)
-        self.__onapp.shutdownVM(self.__minipadId)
+        vm = onAppVM(self.__onapp , self.__minipadId)
+        vm.stop()
 
-        
-        #TODO return object of VM type
-        return 
+        return vm
 
     def detachDiskFromMinipad(self , disk):
         """ to implement in the inherited class """
@@ -252,7 +294,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         logging.debug("onApp connected API version " + version)
 
         self.__diskSize = 100;
-        self.__builtTimeOutSec = 60*30;
+        self.__builtTimeOutSec = 60*60;
         self.__minipadTemplate = minipad_image_id
         self.__minipadId = minipad_vm_id
         self.__datastore = onapp_datastore_id
@@ -262,7 +304,12 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
     def startConversion(self,image , ip):
         """override proxy. it waits till server is built and only then starts the conversion"""
         self.waitTillVMBuilt(self.__minipadId, timeout = self.__builtTimeOutSec )
-        #self.__onapp.startVM(self.__minipadId)
+        
+        vm = onAppVM(self.__onapp, self.__minipadId)
+        logging.info("Awaiting till Cloudscraper target VM is alive (echoing Cloudscraper VM RDP port)")
+        if vm.checkAlive() == False:
+            logging.warn("!Cloudscraper target VM is not repsonding (to RDP port). Misconfiguration is highly possible!")
+        
         return super(onAppInstanceGenerator, self).startConversion(image, ip)
 
 
