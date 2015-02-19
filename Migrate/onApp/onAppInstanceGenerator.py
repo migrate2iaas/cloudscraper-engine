@@ -222,7 +222,8 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         logging.info(">>> Waiting till onApp Cloudscraper VM is ready")
         while timeout > 0:
             vm = self.__onapp.getVM(vmid)
-            if vm["built"] == 1:
+            logging.debug("VM status: " + str(vm))
+            if vm["built"] == 1 and vm["locked"] == False:
                 return
             timeout = timeout - sleeptime
             time.sleep(sleeptime)
@@ -259,7 +260,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
     def startConversion(self,image , ip):
         """override proxy. it waits till server is built and only then starts the conversion"""
         self.waitTillVMBuilt(self.__minipadId, timeout = self.__builtTimeOutSec )
-        self.__onapp.startVM(self.__minipadId)
+        #self.__onapp.startVM(self.__minipadId)
         return super(onAppInstanceGenerator, self).startConversion(image, ip)
 
 
