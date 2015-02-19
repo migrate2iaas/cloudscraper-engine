@@ -273,7 +273,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         logging.error("!!!ERROR: Timeout, Cloudscraper target VM is not ready. Please contact the cloud provider.")
         return
 
-    def __init__(self, onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_id = "" , minipad_vm_id = None):
+    def __init__(self, onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_id = "" , minipad_vm_id = None , vmbuild_timeout=100*60 ):
         """
         Args:
             onapp_endpoint - cloud endpoint address (ip or dns)
@@ -285,6 +285,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
             preset_ip - set if the minipad VM is already launched
             minipad_image_id - the template id of minipad to launch
             minipad_vm_id - id if minipad is already created
+            vmbuild_timeout: int - timeout in seconds to wait till target minipad VM is built
         """
         self.__onapp = OnAppBase();
         self.__onapp.connectOnApp(onapp_login, onapp_password, onapp_endpoint, str(onapp_port));
@@ -294,7 +295,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         logging.debug("onApp connected API version " + version)
 
         self.__diskSize = 100;
-        self.__builtTimeOutSec = 60*60;
+        self.__builtTimeOutSec = vmbuild_timeout;
         self.__minipadTemplate = minipad_image_id
         self.__minipadId = minipad_vm_id
         self.__datastore = onapp_datastore_id
