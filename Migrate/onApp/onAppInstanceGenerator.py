@@ -346,4 +346,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
     def makeVolumeFromImage(self , imageid, initialconfig, instancename):
         """makes volume based on image id - link to public image"""
         self.getDiskSize(imageid)
-        return super(onAppInstanceGenerator, self).makeVolumeFromImage(imageid, initialconfig, instancename)
+        vm = onAppVM(self.__onapp, self.__minipadId)
+        vm.run()
+        volume = super(onAppInstanceGenerator, self).makeVolumeFromImage(imageid, initialconfig, instancename)
+        vm.stop()
