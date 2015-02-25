@@ -243,7 +243,6 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         vmParams = { "label" : name }
         self.__onapp.editVM(self.__minipadId, vmParams)
         vm = onAppVM(self.__onapp , self.__minipadId)
-        vm.stop()
 
         return vm
 
@@ -315,6 +314,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         if vm.checkAlive() == False:
             logging.warn("!Cloudscraper target VM is not repsonding (to RDP port). Misconfiguration is highly possible!")
         
+        logging.info("Waiting till service is on")
         #extra wait for service availability
         time.sleep(self.__serviceStartTimeout)
 
@@ -347,6 +347,4 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         """makes volume based on image id - link to public image"""
         self.getDiskSize(imageid)
         vm = onAppVM(self.__onapp, self.__minipadId)
-        vm.run()
         volume = super(onAppInstanceGenerator, self).makeVolumeFromImage(imageid, initialconfig, instancename)
-        vm.stop()
