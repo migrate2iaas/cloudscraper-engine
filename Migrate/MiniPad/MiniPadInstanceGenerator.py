@@ -197,7 +197,7 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
         disk = self.createDisk(instancename)
         self.attachDiskToMinipad(disk )
         
-        if self.startConversion(imageid , self.__server_ip , import_type = "ImportVolume") == False:
+        if self.startConversion(imageid , self.__server_ip , "ImportVolume") == False:
             return None
 
         self.detachDiskFromMinipad(disk)

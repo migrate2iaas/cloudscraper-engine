@@ -188,7 +188,9 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         return disk_out['id']
 
     def attachDiskToMinipad(self, disk):
-
+        """we just wait here to ensure disk attached"""
+        logging.debug("Waiting till disk is attached")
+        time.sleep(self.__diskWaitTimeout)
         return
 
     def initCreate(self , initialconfig):
@@ -213,7 +215,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         if self.__minipadTemplate and not self.__minipadId:
             logging.info("Launching template " + str(self.__minipadTemplate) + " to act as minipad target")
             vmParams = { "template_id" : int(self.__minipadTemplate) , "label" : name , "hostname" : name , "memory" : 2048 , "cpus" : 1 , "cpu_shares" : 1 , "primary_disk_size": win_template_disk_size , \
-                "swap_disk_size" : 0 , "required_virtual_machine_build" : 1 , "required_ip_address_assignment" : 1 , "licensing_type": win_licensing_type}
+                "rate_limit" : 0 , "swap_disk_size" : 0 , "required_virtual_machine_build" : 1 , "required_ip_address_assignment" : 1 , "licensing_type": win_licensing_type}
             vm = self.__onapp.createVM(vmParams)
             ip = vm['ip_addresses'][0]['ip_address']['address']
             self.__minipadId = vm['identifier']
@@ -296,13 +298,15 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
 
         self.__diskSize = 100;
         self.__builtTimeOutSec = vmbuild_timeout;
+        self.__diskWaitTimeout = 120 #2 mins
+        self.__serviceStartTimeout = 120
         self.__minipadTemplate = minipad_image_id
         self.__minipadId = minipad_vm_id
         self.__datastore = onapp_datastore_id
         super(onAppInstanceGenerator, self).__init__(preset_ip)
         #TODO: should find datastore id via the label
         
-    def startConversion(self,image , ip):
+    def startConversion(self,image , ip , import_type = 'ImportInstance' , server_port = 80):
         """override proxy. it waits till server is built and only then starts the conversion"""
         self.waitTillVMBuilt(self.__minipadId, timeout = self.__builtTimeOutSec )
         
@@ -311,7 +315,10 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         if vm.checkAlive() == False:
             logging.warn("!Cloudscraper target VM is not repsonding (to RDP port). Misconfiguration is highly possible!")
         
-        return super(onAppInstanceGenerator, self).startConversion(image, ip)
+        #extra wait for service availability
+        time.sleep(self.__serviceStartTimeout)
+
+        return super(onAppInstanceGenerator, self).startConversion(image, ip , import_type , server_port)
 
 
     def getDiskSize(self, imageid_manifest_link):
@@ -323,7 +330,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
             (head, sep ,tail) = xmlheader.partition("<volume-size>")
             if tail:
                     (head, sep ,tail) = tail.partition("</volume-size>")
-                    self.__diskSize = int(head , base = 10) 
+                    self.__diskSize = int(head , base = 10) + 1 # add one so to fit 100%
                     logging.debug("The volume would be of size " + str(self.__diskSize) + " GBs")
             else:
                     logging.warning("!Couldn't parse the xml describing the import done")
