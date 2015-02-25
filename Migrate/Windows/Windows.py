@@ -68,7 +68,7 @@ class Windows(object):
         if self.__windowsVersion == WindowsSystemInfo.WindowsSystemInfo.Win2008R2:
             virtiodir = virtiodir + "\\WIN7"
         if self.__windowsVersion >= WindowsSystemInfo.WindowsSystemInfo.Win2012:
-            virtiodir = virtiodir + "\\WIN7" # WIN8 cat files are corrupt, trying to use win7 ones
+            virtiodir = virtiodir + "\\WIN8" 
 
         if WindowsSystemInfo.WindowsSystemInfo().getSystemArcheticture() == WindowsSystemInfo.WindowsSystemInfo.Archx8664:
             virtiodir = virtiodir + "\\AMD64"
