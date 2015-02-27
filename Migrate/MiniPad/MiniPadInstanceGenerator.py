@@ -189,7 +189,7 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
 
         self.detachDiskFromMinipad(disk)
         vm = self.createVM(disk , instancename)
-        #TODO: create instance object here
+        return vm
 
     def makeVolumeFromImage(self , imageid , initialconfig, instancename):
         """generates cloud server instances from uploaded images"""
@@ -201,4 +201,5 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
             return None
 
         self.detachDiskFromMinipad(disk)
+        return True
          #TODO: create volume object here
