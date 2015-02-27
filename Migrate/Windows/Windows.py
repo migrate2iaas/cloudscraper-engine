@@ -68,7 +68,7 @@ class Windows(object):
         if self.__windowsVersion == WindowsSystemInfo.WindowsSystemInfo.Win2008R2:
             virtiodir = virtiodir + "\\WIN7"
         if self.__windowsVersion >= WindowsSystemInfo.WindowsSystemInfo.Win2012:
-            virtiodir = virtiodir + "\\WIN8" 
+            virtiodir = virtiodir + "\\WIN7" # pnputil doesn't work for win8 drivers so we load win7 ones
 
         if WindowsSystemInfo.WindowsSystemInfo().getSystemArcheticture() == WindowsSystemInfo.WindowsSystemInfo.Archx8664:
             virtiodir = virtiodir + "\\AMD64"
@@ -153,6 +153,10 @@ class Windows(object):
         # if it exists, renaming for the short period of time
         # note: the deletion is executed in cleanup before the renaming
         files_to_copy = [system32_folder + "\\drivers\\"+self.__bootDriverName, wininstall + "\\inf\\"+ self.__bootDriverInf ]
+
+        if self.__windowsVersion >= WindowsSystemInfo.WindowsSystemInfo.Win2012:
+            # don't copy files for Win2012, they seem to mess with the system
+            files_to_copy = []
         
         for conflicting_file in files_to_copy:
             if os.path.exists(conflicting_file):
