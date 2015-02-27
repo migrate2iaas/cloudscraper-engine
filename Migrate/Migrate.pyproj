@@ -38,6 +38,7 @@
     <Compile Include="Azure\AzureInstanceGenerator.py" />
     <Compile Include="Azure\AzureUploadChannel.py" />
     <Compile Include="Azure\AzureUploadChannel_test.py" />
+    <Compile Include="Azure\AzureVmInstance.py" />
     <Compile Include="Azure\virtualmachine.py" />
     <Compile Include="BackupAdjust.py" />
     <Compile Include="BackupSource.py" />
