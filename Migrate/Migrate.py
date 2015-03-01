@@ -191,6 +191,7 @@ if __name__ == '__main__':
                 #respond = AzureServiceBusResponder.AzureServiceBusResponder("cloudscraper-euwest" , 'Pdw8d/kMGqU0d1m99n3sSrepJu1Q61MwjeLmg0o3lJA=', 'owner' , 'server-up')
 
                 logging.info("\n>>>>>>>>>>>>>>>>> Making test run for an instance to check it alive\n")
+                instance.stop()
                 instance.run()
                 logging.info("\n>>>>>>>>>>>>>>>>> Waiting till it responds\n")
                 port = 22
@@ -209,7 +210,7 @@ if __name__ == '__main__':
             os._exit(errno.ERANGE)
             #sys.exit(errno.ERANGE)
         finally:
-            instance.stop()
+                instance.stop()
 
         os._exit(0)
     except Exception as e:

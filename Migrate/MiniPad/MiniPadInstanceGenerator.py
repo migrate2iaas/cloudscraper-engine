@@ -113,8 +113,10 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
                   }
         self.__post(payload)
 
+        logging.info(">>> Connection estabilished, starting transferring data from intermediate storage")
+
         # wait for ConfigurInstance
-        time.sleep(2)
+        time.sleep(20)
 
         # get status
         payload = {'Action' : 'GetImportTargetStatus',}
@@ -128,11 +130,13 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
         self.__post(payload)
 
         done = False
+        waited = 0
         while not done:
             # wait for 5 seconds
             delay = 5
             logging.debug("Waiting %d seconds..." % delay)
             time.sleep(delay)
+            waited = waited + delay
 
             ## DescribeConversionTasks
             payload = {'Action' : 'DescribeConversionTasks',}
@@ -146,6 +150,8 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
             Status = r.find('Status')
             if Status.text in ['Error', 'FinishedTransfer']:
                 done = True
+            if waited % delay*60:
+                logging.info("% Progress: " + Status.text)
 
 
         # get status
