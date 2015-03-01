@@ -247,6 +247,10 @@ class MigratorConfigurer(object):
         if config.has_option('onApp', 'minipad_vm_id'):
             minipad_vm_id = config.get('onApp', 'minipad_vm_id') 
 
+        vm_build_timeout = 120*60
+        if config.has_option('onApp', 'vm_build_timeout'):
+            vm_build_timeout = config.get('onApp', 'vm_build_timeout') 
+
         onapp_target_account = None
 
         s3bucket = config.get('onApp', 's3bucket')
@@ -259,7 +263,7 @@ class MigratorConfigurer(object):
         image = onAppConfigs.onAppMigrateConfig(volumes , factory, 'x86_64' , imagetype)
         cloud = onAppConfigs.onAppCloudOptions(s3bucket , s3user , s3secret , s3region , onapp_endpoint , onapp_login , \
             password , onapp_datastore_id, onapp_target_account , onapp_port = 80, preset_ip = minipad_ip, \
-            minipad_image_name = minipad_template , minipad_vm_id = minipad_vm_id)
+            minipad_image_name = minipad_template , minipad_vm_id = minipad_vm_id , vm_build_timeout_sec = int(vm_build_timeout))
 
         return (image,adjust_override,cloud)
 

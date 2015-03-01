@@ -310,6 +310,8 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         self.waitTillVMBuilt(self.__minipadId, timeout = self.__builtTimeOutSec )
         
         vm = onAppVM(self.__onapp, self.__minipadId)
+        logging.debug("Trying to run the VM , in case it's stopped")
+        vm.run()
         logging.info("Awaiting till Cloudscraper target VM is alive (echoing Cloudscraper VM RDP port)")
         if vm.checkAlive() == False:
             logging.warn("!Cloudscraper target VM is not repsonding (to RDP port). Misconfiguration is highly possible!")

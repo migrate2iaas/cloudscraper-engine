@@ -89,7 +89,8 @@ class Windows(object):
             logging.debug(cmd.stdout.read())
         logging.debug(batname + " returned " + str(returncode))
         if returncode <> 0:
-            raise Exception("Cannot execute PnPutil to add drivers to the store!")
+            logging.warn("! Failed to add Virtio drivers to the running system!")
+        #    raise Exception("Cannot execute PnPutil to add drivers to the store!")
 
 
     # volume should be in "\\.\X:" form
