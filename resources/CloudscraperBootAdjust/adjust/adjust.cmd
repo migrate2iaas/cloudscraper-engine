@@ -13,12 +13,16 @@ if defined ProgramFiles(x86) (
   set DRVPATH=%~dp0\..\VirtIO\
   set DEVCON=devcon_32
 )
+copy /Y "%~dp0\%DEVCON%.exe" "%~dp0\devcon.exe"
 
 certutil -addstore TrustedPublisher redhat.cer >> C:\adjustlog.txt
 
-%~dp0\%DEVCON% install "%DRVPATH%\netkvm.inf" "PCI\VEN_1AF4&DEV_1000&SUBSYS_00011AF4&REV_00" >> C:\adjustlog.txt
+"%~dp0\%DEVCON%" install "%DRVPATH%\netkvm.inf" "PCI\VEN_1AF4&DEV_1000&SUBSYS_00011AF4&REV_00" >> C:\adjustlog.txt
 
 if exist %~dp0\netsh_dump.txt (
+
+echo Removing the absent devices >>  C:\adjustlog.txt
+call removedevices.js /noconfirm >> C:\adjustlog.txt
 
 :: Checks adapter name
 SET adapterName=
@@ -37,6 +41,6 @@ netsh interface set interface name="!adapterName!" newname="Local Area Connectio
 )
 :: executing the adjust script
 echo "Importing tcpip settings" >> C:\adjustlog.txt
-netsh -f %~dp0\netsh_dump.txt >> C:\adjustlog.txt
+netsh -f "%~dp0\netsh_dump.txt" >> C:\adjustlog.txt
 )
 :EOF
