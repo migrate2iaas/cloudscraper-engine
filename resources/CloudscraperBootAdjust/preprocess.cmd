@@ -11,4 +11,4 @@ if defined ProgramFiles(x86) (
   set difxcmd=difxcmd_32
 )
 
-%difxcmd% /i "%~dp0\virtio\viostor.inf" 7
+pnputil /a "%~dp0\virtio\viostor.inf"

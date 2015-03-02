@@ -21,6 +21,7 @@ certutil -addstore TrustedPublisher redhat.cer >> C:\adjustlog.txt
 
 if exist %~dp0\netsh_dump.txt (
 
+cd "%~dp0"
 echo Removing the absent devices >>  C:\adjustlog.txt
 call removedevices.js /noconfirm >> C:\adjustlog.txt
 
