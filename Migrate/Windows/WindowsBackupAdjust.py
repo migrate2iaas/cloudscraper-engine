@@ -150,7 +150,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         returncode = cmd.wait()
         if cmd.stdout:
             logging.debug(cmd.stdout.read())
-        logging.debug(batname + " returned " + str(returncode))
+        logging.debug("reg returned " + str(returncode))
         if returncode <> 0:
             logging.warn("! Failed to add Virtio drivers to the registry!")
             raise IOError("Failed to add driver info into the registry")
