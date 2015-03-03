@@ -154,7 +154,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         regfile = open(regfilepath , "r")
         data = regfile.read()
         regfile.close()
-        data = data.replace("<VIOSTOR>",keyname).replace("<SYSTEM>",hivekeyname)
+        data = data.replace("<VIOSTOR>",keyname).replace("<SYSHIVE>",hivekeyname)
         filename = os.tempnam("viostor2012") + ".reg"
         newfile = open(filename , "w")
         newfile.write(data)
