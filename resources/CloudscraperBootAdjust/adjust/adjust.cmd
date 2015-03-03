@@ -19,6 +19,9 @@ certutil -addstore TrustedPublisher redhat.cer >> C:\adjustlog.txt
 
 "%~dp0\%DEVCON%" install "%DRVPATH%\netkvm.inf" "PCI\VEN_1AF4&DEV_1000&SUBSYS_00011AF4&REV_00" >> C:\adjustlog.txt
 
+echo Wait till network device is up... >>  C:\adjustlog.txt
+ping 128.0.0.1 -n 1 -w 600 >>  C:\adjustlog.txt
+
 if exist %~dp0\netsh_dump.txt (
 
 cd "%~dp0"
