@@ -146,7 +146,14 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         tcpipkey.close()
 
     def __mergeReg(self , newreg):
-        p1 = subprocess.check_call(["reg" , "import" , newreg])
+        cmd =  subprocess.Popen(["reg" , "import" , newreg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        returncode = cmd.wait()
+        if cmd.stdout:
+            logging.debug(cmd.stdout.read())
+        logging.debug(batname + " returned " + str(returncode))
+        if returncode <> 0:
+            logging.warn("! Failed to add Virtio drivers to the registry!")
+            raise IOError("Failed to add driver info into the registry")
         return
 
     def injectViostor2012(self , hivekeyname , currentcontrolset , keyname):
@@ -155,6 +162,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         data = regfile.read()
         regfile.close()
         data = data.replace("<VIOSTOR>",keyname).replace("<SYSHIVE>",hivekeyname)
+        logging.debug("Inserting registry \n" + data)
         filename = os.tempnam("viostor2012") + ".reg"
         newfile = open(filename , "w")
         newfile.write(data)
