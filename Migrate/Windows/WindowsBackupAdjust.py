@@ -145,8 +145,34 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
         tcpipkey.close()
 
-   
-       
+    def __mergeReg(self , newreg):
+        p1 = subprocess.check_call(["reg" , "import" , newreg])
+        return
+
+    def injectViostor2012(self , hivekeyname , currentcontrolset , keyname):
+        regfilepath = Windows.Windows.virtRelIoDir + "\\viostor2012.reg"
+        regfile = open(regfilepath , "r")
+        data = regfile.read()
+        regfile.close()
+        data = data.replace("<VIOSTOR>",keyname).replace("<SYSTEM>",hivekeyname)
+        filename = os.tmpnam()
+        newfile = open(filename , "w")
+        newfile.write(data)
+        newfile.close()
+        self.__mergeReg(filename)
+
+    def injectVirtIo(self , hivekeyname , currentcontrolset):
+        if self.__windowsVersion < WindowsSystemInfo.WindowsSystemInfo.Win2012:
+            # we think the virtio driver is installed by the init code
+            return
+        driverskey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\DriverDatabase\\DriverPackages" , 0 , win32con.KEY_ALL_ACCESS )
+        infkeys = win32api.RegEnumKeyEx(driverskey)
+        for (keyname, reserved, classname, modtime) in infkeys:
+            if "viostor.inf" in keyname:
+                logging.debug("Adding dirver package info to " + hivekeyname+"\\DriverDatabase\\DriverPackages\\" +  keyname + " . Should  be run from the system account")
+                self.injectViostor2012(hivekeyname , currentcontrolset , keyname)
+        
+        return 
 
     def adjustSystemHive(self , hive_file_path):
         """make some adjusts to a system hive located at hive_file_path"""
@@ -306,9 +332,8 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         virtio = self.__adjustConfig.injectVirtIo()
         if virtio:
             logging.info("Injecting virtio") 
-            logging.debug("Doing nothing at the moment")
             #virtio_path = self.__adjustConfig.virtIoPaths)
-            #self.injectVirtIo(hivekeyname,currentcontrolset, virtio_path)
+            self.injectVirtIo(hivekeyname,currentcontrolset)
 
         postprocess = self.__adjustConfig.injectPostprocess()
         if postprocess:
