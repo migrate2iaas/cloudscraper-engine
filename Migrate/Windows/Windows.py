@@ -361,7 +361,7 @@ class Windows(object):
         for (keyname, reserved, classname, modtime) in infkeys:
             if "viostor.inf" in keyname:
                 logging.debug("Adding dirver package info to " + hivekeyname+"\\DriverDatabase\\DriverPackages\\" +  keyname + " . Should  be run from the system account")
-                self.__injectViostor2012Package(hivekeyname , currentcontrolset , keyname)
+                self.__injectViostor2012Package(keyname)
 
         driverskey.close()
         
