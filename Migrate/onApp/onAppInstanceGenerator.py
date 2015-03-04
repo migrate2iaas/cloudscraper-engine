@@ -150,7 +150,7 @@ class onAppVM(VmInstance.VmInstance):
         vm = self.__onapp.getVM(self.__vmid)
         if vm['booted'] == True:
             return True
-        self.__onapp.startVM()
+        self.__onapp.startVM(self.__vmid)
 
     def stop(self):
         """stops instance"""
