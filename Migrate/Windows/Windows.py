@@ -342,7 +342,7 @@ class Windows(object):
 
     def __injectViostor2012Package(self , keyname):
         hivekeyname = "SYSTEM"
-        regfilepath = Windows.Windows.virtRelIoDir + "\\viostor2012.reg"
+        regfilepath = Windows.virtRelIoDir + "\\viostor2012.reg"
         regfile = open(regfilepath , "r")
         data = regfile.read()
         regfile.close()
