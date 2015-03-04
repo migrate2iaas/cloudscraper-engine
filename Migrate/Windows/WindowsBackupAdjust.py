@@ -145,41 +145,13 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
         tcpipkey.close()
 
-    def __mergeReg(self , newreg):
-        cmd =  subprocess.Popen(["reg" , "import" , newreg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        returncode = cmd.wait()
-        if cmd.stdout:
-            logging.debug(cmd.stdout.read())
-        logging.debug("reg returned " + str(returncode))
-        if returncode <> 0:
-            logging.warn("! Failed to add Virtio drivers to the registry!")
-            raise IOError("Failed to add driver info into the registry")
-        return
-
-    def injectViostor2012(self , hivekeyname , currentcontrolset , keyname):
-        regfilepath = Windows.Windows.virtRelIoDir + "\\viostor2012.reg"
-        regfile = open(regfilepath , "r")
-        data = regfile.read()
-        regfile.close()
-        data = data.replace("<VIOSTOR>",keyname).replace("<SYSHIVE>",hivekeyname)
-        logging.debug("Inserting registry \n" + data)
-        filename = os.tempnam("viostor2012") + ".reg"
-        newfile = open(filename , "w")
-        newfile.write(data)
-        newfile.close()
-        self.__mergeReg(filename)
+    
 
     def injectVirtIo(self , hivekeyname , currentcontrolset):
+        # nothing for now
         if self.__windowsVersion < WindowsSystemInfo.WindowsSystemInfo.Win2012:
             # we think the virtio driver is installed by the init code
             return
-        driverskey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\DriverDatabase\\DriverPackages" , 0 , win32con.KEY_ALL_ACCESS )
-        infkeys = win32api.RegEnumKeyEx(driverskey)
-        for (keyname, reserved, classname, modtime) in infkeys:
-            if "viostor.inf" in keyname:
-                logging.debug("Adding dirver package info to " + hivekeyname+"\\DriverDatabase\\DriverPackages\\" +  keyname + " . Should  be run from the system account")
-                self.injectViostor2012(hivekeyname , currentcontrolset , keyname)
-        
         return 
 
     def adjustSystemHive(self , hive_file_path):

@@ -32,6 +32,12 @@ import time
 import logging
 import subprocess
 
+
+import win32api
+import win32con
+import win32security
+import win32file
+
 class Windows(object):
     """factory class for generating objects of Windows subsystem"""
 
@@ -53,6 +59,7 @@ class Windows(object):
         self.__adjustSvcDir = Windows.adjustRelSvcDir
         self.__windowsVersion = self.getVersion()
         self.__virtIoDir = self.__setVirtIoSourceDir()
+        # TODO: move all viostor related stuff elsewhere
         self.__bootDriverName = "viostor.sys"
         self.__bootDriverInf = "viostor.inf"
 
@@ -283,6 +290,7 @@ class Windows(object):
                     cab.extract(sys32dir , [hal])
                
         return True
+    
 
     def __prepareRegistry(self):
         self.__injectVirtIo()
@@ -322,8 +330,41 @@ class Windows(object):
 
 
     def __mergeReg(self , newreg):
-        p1 = subprocess.check_call(["reg" , "import" , newreg])
+        cmd =  subprocess.Popen(["reg" , "import" , newreg], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        returncode = cmd.wait()
+        output = cmd.stdout.read()
+        if cmd.stdout:
+            logging.debug(output)
+        logging.debug("reg returned " + str(returncode))
+        if returncode <> 0:
+            logging.warn("! Failed to add Virtio drivers to the registry!")
         return
+
+    def __injectViostor2012Package(self , keyname):
+        hivekeyname = "SYSTEM"
+        regfilepath = Windows.Windows.virtRelIoDir + "\\viostor2012.reg"
+        regfile = open(regfilepath , "r")
+        data = regfile.read()
+        regfile.close()
+        data = data.replace("<VIOSTOR>",keyname).replace("<SYSHIVE>",hivekeyname)
+        logging.debug("Inserting registry \n" + data)
+        filename = os.tempnam("viostor2012") + ".reg"
+        newfile = open(filename , "w")
+        newfile.write(data)
+        newfile.close()
+        self.__mergeReg(filename)
+
+    def __injectViostor2012(self):
+        hivekeyname = "SYSTEM"
+        driverskey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\DriverDatabase\\DriverPackages" , 0 , win32con.KEY_ALL_ACCESS )
+        infkeys = win32api.RegEnumKeyEx(driverskey)
+        for (keyname, reserved, classname, modtime) in infkeys:
+            if "viostor.inf" in keyname:
+                logging.debug("Adding dirver package info to " + hivekeyname+"\\DriverDatabase\\DriverPackages\\" +  keyname + " . Should  be run from the system account")
+                self.__injectViostor2012Package(hivekeyname , currentcontrolset , keyname)
+
+        driverskey.close()
+        
 
     def __injectVirtIo(self):
         """
@@ -332,6 +373,8 @@ class Windows(object):
         
         """
         
+        logging.info(">>>> Adding virt-io drivers to the running system")
+
         root_virtio = Windows.virtRelIoDir # + virtio_path
         virtiodir="%SystemRoot%\\system32\\drivers\\virtio"
 
@@ -339,6 +382,9 @@ class Windows(object):
         # the injection reg file is found in corresponding resource directory
         #newreg = self.prepareRegFile(hivekeyname , "ControlSet00"+str(currentcontrolset) ,  ,  virtiodir , virtiodir )
         self.__mergeReg(root_virtio + "\\virtio.reg")     
+
+        if self.__windowsVersion >= WindowsSystemInfo.WindowsSystemInfo.Win2012:
+            self.__injectViostor2012()
 
         return True
 

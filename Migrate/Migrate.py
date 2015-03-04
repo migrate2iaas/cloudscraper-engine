@@ -192,6 +192,8 @@ if __name__ == '__main__':
 
                 logging.info("\n>>>>>>>>>>>>>>>>> Making test run for an instance to check it alive\n")
                 instance.stop()
+                logging.info("Waiting a bit for server restart")
+                time.sleep(60)
                 instance.run()
                 logging.info("\n>>>>>>>>>>>>>>>>> Waiting till it responds\n")
                 port = 22
