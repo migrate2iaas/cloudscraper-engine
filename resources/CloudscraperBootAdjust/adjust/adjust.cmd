@@ -49,6 +49,7 @@ netsh interface set interface name="!adapterName!" newname="Local Area Connectio
 echo "Importing tcpip settings" >> C:\adjustlog.txt
 netsh -f "%~dp0\netsh_dump.txt" >> C:\adjustlog.txt
 ping 128.0.0.1 -n 1 -w 6000 >>  C:\adjustlog.txt
-del /Q "%~dp0\netsh_dump.txt" 
+del /Q "%~dp0\netsh_dump.txt" >>  C:\adjustlog.txt
+
 )
 :EOF
