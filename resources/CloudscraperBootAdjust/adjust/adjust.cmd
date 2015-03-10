@@ -52,4 +52,8 @@ ping 128.0.0.1 -n 1 -w 6000 >>  C:\adjustlog.txt
 del /Q "%~dp0\netsh_dump.txt" >>  C:\adjustlog.txt
 
 )
+
+echo "Disable autoadjust" >>   C:\adjustlog.txt
+sc config CloudscraperBoot start=demand >>   C:\adjustlog.txt
+
 :EOF
