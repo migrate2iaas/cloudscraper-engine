@@ -41,15 +41,17 @@ class OnAppBase:
                         self.conn.request(type, page, requestData, headers);
                 response = self.conn.getresponse()
                 if response.status >= 400:
-                    logging.error("!!!ERROR: Http request " + str(type) + " " + str(page) + " to onApp cloud failed!")
+                    errortext = "HTTP request " + str(type) + " " + str(page) + " to onApp cloud failed!"
                     try:
                         response_data = str(response.read())
                         logging.error(str(response.status)+":"+ response_data)
                         data = json.loads(response_data);
+                        errortext = errortext + " onApp cloud error: " + str(data["errors"]["base"])
                         logging.error("!!!ERROR: onApp cloud error: " + str(data["errors"]["base"]))
                     except Exception as e:
-                        logging.error("!!!ERROR: cannot decode the error, please see logs")
-                    raise IOError("Http operation failed!")
+                        logging.error("!!!ERROR: cannot decode onApp error, please see logs")
+                    logging.error("!!!ERROR: " + errortext )
+                    raise IOError(errortext)
                 return response
 
 

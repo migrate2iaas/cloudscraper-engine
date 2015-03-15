@@ -132,8 +132,8 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
         done = False
         waited = 0
         while not done:
-            # wait for 5 seconds
-            delay = 5
+            # wait for 30 seconds
+            delay = 30
             logging.debug("Waiting %d seconds..." % delay)
             time.sleep(delay)
             waited = waited + delay
