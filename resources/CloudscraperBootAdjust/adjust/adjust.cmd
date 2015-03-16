@@ -20,7 +20,8 @@ certutil -addstore TrustedPublisher redhat.cer >> C:\adjustlog.txt
 "%~dp0\%DEVCON%" install "%DRVPATH%\netkvm.inf" "PCI\VEN_1AF4&DEV_1000&SUBSYS_00011AF4&REV_00" >> C:\adjustlog.txt
 
 echo Wait till network device is up... >>  C:\adjustlog.txt
-ping 128.0.0.1 -n 1000 -w 1 >>  C:\adjustlog.txt
+::send 10 packets with minute between each other
+ping 127.0.0.1 -n 10 -w 60000 >>  C:\adjustlog.txt
 IPCONFIG >> C:\adjustlog.txt
 
 if exist %~dp0\netsh_dump.txt (
@@ -31,6 +32,7 @@ call removedevices.js /noconfirm /verbose >> C:\adjustlog.txt
 
 :: Checks adapter name
 SET adapterName=
+SET cloudscraperNetName="VirtualNetworkAdapter"
 
 FOR /F "tokens=* delims=:" %%a IN ('IPCONFIG ^| FIND /I "ETHERNET ADAPTER"') DO (
 SET adapterName=%%a
@@ -43,12 +45,13 @@ SET adapterName=!adapterName:~0,-1!
 
 echo Renaming !adapterName! to Local Area Connection >> C:\adjustlog.txt
 :: renaming the primary ethernet to Local Area Network
-netsh interface set interface name="!adapterName!" newname="Local Area Connection" >> C:\adjustlog.txt
+netsh interface set interface name="!adapterName!" newname=%cloudscraperNetName% >> C:\adjustlog.txt
 )
 :: executing the adjust script
 echo "Importing tcpip settings" >> C:\adjustlog.txt
 netsh -f "%~dp0\netsh_dump.txt" >> C:\adjustlog.txt
-ping 128.0.0.1 -n 1 -w 6000 >>  C:\adjustlog.txt
+::send 10 packets with minute between each other
+ping 127.0.0.1 -n 10 -w 60000 >>  C:\adjustlog.txt
 IF ERRORLEVEL 0 (
 	echo Netconf applied. Deleting the network config file >>  C:\adjustlog.txt
 	del /Q "%~dp0\netsh_dump.txt" >>  C:\adjustlog.txt
@@ -57,7 +60,6 @@ IF ERRORLEVEL 0 (
 )
 
 echo "Disable autoadjust" >>   C:\adjustlog.txt
-sc query CloudscraperBoot  >>   C:\adjustlog.txt
-sc config CloudscraperBoot start=demand >>   C:\adjustlog.txt
+sc config CloudscraperBoot start= demand >>   C:\adjustlog.txt
 
 :EOF
