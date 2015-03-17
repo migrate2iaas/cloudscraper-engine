@@ -20,19 +20,36 @@ certutil -addstore TrustedPublisher redhat.cer >> C:\adjustlog.txt
 "%~dp0\%DEVCON%" install "%DRVPATH%\netkvm.inf" "PCI\VEN_1AF4&DEV_1000&SUBSYS_00011AF4&REV_00" >> C:\adjustlog.txt
 
 echo Wait till network device is up... >>  C:\adjustlog.txt
-::send 10 packets with minute between each other
+::send 10 packets with minute between each other resulting in max 10 mins to wait for eth to up
 ping 127.0.0.1 -n 10 -w 60000 >>  C:\adjustlog.txt
 IPCONFIG >> C:\adjustlog.txt
+echo Quering WMI >> C:\adjustlog.txt
+wmic NIC where NetEnabled=true get Name,NetConnectionID >> C:\adjustlog.txt
+echo Quering netsh >> C:\adjustlog.txt
+netsh interface show interface >> C:\adjustlog.txt
+
+:: the problem is we cannot be sure that Windows net connection e.g. local area network is up
+
+echo  wait more 1 min to up the iface >>  C:\adjustlog.txt
+ping 128.0.0.1 -n 1 -w 60000 >>  C:\adjustlog.txt
+IPCONFIG >> C:\adjustlog.txt
+echo Quering WMI >> C:\adjustlog.txt
+wmic NIC where NetEnabled=true get Name,NetConnectionID >> C:\adjustlog.txt
+echo Quering netsh >> C:\adjustlog.txt
+netsh interface show interface >> C:\adjustlog.txt
 
 if exist %~dp0\netsh_dump.txt (
 
 cd "%~dp0"
 echo Removing the absent devices >>  C:\adjustlog.txt
-call removedevices.js /noconfirm /verbose >> C:\adjustlog.txt
+
+:: Not necessary as long as network connection is named VirtualNetworkAdapter
+::call removedevices.js /noconfirm /verbose >> C:\adjustlog.txt
 
 :: Checks adapter name
 SET adapterName=
 SET cloudscraperNetName="VirtualNetworkAdapter"
+:: the network name should hardcoded somewhere in minipad Windows network configuration
 
 FOR /F "tokens=* delims=:" %%a IN ('IPCONFIG ^| FIND /I "ETHERNET ADAPTER"') DO (
 SET adapterName=%%a
