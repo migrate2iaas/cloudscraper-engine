@@ -19,19 +19,8 @@ certutil -addstore TrustedPublisher redhat.cer >> C:\adjustlog.txt
 
 "%~dp0\%DEVCON%" install "%DRVPATH%\netkvm.inf" "PCI\VEN_1AF4&DEV_1000&SUBSYS_00011AF4&REV_00" >> C:\adjustlog.txt
 
-echo Wait till network device is up... >>  C:\adjustlog.txt
-::send 10 packets with minute between each other resulting in max 10 mins to wait for eth to up
-ping 127.0.0.1 -n 10 -w 60000 >>  C:\adjustlog.txt
-IPCONFIG >> C:\adjustlog.txt
-echo Quering WMI >> C:\adjustlog.txt
-wmic NIC where NetEnabled=true get Name,NetConnectionID >> C:\adjustlog.txt
-echo Quering netsh >> C:\adjustlog.txt
-netsh interface show interface >> C:\adjustlog.txt
-
-:: the problem is we cannot be sure that Windows net connection e.g. local area network is up
-
-echo  wait more 1 min to up the iface >>  C:\adjustlog.txt
-ping 128.0.0.1 -n 1 -w 60000 >>  C:\adjustlog.txt
+echo Wait several mins till network device is up... >>  C:\adjustlog.txt
+REM | CHOICE /C:AB /T:A,320 > NUL
 IPCONFIG >> C:\adjustlog.txt
 echo Quering WMI >> C:\adjustlog.txt
 wmic NIC where NetEnabled=true get Name,NetConnectionID >> C:\adjustlog.txt
@@ -43,32 +32,25 @@ if exist %~dp0\netsh_dump.txt (
 cd "%~dp0"
 echo Removing the absent devices >>  C:\adjustlog.txt
 
-:: Not necessary as long as network connection is named VirtualNetworkAdapter
-::call removedevices.js /noconfirm /verbose >> C:\adjustlog.txt
-
 :: Checks adapter name
+SET cloudscraperNetName=VirtualNetworkAdapter
 SET adapterName=
-SET cloudscraperNetName="VirtualNetworkAdapter"
-:: the network name should hardcoded somewhere in minipad Windows network configuration
 
-FOR /F "tokens=* delims=:" %%a IN ('IPCONFIG ^| FIND /I "ETHERNET ADAPTER"') DO (
-SET adapterName=%%a
+rem the network name should hardcoded somewhere in minipad Windows network configuration
 
-REM Removes "Ethernet adapter" from the front of the adapter name
-SET adapterName=!adapterName:~17!
+wmic NIC where "NetEnabled=true and Name like 'Red Hat VirtIO%%'" get NetConnectionID /value >>  C:\adjustlog.txt
 
-REM Removes the colon from the end of the adapter name
-SET adapterName=!adapterName:~0,-1!
-
-echo Renaming !adapterName! to Local Area Connection >> C:\adjustlog.txt
+FOR /F "tokens=2 delims==" %%a IN ('wmic NIC where "NetEnabled=true and Name like 'Red Hat VirtIO%%'" get NetConnectionID /value ') DO (
+echo Renaming %%a to !cloudscraperNetName! >> C:\adjustlog.txt
 :: renaming the primary ethernet to Local Area Network
-netsh interface set interface name="!adapterName!" newname=%cloudscraperNetName% >> C:\adjustlog.txt
+netsh interface set interface name=%%a newname="!cloudscraperNetName!" >> C:\adjustlog.txt
 )
 :: executing the adjust script
 echo "Importing tcpip settings" >> C:\adjustlog.txt
 netsh -f "%~dp0\netsh_dump.txt" >> C:\adjustlog.txt
 ::send 10 packets with minute between each other
-ping 127.0.0.1 -n 10 -w 60000 >>  C:\adjustlog.txt
+rem TODO: change this one to something pingable inside the cloud
+ping 8.8.8.8 -n 10 -w 1000 >>  C:\adjustlog.txt
 IF ERRORLEVEL 0 (
 	echo Netconf applied. Deleting the network config file >>  C:\adjustlog.txt
 	del /Q "%~dp0\netsh_dump.txt" >>  C:\adjustlog.txt
