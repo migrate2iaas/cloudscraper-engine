@@ -20,7 +20,7 @@ certutil -addstore TrustedPublisher redhat.cer >> C:\adjustlog.txt
 "%~dp0\%DEVCON%" install "%DRVPATH%\netkvm.inf" "PCI\VEN_1AF4&DEV_1000&SUBSYS_00011AF4&REV_00" >> C:\adjustlog.txt
 
 echo Wait several mins till network device is up... >>  C:\adjustlog.txt
-REM | CHOICE /C:AB /T:A,320 > NUL
+CHOICE /C:AB /D:A /T 320 > NUL
 IPCONFIG >> C:\adjustlog.txt
 echo Quering WMI >> C:\adjustlog.txt
 wmic NIC where NetEnabled=true get Name,NetConnectionID >> C:\adjustlog.txt
@@ -34,7 +34,6 @@ echo Removing the absent devices >>  C:\adjustlog.txt
 
 :: Checks adapter name
 SET cloudscraperNetName=VirtualNetworkAdapter
-SET adapterName=
 
 rem the network name should hardcoded somewhere in minipad Windows network configuration
 
@@ -43,14 +42,14 @@ wmic NIC where "NetEnabled=true and Name like 'Red Hat VirtIO%%'" get NetConnect
 FOR /F "tokens=2 delims==" %%a IN ('wmic NIC where "NetEnabled=true and Name like 'Red Hat VirtIO%%'" get NetConnectionID /value ') DO (
 echo Renaming %%a to !cloudscraperNetName! >> C:\adjustlog.txt
 :: renaming the primary ethernet to Local Area Network
-netsh interface set interface name=%%a newname="!cloudscraperNetName!" >> C:\adjustlog.txt
+netsh interface set interface name=%%a newname="%cloudscraperNetName%" >> C:\adjustlog.txt
 )
 :: executing the adjust script
 echo "Importing tcpip settings" >> C:\adjustlog.txt
 netsh -f "%~dp0\netsh_dump.txt" >> C:\adjustlog.txt
 ::send 10 packets with minute between each other
 rem TODO: change this one to something pingable inside the cloud
-ping 8.8.8.8 -n 10 -w 1000 >>  C:\adjustlog.txt
+ping 8.8.8.8 -n 10 -w 1000 | Findstr /I /C:"timed out" /C:"host unreachable" /C:"could not find host" /C:"error" >>  C:\adjustlog.txt
 IF ERRORLEVEL 0 (
 	echo Netconf applied. Deleting the network config file >>  C:\adjustlog.txt
 	del /Q "%~dp0\netsh_dump.txt" >>  C:\adjustlog.txt
