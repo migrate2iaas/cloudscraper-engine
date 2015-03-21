@@ -39,17 +39,21 @@ rem the network name should hardcoded somewhere in minipad Windows network confi
 
 wmic NIC where "NetEnabled=true and Name like 'Red Hat VirtIO%%'" get NetConnectionID /value >>  C:\adjustlog.txt
 
-FOR /F "tokens=2 delims==" %%a IN ('wmic NIC where "NetEnabled=true and Name like 'Red Hat VirtIO%%'" get NetConnectionID /value ') DO (
+FOR /F "tokens=2 delims==" %%a IN ('wmic NIC where "NetEnabled=true and Name like 'Red Hat VirtIO%%'" get NetConnectionID /value ^| more ^| findstr /I "NetConnectionID" ') DO (
 echo Renaming %%a to !cloudscraperNetName! >> C:\adjustlog.txt
 :: renaming the primary ethernet to Local Area Network
 netsh interface set interface name="%%a" newname="%cloudscraperNetName%" >> C:\adjustlog.txt
+:: try the other interface name - the output may contain extra crlf characters
+set interfaceName=%%a
+set interfaceName=!interfaceName:~0,-1!
+netsh interface set interface name="!interfaceName!" newname="%cloudscraperNetName%" >> C:\adjustlog.txt
 )
 :: executing the adjust script
 echo "Importing tcpip settings" >> C:\adjustlog.txt
 netsh -f "%~dp0\netsh_dump.txt" >> C:\adjustlog.txt
 ::send 10 packets with minute between each other
 rem TODO: change this one to something pingable inside the cloud
-ping 8.8.8.8 -n 10 -w 1000 | Findstr /I /C:"timed out" /C:"host unreachable" /C:"could not find host" /C:"error" >>  C:\adjustlog.txt
+ping 8.8.8.8 -n 10 -w 1000 | Findstr /I /C:"timed out" /C:"host unreachable" /C:"could not find host" /C:"error"  /C:"failed" >>  C:\adjustlog.txt
 IF ERRORLEVEL 1 (
 	echo Netconf applied. Deleting the network config file >>  C:\adjustlog.txt
 	del /Q "%~dp0\netsh_dump.txt" >>  C:\adjustlog.txt
