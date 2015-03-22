@@ -42,11 +42,11 @@ wmic NIC where "NetEnabled=true and Name like 'Red Hat VirtIO%%'" get NetConnect
 FOR /F "tokens=2 delims==" %%a IN ('wmic NIC where "NetEnabled=true and Name like 'Red Hat VirtIO%%'" get NetConnectionID /value ^| more ^| findstr /I "NetConnectionID" ') DO (
 echo Renaming %%a to !cloudscraperNetName! >> C:\adjustlog.txt
 :: renaming the primary ethernet to Local Area Network
-netsh interface set interface name="%%a" newname="%cloudscraperNetName%" >> C:\adjustlog.txt
+netsh interface set interface name="%%a" newname="!cloudscraperNetName!" >> C:\adjustlog.txt
 :: try the other interface name - the output may contain extra crlf characters
 set interfaceName=%%a
 set interfaceName=!interfaceName:~0,-1!
-netsh interface set interface name="!interfaceName!" newname="%cloudscraperNetName%" >> C:\adjustlog.txt
+netsh interface set interface name="!interfaceName!" newname="!cloudscraperNetName!" >> C:\adjustlog.txt
 )
 :: executing the adjust script
 echo "Importing tcpip settings" >> C:\adjustlog.txt
