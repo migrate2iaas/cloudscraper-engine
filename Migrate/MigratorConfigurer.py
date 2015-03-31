@@ -428,8 +428,12 @@ class MigratorConfigurer(object):
 
         use_ssl = ""
         if config.has_option('EC2', 'ssl'):
-           use_ssl = config.get('EC2', 'ssl') 
-
+           use_ssl = config.get('EC2', 'ssl')
+           
+        chunksize = 10*1024*1024
+        if config.has_option('EC2', 'chunksize'):
+           chunksize = int(config.get('EC2', 'chunksize'))
+           
         bucket = ''
 
         try:
@@ -461,8 +465,9 @@ class MigratorConfigurer(object):
 
         image = AmazonConfigs.AmazonMigrateConfig(volumes , factory, imagearch , imagetype)
         #TODO: add machine name
-        cloud = AmazonConfigs.AmazonCloudOptions(bucket = bucket , user=user , password=password , newsize=newsize , arch=arch , zone= zone , region=region , machinename="" , securityid=security , instancetype=instancetype \
-                                                , disktype = imagetype , keyname_prefix = s3prefix , vpc=vpcsubnet , custom_host = custom_host , custom_port = custom_port , custom_suffix = custom_suffix , use_ssl = use_ssl )
+        cloud = AmazonConfigs.AmazonCloudOptions(bucket = bucket , user=user , password=password , newsize=newsize , arch=arch , zone= zone \
+                                                , region=region , machinename="" , securityid=security , instancetype=instancetype \
+                                                , chunksize = chunksize, disktype = imagetype , keyname_prefix = s3prefix , vpc=vpcsubnet , custom_host = custom_host , custom_port = custom_port , custom_suffix = custom_suffix , use_ssl = use_ssl )
         
 
         return (image,adjust_override,cloud)
