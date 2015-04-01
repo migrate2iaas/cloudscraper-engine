@@ -45,7 +45,7 @@ class onAppInstanceGenerator_test(unittest.TestCase):
         
         generator = onAppInstanceGenerator.onAppInstanceGenerator("oadev.xfernet.net" , "feoff@migrate2iaas.com", "8493452ecd20400c81d7869854665ba750a2c1c1" , 1 , minipad_image_id=16 , vmbuild_timeout = 60*180)
 
-        instance = generator.makeInstanceFromImage("http://cloudscraper-xfernet-1.s3.amazonaws.com/WIN-CANE5VV7AS8-Cmanifest.xml?AWSAccessKeyId=AKIAIY2X62QVIHOPEFEQ&Expires=1425464807&Signature=3%2FLvJ9oHGx7k%2FiKlZDxNfxMuiw8%3D" , None, "autotest-instance")
+        instance = generator.makeInstanceFromImage("https://cloudscraper-xfernet-1.s3.amazonaws.com/AT-2008R2-ONAPP-Cmanifest.xml?AWSAccessKeyId=AKIAIY2X62QVIHOPEFEQ&Expires=1427828034&Signature=%2BVE5vkAnMFCH5RKvHVvNI%2FizOI0%3D" , None, "autotest-instance")
         volume = generator.makeVolumeFromImage("https://cloudscraper-xfernet-1.s3.amazonaws.com/WIN-CANE5VV7AS8-Cmanifest.xml?AWSAccessKeyId=AKIAIY2X62QVIHOPEFEQ&Expires=1425464807&Signature=3%2FLvJ9oHGx7k%2FiKlZDxNfxMuiw8%3D" , None, "autotest-datadisk")
 
         return
