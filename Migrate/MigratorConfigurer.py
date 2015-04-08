@@ -439,6 +439,8 @@ class MigratorConfigurer(object):
         if config.has_option('EC2', 'chunksize'):
            chunksize = int(config.get('EC2', 'chunksize'))
            
+        logging.info();
+
         bucket = ''
 
         try:
