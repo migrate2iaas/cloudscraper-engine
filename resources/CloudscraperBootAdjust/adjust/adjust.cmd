@@ -34,12 +34,22 @@ echo Removing the absent devices >>  C:\adjustlog.txt
 
 :: Checks adapter name
 SET cloudscraperNetName=VirtualNetworkAdapter
+:: prefix to seek for when switching network
+set adapterNamePrefix=Red Hat VirtIO
+
+FOR /F "tokens=2 delims==" %%a IN ('type %~dp0\adapter_name.txt') do (
+:: the output may contain extra crlf characters
+set adapterNamePrefix=%%a
+set adapterNamePrefix=!adapterNamePrefix:~0,-1!
+echo Using adapter name !adapterNamePrefix!
+)
+
 
 rem the network name should hardcoded somewhere in minipad Windows network configuration
 
-wmic NIC where "NetEnabled=true and Name like 'Red Hat VirtIO%%'" get NetConnectionID /value >>  C:\adjustlog.txt
+wmic NIC where "NetEnabled=true and Name like '!adapterNamePrefix!%%'" get NetConnectionID /value >>  C:\adjustlog.txt
 
-FOR /F "tokens=2 delims==" %%a IN ('wmic NIC where "NetEnabled=true and Name like 'Red Hat VirtIO%%'" get NetConnectionID /value ^| more ^| findstr /I "NetConnectionID" ') DO (
+FOR /F "tokens=2 delims==" %%a IN ('wmic NIC where "NetEnabled=true and Name like '!adapterNamePrefix!%%'" get NetConnectionID /value ^| more ^| findstr /I "NetConnectionID" ') DO (
 echo Renaming %%a to !cloudscraperNetName! >> C:\adjustlog.txt
 :: renaming the primary ethernet to Local Area Network
 netsh interface set interface name="%%a" newname="!cloudscraperNetName!" >> C:\adjustlog.txt
