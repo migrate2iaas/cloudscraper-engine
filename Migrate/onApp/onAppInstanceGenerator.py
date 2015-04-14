@@ -56,7 +56,6 @@ class OnAppBase:
 
 
         def getVersion(self):
-            return "3.3"
             #Make Request to OnApp with Basic Auth
             response = self.sendRequest("GET", "/version.json");
             array = json.loads(response.read());
