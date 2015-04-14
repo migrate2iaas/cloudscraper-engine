@@ -56,12 +56,13 @@ class OnAppBase:
 
 
         def getVersion(self):
-                #Make Request to OnApp with Basic Auth
-                response = self.sendRequest("GET", "/version.json");
-                array = json.loads(response.read());
-                if 'version' in array:
-                        return array['version'];
-                return False;
+            return "3.3"
+            #Make Request to OnApp with Basic Auth
+            response = self.sendRequest("GET", "/version.json");
+            array = json.loads(response.read());
+            if 'version' in array:
+                    return array['version'];
+            return False;
 
         # should split into several classes if needed
         def createVM(self, vmParams):
@@ -159,6 +160,7 @@ class onAppVM(VmInstance.VmInstance):
         vm = self.__onapp.getVM(self.__vmid)
         if vm['booted'] == False:
             return True
+        logging.info("Shutting down the onApp VM " + self.__vmid)
         self.__onapp.shutdownVM(self.__vmid)
 
     def attachDataVolume(self):

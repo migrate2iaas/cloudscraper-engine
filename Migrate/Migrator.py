@@ -527,6 +527,10 @@ class Migrator(object):
         generator = None
         volname = ""
         vol = None
+        if description:
+           volname = description
+        else:
+           volname = os.environ['COMPUTERNAME']+"_data_volume"
         #TODO: make volume generator separate class
         if self.__cloudName == "EC2":
             import EC2VolumeGenerator
@@ -543,10 +547,6 @@ class Migrator(object):
             import AzureConfigs
             import AzureInstanceGenerator
             generator = self.__cloudOptions.generateInstanceFactory()
-            if description:
-                volname = description
-            else:
-                volname = os.environ['COMPUTERNAME']+str(datetime.date.today())+"_data"
         else:
             generator = self.__cloudOptions.generateInstanceFactory()
         
