@@ -107,6 +107,14 @@ class OnAppBase:
 
             return
 
+        def getDisks(self , vmid):
+            response = self.sendRequest("GET", "/virtual_machines/"+str(vmid)+"/disks.json");
+            data = json.loads(response.read());
+            if 'disks' in data:
+                return data['disks'];
+            else:
+                return data;
+
         def backupDisk(self , diskid):
             #TODO: analyze responses
             response = self.sendRequest("POST", "/settings/disks/"+str(diskid)+"/backups.json");
@@ -183,17 +191,25 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
     """on app generator"""
 
     def createDisk(self , name):
-        size = 100;
         parms = {"label":name , "disk_size" : self.__diskSize , "data_store_id" : int(self.__datastore) , "hot_attach" : 1}
         disk_out = self.__onapp.createDisk(self.__minipadId , parms)
         logging.debug(repr(disk_out))
         #self.__diskId = 
         return disk_out['id']
 
-    def attachDiskToMinipad(self, disk):
+    def attachDiskToMinipad(self, diskid):
         """we just wait here to ensure disk attached"""
+        timeout = self.__diskWaitTimeout
+        sleeptime = 30*1 # check every 30 sec
         logging.debug("Waiting till disk is attached")
-        time.sleep(self.__diskWaitTimeout)
+        while timeout > 0:
+            disks = self.__onapp.getDisks(self.__minipadId) 
+            for disk in disks:
+                if disk['disk']['id'] == diskid:
+                    if disk['disk']['built'] == True:
+                        return 
+            time.sleep(sleeptime)
+            timeout = timeout - sleeptime
         return
 
     def initCreate(self , initialconfig):
@@ -300,7 +316,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
 
         self.__diskSize = 100;
         self.__builtTimeOutSec = vmbuild_timeout;
-        self.__diskWaitTimeout = 120 #2 mins
+        self.__diskWaitTimeout = 360 #6 mins
         self.__serviceStartTimeout = 120
         self.__minipadTemplate = minipad_image_id
         self.__minipadId = minipad_vm_id
