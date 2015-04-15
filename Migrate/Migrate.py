@@ -148,6 +148,7 @@ if __name__ == '__main__':
         parser.add_argument('-z', '--timeout', help="Specify timeout to wait for test run server to respond", type=int, default=480)                  
         parser.add_argument('-b', '--heartbeat', help="Specifies interval in seconds to write hearbeat messages to stdout. No heartbeat if this flag is ommited", type=int)                   
         parser.add_argument('-q', '--statusfile', help="Specifies status file to write current output") 
+        parser.add_argument('-v', '--virtio', help="Injects virtio drivers in the running server driver store", action="store_true")
     
         #new random seed
         random.seed()
@@ -226,7 +227,7 @@ if __name__ == '__main__':
             os._exit(errno.EFAULT)
     
         logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Transfer Process:\n")
-        __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload , limits = limits)
+        __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload , limits = limits , insert_vitio=parser.parse_args().resumeupload)
         logging.info("Migrator test started")
         # Doing the task
         instance = None

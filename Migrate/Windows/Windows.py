@@ -49,7 +49,7 @@ class Windows(object):
     adjustRelSvcDir = "..\\resources\\CloudscraperBootAdjust"
 
     # TODO: some init configs could be read here, e.g. Windows configs
-    def __init__(self):
+    def __init__(self , insertvirtio=False):
         self.__filesToDelete = set()
         self.__filesToRename = dict() # key is old name and value is a new one
         self.__vss = VssThruVshadow.VssThruVshadow()
@@ -62,6 +62,7 @@ class Windows(object):
         # TODO: move all viostor related stuff elsewhere
         self.__bootDriverName = "viostor.sys"
         self.__bootDriverInf = "viostor.inf"
+        self.__insertVirtio = insertvirtio
 
         return
     
@@ -85,6 +86,9 @@ class Windows(object):
 
     def __executePreprocess(self):
         """executes preprocess bat"""
+        if self.__insertVirtio == False:
+            logging.debug("skipping the preprocess due to no virtio set")
+
         windir = os.environ['Windir'] 
         windir = windir.lower()
         windrive_letter = windir[0] 
@@ -142,8 +146,7 @@ class Windows(object):
         volumename = vol.getVolumeName()
         self.__vss.deleteSnapshot(volumename)
 
-    def __copyExtraFiles(self):
-        """copies extra files: virtio drivers and autoadjust service """
+    def __copyVirtIoFiles(self):
         # copies whole virtio to Windows\System32\drivers
         originalwindir = os.environ['windir']
         windrive = originalwindir.split("\\")[0] #get C: substring
@@ -177,14 +180,22 @@ class Windows(object):
             shutil.copy(self.__virtIoDir+"\\"+os.path.basename(conflicting_file) , conflicting_file)
             self.__filesToDelete.add(conflicting_file)
 
-        # copies adjust service
-        shutil.copytree(self.__adjustSvcDir , windrive + "\\" + Windows.adjustServiceDir)
-        self.__filesToDelete.add(windrive + "\\" + Windows.adjustServiceDir)
-
         # copies virtio dir
         logging.debug("Copy virtio dir");
         virtio_copy_path = windrive + "\\" + Windows.adjustServiceDir+"\\virtio"; #wininstall + "\\system32\\drivers\\virtio"
         shutil.copytree(self.__virtIoDir , virtio_copy_path)
+
+
+    def __copyExtraFiles(self):
+        """copies extra files: virtio drivers and autoadjust service """
+
+        if self.__insertVirtio:
+            self.__copyVirtIoFiles()
+        # copies adjust service
+        shutil.copytree(self.__adjustSvcDir , windrive + "\\" + Windows.adjustServiceDir)
+        self.__filesToDelete.add(windrive + "\\" + Windows.adjustServiceDir)
+
+        
 
 
     def __makeSystemVolumeBootable(self):
@@ -293,7 +304,8 @@ class Windows(object):
     
 
     def __prepareRegistry(self):
-        self.__injectVirtIo()
+        if self.__insertVirtio:
+            self.__injectVirtIo()
         self.__injectPostprocess(Windows.adjustRelSvcDir)
         return
 
