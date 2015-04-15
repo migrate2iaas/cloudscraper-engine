@@ -28,7 +28,7 @@ import ProxyTransferTarget
 class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT reside"""
 
-    def __init__(self , cloud_options , migrate_options, sys_adjust_overrides , skip_imaging=False, resume_upload=False, skip_upload=False , self_checks=False , limits = None):
+    def __init__(self , cloud_options , migrate_options, sys_adjust_overrides , skip_imaging=False, resume_upload=False, skip_upload=False , self_checks=False , limits = None , insert_vitio = False):
         """
         Inits the Migrator mega-class. 
 
@@ -41,6 +41,7 @@ class Migrator(object):
             skip_upload: bool - flag to skip upload at all. Needed primarily in case when the upload is already done but cloud server is not created yet
             self_checks: bool - some self-checks on images\registry during the Migrator work (doesn't work for now!)
             limits: ? (currently long) - the limitation of data to be transfered
+            insert_vitio : bool - inserts virtio drivers to the running system
         """
         self.__adjustedSystemBackupSource = None
         self.__systemBackupSource = None
@@ -77,6 +78,7 @@ class Migrator(object):
         self.__os = None
         
         self.__fileBackup = False
+        self.__insertVirtio = insert_vitio
 
         #TODO: pass this parm somehow. Thru migrate\adjust overrides?
         self.__linuxGC = True
@@ -84,7 +86,7 @@ class Migrator(object):
         #TODO: analyze both host and source systems
         if self.__migrateOptions.getHostOs() == "Windows":
             import Windows
-            self.__windows = Windows.Windows()
+            self.__windows = Windows.Windows(self.__insertVirtio)
             self.__runOnWindows = True
             self.__winSystemAdjustOptions = self.__windows.createSystemAdjustOptions(sys_adjust_overrides)
             self.__systemAdjustOptions = self.__winSystemAdjustOptions
