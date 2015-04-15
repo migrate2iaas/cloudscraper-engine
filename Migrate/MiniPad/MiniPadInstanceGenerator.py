@@ -24,9 +24,15 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
    
     # to override
     
-    def __init__(self , preset_ip = None):
+    def __init__(self , preset_ip = None , finalize_every_vol = False):
+        """
+        Args:
+            preset_ip - an ip address of running minipad instance (if any)
+            finalize_every_vol - if to call for finalization after every one volume uploaded. Set this to False if Minipad runs on the same VM where resulting system is to run
+        """
         self.__server_ip = preset_ip
         self.__server_port = 80
+        self.__finalizeEveryVolume = finalize_every_vol
         super(MiniPadInstanceGenerator, self).__init__()
 
     def createVM(self ,disk ,name):
@@ -99,6 +105,14 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
             r.raise_for_status()
         
 
+    def finalizeConversion(self , set_boot = True):
+        """finalizes the conversion sending minipad the end signal"""
+        make_boot = 'False'
+        if set_boot:
+            make_boot = 'True'
+        payload = {'Action' : 'FinalizeConversion' , 'MakeBoot' : make_boot}
+        self.__post(payload)
+
 
     def startConversion(self, manifesturl , server_ip, import_type = 'ImportInstance' , server_port = 80):
         """Converts the VM"""
@@ -162,9 +176,10 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
         # get log file
         self.__getLog()
 
+        
         # finalizeimport
-        payload = {'Action' : 'FinalizeConversion'}
-        self.__post(payload)
+        if self.__finalizeEveryVolume:
+            self.finalizeConversion(import_type == 'ImportInstance')
 
         # get status
         payload = {'Action' : 'GetImportTargetStatus',}

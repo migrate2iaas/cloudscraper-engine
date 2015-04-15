@@ -27,6 +27,9 @@ class VmInstance(object):
         """stops instance"""
         raise NotImplementedError
 
+    def finalize(self):
+        """finalizes the VM setting it to stopped state ready to be boot whenever user starts it"""
+        self.stop()
 
     def checkAlive(self, timeout = 500 , port = 3389):
         """
