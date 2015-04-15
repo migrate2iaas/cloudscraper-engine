@@ -663,7 +663,9 @@ class Migrator(object):
             
             # image size is really size of data, imagesize here is size of image file
             # dammit, needs clarifications
-            self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath() , mediaimagesize , disksize , volinfo.generateMigrationId() )
+            if not self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath() , mediaimagesize , disksize , volinfo.generateMigrationId() ):
+                logging.error("!!!ERROR: Cannot transfer a data volume!")
+                return False
 
        
         return True
