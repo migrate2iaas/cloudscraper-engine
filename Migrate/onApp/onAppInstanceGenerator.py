@@ -267,7 +267,6 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         """
         #TODO: customize VM size
         # Here we should customize cloudscraper minipad image
-
         try:
             vmParams = { "label" : name }
             self.__onapp.editVM(self.__minipadId, vmParams)
