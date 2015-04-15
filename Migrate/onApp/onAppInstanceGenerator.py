@@ -219,6 +219,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
             time.sleep(sleeptime)
             timeout = timeout - sleeptime
         logging.warn("!The disk is not ready!")
+
         return
 
     def initCreate(self , initialconfig):
