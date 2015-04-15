@@ -166,7 +166,7 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
         self.__post(payload)
 
         # get status
-        payload = {'Action' : 'GetImportTargetStatus',}
+        payload = {'Action' : 'GetImportTargetStatus', 'ChangeBoot' : 'True'}
         status = self.__post(payload)
         
         if int(status.find("StatusCode").text) >= 400:

@@ -88,6 +88,7 @@ class Windows(object):
         """executes preprocess bat"""
         if self.__insertVirtio == False:
             logging.debug("skipping the preprocess due to no virtio set")
+            return
 
         windir = os.environ['Windir'] 
         windir = windir.lower()
@@ -188,6 +189,8 @@ class Windows(object):
 
     def __copyExtraFiles(self):
         """copies extra files: virtio drivers and autoadjust service """
+        originalwindir = os.environ['windir']
+        windrive = originalwindir.split("\\")[0] #get C: substring
 
         if self.__insertVirtio:
             self.__copyVirtIoFiles()
