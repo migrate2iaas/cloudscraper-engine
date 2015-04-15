@@ -183,11 +183,11 @@ class Migrator(object):
                     logging.info("System copy failed")
                     return None
 
-            #
+            # 13) TODO: attach volumes here!
+            logging.info("Finalizing the instance making it ready for the user")
+            if self.__resultingInstance:
+                self.__resultingInstance.finalize()
         
-        # 8) adjust transfers after all?
-        # Tha place of parallelism and asynchronousity is somewhere here
-        # for now we just save the data here
 
         except Exception as ex:
             traceback.print_exception(sys.exc_info()[0] , sys.exc_info()[1] , sys.exc_info()[2]) 

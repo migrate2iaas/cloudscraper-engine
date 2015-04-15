@@ -150,10 +150,17 @@ class OnAppBase:
 
 class onAppVM(VmInstance.VmInstance):
     """class representing onapp vm"""
-    def __init__(self , onapp, vmid):
+    def __init__(self , onapp, vmid , minipad_obj = None):
         self.__onapp = onapp
         self.__vmid = vmid
-        
+        self.__minipad_obj = minipad_obj
+    
+    def finalize(self):
+        """finalizes the VM setting it to stopped state ready to be boot whenever user starts it"""
+        if self.__minipad_obj:
+            logging.info("Finalizing the onApp VM making it bootable from attached disk")
+            self.__minipad_obj.finalizeConversion(True)
+        self.stop()
 
     def run(self):
         """starts instance"""
@@ -261,7 +268,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         
         vmParams = { "label" : name }
         self.__onapp.editVM(self.__minipadId, vmParams)
-        vm = onAppVM(self.__onapp , self.__minipadId)
+        vm = onAppVM(self.__onapp , self.__minipadId , self)
 
         return vm
 
