@@ -24,8 +24,11 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
    
     # to override
     
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> see #707, postprocess added as parm
     def __init__(self , preset_ip = None , finalize_every_vol = False , postprocess = True):
         """
         Args:
@@ -36,10 +39,14 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
         self.__server_ip = preset_ip
         self.__server_port = 80
         self.__finalizeEveryVolume = finalize_every_vol
+<<<<<<< HEAD
 
 
         self.__postprocess = postprocess
 
+=======
+        self.__postprocess = postprocess
+>>>>>>> see #707, postprocess added as parm
         super(MiniPadInstanceGenerator, self).__init__()
 
     def createVM(self ,disk ,name):

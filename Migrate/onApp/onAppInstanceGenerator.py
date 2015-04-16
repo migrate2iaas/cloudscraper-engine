@@ -218,8 +218,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
                         return 
             time.sleep(sleeptime)
             timeout = timeout - sleeptime
-        logging.warn("!The disk is not ready!")
-
+        logging.warn("The disk is not ready!")
         return
 
     def initCreate(self , initialconfig):
@@ -272,7 +271,6 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
             self.__onapp.editVM(self.__minipadId, vmParams)
         except Exception as e:
             logging.warn("!Failed to rename the VM " + self.__minipadId + " :" + str(e) + " please see logs for info")
-
 
         vm = onAppVM(self.__onapp , self.__minipadId , self)
 
