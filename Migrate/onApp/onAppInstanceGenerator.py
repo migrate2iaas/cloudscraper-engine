@@ -213,7 +213,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
             disks = self.__onapp.getDisks(self.__minipadId) 
             for disk in disks:
                 if disk['disk']['id'] == diskid:
-                    if disk['disk']['built'] == True:
+                    if disk['disk']['built'] == True and disk['disk']['locked'] == False:
                         logging.debug("The disk is ready")
                         return 
             time.sleep(sleeptime)
@@ -267,17 +267,13 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         #TODO: customize VM size
         # Here we should customize cloudscraper minipad image
 
-<<<<<<< HEAD
         try:
             vmParams = { "label" : name }
             self.__onapp.editVM(self.__minipadId, vmParams)
         except Exception as e:
             logging.warn("!Failed to rename the VM " + self.__minipadId + " :" + str(e) + " please see logs for info")
-=======
-        
-        vmParams = { "label" : name }
-        self.__onapp.editVM(self.__minipadId, vmParams)
->>>>>>> e01eae1e31bcbd86f101494df39b416acac3b58a
+
+
         vm = onAppVM(self.__onapp , self.__minipadId , self)
 
         return vm
