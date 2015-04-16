@@ -213,7 +213,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
             disks = self.__onapp.getDisks(self.__minipadId) 
             for disk in disks:
                 if disk['disk']['id'] == diskid:
-                    if disk['disk']['built'] == True:
+                    if disk['disk']['built'] == True and disk['disk']['locked'] == False:
                         logging.debug("The disk is ready")
                         return 
             time.sleep(sleeptime)
@@ -272,6 +272,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
             self.__onapp.editVM(self.__minipadId, vmParams)
         except Exception as e:
             logging.warn("!Failed to rename the VM " + self.__minipadId + " :" + str(e) + " please see logs for info")
+
         vm = onAppVM(self.__onapp , self.__minipadId , self)
 
         return vm
