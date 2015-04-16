@@ -24,17 +24,22 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
    
     # to override
     
+
     def __init__(self , preset_ip = None , finalize_every_vol = False , postprocess = True):
         """
         Args:
             preset_ip - an ip address of running minipad instance (if any)
             finalize_every_vol - if to call for finalization after every one volume uploaded. Set this to False if Minipad runs on the same VM where resulting system is to run
+
             postprocess - whether to call for postprocessing (injecting drivers etc) after the instance import is complete
+
         """
         self.__server_ip = preset_ip
         self.__server_port = 80
         self.__finalizeEveryVolume = finalize_every_vol
+
         self.__postprocess = postprocess
+
         super(MiniPadInstanceGenerator, self).__init__()
 
     def createVM(self ,disk ,name):
