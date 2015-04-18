@@ -381,3 +381,4 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         self.getDiskSize(imageid)
         vm = onAppVM(self.__onapp, self.__minipadId)
         volume = super(onAppInstanceGenerator, self).makeVolumeFromImage(imageid, initialconfig, instancename)
+        return volume
