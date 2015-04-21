@@ -150,7 +150,7 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
             Status = r.find('Status')
             if Status.text in ['Error', 'FinishedTransfer']:
                 done = True
-            if waited % delay*60:
+            if (waited % (delay*60)) == 0:
                 logging.info("% Progress: " + Status.text)
 
 
