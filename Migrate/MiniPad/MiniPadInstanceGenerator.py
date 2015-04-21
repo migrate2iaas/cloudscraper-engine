@@ -177,6 +177,7 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
                 logging.info("% Progress " + StatusMessage.text)
 
 
+
         # get status
         payload = {'Action' : 'GetImportTargetStatus',}
         self.__post(payload)
