@@ -68,7 +68,7 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
 
         parsedurl = xml[xml.find('.com'):].split('/' , 1)
         keyname = parsedurl[1]
-        bucketname = xml[xml.find("://")+len("://") : xml.find(".s3.amazonaws.com") - 1]
+        bucketname = xml[xml.find("://")+len("://") : xml.find(".s3.amazonaws.com")]
 
         logging.debug("Manifest xml is in bucket " + bucketname + " , key " + keyname) 
 
