@@ -174,7 +174,7 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
             if Status.text in ['Error', 'FinishedTransfer']:
                 done = True
             if (waited % (delay*10)) == 0:
-                logging.info("% " + StatusMessage.text)
+                logging.info("% Progress " + StatusMessage.text)
 
 
         # get status
