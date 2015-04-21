@@ -199,6 +199,9 @@ class Migrator(object):
             logging.error("!!!ERROR: Unexpected error occured")
             logging.error("!!!ERROR: " + str(ex))
             logging.error(traceback.format_exc())
+            return None
+            #TODO: set error state
+            # do cleanups? Should write something to the console
             
         finally:
             for channel in self.__dataChannelList.values():

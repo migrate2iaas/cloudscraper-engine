@@ -40,6 +40,11 @@ class onAppInstanceGenerator_test(unittest.TestCase):
 
     #--------------------- Tests:
     
+    def test_onapp_finalize(self):
+        generator = onAppInstanceGenerator.onAppInstanceGenerator("activegrid-lax.xfernet.net" , "support@migrate2iaas.com", "8e4d09e0922cf6b7dff79a9c8d9b46f6e252bdc0" , 8 , minipad_image_id=30 , vmbuild_timeout = 60*180)
+
+
+
     def test_create(self):
         """creates new VM"""
         
@@ -53,6 +58,7 @@ class onAppInstanceGenerator_test(unittest.TestCase):
 
         return
 
+    
     def test_testname2(self):
         """test2 desctiption"""
         return
