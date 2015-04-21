@@ -23,12 +23,6 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
     """Generator of instances via minipad. It's pretty similar to EC2 but has some of its own features aswell"""
    
     # to override
-    
-<<<<<<< HEAD
-
-
-=======
->>>>>>> see #707, postprocess added as parm
     def __init__(self , preset_ip = None , finalize_every_vol = False , postprocess = True):
         """
         Args:
@@ -39,14 +33,9 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
         self.__server_ip = preset_ip
         self.__server_port = 80
         self.__finalizeEveryVolume = finalize_every_vol
-<<<<<<< HEAD
-
 
         self.__postprocess = postprocess
 
-=======
-        self.__postprocess = postprocess
->>>>>>> see #707, postprocess added as parm
         super(MiniPadInstanceGenerator, self).__init__()
 
     def createVM(self ,disk ,name):
@@ -181,7 +170,11 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
             if Status.text in ['Error', 'FinishedTransfer']:
                 done = True
             if (waited % (delay*10)) == 0:
+<<<<<<< HEAD
                 logging.info("% Progress " + StatusMessage.text)
+=======
+                logging.info("% " + StatusMessage.text)
+>>>>>>> fixed progress
 
 
         # get status
