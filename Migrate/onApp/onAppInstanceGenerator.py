@@ -79,7 +79,7 @@ class OnAppBase:
             response = self.sendRequest("PUT", "/virtual_machines/"+str(vmid)+".json", request);
             
         def shutdownVM(self , vmid):
-            response = self.sendRequest("POST", "/virtual_machines/"+str(vmid)+"/stop.json");
+            response = self.sendRequest("POST", "/virtual_machines/"+str(vmid)+"/shutdown.json");
 
         def startVM(self, vmid):
             response = self.sendRequest("POST", "/virtual_machines/"+str(vmid)+"/startup.json");
