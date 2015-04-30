@@ -232,7 +232,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
     def launchMinipadServer(self):
         """ to implement in the inherited class """
         #here we should start minipad from template
-        win_template_disk_size = 20
+        win_template_disk_size = self.__winTemplateDiskSize
         #TODO: licensing should be configurable
         win_licensing_type = "mak"
 
@@ -306,7 +306,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         logging.error("!!!ERROR: Timeout, Cloudscraper target VM is not ready. Please contact the cloud provider.")
         return
 
-    def __init__(self, onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_id = "" , minipad_vm_id = None , vmbuild_timeout=100*60 ):
+    def __init__(self, onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_id = "" , minipad_vm_id = None , vmbuild_timeout=100*60 , win_template_disk_size=20):
         """
         Args:
             onapp_endpoint - cloud endpoint address (ip or dns)
@@ -319,6 +319,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
             minipad_image_id - the template id of minipad to launch
             minipad_vm_id - id if minipad is already created
             vmbuild_timeout: int - timeout in seconds to wait till target minipad VM is built
+            win_template_disk_size: int - the size of minipad VM primary disk in GBs
         """
         self.__onapp = OnAppBase();
         self.__onapp.connectOnApp(onapp_login, onapp_password, onapp_endpoint, str(onapp_port));
@@ -334,6 +335,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         self.__minipadTemplate = minipad_image_id
         self.__minipadId = minipad_vm_id
         self.__datastore = onapp_datastore_id
+        self.__winTemplateDiskSize = win_template_disk_size
         super(onAppInstanceGenerator, self).__init__(preset_ip)
         #TODO: should find datastore id via the label
         
