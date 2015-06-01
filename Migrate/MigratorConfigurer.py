@@ -568,7 +568,7 @@ class MigratorConfigurer(object):
             if config.has_option('Volumes', 'system'):
                 addsys = config.getboolean('Volumes', 'system') 
                 if addsys:
-                    sysvol = os.environ['windir'].split(':')[0] #todo: change to cross-platform way
+                    sysvol = os.environ['windir'].split(':')[0] #todo: change to cross-platform way. windir is set artificially at the program start for linux
                     if not sysvol in letterslist:
                         letterslist.append(sysvol)
 
