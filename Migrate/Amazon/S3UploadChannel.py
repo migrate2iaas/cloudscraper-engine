@@ -321,7 +321,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
                 hostname = 's3.amazonaws.com'
                 if awsregion:
                     hostname = 's3-'+awsregion+'.amazonaws.com'
-                self.__S3 = S3Connection(awskey, awssercret, is_secure=use_ssl, host=hostname)
+                self.__S3 = S3Connection(awskey, awssercret, is_secure=use_ssl, host=hostname , debug=1)
         
             self.__bucketName = bucket
             try:
