@@ -36,6 +36,7 @@ import datetime
 import StreamVmdkMediaFactory
 import ProfitBricksConfig
 import SparseRawMediaFactory
+import QemuImgMediaFactory
 
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
@@ -596,17 +597,15 @@ class MigratorConfigurer(object):
         if config.has_option('Image', 'compression'):
             compression =  config.getint('Image', 'compression')
         
-        # check run on windows flag
         factory = None
         if (imagetype == "VHD" or imagetype == "fixed.VHD") and image_placement == "local":
+            # check run on windows flag
             if os.name == 'nt':
                 import WindowsVhdMediaFactory
                 factory = WindowsVhdMediaFactory.WindowsVhdMediaFactory(fixed = (imagetype == "fixed.VHD"))
             else:
-                logging.error("!!!ERROR: Linux doesn't support VHD format");
-            
-        #if imagetype == "raw.gz" and image_placement == "local":
-        # factory =  RawGzipMediaFactory.RawGzipMediaFactory(imagepath , imagesize)
+                factory = QemuImgMediaFactory.QemuImgMediaFactory()    
+        
         if (imagetype == "raw.tar" or imagetype.lower() == "raw") and image_placement == "local":
             chunk = 4096*1024
             factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
@@ -614,6 +613,11 @@ class MigratorConfigurer(object):
             factory = StreamVmdkMediaFactory.StreamVmdkMediaFactory(compression) 
         if (str(imagetype).lower() == "sparsed" or imagetype.lower() == "sparsed.raw"):
             factory = SparseRawMediaFactory.SparseRawMediaFactory()
+        
+        if not factory and (not os.name == 'nt') and image_placement == "local":  
+            #TODO: should pass the type parm here so QemuImgMedia makes no guesses on disk types (they can be misleading)      
+            factory = QemuImgMediaFactory.QemuImgMediaFactory()
+
         return factory
 
     def getImageOptions(self , config):
