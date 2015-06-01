@@ -5,7 +5,10 @@ __copyright__ = "Copyright (C) 2015 Migrate2Iaas"
 
 import ImageMedia
 import os
+<<<<<<< HEAD
 import logging
+=======
+>>>>>>> see #686, added qemu img support for linux
 from subprocess import *
 
 class QemuImgMedia(ImageMedia.ImageMedia):
@@ -17,6 +20,7 @@ class QemuImgMedia(ImageMedia.ImageMedia):
         self.__filename = filename
         self.__size = size
         self.__compression = False
+<<<<<<< HEAD
         
         format = "raw"
         if str(imagepath).lower.endswith("vhd"):
@@ -29,6 +33,8 @@ class QemuImgMedia(ImageMedia.ImageMedia):
             format = "qcow2"
         self.__format = format
 
+=======
+>>>>>>> see #686, added qemu img support for linux
         if ".img" in filename or ".qcow" in filename or ".qcow2" in filename:
             self.__compression = True
         
@@ -51,12 +57,21 @@ class QemuImgMedia(ImageMedia.ImageMedia):
         #TODO: consider using snapshots as it may create good delta-backup opportunity
         #NOTE: subformat can also be specified
         if len(self.__options):
+<<<<<<< HEAD
             qemu_cmd = ["qemu-img" , "create" , "-f" , self.__format  , "-o"] + self.__options + [self.__filename , str(self.__size)]
         else:
             qemu_cmd = ["qemu-img" , "create" , "-f" , self.__format , self.__filename , str(self.__size)]
 
         p = Popen(qemu_cmd, stdout=PIPE , stderr=PIPE)
         cmd_output = p.communicate()
+=======
+            qemu_cmd = ["qemu-img" , "create" , "-o"] + self.__options + [filename , str(self.__size)]
+        else:
+            qemu_cmd = ["qemu-img" , "create" , filename , str(self.__size)]
+
+        p1 = Popen(qemu_cmd, stdout=PIPE , stderr=PIPE)
+        cmd_output = p1.communicate()
+>>>>>>> see #686, added qemu img support for linux
 
         if p.returncode:
             logging.error('!!!ERROR: Error while running qemu-img return_code = %s\n'
