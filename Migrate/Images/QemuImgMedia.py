@@ -17,6 +17,18 @@ class QemuImgMedia(ImageMedia.ImageMedia):
         self.__filename = filename
         self.__size = size
         self.__compression = False
+        
+        format = "raw"
+        if str(imagepath).lower.endswith("vhd"):
+            format = "vpc"
+        if str(imagepath).lower.endswith("vmdk"):
+            format = "vmdk"
+        if str(imagepath).lower.endswith("qcow"):
+            format = "qcow"
+        if str(imagepath).lower.endswith("qcow2"):
+            format = "qcow2"
+        self.__format = format
+
         if ".img" in filename or ".qcow" in filename or ".qcow2" in filename:
             self.__compression = True
         
@@ -39,9 +51,9 @@ class QemuImgMedia(ImageMedia.ImageMedia):
         #TODO: consider using snapshots as it may create good delta-backup opportunity
         #NOTE: subformat can also be specified
         if len(self.__options):
-            qemu_cmd = ["qemu-img" , "create" , "-o"] + self.__options + [self.__filename , str(self.__size)]
+            qemu_cmd = ["qemu-img" , "create" , "-f" , self.__format  , "-o"] + self.__options + [self.__filename , str(self.__size)]
         else:
-            qemu_cmd = ["qemu-img" , "create" , self.__filename , str(self.__size)]
+            qemu_cmd = ["qemu-img" , "create" , "-f" , self.__format , self.__filename , str(self.__size)]
 
         p = Popen(qemu_cmd, stdout=PIPE , stderr=PIPE)
         cmd_output = p.communicate()
