@@ -5,10 +5,7 @@ __copyright__ = "Copyright (C) 2015 Migrate2Iaas"
 
 import ImageMedia
 import os
-<<<<<<< HEAD
 import logging
-=======
->>>>>>> see #686, added qemu img support for linux
 from subprocess import *
 
 class QemuImgMedia(ImageMedia.ImageMedia):
