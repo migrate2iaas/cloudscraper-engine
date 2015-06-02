@@ -38,9 +38,9 @@ class QemuImgMedia(ImageMedia.ImageMedia):
         #TODO: consider using snapshots as it may create good delta-backup opportunity
         #NOTE: subformat can also be specified
         if len(self.__options):
-            qemu_cmd = ["qemu-img" , "create" , "-o"] + self.__options + [filename , str(self.__size)]
+            qemu_cmd = ["qemu-img" , "create" , "-o"] + self.__options + [self.__filename , str(self.__size)]
         else:
-            qemu_cmd = ["qemu-img" , "create" , filename , str(self.__size)]
+            qemu_cmd = ["qemu-img" , "create" , self.__filename , str(self.__size)]
 
         p1 = Popen(qemu_cmd, stdout=PIPE , stderr=PIPE)
         cmd_output = p1.communicate()
