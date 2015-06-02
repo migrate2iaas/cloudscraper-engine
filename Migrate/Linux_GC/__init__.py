@@ -167,6 +167,7 @@ class Linux(object):
 
         #TODO: make assert media size equals file size
         options = AttrDict()
+        #TODO: should pass the size suitable to hold all data for a resulting FS
         options['fs_size']  = size
         options['skip_disk_space_check'] = True;
         #TODO: Should pass somehow
@@ -207,6 +208,7 @@ class Linux(object):
 
         #it's object to move the system
         #NOTE: for now it moves the whole system only (if include mountpoints flag is set)
+        #TODO: check media to choose whether it raw or not
         bundle_object = FsBundler.FsBundler(options.fs_size, file_system, options.skip_disk_space_check , diskname = target_filename.replace(scratch_dir, ""))
 
         # TODO: should tie up with dir
