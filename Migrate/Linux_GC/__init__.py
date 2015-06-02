@@ -40,6 +40,7 @@ import LinuxBlockDevice
 import LinuxBackupAdjust
 
 import TransferTarget
+import FsBundler
 
 
 import re
@@ -172,7 +173,9 @@ class Linux(object):
         options['file_system'] = "ext3"
         options['root_directory'] = "/"
         options['key'] = "nebula"
-        
+        #TODO: pass it, either we copy all disks or system one only
+        include_mounts = True
+
         try:
             guest_platform = platform_factory.PlatformFactory(
                 options.root_directory).GetPlatform()
@@ -184,9 +187,7 @@ class Linux(object):
         # if options.file_system is not set - sets it to prefered guest
         file_system = imagebundle.GetTargetFilesystem(options, guest_platform)
 
-        #it's the transfer target
-        bundle_object = block_disk.RootFsRaw(options.fs_size, file_system, options.skip_disk_space_check)
-
+        
         scratch_dir = None
         target_filename = None
         try:
@@ -203,6 +204,11 @@ class Linux(object):
         if not scratch_dir:
             scratch_dir = tempfile.mkdtemp()
             target_filename = scratch_dir + "/disk.raw.tar"
+
+        #it's object to move the system
+        #NOTE: for now it moves the whole system only (if include mountpoints flag is set)
+        bundle_object = FsBundler.FsBundler(options.fs_size, file_system, options.skip_disk_space_check , diskname = target_filename.replace(scratch_dir, ""))
+
         # TODO: should tie up with dir
         bundle_object.SetScratchDirectory(scratch_dir)
         bundle_object.SetTarfile(target_filename)
@@ -210,7 +216,7 @@ class Linux(object):
         logging.info("excluding dir " + scratch_dir + " from data copy");
         bundle_object.AppendExcludes([exclude_spec.ExcludeSpec(scratch_dir, preserve_dir=False)])
 
-        return BundleTransferTarget(bundle_object , media , self , guest_platform)
+        return BundleTransferTarget(bundle_object , media , self , guest_platform , include_mounts)
 
     
     def createSystemAdjustOptions(self):
