@@ -42,8 +42,8 @@ class QemuImgMedia(ImageMedia.ImageMedia):
         else:
             qemu_cmd = ["qemu-img" , "create" , self.__filename , str(self.__size)]
 
-        p1 = Popen(qemu_cmd, stdout=PIPE , stderr=PIPE)
-        cmd_output = p1.communicate()
+        p = Popen(qemu_cmd, stdout=PIPE , stderr=PIPE)
+        cmd_output = p.communicate()
 
         if p.returncode:
             logging.error('!!!ERROR: Error while running qemu-img return_code = %s\n'
