@@ -5,6 +5,7 @@ __copyright__ = "Copyright (C) 2015 Migrate2Iaas"
 
 import ImageMedia
 import os
+import logging
 from subprocess import *
 
 class QemuImgMedia(ImageMedia.ImageMedia):
