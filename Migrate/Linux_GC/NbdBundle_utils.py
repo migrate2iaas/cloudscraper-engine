@@ -1,8 +1,8 @@
 """
-NdbBundle_utils
+NbdBundle_utils
 ~~~~~~~~~~~~~~~~~
 
-This module provides NdbBundle_utils overrides for GCE utils
+This module provides NbdBundle_utils overrides for GCE utils
 """
 
 # --------------------------------------------------------
@@ -13,6 +13,10 @@ __copyright__ = "Copyright (C) 2015 Migrate2Iaas"
 import logging
 import traceback
 import time
+import sys
+import os
+
+import gcimagebundlelib
 
 from gcimagebundlelib.utils import *
 
@@ -20,6 +24,8 @@ from gcimagebundlelib.utils import *
 
 class LoadNbdImage(object):
     """Mounts virtual disk via qemu-nbd"""
+    nbd_port = 0
+    
     def __init__(self, file_path):
         """ Inits object
 
@@ -30,7 +36,9 @@ class LoadNbdImage(object):
             path to raw disk device to open
         """
         self._file_path = file_path
-        self._nbd_path = "/dev/nbd" + str(hex(int(time.time())))
+        # nbd creates 16 entries nbd0 thru nbd15
+        self._nbd_path = "/dev/nbd" + str((nbd_port%16))
+        LoadNbdImage.nbd_port = 16
 
     def __enter__(self):
         """Map disk image as a device."""
@@ -40,7 +48,7 @@ class LoadNbdImage(object):
         modprobe_cmd = ['modprobe', 'nbd']
        
         output = RunCommand(modprobe_cmd)
-        nbd_cmd = ["qemu-nbd", "-c" , mountpath, file_path]
+        nbd_cmd = ["qemu-nbd", "-c" , mountpath, self._file_path]
         output = RunCommand(nbd_cmd)
         return mountpath
 
@@ -55,7 +63,7 @@ class LoadNbdImage(object):
         SyncFileSystem()
         time.sleep(2)
 
-        mountpath =  self._ndb_path
+        mountpath =  self._nbd_path
         nbd_cmd = ["qemu-nbd", "-d" , mountpath]
         output = RunCommand(nbd_cmd)
 
@@ -126,7 +134,7 @@ class LoadDiskImage(object):
             output = RunCommand(nbd_cmd)
 
 
-class NdbOverride:
+class NbdOverride:
     """ Static class that keeps override functions for utils.py"""
 
     original_MakePartitionTable = None
@@ -139,24 +147,24 @@ class NdbOverride:
     @staticmethod
     def init_override():
         """Singleton-like init"""
-        if NdbOverride.original_MakePartitionTable == None:
-            NdbOverride.original_MakePartitionTable = MakePartitionTable
-            gcimagebundlelib.utils.MakePartitionTable = NdbOverride.ndb_MakePartitionTable
-        if NdbOverride.original_MakePartition == None:
-            NdbOverride.original_MakePartition = MakePartition
-            gcimagebundlelib.utils.MakePartition = NdbOverride.ndb_MakePartition
-        if NdbOverride.original_GetPartitionStart == None:
-            NdbOverride.original_GetPartitionStart = GetPartitionStart
-            gcimagebundlelib.utils.GetPartitionStart = NdbOverride.ndb_GetPartitionStart
-        if NdbOverride.original_RemovePartition == None:
-            NdbOverride.original_RemovePartition = RemovePartition
-            gcimagebundlelib.utils.RemovePartition = NdbOverride.ndb_RemovePartition
-        if NdbOverride.original_GetDiskSize == None:
-            NdbOverride.original_GetDiskSize = GetDiskSize
-            gcimagebundlelib.utils.GetDiskSize = NdbOverride.ndb_GetDiskSize
-        if NdbOverride.original_InstallGrub == None:
-            NdbOverride.original_InstallGrub = InstallGrub
-            gcimagebundlelib.utils.InstallGrub = NdbOverride.ndb_InstallGrub
+        if NbdOverride.original_MakePartitionTable == None:
+            NbdOverride.original_MakePartitionTable = MakePartitionTable
+            gcimagebundlelib.utils.MakePartitionTable = NbdOverride.ndb_MakePartitionTable
+        if NbdOverride.original_MakePartition == None:
+            NbdOverride.original_MakePartition = MakePartition
+            gcimagebundlelib.utils.MakePartition = NbdOverride.ndb_MakePartition
+        if NbdOverride.original_GetPartitionStart == None:
+            NbdOverride.original_GetPartitionStart = GetPartitionStart
+            gcimagebundlelib.utils.GetPartitionStart = NbdOverride.ndb_GetPartitionStart
+        if NbdOverride.original_RemovePartition == None:
+            NbdOverride.original_RemovePartition = RemovePartition
+            gcimagebundlelib.utils.RemovePartition = NbdOverride.ndb_RemovePartition
+        if NbdOverride.original_GetDiskSize == None:
+            NbdOverride.original_GetDiskSize = GetDiskSize
+            gcimagebundlelib.utils.GetDiskSize = NbdOverride.ndb_GetDiskSize
+        if NbdOverride.original_InstallGrub == None:
+            NbdOverride.original_InstallGrub = InstallGrub
+            gcimagebundlelib.utils.InstallGrub = NbdOverride.ndb_InstallGrub
 
     @staticmethod
     def ndb_MakePartitionTable(file_path):
@@ -166,7 +174,7 @@ class NdbOverride:
         file_path: A path to a file where a partition table will be created.
       """
       with LoadNbdImage(file_path) as path:
-        original_MakePartitionTable(path)
+        NbdOverride.original_MakePartitionTable.im_func(path)
 
     @staticmethod
     def ndb_MakePartition(file_path, partition_type, fs_type, start, end):
@@ -181,13 +189,13 @@ class NdbOverride:
         end: End offset of a partition in bytes.
       """
       with LoadNbdImage(file_path) as path:
-          original_MakePartition(path, partition_type, fs_type, start, end)
+          NbdOverride.original_MakePartition.im_func(path, partition_type, fs_type, start, end)
 
     @staticmethod
     def ndb_RemovePartition(disk_path, partition_number):
       """removes partition"""
       with LoadNbdImage(file_path) as path:
-          original_RemovePartition(disk_path, partition_number)
+          NbdOverride.original_RemovePartition.im_func(disk_path, partition_number)
 
     @staticmethod
     def ndb_GetPartitionStart(disk_path, partition_number):
@@ -205,7 +213,7 @@ class NdbOverride:
         IndexError: If there is no partition at the given number.
       """
       with LoadNbdImage(disk_path) as path:
-          original_GetPartitionStart(path ,partition_number )   
+          NbdOverride.original_GetPartitionStart.im_func(path ,partition_number)   
 
     @staticmethod
     def ndb_GetDiskSize(disk_file):
@@ -221,11 +229,11 @@ class NdbOverride:
         subprocess.CalledProcessError: If fdisk command fails for the disk file.
       """
       with LoadNbdImage(disk_path) as path:
-          original_GetDiskSize(path)
+          NbdOverride.original_GetDiskSize.im_func(path)
 
 
     @staticmethod
     def ndb_InstallGrub(boot_directory_path , disk_file_path):
       """Adds Grub boot loader to the disk and points it to boot from the partition"""
       with LoadNbdImage(disk_file_path) as path:
-           original_GetPartitionStart(boot_directory_path ,path)
+           NbdOverride.original_GetPartitionStart.im_func(boot_directory_path ,path)
