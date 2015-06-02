@@ -12,7 +12,10 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 
 import logging
 import traceback
+<<<<<<< HEAD
 
+=======
+>>>>>>> see #686, various errors fixed
 import sys
 import os
 sys.path.append('./../compute-image-packages/gcimagebundle')
@@ -34,6 +37,7 @@ class FsBundler(block_disk.RootFsRaw):
     def __init__(self, fs_size, fs_type, skip_disk_space_check, diskname = "disk.raw" , statvfs = os.statvfs):
         #override to use ndb
         NbdBundle_utils.NbdOverride.init_override()
+
 
         super(FsBundler , self).__init__(fs_size, fs_type, skip_disk_space_check, statvfs = statvfs , disk_file_name = diskname)
 
