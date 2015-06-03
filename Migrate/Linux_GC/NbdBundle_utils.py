@@ -142,7 +142,6 @@ class NbdOverride:
     original_GetPartitionStart = None
     original_RemovePartition = None
     original_GetDiskSize = None
-    original_InstallGrub = None
 
     @staticmethod
     def init_override():
@@ -162,9 +161,6 @@ class NbdOverride:
         if NbdOverride.original_GetDiskSize == None:
             NbdOverride.original_GetDiskSize = GetDiskSize
             gcimagebundlelib.utils.GetDiskSize = NbdOverride.ndb_GetDiskSize
-        if NbdOverride.original_InstallGrub == None:
-            NbdOverride.original_InstallGrub = InstallGrub
-            gcimagebundlelib.utils.InstallGrub = NbdOverride.ndb_InstallGrub
 
     @staticmethod
     def ndb_MakePartitionTable(file_path):
@@ -230,10 +226,3 @@ class NbdOverride:
       """
       with LoadNbdImage(disk_path) as path:
           NbdOverride.original_GetDiskSize.im_func(path)
-
-
-    @staticmethod
-    def ndb_InstallGrub(boot_directory_path , disk_file_path):
-      """Adds Grub boot loader to the disk and points it to boot from the partition"""
-      with LoadNbdImage(disk_file_path) as path:
-           NbdOverride.original_GetPartitionStart.im_func(boot_directory_path ,path)
