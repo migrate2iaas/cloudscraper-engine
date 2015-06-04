@@ -37,8 +37,8 @@ class LoadNbdImage(object):
         """
         self._file_path = file_path
         # nbd creates 16 entries nbd0 thru nbd15
-        self._nbd_path = "/dev/nbd" + str((nbd_port%16))
-        LoadNbdImage.nbd_port = 16
+        self._nbd_path = "/dev/nbd" + str((LoadNbdImage.nbd_port%16))
+        LoadNbdImage.nbd_port = LoadNbdImage.nbd_port + 1
 
     def __enter__(self):
         """Map disk image as a device."""
