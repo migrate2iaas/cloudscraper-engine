@@ -34,7 +34,7 @@ class FsBundler(block_disk.RootFsRaw):
         #override to use ndb
         NbdBundle_utils.NbdOverride.init_override()
 
-        super(FsBundler , self).__init__(fs_size, fs_type, skip_disk_space_check, statvfs = statvfs , diskname = diskname)
+        super(FsBundler , self).__init__(fs_size, fs_type, skip_disk_space_check, statvfs = statvfs , disk_file_name = diskname)
 
     def Bundleup(self):
         return super(FsBundler, self).Bundleup()
