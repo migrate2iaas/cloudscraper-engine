@@ -215,6 +215,7 @@ class Linux(object):
         bundle_object = FsBundler.FsBundler(options.fs_size, file_system, options.skip_disk_space_check , diskname = target_filename.replace(scratch_dir, "") )
 
 
+
         # TODO: should tie up with dir
         bundle_object.SetScratchDirectory(scratch_dir)
         bundle_object.SetTarfile(target_filename)
