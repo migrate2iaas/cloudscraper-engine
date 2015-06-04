@@ -209,7 +209,7 @@ class Linux(object):
         #it's object to move the system
         #NOTE: for now it moves the whole system only (if include mountpoints flag is set)
         #TODO: check media to choose whether it raw or not
-        bundle_object = FsBundler.FsBundler(options.fs_size, file_system, options.skip_disk_space_check , diskname = target_filename.replace(scratch_dir, ""))
+        bundle_object = FsBundler.FsBundler(options.fs_size, file_system, options.skip_disk_space_check , diskname = target_filename.replace(scratch_dir, "") )
 
         # TODO: should tie up with dir
         bundle_object.SetScratchDirectory(scratch_dir)
