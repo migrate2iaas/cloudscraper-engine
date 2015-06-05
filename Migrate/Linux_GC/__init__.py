@@ -50,6 +50,8 @@ from subprocess import *
 def RenameFile(src_files , dest):
     """a small hack function"""
     for file in src_files:
+        if file == dest:
+            continue
         logging.info("Renaming output" + file + " to the image file " + dest);
         os.rename(file , dest)
         #touch() -like command. just create an empty file so google code could delete it afterwards
