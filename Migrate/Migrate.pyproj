@@ -54,6 +54,8 @@
     <Compile Include="ElasticHosts\EHUploadChannel.py" />
     <Compile Include="ElasticHosts\EHUploadChannel_test.py" />
     <Compile Include="Helper\UnicodeConfigParser.py" />
+    <Compile Include="Images\QemuImgMedia.py" />
+    <Compile Include="Images\QemuImgMediaFactory.py" />
     <Compile Include="Images\SparseRawMedia.py" />
     <Compile Include="Images\SparseRawMediaFactory.py" />
     <Compile Include="Images\StreamVmdkMedia.py" />
@@ -76,12 +78,14 @@
     <Compile Include="Linux\LinuxSystemInfo.py" />
     <Compile Include="Linux\LinuxVolumeInfo.py" />
     <Compile Include="Linux\__init__.py" />
+    <Compile Include="Linux_GC\FsBundler.py" />
     <Compile Include="Linux_GC\LinuxAdjustOptions.py" />
     <Compile Include="Linux_GC\LinuxBackupAdjust.py" />
     <Compile Include="Linux_GC\LinuxBackupSource.py" />
     <Compile Include="Linux_GC\LinuxBlockDevice.py" />
     <Compile Include="Linux_GC\LinuxSystemInfo.py" />
     <Compile Include="Linux_GC\LinuxVolumeInfo.py" />
+    <Compile Include="Linux_GC\NbdBundle_utils.py" />
     <Compile Include="Linux_GC\__init__.py" />
     <Compile Include="Migrate.py" />
     <Compile Include="MigrateConfig.py" />
