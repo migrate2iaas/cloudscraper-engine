@@ -28,7 +28,7 @@ class OnAppBase:
                 self.basicAuth = base64.encodestring('%s:%s' % (username, password)).replace('\n', '');
                 self.conn = httplib.HTTPConnection(hostname, port);
                 try:
-                        logging.info("Connecting to HTTPConnection");
+                        logging.info("Connecting to HTTPConnection " + hostname);
                         self.conn.connect();
                 except:
                         logging.error('!!!ERROR: Unable to connect to ' + hostname  + '  HTTPConnection Connect, unable to continue!');

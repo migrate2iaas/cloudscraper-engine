@@ -119,7 +119,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         #TODO: check its size
         self.__hVirtDisk = self.__vdiskDll.OpenVhd(c_wchar_p(unicode(self.__fileName)))
         if (self.__hVirtDisk == 0 or self.__hVirtDisk == -1):
-           logging.error("!!!ERROR: Failed to create virtual disk to store data, error = " + hex(self.__vdiskDll.GetLastVhdError(None)))
+           logging.error("!!!ERROR: Failed to create virtual disk to store data, error = " + hex(self.__vdiskDll.GetLastVhdError(None) & 0xffffffff))
            raise WindowsError
         return
 
@@ -128,7 +128,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         self.__vdiskDll.CreateExpandingVhd.restype = c_void_p
         success = self.__vdiskDll.AttachVhd(c_void_p(self.__hVirtDisk))
         if success == 0:
-           logging.error("!!!ERROR: Failed to attach virtual disk, error = " + hex(self.__vdiskDll.GetLastVhdError(None)))
+           logging.error("!!!ERROR: Failed to attach virtual disk, error = " + hex(self.__vdiskDll.GetLastVhdError(None) & 0xffffffff))
            raise WindowsError
 
         diskno = self.__vdiskDll.GetAttachedVhdDiskNumber(c_void_p(self.__hVirtDisk))
@@ -142,13 +142,13 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
     def __detachDisk(self):
         success = self.__vdiskDll.DetachVhd(c_void_p(self.__hVirtDisk))
         if success == 0:
-           logging.error("!!!ERROR: Failed to detach virtual disk, error = " + hex(self.__vdiskDll.GetLastVhdError(None)))
+           logging.error("!!!ERROR: Failed to detach virtual disk, error = " + hex(self.__vdiskDll.GetLastVhdError(None) & 0xffffffff))
            raise WindowsError
         
     def __closeDisk(self):
         success = self.__vdiskDll.CloseVhd(c_void_p(self.__hVirtDisk))
         if success == 0:
-           logging.error("!!!ERROR: Failed to close virtual disk, error = " + hex(self.__vdiskDll.GetLastVhdError(None)))
+           logging.error("!!!ERROR: Failed to close virtual disk, error = " + hex(self.__vdiskDll.GetLastVhdError(None) & 0xffffffff))
            raise WindowsError
         logging.debug("VHD closed, file size = " + str(self.getImageSize()))
         if self.__alignDisk:
