@@ -169,6 +169,7 @@ class Windows(object):
        # if self.__windowsVersion >= WindowsSystemInfo.WindowsSystemInfo.Win2012:
             # don't copy files for Win2012, they seem to mess with the system
       #      files_to_copy = []
+
         
         for conflicting_file in files_to_copy:
             if os.path.exists(conflicting_file):
