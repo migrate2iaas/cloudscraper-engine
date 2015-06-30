@@ -16,6 +16,7 @@ import traceback
 import os
 import time
 
+import Azure
 from azure import *
 from azure.servicemanagement import *
 
