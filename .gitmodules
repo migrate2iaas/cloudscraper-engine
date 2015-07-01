@@ -3,4 +3,4 @@
 	url = https://github.com/feoff3/compute-image-packages
 [submodule "submodules/azure-sdk-for-python"]
 	path = submodules/azure-sdk-for-python
-	url = https://github.com/feoff3/azure-sdk-for-python.git
+	url = https://github.com/feoff3/azure-sdk-for-python
