@@ -12,10 +12,7 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 
 import logging
 import traceback
-<<<<<<< HEAD
 
-=======
->>>>>>> see #686, various errors fixed
 import sys
 import os
 sys.path.append('./../compute-image-packages/gcimagebundle')

@@ -23,6 +23,7 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
     """Generator of instances via minipad. It's pretty similar to EC2 but has some of its own features aswell"""
    
     # to override
+
     def __init__(self , preset_ip = None , finalize_every_vol = False , postprocess = True):
         """
         Args:
@@ -33,9 +34,7 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
         self.__server_ip = preset_ip
         self.__server_port = 80
         self.__finalizeEveryVolume = finalize_every_vol
-
         self.__postprocess = postprocess
-
         super(MiniPadInstanceGenerator, self).__init__()
 
     def createVM(self ,disk ,name):
