@@ -40,6 +40,7 @@
     <Compile Include="Azure\AzureUploadChannel_test.py" />
     <Compile Include="Azure\AzureVmInstance.py" />
     <Compile Include="Azure\virtualmachine.py" />
+    <Compile Include="Azure\__init__.py" />
     <Compile Include="BackupAdjust.py" />
     <Compile Include="BackupSource.py" />
     <Compile Include="CloudConfig.py" />
