@@ -199,10 +199,11 @@ class Linux(object):
                 scratch_dir = os.path.dirname(target_filename) + "/"
             logging.info("Preparing bundle file " + target_filename + " and temp dir" + scratch_dir)
         except NotImplementedError as e:
-            logging.warning("!Cannot get file path for the image, generating new one , media class " + repr(media));
+            logging.warning("!Cannot get file path for the image");
             logging.warning("! Error: " + str(e) )
             logging.warning(traceback.format_exc())
             scratch_dir = None
+            raise
 
         if not scratch_dir:
             scratch_dir = tempfile.mkdtemp()
