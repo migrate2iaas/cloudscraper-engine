@@ -49,7 +49,7 @@ class Windows(object):
     adjustRelSvcDir = "..\\resources\\CloudscraperBootAdjust"
 
     # TODO: some init configs could be read here, e.g. Windows configs
-    def __init__(self , insertvirtio=False):
+    def __init__(self , insertvirtio=True):
         self.__filesToDelete = set()
         self.__filesToRename = dict() # key is old name and value is a new one
         self.__vss = VssThruVshadow.VssThruVshadow()
