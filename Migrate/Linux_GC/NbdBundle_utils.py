@@ -24,7 +24,8 @@ from gcimagebundlelib.utils import *
 
 class LoadNbdImage(object):
     """Mounts virtual disk via qemu-nbd"""
-    nbd_port = 0
+    # the port is random evert new run so nbd errors won't affect us 
+    nbd_port = int(time.clock())%16
     
     def __init__(self, file_path):
         """ Inits object
