@@ -19,13 +19,13 @@ class QemuImgMedia(ImageMedia.ImageMedia):
         self.__compression = False
         
         format = "raw"
-        if str(filename).lower.endswith("vhd"):
+        if str(filename).lower().endswith("vhd"):
             format = "vpc"
-        if str(filename).lower.endswith("vmdk"):
+        if str(filename).lower().endswith("vmdk"):
             format = "vmdk"
-        if str(filename).lower.endswith("qcow"):
+        if str(filename).lower().endswith("qcow"):
             format = "qcow"
-        if str(filename).lower.endswith("qcow2"):
+        if str(filename).lower().endswith("qcow2"):
             format = "qcow2"
         self.__format = format
 
