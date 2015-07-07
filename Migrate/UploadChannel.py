@@ -6,6 +6,8 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 
 import DataExtent
 
+
+
 class UploadChannel(object):
     """Interface class of disk image data upload channel"""
 

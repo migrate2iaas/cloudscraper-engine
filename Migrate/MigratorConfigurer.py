@@ -15,6 +15,8 @@ import EHConfigs
 import AzureConfigs
 import CloudSigmaConfigs
 import onAppConfigs
+import OpenStack
+from OpenStack import OpenStackConfigs
 
 import platform
 import shutil
@@ -221,8 +223,26 @@ class MigratorConfigurer(object):
         if config.has_section('onApp'):
             return self.configOnApp(configfile, config , password )
 
+        if config.has_section('OpenStack'):
+            return self.configOpenStack(configfile, config , password )
+
         logging.error("!!!ERROR: No appropriate config entry found. Config is corrupted or target cloud is not supported by the software version")
         return None
+
+    def configOpenStack(self , configfile, config, password):
+        (imagedir, image_placement, imagetype) = self.getImageOptions(config)
+        volumes = self.createVolumesList(config , configfile, imagedir, imagetype)        
+        factory = self.createImageFactory(config , image_placement , imagetype)
+        
+        user = config.get('OpenStack', 'user')
+        endpoint = config.get('OpenStack', 'endpoint')
+        tennant = config.get('OpenStack', 'tennant')
+        #TODO: we may add flavors here
+
+        adjust_override = self.getOverrides(config , configfile)
+        image = OpenStackConfigs.OpenStackMigrateConfig(volumes , factory, 'x86_64' , imagetype)
+        cloud = OpenStackConfigs.OpenStackCloudOptions(endpoint , user, tennant, password, imagetype)
+        return (image,adjust_override,cloud)
 
     def configOnApp(self, configfile, config, password):
          # generic for other clouds
