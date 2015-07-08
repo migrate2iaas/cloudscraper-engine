@@ -123,5 +123,6 @@ class OpenStackMigrateConfig(MigrateConfig.MigrateConfig):
         #TODO: really , dunno what should be palced here. should make some umls to see what needed to be changed
         return None
 
-
+    def insertVirtIo(self):
+        return True
 
