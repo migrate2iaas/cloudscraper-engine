@@ -41,7 +41,7 @@ class Migrator(object):
             skip_upload: bool - flag to skip upload at all. Needed primarily in case when the upload is already done but cloud server is not created yet
             self_checks: bool - some self-checks on images\registry during the Migrator work (doesn't work for now!)
             limits: ? (currently long) - the limitation of data to be transfered
-            insert_vitio : bool - inserts virtio drivers to the running system
+            insert_vitio : bool - inserts virtio drivers to the running system. Note, this option can be overriden with migrate_options.insertVirtIo()
         """
         self.__adjustedSystemBackupSource = None
         self.__systemBackupSource = None
@@ -78,7 +78,7 @@ class Migrator(object):
         self.__os = None
         
         self.__fileBackup = False
-        self.__insertVirtio = insert_vitio
+        self.__insertVirtio = insert_vitio or migrate_options.insertVirtIo()
 
         #TODO: pass this parm somehow. Thru migrate\adjust overrides?
         self.__linuxGC = True

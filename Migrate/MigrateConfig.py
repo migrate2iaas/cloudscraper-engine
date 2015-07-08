@@ -117,3 +117,5 @@ class MigrateConfig(object):
     def getDataVolumes(self):
         return self.__dataVolumes
      
+    def insertVirtIo(self):
+        return False
