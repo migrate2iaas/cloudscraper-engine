@@ -88,6 +88,8 @@ class OpenStackUploadChannel(UploadChannel.UploadChannel):
         self.__diskSize = result_disk_size_bytes
         self.__uploadedSize = 0
         self.__proxyFileObj = None
+
+        self.__chunkSize = chunksize # 64KB as requested by glance api
         #self.__glance.authenticate()
 
  
@@ -132,4 +134,56 @@ class OpenStackUploadChannel(UploadChannel.UploadChannel):
         """
         return self.__image.id
 
+    def getTransferChunkSize(self):
+       """
+       Gets the size of transfer chunk in bytes.
+       All the data except the last chunk should be aligned and be integral of this size    
+       """
+       return self.__chunkSize
+
+    def getDataTransferRate(self):
+       """ 
+       Return: 
+            float: approx. number of bytes transfered per second 
+       """
+       return 0
+
+    def getOverallDataSkipped(self):
+        """
+        Gets overall size of data skipped in bytes. 
+        Data is skipped by the channel when the block with same checksum is already present in the cloud
+        """
+        return 0
+
+    def getOverallDataTransfered(self):
+        """
+        Gets overall size of data actually uploaded (not skipped) in bytes.
+        """
+        return self.__uploadedSize
+
+    def close(self):
+        """
+        Closes the channel, deallocates any associated resources
+        """
+        return
    
+
+    def getImageSize(self):
+        """
+        Gets image data size to be uploaded
+        """
+        return self.__diskSize
+
+    def getDiskUploadedProperty(self):
+        """
+        Returns amount of data already uploaded as it saved in the cloud storage
+        This data could be loaded from the disk object on cloud side which channel represents
+        """
+        return 0
+
+    def __loadDiskUploadedProperty(self):
+        """
+        Loads data already uploaded property as it saved in the cloud storage
+        Returns False if disk property could be loaded, True if it was loaded and saved, excepts otherwise
+        """
+        return False
