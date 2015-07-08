@@ -38,7 +38,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         self.__password = password
         self.__chunkSize = 64*1024
         self.__disk_format = str(disk_format).lower()
-        super(onAppCloudOptions, self).__init__()
+        super(OpenStackCloudOptions, self).__init__()
 
         
         
