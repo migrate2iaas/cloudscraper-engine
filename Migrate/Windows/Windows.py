@@ -381,7 +381,7 @@ class Windows(object):
         infkeys = win32api.RegEnumKeyEx(driverskey)
         for (keyname, reserved, classname, modtime) in infkeys:
             if "viostor.inf" in keyname:
-                logging.debug("Adding dirver package info to " + hivekeyname+"\\DriverDatabase\\DriverPackages\\" +  keyname + " . Should  be run from the system account")
+                logging.info("Adding dirver package info to " + hivekeyname+"\\DriverDatabase\\DriverPackages\\" +  keyname + " . Should  be run from the system account")
                 self.__injectViostor2012Package(keyname)
 
         driverskey.close()
@@ -405,6 +405,7 @@ class Windows(object):
         self.__mergeReg(root_virtio + "\\virtio.reg")     
 
         if self.__windowsVersion >= WindowsSystemInfo.WindowsSystemInfo.Win2012:
+            logging.info("Adding Win2012+ driver configurations")
             self.__injectViostor2012()
 
         return True
