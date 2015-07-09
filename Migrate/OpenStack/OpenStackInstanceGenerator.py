@@ -50,7 +50,7 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
         servers =self.__nova.servers.list()
         
         image = self.__nova.images.get(imageid)
-        self.__nova.servers.create(image , flavor=flavor)
+        self.__nova.servers.create(instancename , image , flavor=flavor)
         
 
 
