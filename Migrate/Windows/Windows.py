@@ -189,7 +189,6 @@ class Windows(object):
             os.rename(virtio_copy_path, tempname)
             self.__filesToRename[virtio_copy_path] = tempname
         shutil.copytree(self.__virtIoDir , virtio_copy_path)
-        self.__filesToDelete.add(virtio_copy_path)
 
 
     def __copyExtraFiles(self):
