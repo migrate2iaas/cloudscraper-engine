@@ -184,6 +184,10 @@ class Windows(object):
         # copies virtio dir
         logging.debug("Copy virtio dir");
         virtio_copy_path = windrive + "\\" + Windows.adjustServiceDir+"\\virtio"; #wininstall + "\\system32\\drivers\\virtio"
+        if os.path.exists(virtio_copy_path):
+            tempname = virtio_copy_path +"-renamed"+str(int(time.time()))
+            os.rename(virtio_copy_path, tempname)
+            self.__filesToRename[virtio_copy_path] = tempname
         shutil.copytree(self.__virtIoDir , virtio_copy_path)
 
 
