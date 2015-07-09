@@ -197,11 +197,14 @@ class Windows(object):
         originalwindir = os.environ['windir']
         windrive = originalwindir.split("\\")[0] #get C: substring
 
-        if self.__insertVirtio:
-            self.__copyVirtIoFiles()
         # copies adjust service
         shutil.copytree(self.__adjustSvcDir , windrive + "\\" + Windows.adjustServiceDir)
         self.__filesToDelete.add(windrive + "\\" + Windows.adjustServiceDir)
+
+        if self.__insertVirtio:
+            self.__copyVirtIoFiles()
+        
+        
 
         
 
