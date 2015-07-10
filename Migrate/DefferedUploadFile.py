@@ -51,6 +51,9 @@ class DefferedUploadFile(file):
 
     def cancel(self):
         self.__cancelled = True
+        #empty the queue
+        while self.__queue.empty()==False:
+            self.__queue.get()
 
     def cancelled(self):
         return self.__cancelled
