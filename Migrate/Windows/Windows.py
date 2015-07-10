@@ -128,8 +128,8 @@ class Windows(object):
             #TODO: add extra config flags for this! 
             #TODO: make use of this singleton class more consistent
             self.__copyExtraFiles()
-            self.__prepareRegistry()
             self.__executePreprocess()
+            self.__prepareRegistry()
             
 
             snapname = self.__vss.createSnapshot(system_vol)
