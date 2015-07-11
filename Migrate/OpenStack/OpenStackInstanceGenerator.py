@@ -51,7 +51,8 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
         flavors = self.__nova.flavors.list()
         flavor = flavors[0]
         servers =self.__nova.servers.list()
-
+        for server in servers:
+            logging.info(server.__repr__())
         image = self.__nova.images.get(imageid)
         logging.info(">>> Creating new server from image " + imageid)
         self.__nova.servers.create(instancename , image , flavor=flavor)
