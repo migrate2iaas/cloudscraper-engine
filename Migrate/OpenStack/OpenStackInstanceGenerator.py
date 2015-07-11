@@ -45,12 +45,19 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
     def makeInstanceFromImage(self , imageid, initialconfig, instancename):
         """generates cloud server instances from uploaded images"""
         images = self.__nova.images.list()
+        logging.info("Images found:")
+        for image in images:
+            logging.info(image.__repr__())
         flavors = self.__nova.flavors.list()
         flavor = flavors[0]
         servers =self.__nova.servers.list()
-        
+
         image = self.__nova.images.get(imageid)
+        logging.info(">>> Creating new server from image " + imageid)
         self.__nova.servers.create(instancename , image , flavor=flavor)
+        #TODO: return VM here
+        # analyze it
+        return True
         
 
 

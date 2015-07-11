@@ -34,7 +34,7 @@ class DefferedUploadFile(file):
         data = self.__queue.get()
         if data == None:
             return ""
-        logging.info("Transfering " + str(len(data)) + " bytes ")
+        logging.debug("Transfering " + str(len(data)) + " bytes ")
         self.__readPosition = self.__readPosition  + len(data)
         return data
 
