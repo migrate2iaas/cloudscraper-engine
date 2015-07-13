@@ -28,7 +28,7 @@ import os
 
 class OpenStackCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self, server_url, username , tennant_name, password, network = None , disk_format="vhd"):
+    def __init__(self, server_url, username , tennant_name, password, network_uuid = None , disk_format="vhd"):
         """
         Constructor
         """
@@ -38,7 +38,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         self.__password = password
         self.__chunkSize = 64*1024
         self.__disk_format = str(disk_format).lower()
-        self.__network = network
+        self.__network = network_uuid
         super(OpenStackCloudOptions, self).__init__()
 
         
