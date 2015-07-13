@@ -39,7 +39,7 @@ class LoadNbdImage(object):
         self._file_path = file_path
         # nbd creates 16 entries nbd0 thru nbd15
         self._nbd_path = "/dev/nbd" + str((LoadNbdImage.nbd_port%16))
-        LoadNbdImage.nbd_port = LoadNbdImage.nbd_port + 1
+        LoadNbdImage.nbd_port = (LoadNbdImage.nbd_port + 1) % 16
 
     def __enter__(self):
         """Map disk image as a device."""
@@ -68,8 +68,10 @@ class LoadNbdImage(object):
         nbd_cmd = ["qemu-nbd", "-d" , mountpath]
         output = RunCommand(nbd_cmd)
 
-class LoadDiskImage(object):
+class Nbd_LoadDiskImage(object):
   """Loads raw disk image using kpartx."""
+
+  nbd_port = int(time.clock())%16
 
   def __init__(self, file_path, virtual_image = True):
     """Initializes LoadDiskImage object.
@@ -84,7 +86,8 @@ class LoadDiskImage(object):
     """
     self._file_path = file_path
     self._virtual_image = virtual_image
-    self._ndb_path = "/dev/nbd0"
+    self._ndb_path = "/dev/nbd" + str((LoadNbdImage.nbd_port%16))
+    LoadDiskImage.nbd_port = (LoadDiskImage.nbd_port + 1) % 16
 
   def __enter__(self):
     """Map disk image as a device."""
@@ -126,9 +129,12 @@ class LoadDiskImage(object):
 
         #TODO: should check if kpartx was done previously
         #may fail on the faulty path
-        kpartx_cmd = ['kpartx', '-d', '-v', '-s', self._file_path]
-        RunCommand(kpartx_cmd)
-
+        try:
+            kpartx_cmd = ['kpartx', '-d', '-v', '-s', self._file_path]
+            RunCommand(kpartx_cmd)
+        except Exception as e:
+            logging.error("kpartx failed to release resources")
+        
         if self._virtual_image:
             mountpath =  self._ndb_path
             nbd_cmd = ["qemu-nbd", "-d" , mountpath]
@@ -143,6 +149,7 @@ class NbdOverride:
     original_GetPartitionStart = None
     original_RemovePartition = None
     original_GetDiskSize = None
+    original_LoadDiskImage_class = None
 
     @staticmethod
     def init_override():
@@ -162,6 +169,9 @@ class NbdOverride:
         if NbdOverride.original_GetDiskSize == None:
             NbdOverride.original_GetDiskSize = GetDiskSize
             gcimagebundlelib.utils.GetDiskSize = NbdOverride.ndb_GetDiskSize
+        if NbdOverride.original_LoadDiskImage_class == None:
+            NbdOverride.original_LoadDiskImage_class = LoadDiskImage
+            gcimagebundlelib.utils.LoadDiskImage = Nbd_LoadDiskImage
 
     @staticmethod
     def ndb_MakePartitionTable(file_path):

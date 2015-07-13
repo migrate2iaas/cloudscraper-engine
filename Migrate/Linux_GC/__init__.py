@@ -203,16 +203,15 @@ class Linux(object):
             logging.warning("! Error: " + str(e) )
             logging.warning(traceback.format_exc())
             scratch_dir = None
-            raise
+            raise e
 
-        if not scratch_dir:
-            scratch_dir = tempfile.mkdtemp()
-            target_filename = scratch_dir + "/disk.raw.tar"
 
         #it's object to move the system
         #NOTE: for now it moves the whole system only (if include mountpoints flag is set)
-        #TODO: check media to choose whether it raw or not
-        bundle_object = FsBundler.FsBundler(options.fs_size, file_system, options.skip_disk_space_check , diskname = target_filename.replace(scratch_dir, "") )
+        if guest_platform.GetLinuxFamily() == guest_platform.DebianFamily:
+            bundle_object = FsBundler.FsBundler(options.fs_size, file_system, options.skip_disk_space_check , disk_file_name = target_filename.replace(scratch_dir, "") )
+        else:
+            bundle_object = block_disk.RootFsRaw(options.fs_size, file_system, options.skip_disk_space_check , disk_file_name = target_filename.replace(scratch_dir, "") )
 
         # TODO: should tie up with dir
         bundle_object.SetScratchDirectory(scratch_dir)
