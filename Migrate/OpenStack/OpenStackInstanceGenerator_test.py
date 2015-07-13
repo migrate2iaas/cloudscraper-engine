@@ -37,7 +37,7 @@ class onAppInstanceGenerator_test(unittest.TestCase):
     
     def test_create(self):
         """creates new VM"""
-        self.generator.makeInstanceFromImage("Windows 2012 R2 Standard" , None, "test")
+        self.generator.makeInstanceFromImage("d52d5e69-f000-43be-be77-fc686b8823ee" , None, "cloduscraper-test-server")
         
         return
 

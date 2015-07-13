@@ -98,9 +98,10 @@ class OpenStackUploadChannel(UploadChannel.UploadChannel):
         Inits storage to run upload
         Throws in case of unrecoverable errors
         """
-
+        #TODO: get metadata from the config, or move to instance generator
+        metadata = {'isolate_os':'windows' , 'requires_ssh_key':'false' , 'windows12':'true'}
         # here we should create an image
-        self.__image = self.__glance.images.create(name=self.__name, disk_format=self.__disk_format ,container_format="bare")
+        self.__image = self.__glance.images.create(name=self.__name, disk_format=self.__disk_format ,container_format="bare", metadata=metadata)
 
         return True
 
