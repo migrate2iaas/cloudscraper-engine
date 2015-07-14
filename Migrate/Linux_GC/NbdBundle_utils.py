@@ -86,8 +86,8 @@ class Nbd_LoadDiskImage(object):
     """
     self._file_path = file_path
     self._virtual_image = virtual_image
-    self._ndb_path = "/dev/nbd" + str((LoadNbdImage.nbd_port%16))
-    LoadDiskImage.nbd_port = (LoadDiskImage.nbd_port + 1) % 16
+    self._ndb_path = "/dev/nbd" + str((Nbd_LoadDiskImage.nbd_port%16))
+    Nbd_LoadDiskImage.nbd_port = (Nbd_LoadDiskImage.nbd_port + 1) % 16
 
   def __enter__(self):
     """Map disk image as a device."""
