@@ -118,7 +118,6 @@ class Nbd_LoadDiskImage(object):
             output = RunCommand(nbd_cmd)
   def __enter__(self):
     """Map disk image as a device."""
-    return 
     SyncFileSystem()
 
     mountpath = self._file_path
