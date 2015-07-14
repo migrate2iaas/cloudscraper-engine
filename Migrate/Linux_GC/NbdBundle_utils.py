@@ -16,10 +16,12 @@ import time
 import sys
 import os
 
+
+sys.path.append('./submodules/compute-image-packages/gcimagebundle')
+sys.path.append('./../submodules/compute-image-packages/gcimagebundle')
 import gcimagebundlelib
 
 from gcimagebundlelib.utils import *
-
 
 
 class LoadNbdImage(object):
@@ -89,8 +91,34 @@ class Nbd_LoadDiskImage(object):
     self._ndb_path = "/dev/nbd" + str((Nbd_LoadDiskImage.nbd_port%16))
     Nbd_LoadDiskImage.nbd_port = (Nbd_LoadDiskImage.nbd_port + 1) % 16
 
+
+
+  def __exit__(self, unused_exc_type, unused_exc_value, unused_exc_tb):
+        """Unmap disk image as a device.
+
+        Args:
+          unused_exc_type: unused.
+          unused_exc_value: unused.
+          unused_exc_tb: unused.
+        """
+        SyncFileSystem()
+        time.sleep(2)
+
+        #TODO: should check if kpartx was done previously
+        #may fail on the faulty path
+        try:
+            kpartx_cmd = ['kpartx', '-d', '-v', '-s', self._file_path]
+            RunCommand(kpartx_cmd)
+        except Exception as e:
+            logging.error("kpartx failed to release resources")
+        
+        if self._virtual_image:
+            mountpath =  self._ndb_path
+            nbd_cmd = ["qemu-nbd", "-d" , mountpath]
+            output = RunCommand(nbd_cmd)
   def __enter__(self):
     """Map disk image as a device."""
+    return 
     SyncFileSystem()
 
     mountpath = self._file_path
@@ -115,30 +143,6 @@ class Nbd_LoadDiskImage(object):
     time.sleep(2)
     return devs
 
-
-    def __exit__(self, unused_exc_type, unused_exc_value, unused_exc_tb):
-        """Unmap disk image as a device.
-
-        Args:
-          unused_exc_type: unused.
-          unused_exc_value: unused.
-          unused_exc_tb: unused.
-        """
-        SyncFileSystem()
-        time.sleep(2)
-
-        #TODO: should check if kpartx was done previously
-        #may fail on the faulty path
-        try:
-            kpartx_cmd = ['kpartx', '-d', '-v', '-s', self._file_path]
-            RunCommand(kpartx_cmd)
-        except Exception as e:
-            logging.error("kpartx failed to release resources")
-        
-        if self._virtual_image:
-            mountpath =  self._ndb_path
-            nbd_cmd = ["qemu-nbd", "-d" , mountpath]
-            output = RunCommand(nbd_cmd)
 
 
 class NbdOverride:
@@ -172,6 +176,7 @@ class NbdOverride:
         if NbdOverride.original_LoadDiskImage_class == None:
             NbdOverride.original_LoadDiskImage_class = LoadDiskImage
             gcimagebundlelib.utils.LoadDiskImage = Nbd_LoadDiskImage
+            
 
     @staticmethod
     def ndb_MakePartitionTable(file_path):
@@ -237,3 +242,14 @@ class NbdOverride:
       """
       with LoadNbdImage(disk_path) as path:
           NbdOverride.original_GetDiskSize.im_func(path)
+
+
+#for initial debug
+if __name__ == '__main__':
+    NbdOverride.init_override()
+    l1 = gcimagebundlelib.utils.LoadDiskImage("test")
+    dic = l1.__dict__
+    dr = dir(l1)
+    with gcimagebundlelib.utils.LoadDiskImage("test") as l:
+        dic = l.__dict__
+        logging.info("done")
