@@ -12,10 +12,13 @@ import unittest
 import logging
 import traceback
 import sys
-import OpenStackUploadChannel
+
 import os
 import DataExtent
 import time
+#import OpenStackUploadChannel
+from OpenStack import OpenStackUploadChannel
+
 
 class OpenStackUploadChannel_test(unittest.TestCase):
     """FtpUploadChannel class unittest"""
@@ -24,7 +27,7 @@ class OpenStackUploadChannel_test(unittest.TestCase):
     
     def test_medium_vhd(self):
         """test1 desctiption"""
-
+        return
         filename = 'E:\\vhdtest1.vhd'
         size = os.stat(filename).st_size
 
@@ -51,6 +54,34 @@ class OpenStackUploadChannel_test(unittest.TestCase):
 
         return
 
+    def test_compressed_vhd(self):
+        """test1 desctiption"""
+
+        filename = 'E:\\vhdtest1.tar.gz'
+        size = os.stat(filename).st_size
+
+        channel = OpenStackUploadChannel.OpenStackUploadChannel(size , server_url="https://auth.nl01.cloud.webzilla.com:5000/v2.0" , username="3186" , tennant_name="2344" , password = "QpLQCTrJjeoWNJaf", container_format="ovf" , image_name="test-compressed")
+        channel.initStorage()
+
+        file = open(filename , "rb")
+        datasize = 64*1024 
+        dataplace = 0
+        while 1:
+            try:
+                data = file.read(datasize)
+            except EOFError:
+                break
+            if len(data) == 0:
+                break
+            dataext = DataExtent.DataExtent(dataplace , len(data))
+            dataplace = dataplace + len(data)
+            dataext.setData(data)
+            channel.uploadData(dataext)
+
+        channel.waitTillUploadComplete()
+        channel.confirm()
+
+        return
 
     #---------------------- Init and Deinit:
     def setUp(self):

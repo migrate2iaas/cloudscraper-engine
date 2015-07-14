@@ -53,11 +53,15 @@ from novaclient import client
 import glanceclient
 import glanceclient.v2.client as glclient
 
+import tarfile
+import StringIO
+import io
 
-def glanceUploadThreadRoutine(glance, proxyFileObj, image,size):
+def glanceUploadThreadRoutine(glance, proxyFileObj, image, size, tarify, chunksize):
     try:
+        proxy_file = proxyFileObj
         logging.info(">>> Image transfer being");
-        glance.images.upload(image.id,proxyFileObj)
+        glance.images.upload(image.id,proxy_file)
         logging.info(">>> Image transfer complete");
     except Exception as e:
          logging.warning("!Failed to upload data")
@@ -73,7 +77,7 @@ class OpenStackUploadChannel(UploadChannel.UploadChannel):
     Implements multithreaded fie upload to Windows Azure 
     """
 
-    def __init__(self, result_disk_size_bytes, server_url , tennant_name , username , password, disk_format = "vhd", image_name=None, resume_upload = False , chunksize=64*1024 , upload_threads=1 , queue_size=1):
+    def __init__(self, result_disk_size_bytes, server_url , tennant_name , username , password, disk_format = "vhd", image_name=None, resume_upload = False , chunksize=64*1024 , upload_threads=1 , queue_size=1 , container_format="bare"):
         """constructor"""
         keystone = ksclient.Client(auth_url=server_url,   username=username, password=password, tenant_name= tennant_name)
         glance_endpoint = keystone.service_catalog.url_for(service_type='image')
@@ -88,6 +92,7 @@ class OpenStackUploadChannel(UploadChannel.UploadChannel):
         self.__diskSize = result_disk_size_bytes
         self.__uploadedSize = 0
         self.__proxyFileObj = None
+        self.__container = container_format
 
         self.__chunkSize = chunksize # 64KB as requested by glance api
         #self.__glance.authenticate()
@@ -99,9 +104,9 @@ class OpenStackUploadChannel(UploadChannel.UploadChannel):
         Throws in case of unrecoverable errors
         """
         #TODO: get metadata from the config, or move to instance generator
-        metadata = {'isolate_os':'windows' , 'requires_ssh_key':'false' , 'windows12':'true'}
+        #metadata = {'isolate_os':'windows' , 'requires_ssh_key':'false' , 'windows12':'true'}
         # here we should create an image
-        self.__image = self.__glance.images.create(name=self.__name, disk_format=self.__disk_format ,container_format="bare", metadata=metadata)
+        self.__image = self.__glance.images.create(name=self.__name, disk_format=self.__disk_format ,container_format=self.__container)
 
         return True
 
@@ -114,12 +119,25 @@ class OpenStackUploadChannel(UploadChannel.UploadChannel):
     def uploadData(self, extent):       
        """Note: should be sequental"""
        
+       tarify = False
+       if self.__container == "ovf" or self.__container == "ova":
+           #NOTE: tarify doesn't work as for now
+            tarify = True
+           
        if self.__proxyFileObj == None:
+           if tarify:
+               self.__tar = tarfile.open("cloudscraper"+str(self.__image.id) , mode="w|bz2" , fileobj=self.__proxyFileObj , bufsize=self.__chunkSize)
+               r, w = os.pipe() 
+               self.__tarProxy = os.fdopen(w, "wb")
+               self.__tar.addfile(tarfile.TarInfo("image."+self.__disk_format) , os.fdopen(r, "rb"))
            self.__proxyFileObj = DefferedUploadFile()
-           self.__thread = threading.Thread(target = glanceUploadThreadRoutine, args=(self.__glance,self.__proxyFileObj,self.__image,self.__diskSize) )
+           self.__thread = threading.Thread(target = glanceUploadThreadRoutine, args=(self.__glance,self.__proxyFileObj,self.__image,self.__diskSize,tarify,self.__chunkSize) )
            self.__thread.start()
-       
-       self.__proxyFileObj.write(extent.getData())
+      
+       if tarify:
+           self.__tarProxy.write(str(extent.getData()))
+       else:
+           self.__proxyFileObj.write(extent.getData())
 
        self.__uploadedSize = self.__uploadedSize + extent.getSize()
 

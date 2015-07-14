@@ -240,11 +240,15 @@ class MigratorConfigurer(object):
         network = None
         if config.has_option('OpenStack', 'network'):
             network = config.get('OpenStack', 'network')
+
+        container = "bare"
+        if config.has_option('OpenStack', 'container'):
+            network = config.get('OpenStack', 'container')
         #TODO: we may add flavors here
 
         adjust_override = self.getOverrides(config , configfile)
         image = OpenStackConfigs.OpenStackMigrateConfig(volumes , factory, 'x86_64' , imagetype)
-        cloud = OpenStackConfigs.OpenStackCloudOptions(endpoint , user, tennant, password, network, imagetype)
+        cloud = OpenStackConfigs.OpenStackCloudOptions(endpoint , user, tennant, password, network, imagetype, container)
         return (image,adjust_override,cloud)
 
     def configOnApp(self, configfile, config, password):

@@ -28,7 +28,7 @@ import os
 
 class OpenStackCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self, server_url, username , tennant_name, password, network_uuid = None , disk_format="vhd"):
+    def __init__(self, server_url, username , tennant_name, password, network_uuid = None , disk_format="vhd", container_format="bare"):
         """
         Constructor
         """
@@ -39,6 +39,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         self.__chunkSize = 64*1024
         self.__disk_format = str(disk_format).lower()
         self.__network = network_uuid
+        self.__container = container_format
         super(OpenStackCloudOptions, self).__init__()
 
         
@@ -55,7 +56,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             imagesize: long - image file size in bytes
         """
 
-        return OpenStackUploadChannel.OpenStackUploadChannel(imagesize , self.__server , self.__tennant , self.__username , self.__password , self.__disk_format, targetname, resume, self.__chunkSize);
+        return OpenStackUploadChannel.OpenStackUploadChannel(imagesize , self.__server , self.__tennant , self.__username , self.__password , self.__disk_format, targetname, resume, self.__chunkSize , self.__container);
 
     def generateInstanceFactory(self):
         return OpenStackInstanceGenerator.OpenStackInstanceGenerator(self.__server , self.__tennant , self.__username , self.__password)
