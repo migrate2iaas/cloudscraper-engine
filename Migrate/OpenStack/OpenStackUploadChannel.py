@@ -87,6 +87,12 @@ class OpenStackUploadChannel(UploadChannel.UploadChannel):
             self.__name = image_name
         else:
             self.__name = "Cloudscraper-img-"+str(int(time.clock()))
+
+        images = self.__glance.images.list()
+        logging.debug("Connected to glance. Available images:")
+        for image in images:
+            logging.debug(image.id)
+
         self.__disk_format = disk_format
         self.__image = None
         self.__diskSize = result_disk_size_bytes
@@ -122,7 +128,7 @@ class OpenStackUploadChannel(UploadChannel.UploadChannel):
        tarify = False
        if self.__container == "ovf" or self.__container == "ova":
            #NOTE: tarify doesn't work as for now
-            tarify = True
+            tarify = False
            
        if self.__proxyFileObj == None:
            if tarify:
@@ -146,6 +152,9 @@ class OpenStackUploadChannel(UploadChannel.UploadChannel):
 
     def waitTillUploadComplete(self):
         self.__proxyFileObj.complete()
+        time.sleep(5)
+        image = self.__glance.images.get(self.__image.id)
+        logging.info("The image upload is complete. Image name: " + str(image.name) + " Id: " + str(image.id) + " Status " + str(image.status))
     
     def confirm(self):
         """

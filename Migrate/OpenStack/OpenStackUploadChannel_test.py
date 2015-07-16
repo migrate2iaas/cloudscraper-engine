@@ -57,10 +57,11 @@ class OpenStackUploadChannel_test(unittest.TestCase):
     def test_compressed_vhd(self):
         """test1 desctiption"""
 
-        filename = 'E:\\vhdtest1.tar.gz'
+        filename = 'E:\\openstack-ubuntu.tar.gz'
         size = os.stat(filename).st_size
 
-        channel = OpenStackUploadChannel.OpenStackUploadChannel(size , server_url="https://auth.nl01.cloud.webzilla.com:5000/v2.0" , username="3186" , tennant_name="2344" , password = "QpLQCTrJjeoWNJaf", container_format="ovf" , image_name="test-compressed")
+        channel = OpenStackUploadChannel.OpenStackUploadChannel(size , server_url="https://auth.nl01.cloud.webzilla.com:5000/v2.0" , username="3186" , tennant_name="2344" , password = "QpLQCTrJjeoWNJaf",\
+            disk_format="qcow2", container_format="ovf" , image_name="test-compressed-native-ovf1")
         channel.initStorage()
 
         file = open(filename , "rb")

@@ -30,7 +30,7 @@ class DefferedUploadFile(file):
 
     def read(self, size):
         """emulate read"""
-        logging.info("Requested " + str(size) + " bytes to transfer to upload")
+        logging.debug("Requested " + str(size) + " bytes to transfer to upload")
         data = self.__queue.get()
         if data == None:
             return ""
