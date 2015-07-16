@@ -65,6 +65,12 @@ class SparseRawMedia(ImageMedia.ImageMedia):
         """
         self.close()
 
+    def allowDirectFileAccess(self):
+        """
+            Returns if the image file can be accessed as raw image from elsewhere
+        """
+        return True
+
 
     #reads data from image, returns data buffer
     def readImageData(self , offset , size):

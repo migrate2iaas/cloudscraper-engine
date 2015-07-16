@@ -92,6 +92,12 @@ class ImageMedia(object):
             Returns the file path associated with the image or None if there is no associated local path
         """
         raise NotImplementedError
+
+    def allowDirectFileAccess(self):
+        """
+            Returns if the image file can be accessed as raw image from elsewhere
+        """
+        return False
     
     def readDiskData(self , offset , size):
         """

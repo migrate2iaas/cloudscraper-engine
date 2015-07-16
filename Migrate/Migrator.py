@@ -324,7 +324,7 @@ class Migrator(object):
                 #then create a linux bundle targer
                 import Linux_GC
                 if ( isinstance(self.__os , Linux_GC.Linux) ):
-                    return self.__os.createBundleTransferTarget(media , size);
+                    return self.__os.createBundleTransferTarget(media , size , media.allowDirectFileAccess()); # we use old style gce if image can be directly accessed
                 else:
                     raise AssertionError("Linux set to Linux GC but __os is not of Linux_GC.Linux type")
 

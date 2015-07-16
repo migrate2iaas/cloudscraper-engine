@@ -164,8 +164,13 @@ class Linux(object):
     """
 
 
-    def createBundleTransferTarget(self , media, size):
-        """a specific GCE method"""
+    def createBundleTransferTarget(self , media, size, gce_original_impl = False):
+        """a specific GCE method to create file-based transfer target 
+        Args:
+            media - virtual disk media
+            size - the size of resulting image
+            gce_original_impl - if to use original gce implementation whithout nbd hacks
+        """
 
         #TODO: make assert media size equals file size
         options = AttrDict()
@@ -208,7 +213,7 @@ class Linux(object):
 
         #it's object to move the system
         #NOTE: for now it moves the whole system only (if include mountpoints flag is set)
-        if guest_platform.GetLinuxFamily() == guest_platform.DebianFamily:
+        if not gce_original_impl and guest_platform.GetLinuxFamily() == guest_platform.DebianFamily:
             bundle_object = FsBundler.FsBundler(options.fs_size, file_system, options.skip_disk_space_check , disk_file_name = target_filename.replace(scratch_dir, "") )
         else:
             bundle_object = block_disk.RootFsRaw(options.fs_size, file_system, options.skip_disk_space_check , disk_file_name = target_filename.replace(scratch_dir, "") )
