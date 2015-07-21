@@ -304,7 +304,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
                 return
             timeout = timeout - sleeptime
             time.sleep(sleeptime)
-        logging.error("!!!ERROR: Timeout, Cloudscraper target VM is not ready. Please contact the cloud provider.")
+        logging.error("!!!ERROR: Timeout, Cloudscraper target VM does not respond to RDP probe. Please contact the cloud provider.")
         return
 
     def __init__(self, onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_id = "" , minipad_vm_id = None , vmbuild_timeout=100*60 , win_template_disk_size=20):
@@ -337,6 +337,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         self.__minipadId = minipad_vm_id
         self.__datastore = onapp_datastore_id
         self.__winTemplateDiskSize = win_template_disk_size
+        self.__targetOsName = "Windows"
         super(onAppInstanceGenerator, self).__init__(preset_ip)
         #TODO: should find datastore id via the label
         
@@ -348,8 +349,12 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         logging.debug("Trying to run the VM , in case it's stopped")
         vm.run()
         logging.info("Awaiting till Cloudscraper target VM is alive (echoing Cloudscraper VM RDP port)")
-        if vm.checkAlive() == False:
-            logging.warn("!Cloudscraper target VM is not repsonding (to RDP port). Misconfiguration is highly possible!")
+        probe_port = 22
+        if  "Windows" in str(self.__targetOsName):
+            probe_port = 3389
+        #TODO: try port 22 and different timeout
+        if vm.checkAlive(port = probe_port) == False:
+            logging.warn("!Cloudscraper target VM is not repsonding (to RDP/SSH port). Misconfiguration is highly possible!")
         
         logging.info("Waiting till service is on")
         #extra wait for service availability
@@ -377,6 +382,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
 
     def makeInstanceFromImage(self , imageid, initialconfig, instancename):
         """makes instance based on image id - link to public image"""
+        self.__targetOsName = initialconfig.getHostOs()
         self.getDiskSize(imageid)
         return super(onAppInstanceGenerator, self).makeInstanceFromImage(imageid, initialconfig, instancename)
 

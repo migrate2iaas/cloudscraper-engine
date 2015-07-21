@@ -31,7 +31,7 @@ class VmInstance(object):
         """finalizes the VM setting it to stopped state ready to be boot whenever user starts it"""
         self.stop()
 
-    def checkAlive(self, timeout = 500 , port = 3389):
+    def checkAlive(self, timeout = 1500 , port = 3389):
         """
         Performs RDP\ssh probe for an instance
         Args:
