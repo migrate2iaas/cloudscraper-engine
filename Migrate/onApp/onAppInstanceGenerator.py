@@ -382,7 +382,10 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
 
     def makeInstanceFromImage(self , imageid, initialconfig, instancename):
         """makes instance based on image id - link to public image"""
-        self.__targetOsName = initialconfig.getHostOs()
+        if os.name == 'nt':
+            self.__targetOsName = 'Windows'
+        else:
+            self.__targetOsName = 'Linux'
         self.getDiskSize(imageid)
         return super(onAppInstanceGenerator, self).makeInstanceFromImage(imageid, initialconfig, instancename)
 
