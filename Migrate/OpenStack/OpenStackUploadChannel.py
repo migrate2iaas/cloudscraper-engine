@@ -94,6 +94,8 @@ class OpenStackUploadChannel(UploadChannel.UploadChannel):
             logging.debug(image.id)
 
         self.__disk_format = disk_format
+        if "raw" in self.__disk_format:
+            self.__disk_format = "raw"
         self.__image = None
         self.__diskSize = result_disk_size_bytes
         self.__uploadedSize = 0
