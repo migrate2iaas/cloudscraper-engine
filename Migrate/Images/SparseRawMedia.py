@@ -106,7 +106,7 @@ class SparseRawMedia(ImageMedia.ImageMedia):
         """
         file = open(self.__filename , "w+b")
         file.seek(offset)
-        file.write(size)
+        file.write(data)
         file.close()
 
 
