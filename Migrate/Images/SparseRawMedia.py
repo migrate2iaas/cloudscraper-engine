@@ -98,7 +98,7 @@ class SparseRawMedia(ImageMedia.ImageMedia):
 
         Returns None, throws an error if any
         """
-        file = open(self.__filename , "w+b")
+        file = open(self.__filename , "r+b")
         file.seek(offset)
         file.write(data)
         file.close()
