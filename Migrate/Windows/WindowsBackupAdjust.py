@@ -148,11 +148,14 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
     
 
     def injectVirtIo(self , hivekeyname , currentcontrolset):
-        # nothing for now
-        if self.__windowsVersion < WindowsSystemInfo.WindowsSystemInfo.Win2012:
-            # we think the virtio driver is installed by the init code
-            return
-        return 
+        try:
+            viostorkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\viostor" , 0 , win32con.KEY_ALL_ACCESS )
+            win32api.RegSetValueEx(viostorkey, "Start" , 0, win32con.REG_DWORD, 0)
+            viostorkey.close()
+        except Exception as e:
+            logging.debug("Couldn't find viostor entry") 
+            logging.debug(str(e))
+        return True
 
     def adjustSystemHive(self , hive_file_path):
         """make some adjusts to a system hive located at hive_file_path"""
