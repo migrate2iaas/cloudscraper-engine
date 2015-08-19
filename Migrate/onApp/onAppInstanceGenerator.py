@@ -49,8 +49,10 @@ class OnAppBase:
                         response_data = str(response.read())
                         logging.error(str(response.status)+":"+ response_data)
                         data = json.loads(response_data);
-                        errortext = errortext + " onApp cloud error: " + str(data["errors"]["base"])
-                        logging.error("!!!ERROR: onApp cloud error: " + str(data["errors"]["base"]))
+                        if "errors" in data:
+                            errortext = errortext + " onApp cloud error: " + str(data["errors"]["base"])
+                        if "error" in data:
+                            errortext = errortext + " onApp cloud error: " + str(data["error"])
                     except Exception as e:
                         logging.error("!!!ERROR: cannot decode onApp error, please see logs")
                     logging.error("!!!ERROR: " + errortext )
