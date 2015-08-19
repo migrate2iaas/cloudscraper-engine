@@ -415,7 +415,9 @@ class S3UploadChannel(UploadChannel.UploadChannel):
        #TODO: monitor the queue sizes
        start = extent.getStart()
        size = extent.getSize()
-       keyname =  self.__keyBase+".part"+str(int(start/self.__chunkSize))
+
+       #813_dr: test we may change keynames as we like to
+       keyname =  self.__keyBase+str(start)+".part"+str(int(start/self.__chunkSize))
        
        #NOTE: the last one could be less than 10Mb.
        # there are two options 1) to align the whole file or to make it possible to use the smaller chunks
