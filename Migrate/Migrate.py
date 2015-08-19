@@ -140,7 +140,7 @@ if __name__ == '__main__':
         parser.add_argument('-i', '--cloudsigmapass', help="Your CloudSigma password.")
         parser.add_argument('-a', '--azurekey', help="Your Azure storage account primary key.")
         parser.add_argument('-w', '--apikey', help="Your generic API key: the cloud will be choosen according to the config file.")
-        parser.add_argument('-c', '--config', help="Path to copy config file")
+        parser.add_argument('-c', '--config', help="Path to copy config file. May be a local path or http link")
         parser.add_argument('-o', '--output', help="Path to extra file for non-detalized output")                   
         parser.add_argument('-u', '--resumeupload', help="Resumes the upload of image already created", action="store_true")                   
         parser.add_argument('-s', '--skipupload', help="Skips both imaging and upload. Just start the machine in cloud from the image given", action="store_true")                   
@@ -149,6 +149,7 @@ if __name__ == '__main__':
         parser.add_argument('-b', '--heartbeat', help="Specifies interval in seconds to write hearbeat messages to stdout. No heartbeat if this flag is ommited", type=int)                   
         parser.add_argument('-q', '--statusfile', help="Specifies status file to write current output") 
         parser.add_argument('-v', '--virtio', help="Injects virtio drivers in the running server driver store", action="store_true")
+        parser.add_argument('-p', '--backup', help="Backup mode. Skips deploying machine in the cloud - just takes an image and uploads it to cloud", action="store_true")
     
         #new random seed
         random.seed()
@@ -203,6 +204,10 @@ if __name__ == '__main__':
             timeout = parser.parse_args().timeout
             print timeout
 
+        backupmode = False
+        if parser.parse_args().backup:
+            backupmode = True
+
         resumeupload = False
         if parser.parse_args().resumeupload:
             resumeupload = True
@@ -210,8 +215,6 @@ if __name__ == '__main__':
         skipupload = False
         if parser.parse_args().skipupload:
             skipupload = True
-            #NOTE: skip upload is not yet good enough! 
-            # it needs saving of 1) image-id (xml-key) for each volume imported previously 2) instance-id
 
         password = s3key or ehkey or azurekey or cloudsigmapass or apikey
         limits = None
@@ -227,7 +230,7 @@ if __name__ == '__main__':
             os._exit(errno.EFAULT)
     
         logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Transfer Process:\n")
-        __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload , limits = limits , insert_vitio=parser.parse_args().resumeupload)
+        __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload , limits = limits , insert_vitio=parser.parse_args().virtio, backup_mode = backupmode)
         logging.info("Migrator test started")
         # Doing the task
         instance = None

@@ -74,7 +74,7 @@ class S3ManfiestBuilder:
          
        return
 
-    def addUploadedPart(self , index , rangeStart , rangeEnd , keyName):
+    def addUploadedPart(self , index , rangeStart , rangeEnd , keyName , version = None):
         
         linktimeexp_seconds = 60*60*24*15 # 15 days
 
@@ -84,15 +84,15 @@ class S3ManfiestBuilder:
         keystr = '\n\t\t\t\t <key>'+str(keyName)+'</key>'
         self.__file.write(keystr)
           
-        urlhead = self.__S3.generate_url( linktimeexp_seconds, method='HEAD', bucket=self.__bucket, key=keyName, force_http=False)
+        urlhead = self.__S3.generate_url( linktimeexp_seconds, method='HEAD', bucket=self.__bucket, key=keyName, force_http=False , version_id = version)
         gethead = '\n\t\t\t\t <head-url>'+urlhead.replace('&' ,'&amp;')+'</head-url>'
         self.__file.write(gethead)
 
-        urlget = self.__S3.generate_url( linktimeexp_seconds, method='GET', bucket=self.__bucket, key=keyName, force_http=False)
+        urlget = self.__S3.generate_url( linktimeexp_seconds, method='GET', bucket=self.__bucket, key=keyName, force_http=False, version_id = version)
         getstr = '\n\t\t\t\t <get-url>'+urlget.replace('&' ,'&amp;')+'</get-url>'
         self.__file.write(getstr)
 
-        urldelete = self.__S3.generate_url( linktimeexp_seconds, method='DELETE', bucket=self.__bucket, key=keyName, force_http=False)
+        urldelete = self.__S3.generate_url( linktimeexp_seconds, method='DELETE', bucket=self.__bucket, key=keyName, force_http=False, version_id = version)
         getdelete = '\n\t\t\t\t <delete-url>'+urldelete.replace('&' ,'&amp;')+'</delete-url>'
         self.__file.write(getdelete)
 
@@ -110,22 +110,26 @@ class S3ManfiestBuilder:
 #TODO: add wait completion\notification\delegates on this part completion
 class UploadQueueTask(object):
     # NOTE: make kinda abstraction for alternative sources. Still more design effort is needed to get what these source\buckets should really be
-    def __init__(self, bucket , keyname, size, data_getter, channel , alternative_source_bucket = None, alternative_source_keyname = None):
+    def __init__(self, bucket , keyname, size, start, data_getter, channel , alternative_source_bucket = None, alternative_source_keyname = None):
         self.__channel = channel
         self.__targetBucket = bucket
         self.__targetKeyname = keyname
         self.__targetSize = size
+        self.__targetStart = start
         self.__dataGetter = data_getter 
         self.__alternativeKey = alternative_source_keyname
         self.__alternativeBucket = alternative_source_bucket
+        self.__version = None
 
     def notifyDataTransfered(self):
         if self.__channel:
             self.__channel.notifyDataTransfered(self.__targetSize)
+            self.__channel.setChunkComplete(self.__targetKeyname, self.__targetStart, self.__targetSize, self.__version)
 
     def notifyDataSkipped(self):
         if self.__channel:
            self.__channel.notifyDataSkipped(self.__targetSize)
+           self.__channel.setChunkComplete(self.__targetKeyname, self.__targetStart, self.__targetSize, self.__version)
 
     def notifyDataTransferError(self):
         if self.__channel:
@@ -148,6 +152,9 @@ class UploadQueueTask(object):
         data = self.getData()
         md5encoder.update(data)
         return md5encoder.hexdigest()
+
+    def setVersion(self , version):
+        self.__version = version
 
     # specifies the alternitive availble path. 
     # alternative source seem to be interesting concept. get something from another place. maybe deferred
@@ -173,13 +180,14 @@ class UploadQueueTask(object):
 
 class S3UploadThread(threading.Thread):
     """thread making all uploading works"""
-    def __init__(self , queue , threadid , skipexisting = False , channel = None , copysimilar = True,  retries = 3 ):
+    def __init__(self , queue , threadid , skipexisting = False , channel = None , copysimilar = True,  retries = 3 , enable_versions = False):
         self.__uploadQueue = queue
         #thread id , for troubleshooting purposes
         self.__threadId = threadid
         self.__skipExisting = skipexisting
         self.__maxRetries = retries
         self.__copySimilar = copysimilar
+        self.__enableVersions = enable_versions
         super(S3UploadThread,self).__init__()
 
     def run(self):
@@ -220,6 +228,7 @@ class S3UploadThread(threading.Thread):
                 try:
                 # s3 key is kinda file in the bucket (directory)           
                     upload = True
+                   
                     try:
                         s3key = bucket.get_key(keyname)
                     except Exception as e:
@@ -242,24 +251,37 @@ class S3UploadThread(threading.Thread):
                             s3key = Key(bucket , keyname)    
                     else: 
                         if self.__skipExisting:
+
+                            keys_to_check = list()
+                            # check all versions of the object
+                            if self.__enableVersions:
+                                keys_to_check = bucket.list_versions(keyname)
                             # check the size and checksums in order to skip upload
-                            #TODO: metadata is empty! should recheck the upload
-                            # TODO: make metadata upload!
-                            existing_length = s3key.size 
-                            if int(existing_length) == size:
-                                existing_md5 = s3key.etag
-                                logging.debug("Checking if we could skip " + existing_md5 + " block")
-                                #md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest) 
-                                if '"'+str(md5_hexdigest)+'"' == existing_md5:
-                                    logging.debug("key with same md5 and length already exisits, skip uploading") 
-                                    upload = False
+                            else:
+                                keys_to_check.append(s3key)
+
+                            for key in keys_to_check:
+                                if not key.name == keyname: #to ensure list_versions hasn't returned some similar but not exact the same key
+                                    continue
+
+                                existing_length = key.size 
+                                if int(existing_length) == size:
+                                    existing_md5 = key.etag
+                                    logging.debug("Checking if we could skip " + existing_md5 + " block")
+                                    if '"'+str(md5_hexdigest)+'"' == existing_md5:
+                                        logging.debug("key with same md5 and length already exisits, skip uploading") 
+                                        upload = False
 
                     if upload:
                         md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest) 
                         s3key.set_contents_from_string(str(data), replace=True, policy=None, md5=(md5digest, base64md5), reduced_redundancy=False, encrypt_key=False)
+                        if self.__enableVersions:
+                            uploadtask.setVersion(s3key.version_id)
                         uploadtask.notifyDataTransfered()
                     else:
                         logging.debug("Skipped the data upload: %s/%s " , str(bucket), keyname) 
+                        if self.__enableVersions:
+                            uploadtask.setVersion(s3key.version_id)
                         uploadtask.notifyDataSkipped()
                     s3key.close()
                 except Exception as e:
@@ -292,12 +314,14 @@ class S3UploadChannel(UploadChannel.UploadChannel):
     #TODO: we need kinda open method for the channel
     #TODO: need kinda doc
     #chunk size means one data element to be uploaded. it waits till all the chunk is transfered to the channel than makes an upload (not fully implemented)
-    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resume_upload = False , chunksize=10*1024*1024 , upload_threads=4 , queue_size=16 , use_ssl = True , walrus = False , walrus_path = "/services/WalrusBackend" , walrus_port = 8773 , make_link_public = False):
+    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resume_upload = False , chunksize=10*1024*1024 , upload_threads=4 , queue_size=16 , use_ssl = True , \
+        walrus = False , walrus_path = "/services/WalrusBackend" , walrus_port = 8773 , make_link_public = False , enable_versioning = True):
         self.__uploadQueue = Queue.Queue(queue_size)
         self.__statLock = threading.Lock()
         self.__prevUploadTime = None 
         self.__transferRate = 0
         self.__makeLinkPublic = make_link_public
+        self.__enableVersioning = enable_versioning
 
         #TODO:need to save it in common log directory
         boto.set_file_logger("boto", "boto.log", level=logging.DEBUG)
@@ -344,6 +368,15 @@ class S3UploadChannel(UploadChannel.UploadChannel):
                     logging.error("!!!ERROR: It's possible the bucket with the same name exists but in another region. Try to specify another bucket name for the upload")
                     logging.error(traceback.format_exc()) 
                     raise ex
+
+            # turn versioning on
+            # by turning versioning we achieve an ability to have several restoration\redeployment points
+            if self.__enableVersioning:
+                try:
+                    self.__bucket.configure_versioning(True)
+                except Exception as ex:
+                    logging.warn("! Cannot enable versioning in the bucket. Only last version of image will be kept")
+                    logging.error(traceback.format_exc()) 
     
 
         self.__chunkSize = chunksize 
@@ -391,7 +424,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         self.__workThreads = list()
         i = 0
         while i < upload_threads:
-            thread = S3UploadThread(self.__uploadQueue , i , self.__resumeUpload , self)
+            thread = S3UploadThread(self.__uploadQueue , i , self.__resumeUpload , self , enable_versions = self.__enableVersioning )
             thread.start()
             self.__workThreads.append(thread )
             i = i + 1
@@ -417,7 +450,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
        size = extent.getSize()
 
        #813_dr: test we may change keynames as we like to
-       keyname =  self.__keyBase+str(start)+".part"+str(int(start/self.__chunkSize))
+       keyname =  self.__keyBase+".part"+str(int(start/self.__chunkSize))
        
        #NOTE: the last one could be less than 10Mb.
        # there are two options 1) to align the whole file or to make it possible to use the smaller chunks
@@ -431,7 +464,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
        if self.__errorUploading == True:
            return False
        
-       uploadtask = UploadQueueTask(self.__bucket , keyname, size, extent.getData() , self )
+       uploadtask = UploadQueueTask(self.__bucket , keyname, size, start, extent.getData() , self )
        if uploadtask.getDataMd5() == self.__nullMd5:
            if uploadtask.getData() == self.__nullData:
                if self.__nullKey:
@@ -440,15 +473,20 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
        #TODO: check threads are working ok
        self.__uploadQueue.put( uploadtask )
-       # todo: log
-       #TODO: make this tuple more flexible
-       #TODO: make kinda fragment database with uploaded flag, md5, etc
-       self.__fragmentDictionary[start] = (keyname , size)
+
+       
        # treating overall size as maximum size
        if self.__overallSize < start + size:
            self.__overallSize = start + size       
 
        return 
+
+    def setChunkComplete(self, keyname, start, size, version=None):
+        """
+        Internal routine to communicate with the upload thread.
+        It marks chunk complete and sets adds it to the fragment dictionary
+        """
+        self.__fragmentDictionary[start] = (keyname , size, version)
 
     def getTransferChunkSize(self):
         """ 
@@ -549,7 +587,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
         #TODO: faster the solution by re-sorting the dictionary or have an another container
         for start in starts:
-            (keyname , size) = self.__fragmentDictionary[start]
+            (keyname , size , version) = self.__fragmentDictionary[start]
             
             # here we rename the parts to reflect their sequence numbers
             # NOTE: it takes to much time. 
@@ -557,7 +595,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             #self.__bucket.copy_key(newkeyname, self.__bucketName, keyname)
             #self.__bucket.delete_key(keyname)
 
-            manifest.addUploadedPart(fragment_index, start , start+size , keyname)
+            manifest.addUploadedPart(fragment_index, start , start+size , keyname , version)
             fragment_index = fragment_index + 1
         
         manifest.finalize()
