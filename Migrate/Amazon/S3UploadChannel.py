@@ -271,6 +271,8 @@ class S3UploadThread(threading.Thread):
                                     if '"'+str(md5_hexdigest)+'"' == existing_md5:
                                         logging.debug("key with same md5 and length already exisits, skip uploading") 
                                         upload = False
+                                        s3key = key
+                                        break
 
                     if upload:
                         md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest) 
