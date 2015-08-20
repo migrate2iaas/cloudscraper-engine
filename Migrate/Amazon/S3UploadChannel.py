@@ -581,7 +581,10 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         #keyprefix = "result"
         #NOTE: really we may not build XML, it'd be built by ec2-import-script
         #but the parts should be named in a right way
-        xmlkey = self.__keyBase+"manifest.xml"
+
+        today = str(datetime.date.today())
+
+        xmlkey = self.__keyBase+"-"+today+"-manifest.xml"
 
         manifest = S3ManfiestBuilder( xmltempfile , xmlkey , self.__bucketName, self.__S3, self.__diskType)	
         manifest.buildHeader(self.__overallSize , self.__volumeToAllocateGb , fragment_count)
