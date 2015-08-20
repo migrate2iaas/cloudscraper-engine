@@ -42,7 +42,7 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         self.__use_ssl = bool(use_ssl)
         #TODO: more amazon-specfiic configs needed
     
-    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):   
+    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0 , preserve_existing_data = False):   
         """
         Generates new upload channel
 
@@ -52,6 +52,7 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
             targetid: str - a cloud-defined path describing the upload (path to key in the bucket)
             resume: Boolean - to recreate disk representation or to reupload
             imagesize: long - image file size in bytes
+            preserve_existing_data: bool - if preserve (make versioned copy) of existing data (only if resume is true)
         """
         # check if we use custom (non AWS) S3 
         custom = False
@@ -60,7 +61,7 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
 
         return S3UploadChannel.S3UploadChannel(self.__bucket , self.__user , self.__pass , targetsize, self.__custom_host or self.__region , targetid or self.__keynamePrefix , self.__diskType , \
             resume_upload = resume , chunksize = self.__chunkSize, \
-            walrus = custom , walrus_path = self.__custom_suffix , walrus_port = self.__custom_port , use_ssl = self.__use_ssl)
+            walrus = custom , walrus_path = self.__custom_suffix , walrus_port = self.__custom_port , use_ssl = self.__use_ssl , enable_versioning = preserve_existing_data)
          
     def generateInstanceFactory(self):
         """returns object of InstanceFactory type to create servers from uploaded images"""

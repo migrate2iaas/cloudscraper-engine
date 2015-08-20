@@ -57,7 +57,7 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
 
         
         
-    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):
+    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0 , preserve_existing_data = False):
         """
         Generates new upload channel
 
@@ -67,13 +67,14 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
             targetid: str - a cloud-defined path describing the upload (blob-name for Azure)
             resume: Boolean - to recreate disk representation (False) or to reupload (True)
             imagesize: long - image file size in bytes
+            preserve_existing_data - if to version existing data
         """
         custom = False
         if self.__custom_host:
             custom = True
 
         return S3UploadChannel.S3UploadChannel(self.__s3bucket , self.__s3user , self.__s3password , targetsize, self.__custom_host or self.__s3region , targetid or self.__keynamePrefix , self.__diskType , \
-            resume_upload = resume , chunksize = self.__chunkSize, walrus = custom , make_link_public=True )
+            resume_upload = resume , chunksize = self.__chunkSize, walrus = custom , make_link_public=True , enable_versioning = preserve_existing_data )
 
     def generateInstanceFactory(self):
         #generate signleton
