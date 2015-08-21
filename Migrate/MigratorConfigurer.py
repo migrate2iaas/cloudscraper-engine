@@ -1,4 +1,4 @@
-# --------------------------------------------------------
+﻿# --------------------------------------------------------
 __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
@@ -36,6 +36,7 @@ import datetime
 import StreamVmdkMediaFactory
 import ProfitBricksConfig
 import SparseRawMediaFactory
+import VhdQcow2MediaFactory
 
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
@@ -621,6 +622,12 @@ class MigratorConfigurer(object):
             factory = StreamVmdkMediaFactory.StreamVmdkMediaFactory(compression) 
         if (str(imagetype).lower() == "sparsed" or imagetype.lower() == "sparsed.raw"):
             factory = SparseRawMediaFactory.SparseRawMediaFactory()
+
+        #Here we can do some additional conversation using qemu utilities
+        if (config.has_option('Qemu', 'path') and imagetype == "qcow2"):
+            qemu_path = config.get('Qemu', 'path')
+            factory = VhdQcow2MediaFactory.VhdQcow2MediaFactory(qemu_path)
+
         return factory
 
     def getImageOptions(self , config):
