@@ -37,6 +37,8 @@ import StreamVmdkMediaFactory
 import ProfitBricksConfig
 import SparseRawMediaFactory
 import VhdQcow2MediaFactory
+import SparseRawMedia
+import WindowsVhdMedia
 
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
@@ -624,9 +626,10 @@ class MigratorConfigurer(object):
             factory = SparseRawMediaFactory.SparseRawMediaFactory()
 
         #Here we can do some additional conversation using qemu utilities
-        if (config.has_option('Qemu', 'path') and imagetype == "qcow2"):
+        if (config.has_option('Qemu', 'path') and config.has_option('Qemu', 'dest_imagetype')):
             qemu_path = config.get('Qemu', 'path')
-            factory = VhdQcow2MediaFactory.VhdQcow2MediaFactory(qemu_path)
+            dest_imagetype = config.get('Qemu', 'dest_imagetype')
+            factory = VhdQcow2MediaFactory.VhdQcow2MediaFactory(factory , qemu_path , dest_imagetype)
 
         return factory
 

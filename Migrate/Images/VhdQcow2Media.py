@@ -4,7 +4,6 @@ __copyright__ = "Copyright (C) 2015 Migrate2Iaas"
 #---------------------------------------------------------
 
 import ImageMedia
-import WindowsVhdMedia
 import os
 import subprocess
 import logging
@@ -12,32 +11,34 @@ import logging
 # the base class for all the media (VHD,raw files etc) to contain a system or data image
 class VhdQcow2Media(ImageMedia.ImageMedia):
 
-    def __init__(self , qemu_path , filename , max_in_bytes , fixed = False , align_disk = 0):
+    def __init__(self , image_media , qemu_path , dest_imagetype):
         """constructor"""
         self.__qemu_path = qemu_path
-        self.__filename = filename + ".vhd"
-        self.__vhdmedia = WindowsVhdMedia.WindowsVhdMedia(self.__filename , max_in_bytes , fixed , align_disk);
+        self.__dest_imagetype = dest_imagetype
+        self.__is_closed = False
+        self.__media = image_media
+        self.__filename = self.__media.getFilePath() + "." +  self.__dest_imagetype
         super(VhdQcow2Media , self).__init__() 
 
     def open(self):
-        self.__vhdmedia.open();
+        self.__media.open();
 
     def getMaxSize(self):
         """
             Returns the size (in bytes) of virtual disk represented by the image.
         """
-        return self.__vhdmedia.getMaxSize()
+        return self.__media.getMaxSize()
 
     def getImageSize(self):
         """
             Gets the overall virtual container file size. 
             Note: it is subject to change cause the image file is used by other modules
         """
-        return os.stat(self.getFilePath()).st_size
+        return self.__media.getImageSize()
 
 
     def reopen(self):
-        self.__vhdmedia.reopen()
+        self.__media.reopen()
 
 
     def close(self):
@@ -45,19 +46,21 @@ class VhdQcow2Media(ImageMedia.ImageMedia):
             Closes the image files and finalizing images. No data could be written after close()
             retuns None, throws and error if any  
         """
-        if not hasattr(self.close.__func__, "is_closed"):
-            self.close.__func__.is_closed = False
+        if (self.__is_closed == False):
+            self.__is_closed = True
         else:
             return True
         
-        self.__vhdmedia.close()
+        self.__media.close()
+
+        #Getting image extention, then converting current image type to dest_imagetype
         try:
             output = subprocess.check_output(
-                "\"" + self.__qemu_path + "\\qemu-img\" convert -O qcow2 " +
-                "\"" + self.getFilePath() + "\" " + self. getFilePath().replace(".vhd" , "" , 1) ,
+                "\"" + self.__qemu_path + "\\qemu-img\" convert -O " + self.__dest_imagetype + " \"" +
+                self.__media.getFilePath() + "\" " + self.getFilePath() + "\"" ,
                 shell = True);
         except subprocess.CalledProcessError as ex:
-            logging.error("!!!ERROR: Cannot convert .vhd image type to .qcow2")
+            logging.error("!!!ERROR: Cannot convert image type to .qcow2")
             logging.error("qemu-img failed" + ex.output)
             raise
 
@@ -68,7 +71,7 @@ class VhdQcow2Media(ImageMedia.ImageMedia):
         """
             (Optional) Flushes all intermediate data to the disk
         """
-        return self.__vhdmedia.flush()
+        return self.__media.flush()
     
 
     def release(self):
@@ -83,7 +86,7 @@ class VhdQcow2Media(ImageMedia.ImageMedia):
         """
             No special handing for now.
         """
-        return self.__vhdmedia.readImageData(offset , size)
+        return self.__media.readImageData(offset , size)
 
    
     def writeDiskData(self , offset , data):
@@ -96,7 +99,7 @@ class VhdQcow2Media(ImageMedia.ImageMedia):
         
         Returns None, throws an error if any
         """
-        self.__vhdmedia.writeDiskData(offset, data)
+        self.__media.writeDiskData(offset, data)
 
 
     def getFilePath(self):
@@ -117,7 +120,7 @@ class VhdQcow2Media(ImageMedia.ImageMedia):
         StreamVmdkMedia: IS NOT IMPLEMENTED, throw sNotImplementedError
 
         """
-        return self.__vhdmedia.readDiskData(offset, size)
+        return self.__media.readDiskData(offset, size)
 
     #sets the channel so the data may be sent simultaniously. Not implemented for now
     def setChannel(self):
