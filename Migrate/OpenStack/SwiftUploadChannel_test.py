@@ -17,55 +17,26 @@ import os
 import DataExtent
 import time
 #import OpenStackUploadChannel
-from OpenStack import OpenStackUploadChannel
+from OpenStack import SwiftUploadChannel
 
 
-class OpenStackUploadChannel_test(unittest.TestCase):
-    """FtpUploadChannel class unittest"""
+class SwiftUploadChannel_test(unittest.TestCase):
+    """SwiftUploadChannel class unittest"""
 
     #--------------------- Tests:
     
-    def test_medium_vhd(self):
-        """test1 desctiption"""
-        return
-        filename = 'E:\\vhdtest1.vhd'
-        size = os.stat(filename).st_size
-
-        channel = OpenStackUploadChannel.OpenStackUploadChannel(size , server_url="https://auth.nl01.cloud.webzilla.com:5000/v2.0" , username="3186" , tennant_name="2344" , password = "QpLQCTrJjeoWNJaf")
-        channel.initStorage()
-
-        file = open(filename , "rb")
-        datasize = 64*1024 
-        dataplace = 0
-        while 1:
-            try:
-                data = file.read(datasize)
-            except EOFError:
-                break
-            if len(data) == 0:
-                break
-            dataext = DataExtent.DataExtent(dataplace , len(data))
-            dataplace = dataplace + len(data)
-            dataext.setData(data)
-            channel.uploadData(dataext)
-
-        channel.waitTillUploadComplete()
-        channel.confirm()
-
-        return
-
-    def test_qcow2(self):
+    def test_a_small_file(self):
         """test1 desctiption"""
         
-        filename = 'E:\\win2003.qcow2'
+        filename = 'E:\\az.rar'
         size = os.stat(filename).st_size
 
-        channel = OpenStackUploadChannel.OpenStackUploadChannel(size , disk_format="qcow2", server_url="https://auth.nl01.cloud.webzilla.com:5000/v2.0" , username="3186" , tennant_name="2344" , password = "QpLQCTrJjeoWNJaf",\
-            image_url = "https://eu01.webzillafiles.com:8080/v1/WEBZILLA_e99d95f8cde748b7b7bd86b3e9ba8ab4/testcontainer2/openstack-ubuntu.qcow2?temp_url_sig=86f582c9542954951792d7aad8148cfb777d59fe&temp_url_expires=1440431797056")
+        channel = SwiftUploadChannel.SwiftUploadChannel(size , server_url="https://eu01-auth.webzilla.com:5000/v2.0" , username="3186" , tennant_name="2344" , password = "icafLFsmAOswwISn",\
+            disk_name = "testfile1", container_name = "testcontainer1")
         channel.initStorage()
 
         file = open(filename , "rb")
-        datasize = 64*1024 
+        datasize = channel.getTransferChunkSize()
         dataplace = 0
         while 1:
             try:
@@ -84,18 +55,49 @@ class OpenStackUploadChannel_test(unittest.TestCase):
 
         return
 
-    def test_compressed_vhd(self):
+    def test_medium_avhd(self):
         """test1 desctiption"""
-        return
-        filename = 'E:\\openstack-ubuntu.tar.gz'
+        
+        filename = 'E:\\C.vhd'
         size = os.stat(filename).st_size
 
-        channel = OpenStackUploadChannel.OpenStackUploadChannel(size , server_url="https://auth.nl01.cloud.webzilla.com:5000/v2.0" , username="3186" , tennant_name="2344" , password = "QpLQCTrJjeoWNJaf",\
-            disk_format="qcow2", container_format="ovf" , image_name="test-compressed-native-ovf1")
+        channel = SwiftUploadChannel.SwiftUploadChannel(size , server_url="https://eu01-auth.webzilla.com:5000/v2.0" , username="3186" , tennant_name="2344" , password = "icafLFsmAOswwISn",\
+            disk_name = "testdisk1", container_name = "testcontainer1")
         channel.initStorage()
 
         file = open(filename , "rb")
-        datasize = 64*1024 
+        datasize = channel.getTransferChunkSize()
+        dataplace = 0
+        while 1:
+            try:
+                data = file.read(datasize)
+            except EOFError:
+                break
+            if len(data) == 0:
+                break
+            dataext = DataExtent.DataExtent(dataplace , len(data))
+            dataplace = dataplace + len(data)
+            dataext.setData(data)
+            channel.uploadData(dataext)
+
+        channel.waitTillUploadComplete()
+        channel.confirm()
+
+        return
+     #--------------------- Tests:
+    
+    def test_medium_qcow2(self):
+        """test1 desctiption"""
+        
+        filename = 'E:\\openstack-ubuntu.qcow2'
+        size = os.stat(filename).st_size
+
+        channel = SwiftUploadChannel.SwiftUploadChannel(size , server_url="https://eu01-auth.webzilla.com:5000/v2.0" , username="3186" , tennant_name="2344" , password = "icafLFsmAOswwISn",\
+            disk_name = "openstack-ubuntu.qcow2", container_name = "testcontainer2")
+        channel.initStorage()
+
+        file = open(filename , "rb")
+        datasize = channel.getTransferChunkSize()
         dataplace = 0
         while 1:
             try:

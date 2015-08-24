@@ -207,5 +207,4 @@ class MiniPadInstanceGenerator(InstanceGenerator.InstanceGenerator):
             return None
 
         self.detachDiskFromMinipad(disk)
-        return True
-         #TODO: create volume object here
+        return str(disk)

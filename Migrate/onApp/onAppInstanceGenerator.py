@@ -160,11 +160,7 @@ class onAppVM(VmInstance.VmInstance):
         if vm['booted'] == False:
             return True
         self.__onapp.shutdownVM(self.__vmid)
-
-    def attachDataVolume(self):
-        """attach data volume"""
-        raise NotImplementedError
-
+        
     def getIp(self):
         """returns public ip string"""
         vm = self.__onapp.getVM(self.__vmid)
@@ -177,6 +173,9 @@ class onAppVM(VmInstance.VmInstance):
             subresources: Boolean - if True, deallocates all associated resources (disks, ips). Deallocates only the vm itself otherwise
         """
         self.__onapp.deleteVM(self.__vmid, destroy_all_backups = int(subresources))
+    
+    def getId(self):
+        return str(self.__vmid)
 
 class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
     """on app generator"""
@@ -352,3 +351,4 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         self.getDiskSize(imageid)
         vm = onAppVM(self.__onapp, self.__minipadId)
         volume = super(onAppInstanceGenerator, self).makeVolumeFromImage(imageid, initialconfig, instancename)
+        return volume

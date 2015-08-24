@@ -13,6 +13,8 @@ import DataExtent
 import datetime
 import time
 import random
+import VmInstance
+import VmVolume
 
 import RawGzipMedia
 import SimpleDiskParser
@@ -196,8 +198,7 @@ class Migrator(object):
 
         except Exception as ex:
             traceback.print_exception(sys.exc_info()[0] , sys.exc_info()[1] , sys.exc_info()[2]) 
-            logging.error("!!!ERROR: Unexpected error occured")
-            logging.error("!!!ERROR: " + str(ex))
+            logging.error("!!!ERROR: Unexpected error occured " + str(ex))
             logging.error(traceback.format_exc())
             
         finally:
@@ -457,7 +458,7 @@ class Migrator(object):
 
                 if self.__limitUpload and channel.getOverallDataTransfered() > self.__limitUpload:
                     logging.error("!!!ERROR: Upload limit reached. Please upgrade contact sales@migrate2iaas.com to obtain the license.")
-                    return False
+                    return None
 
                 #NOTE: this is a very rough estimate
                 timenow = datetime.datetime.now()
@@ -672,7 +673,13 @@ class Migrator(object):
             
             # image size is really size of data, imagesize here is size of image file
             # dammit, needs clarifications
-            self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath() , mediaimagesize , disksize , volinfo.generateMigrationId() )
-
+            volume = self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath() , mediaimagesize , disksize , volinfo.generateMigrationId() )
+            if self.__resultingInstance and volume and isinstance(volume,VmVolume.VmVolume):
+                logging.info(">>> Attaching volume " + str(volume) + " to instance " + str(self.__resultingInstance))
+                try:
+                    volume.attach(str(self.__resultingInstance))
+                except Exception as e:
+                    logging.warning("!Cannot attach volume " + str(volume) + " to the instance. Please attach the volume manually via cloud management console")
+                    logging.warning(traceback.format_exc())
        
         return True

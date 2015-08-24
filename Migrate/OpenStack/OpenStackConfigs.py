@@ -28,7 +28,8 @@ import os
 
 class OpenStackCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self, server_url, username , tennant_name, password, network_uuid = None , disk_format="vhd", container_format="bare"):
+    def __init__(self, server_url, username , tennant_name, password, network_uuid = None , disk_format="vhd", container_format="bare",\
+        swift_server_url = None , swift_tennant_name = None , swift_username = None , swift_password = None , swift_container="cloudscraper-upload" , compression=0, chunksize=10*1024*1024):
         """
         Constructor
         """
@@ -36,10 +37,22 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         self.__username = username
         self.__tennant = tennant_name
         self.__password = password
-        self.__chunkSize = 64*1024
+        self.__chunkSize = chunksize
         self.__disk_format = str(disk_format).lower()
         self.__network = network_uuid
-        self.__container = container_format
+        self.__container_format = container_format
+
+        self.__swiftUrl = swift_server_url 
+        self.__swiftTennant = swift_tennant_name 
+        self.__swiftUsername = swift_username
+        self.__swiftPassword = swift_password
+        self.__swiftContainer = swift_container
+        
+        if compression: # in case compression is int 
+            self.__compression = True
+        else:
+            self.__compression = False
+
         super(OpenStackCloudOptions, self).__init__()
 
         
@@ -51,12 +64,15 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         Args:
             targetsize: long - target cloud disk size in bytes
             targetname: str - arbitrary description to mark the disk after migration (ignored)
-            targetid: str - a cloud-defined path describing the upload (blob-name for Azure)
+            targetid: str - a cloud-defined path describing the upload 
             resume: Boolean - to recreate disk representation (False) or to reupload (True)
             imagesize: long - image file size in bytes
         """
 
-        return OpenStackUploadChannel.OpenStackUploadChannel(imagesize , self.__server , self.__tennant , self.__username , self.__password , self.__disk_format, targetname, resume, self.__chunkSize , self.__container);
+        return OpenStackUploadChannel.OpenStackUploadChannel(imagesize , self.__server , self.__tennant , self.__username , self.__password , self.__disk_format, \
+            targetname, resume, self.__chunkSize , self.__container_format, \
+            swift_server_url = self.__swiftUrl , swift_tennant_name = self.__swiftTennant , swift_username = self.__swiftUsername , swift_password = self.__swiftPassword ,\
+            disk_name = targetname, container_name = self.__swiftContainer , compression = self.__compression);
 
     def generateInstanceFactory(self):
         return OpenStackInstanceGenerator.OpenStackInstanceGenerator(self.__server , self.__tennant , self.__username , self.__password)

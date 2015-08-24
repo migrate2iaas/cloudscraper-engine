@@ -27,6 +27,9 @@ class VmInstance(object):
         """stops instance"""
         raise NotImplementedError
 
+    def getId(self):
+        """returns cloud id of the instance"""
+        raise NotImplementedError
 
     def checkAlive(self, timeout = 500 , port = 3389):
         """
@@ -61,10 +64,6 @@ class VmInstance(object):
 
         return False
 
-    def attachDataVolume(self):
-        """attach data volume"""
-        raise NotImplementedError
-
     def getIp(self):
         """returns public ip string"""
         raise NotImplementedError
@@ -76,3 +75,5 @@ class VmInstance(object):
         """
         raise NotImplementedError
 
+    def __str__(self):
+        return str(self.getId())

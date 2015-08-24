@@ -246,9 +246,35 @@ class MigratorConfigurer(object):
             network = config.get('OpenStack', 'container')
         #TODO: we may add flavors here
 
+        # Swift specific parameters (if different from the major cloud ones)
+        swift_server_url = endpoint
+        if config.has_option('OpenStack', 'swift_endpoint'):
+            swift_server_url = config.get('OpenStack', 'swift_endpoint')
+
+        swift_tennant_name = tennant
+        if config.has_option('OpenStack', 'swift_tennant'):
+            swift_tennant_name = config.get('OpenStack', 'swift_tennant')
+
+        swift_username = user
+        if config.has_option('OpenStack', 'swift_user'):
+            swift_username = config.get('OpenStack', 'swift_user')
+
+        swift_password = user
+        if config.has_option('OpenStack', 'swift_password'):
+            swift_password = config.get('OpenStack', 'swift_password')
+
+        swift_container = "cloudscraper-"+str(int(time.time()))
+        if config.has_option('OpenStack', 'swift_container'):
+            swift_container = config.get('OpenStack', 'swift_container')
+
+        swift_compression = 0
+        if config.has_option('OpenStack', 'swift_compression'):
+            swift_compression = config.get('OpenStack', 'swift_compression')
+
         adjust_override = self.getOverrides(config , configfile)
         image = OpenStackConfigs.OpenStackMigrateConfig(volumes , factory, 'x86_64' , imagetype)
-        cloud = OpenStackConfigs.OpenStackCloudOptions(endpoint , user, tennant, password, network, imagetype, container)
+        cloud = OpenStackConfigs.OpenStackCloudOptions(endpoint , user, tennant, password, network, imagetype, container,\
+            swift_server_url = swift_server_url , swift_tennant_name = swift_tennant_name , swift_username = swift_username , swift_password = swift_password , swift_container=swift_container , compression=swift_compression)
         return (image,adjust_override,cloud)
 
     def configOnApp(self, configfile, config, password):

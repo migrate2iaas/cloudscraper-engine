@@ -19,7 +19,7 @@ import keystoneclient.v2_0.client as ksclient
 from keystoneclient.auth.identity import v2
 from keystoneclient import session
 from novaclient import client
-
+from cinderclient.v2 import client as ciclient
 
 import logging
 import traceback
@@ -27,6 +27,63 @@ import time
 
 import InstanceGenerator
 import OpenStack
+
+import VmInstance
+import VmVolume
+
+
+class OpenStackInstance(VmInstance.VmInstance):
+    """OpenStack instance"""
+
+    def __init__(self, server):
+        self.__server = server
+
+    def run(self):
+        """starts instance"""
+        self.__server.start()
+
+    def stop(self):
+        """stops instance"""
+        self.__server.stop()
+
+    def attachDataVolume(self):
+        """attach data volume"""
+        raise NotImplementedError
+
+    def getIp(self):
+        """returns public ip string"""
+        return self.__server['accessIPv4']
+
+    def deallocate(self , subresources=True):
+        """deallocates a VM
+            Args:
+            subresources: Boolean - if True, deallocates all associated resources (disks, ips). Deallocates only the vm itself otherwise
+        """
+        self.__server.delete()
+
+class OpenStackVolume(VmVolume.VmVolume):
+    """represents a volume in OpenStack"""
+
+    device_letter = "p"
+
+    def __init__(self , volume):
+        self.__volume = volume
+        return 
+
+    def getId(self):
+        """returns cloud id of the volume"""
+        return self.__volume.id
+
+    def attach(self, vm_instance_id):
+        """
+        Attaches to the machine specified by instance_id
+        """
+        self.__volume.attach(vm_instance_id , "/dev/xvd"+OpenStackVolume.device_letter)
+        # move from xvdp to xvdf
+        OpenStackVolume.device_letter = chr(ord(OpenStackVolume.device_letter) - 1)
+
+    def __str__(self):
+        return str(self.getId())
 
 class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
     """Generator of vm instances for OpenStack based clouds."""
@@ -40,11 +97,16 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
         #self.__auth = keystone.auth_token
         self.__nova = client.Client(version,username,password,tennant_name,server_url)
         self.__nova.authenticate()
+
+        self.__cinder = ciclient.Client(version,username,password,tennant_name,server_url,service_type='volume')
+        self.__cinder.authenticate()
+
         self.__vmbuild_timeout_sec = int(vmbuild_timeout_sec)
         super(OpenStackInstanceGenerator, self).__init__()
 
     def makeInstanceFromImage(self , imageid, initialconfig, instancename):
         """generates cloud server instances from uploaded images"""
+
         images = self.__nova.images.list()
         logging.info("Images found:")
         for image in images:
@@ -100,14 +162,19 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
         if (server.__dict__['OS-EXT-STS:vm_state'] == 'error'):
             logging.error("!!!Error OpenStack cloud failed to create server " + server.__dict__["_info"].fault.message) 
             return None
-            #server.reset_state('active') needs admin "reset state" permission
+            
 
-        #TODO: return VM here
-        # analyze it
-        return server
+        return OpenStackInstance(server)
         
 
 
     def makeVolumeFromImage(self , imageid , initialconfig, instancename):
         """generates cloud server instances from uploaded images"""
-        raise NotImplementedError
+        image = self.__nova.images.get(imageid)
+        size = image['virtual_size']
+        if not size:
+            size = image['size']
+        size_gb = int((size-1) / (1024*1024*1024)) + 1
+        #TODO: somehow we should get the size
+        volume = self.__nova.volumes.create(size_gb , name = instancename, imageRef=imageid)
+        return OpenStackVolume(volume)
