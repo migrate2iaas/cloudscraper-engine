@@ -60,8 +60,7 @@ class OpenStackUploadChannel_test(unittest.TestCase):
         filename = 'E:\\win2003.qcow2'
         size = os.stat(filename).st_size
 
-        channel = OpenStackUploadChannel.OpenStackUploadChannel(size , disk_format="qcow2", server_url="https://auth.nl01.cloud.webzilla.com:5000/v2.0" , username="3186" , tennant_name="2344" , password = "QpLQCTrJjeoWNJaf",\
-            image_url = "https://eu01.webzillafiles.com:8080/v1/WEBZILLA_e99d95f8cde748b7b7bd86b3e9ba8ab4/testcontainer2/openstack-ubuntu.qcow2?temp_url_sig=86f582c9542954951792d7aad8148cfb777d59fe&temp_url_expires=1440431797056")
+        channel = OpenStackUploadChannel.OpenStackUploadChannel(size , disk_format="qcow2", server_url="https://auth.nl01.cloud.webzilla.com:5000/v2.0" , username="3186" , tennant_name="2344" , password = "QpLQCTrJjeoWNJaf")
         channel.initStorage()
 
         file = open(filename , "rb")

@@ -135,7 +135,7 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
         super(AzureUploadChannel,self).__init__(resulting_size_bytes , resume_upload , chunksize , upload_threads , queue_size)
 
  
-    def initStorage(self):
+    def initStorage(self, init_data_link=""):
         """
         Inits storage to run upload
         Throws in case of unrecoverable errors

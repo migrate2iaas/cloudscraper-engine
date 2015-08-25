@@ -179,7 +179,8 @@ def swiftUploadThreadRoutine(proxyFileObj, container, upload_object, swiftServic
         verbose = True
         proxy_file = proxyFileObj
         logging.info(">>> Image transfer begins");
-        results = swiftService.upload(container , [upload_object])
+        options = {'segment_container':container , 'use_slo':True}
+        results = swiftService.upload(container , [upload_object], options=options)
         for r in results:
             if r['success']:
                 if verbose:
@@ -256,7 +257,9 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
         Inits storage to run upload
         Throws in case of unrecoverable errors
         """
-        result = self.__swiftService.post(self.__containerName)
+        #we make it public for now
+        options = {'read_acl':'.r:*'}
+        result = self.__swiftService.post(self.__containerName , options=options)
         if not result["success"]:
             logging.error("!!!ERROR: Couldn't connect to swift: " + repr(result))
             return False
@@ -335,6 +338,7 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
             options = {'headers':{'':key}}
             self.__swiftService.post(options = options)
 
+        logging.info(repr(account_stat))
         path_url_part = storage_url[storage_url.find("/v1/"):]
         base_url_part = storage_url.replace(path_url_part , "")
         path = path_url_part+"/"+self.__containerName+"/"+self.__diskName
@@ -342,12 +346,13 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
         
         seconds =  24*60*60 # 24 hours
         # dunno but Webzilla takes milliseconds instead of seconds
-        #milliseconds = int(time.time())*1000 + seconds*1000 - int(time.time())
+        milliseconds = int(time.time())*1000 + seconds*1000 - time.time() + seconds
         #milliseconds = 1440535811144 - time.time()
         #key should be set as metdata Temp-URL-Key:
-        url = generate_temp_url(path, seconds, key, method)
+        url = generate_temp_url(path, milliseconds, key, method)
         logging.debug("Swift temp url is " + url)
-        return base_url_part+url
+        # temp url doesn't work if object is not public - glance ignores the URI signature and parms when making request
+        return base_url_part+path #+url
 
     def confirm(self):
         """

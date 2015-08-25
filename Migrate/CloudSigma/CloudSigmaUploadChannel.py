@@ -154,7 +154,7 @@ class CloudSigmaUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
     ############ ------- TO OVERRIDE -------- ###########
 
 
-    def initStorage(self):
+    def initStorage(self, init_data_link=""):
         """
         Inits storage to run upload
         Throws in case of unrecoverable errors
