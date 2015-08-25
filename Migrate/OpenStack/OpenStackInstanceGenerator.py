@@ -128,6 +128,7 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
             self.__cinder = ciclient.Client(username=username,api_key=password,project_id=tennant_name,auth_url=server_url,service_type='volume')
             self.__cinder.authenticate()
         except Exception as e:
+            self.__cinder = None
             logging.warning("!Cinder block storage is unavailable");
             logging.warning(traceback.format_exc())
 
@@ -220,5 +221,5 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
             volume = self.__cinder.volumes.create(size_gb , name = instancename, imageRef=imageid)
             return OpenStackCinderVolume(volume)
         else:
-            volume = self.__nova.volumes.create(size_gb , name = instancename, imageRef=imageid)
+            volume = self.__nova.volumes.create(size_gb , display_name = instancename, imageRef=imageid)
             return OpenStackNovaVolume(self.__nova , volume)
