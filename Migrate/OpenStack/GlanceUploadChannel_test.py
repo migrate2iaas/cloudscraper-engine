@@ -30,7 +30,7 @@ class GlanceUploadChannel_test(unittest.TestCase):
         size = os.stat(filename).st_size
 
         channel = GlanceUploadChannel.GlanceUploadChannel(size , disk_format="qcow2", server_url="https://auth.nl01.cloud.webzilla.com:5000/v2.0" , username="3186" , tennant_name="2344" , password = "QpLQCTrJjeoWNJaf")
-        channel.initStorage("https://goo.gl/GlI6aX")
+        #channel.initStorage("https://goo.gl/GlI6aX")
         #channel.initStorage("swift://2344:3186:icafLFsmAOswwISn@eu01-auth.webzilla.com:5000/v2.0/cloudscraper-pub/12312RCF2_data_2015-08-25asdasd")
         #"swift://2344:3186:icafLFsmAOswwISn@auth.nl01.cloud.webzilla.com:5000/v2.0/cloudscraper-test12/12312RCF2_data_2015-08-25"
         channel.waitTillUploadComplete()

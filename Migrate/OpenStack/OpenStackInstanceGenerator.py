@@ -201,10 +201,20 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
     def makeVolumeFromImage(self , imageid , initialconfig, instancename):
         """generates cloud server instances from uploaded images"""
         image = self.__nova.images.get(imageid)
-        size = image['virtual_size']
-        if not size:
-            size = image['size']
-        size_gb = int((size-1) / (1024*1024*1024)) + 1
+        
+        # getting the image size. Primarily we rely on min_disk attribute we set when image is created
+        size_gb = 0
+        if int(image._info['min_disk']):
+            size_gb = int(image._info['min_disk'])
+        else:
+            if image._info.has_key('virtual_size') and int(image._info.has_key('virtual_size')):
+                size = int(image._info['virtual_size'])
+            if not size:
+                if image._info.has_key('size') and int(image._info.has_key('size')):
+                    size = int(image._info['size'])
+        if not size_gb:
+            size_gb = int((int(size)-1) / (1024*1024*1024)) + 1
+
         if self.__cinder:
             #TODO: somehow we should get the size
             volume = self.__cinder.volumes.create(size_gb , name = instancename, imageRef=imageid)
