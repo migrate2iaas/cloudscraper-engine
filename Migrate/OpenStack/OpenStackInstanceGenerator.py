@@ -61,7 +61,32 @@ class OpenStackInstance(VmInstance.VmInstance):
         """
         self.__server.delete()
 
-class OpenStackVolume(VmVolume.VmVolume):
+class OpenStackNovaVolume(VmVolume.VmVolume):
+    """represents a volume to be created when the server created - on the attachement phase"""
+
+    device_letter = "p"
+
+    def __init__(self , nova , volume):
+        self.__nova = nova
+        self.__volume = volume
+        return 
+
+    def getId(self):
+        """returns cloud id of the volume"""
+        return self.__image.id
+
+    def attach(self, vm_instance_id):
+        """
+        Attaches to the machine specified by instance_id
+        """
+        self.__nova.volumes.create_server_volume(vm_instance_id , self.__volume.id , "/dev/xvd"+OpenStackVolume.device_letter)
+        # move from xvdp to xvdf
+        OpenStackVolume.device_letter = chr(ord(OpenStackVolume.device_letter) - 1)
+
+    def __str__(self):
+        return str(self.getId())
+
+class OpenStackrVolume(VmVolume.VmVolume):
     """represents a volume in OpenStack"""
 
     device_letter = "p"
@@ -85,6 +110,7 @@ class OpenStackVolume(VmVolume.VmVolume):
     def __str__(self):
         return str(self.getId())
 
+
 class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
     """Generator of vm instances for OpenStack based clouds."""
 
@@ -98,8 +124,12 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
         self.__nova = client.Client(version,username,password,tennant_name,server_url)
         self.__nova.authenticate()
 
-        self.__cinder = ciclient.Client(version,username,password,tennant_name,server_url,service_type='volume')
-        self.__cinder.authenticate()
+        try:
+            self.__cinder = ciclient.Client(username=username,api_key=password,project_id=tennant_name,auth_url=server_url,service_type='volume')
+            self.__cinder.authenticate()
+        except Exception as e:
+            logging.warning("!Cinder block storage is unavailable");
+            logging.warning(traceback.format_exc())
 
         self.__vmbuild_timeout_sec = int(vmbuild_timeout_sec)
         super(OpenStackInstanceGenerator, self).__init__()
@@ -175,6 +205,10 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
         if not size:
             size = image['size']
         size_gb = int((size-1) / (1024*1024*1024)) + 1
-        #TODO: somehow we should get the size
-        volume = self.__nova.volumes.create(size_gb , name = instancename, imageRef=imageid)
-        return OpenStackVolume(volume)
+        if self.__cinder:
+            #TODO: somehow we should get the size
+            volume = self.__cinder.volumes.create(size_gb , name = instancename, imageRef=imageid)
+            return OpenStackCinderVolume(volume)
+        else:
+            volume = self.__nova.volumes.create(size_gb , name = instancename, imageRef=imageid)
+            return OpenStackNovaVolume(self.__nova , volume)
