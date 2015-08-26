@@ -243,11 +243,13 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
         self.__nullMd5 = md5encoder.hexdigest()
         self.__sslCompression = compression
 
+        self.__segmentSize = resulting_size_bytes / 64 # max segment size is 100
+
         self.__proxyFileObj  = None
         self.__uploadedSize = 0
 
         self.__serviceOpts = { 'auth' : server_url , 'user':tennant_name+":"+self.__accountName , "key":self.__accessKey , "auth_version":"2" , \
-            "segment_threads":upload_threads , "segment_size" : chunksize , \
+            "segment_threads":upload_threads , "segment_size" : self.__segmentSize , \
            'ssl_compression' : self.__sslCompression }
         self.__swiftService = SwiftService(options = self.__serviceOpts)
 
@@ -289,7 +291,7 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
                 os.stat = defferedStat
 
            deffered_path = "deffered://"+self.__diskName
-           self.__proxyFileObj = DefferedUploadDataStream(deffered_path , self.__diskSize, self.__chunkSize, self.__uploadThreads*2)
+           self.__proxyFileObj = DefferedUploadDataStream(deffered_path , self.__diskSize, self.__chunkSize, self.__uploadThreads*4)
            upload_object = SwiftUploadObject(deffered_path,self.__diskName)
            self.__thread = threading.Thread(target = swiftUploadThreadRoutine, args=(self.__proxyFileObj,self.__containerName,upload_object, self.__swiftService) )
            self.__thread.start()
