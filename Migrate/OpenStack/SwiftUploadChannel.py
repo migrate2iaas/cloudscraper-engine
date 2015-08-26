@@ -243,7 +243,7 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
         self.__nullMd5 = md5encoder.hexdigest()
         self.__sslCompression = compression
 
-        self.__segmentSize = resulting_size_bytes / 64 # max segment size is 100
+        self.__segmentSize = max(int(resulting_size_bytes / 64) , self.__chunkSize) # max segment size is 100
 
         self.__proxyFileObj  = None
         self.__uploadedSize = 0
