@@ -55,10 +55,10 @@ class SwiftUploadChannel_test(unittest.TestCase):
 
         return
 
-    def test_medium_avhd(self):
+    def test_large_vhd(self):
         """test1 desctiption"""
         
-        filename = 'E:\\C.vhd'
+        filename = 'E:\\vms\\2003r2\\win2003r2_32.vhd'
         size = os.stat(filename).st_size
 
         channel = SwiftUploadChannel.SwiftUploadChannel(size , server_url="https://eu01-auth.webzilla.com:5000/v2.0" , username="3186" , tennant_name="2344" , password = "icafLFsmAOswwISn",\

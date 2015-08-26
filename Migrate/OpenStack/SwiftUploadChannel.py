@@ -289,7 +289,7 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
                 os.stat = defferedStat
 
            deffered_path = "deffered://"+self.__diskName
-           self.__proxyFileObj = DefferedUploadDataStream(deffered_path , self.__diskSize, self.__chunkSize, self.__uploadThreads*20)
+           self.__proxyFileObj = DefferedUploadDataStream(deffered_path , self.__diskSize, self.__chunkSize, self.__uploadThreads*2)
            upload_object = SwiftUploadObject(deffered_path,self.__diskName)
            self.__thread = threading.Thread(target = swiftUploadThreadRoutine, args=(self.__proxyFileObj,self.__containerName,upload_object, self.__swiftService) )
            self.__thread.start()
