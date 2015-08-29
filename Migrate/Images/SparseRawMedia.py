@@ -3,11 +3,15 @@ __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
-import ImageMedia
+from ImageMedia import ImageMedia
 import os
 
-# the base class for all the media (VHD,raw files etc) to contain a system or data image
-class SparseRawMedia(ImageMedia.ImageMedia):
+import inspect
+
+
+print("Imported sparse raw media")
+
+class SparseRawMedia(ImageMedia):
     """Media representing one big but sparsed raw file"""
 
     def __init__(self, filename, size):
@@ -15,6 +19,8 @@ class SparseRawMedia(ImageMedia.ImageMedia):
         super(SparseRawMedia,self).__init__() 
         self.__filename = filename
         self.__size = size
+        
+        
 
     def open(self):
         """
@@ -37,14 +43,6 @@ class SparseRawMedia(ImageMedia.ImageMedia):
             Note: it is subject to change cause the image file is used by other modules
         """
         return os.stat(self.__filename).st_size
-
-    def reopen(self):
-        """
-            Reopens image files
-            retuns None, throws and error if any  
-        """
-        self.close()
-        self.open()
 
     def close(self):
         """
@@ -123,6 +121,4 @@ class SparseRawMedia(ImageMedia.ImageMedia):
         """
         return self.readImageData(offset, size)
 
-    #sets the channel so the data may be sent simultaniously. Not implemented for now
-    def setChannel(self):
-        raise NotImplementedError
+    

@@ -481,18 +481,20 @@ class Migrator(object):
 
                 logging.info( "% "+ logmsg )
 
-            data = media.readImageData(dataplace, datasize)
-            if len(data) == 0:
-                logging.warning("!Warning: the source archive has ended unexpectedly while uploading...");
-                break
-            dataext = DataExtent.DataExtent(dataplace , len(data))
-            dataplace = dataplace + len(data)
+            if dataplace + datasize > imagesize:
+                datasize = imagesize - dataplace
+            data = media.defferedReadImageData(dataplace, datasize) 
+            
+            dataext = DataExtent.CachedDataExtent(dataplace , datasize)
+            dataplace = dataplace + datasize
             dataext.setData(data)
             if channel.uploadData(dataext) == False:
                 return None
             datasent = datasent + 1
             
         channel.waitTillUploadComplete()
+
+ 
 
         logmsg = "% The image data has been fully processed. "
         #if channel.getOverallDataSkipped():

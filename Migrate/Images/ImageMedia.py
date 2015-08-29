@@ -3,9 +3,25 @@ __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
-# the base class for all the media (VHD,raw files etc) to contain a system or data image
+class DefferedData(object):
+    """Auxillary functor class to get data in deffered way from the image. It follows DataExtent semantics"""
+
+    def __init__(self , start , size , read_function):
+        """constructor taking deffered read bound method"""
+        self.__start = start
+        self.__size = size
+        self.__read = read_function
+
+    def __str__(self):
+        return self.__read(self.__start , self.__size)
+
+
 class ImageMedia(object):
-    """Base class to represent media to store an image"""
+    """ the base class for all media formats (VHD,raw files etc) to contain a system or data image"""
+
+    def __init__(self):
+        """construncto"""
+        pass
 
     def open(self):
         """
@@ -20,6 +36,7 @@ class ImageMedia(object):
             Returns the size (in bytes) of virtual disk represented by the image.
         """
         return 0
+
 
     #gets the overall image size available for writing. Note: it is subject to grow when new data is written
     def getImageSize(self):
@@ -55,7 +72,7 @@ class ImageMedia(object):
             No special handing for now. Just call close()
         """
         self.close()
-
+        
 
     #reads data from image, returns data buffer
     def readImageData(self , offset , size):
@@ -99,13 +116,25 @@ class ImageMedia(object):
 
         Args:
             offset:long - offset from the virtual disk start in bytes
-            data:str -  binary array of data to write. len(data) should be an integer of 512
-
-        StreamVmdkMedia: IS NOT IMPLEMENTED, throw sNotImplementedError
+           size:int - the size of buffer to read
 
         """
         raise NotImplementedError
 
+    def defferedReadImageData(self , offset, size):
+        """A generic function to defer the read of data from disk
+        
+        Args:
+            offset:long - offset from the file start in bytes
+            size:int - the size of buffer to read
+
+        Returns DefferedData object instance
+        """
+        return DefferedData(offset , size , self.readImageData)
+
     #sets the channel so the data may be sent simultaniously. Not implemented for now
     def setChannel(self):
         raise NotImplementedError
+
+
+   

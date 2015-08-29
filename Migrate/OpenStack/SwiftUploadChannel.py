@@ -102,6 +102,7 @@ class DefferedUploadDataStream(object):
         self.__semaphore = threading.Semaphore(max_part_number)
         self.__dictLock = threading.Lock()
         self.__cancel = False
+        self.__completeDataSize = 0
 
     def readData(self , len , pos):
         while 1:
@@ -109,7 +110,8 @@ class DefferedUploadDataStream(object):
             with self.__dictLock:
                 if self.__parts.has_key(interval_start):
                     #logging.debug("Getting data at pos " + str(pos) + " of len " + str(len) )
-                    data = self.__parts[interval_start][pos-interval_start:pos-interval_start+len]
+                    part = self.__parts[interval_start]
+                    data = part.getData()[pos-interval_start:pos-interval_start+len] # now we read all data from the extent
                     if pos-interval_start+len == self.__chunksize:
                         del self.__parts[interval_start]
                         self.__semaphore.release()
@@ -117,18 +119,22 @@ class DefferedUploadDataStream(object):
                     if data == None:
                         logging.warning("!No data available")
                         data = ""
+                    self.__completeDataSize = self.__completeDataSize + data.__len__()
                     return data
             # not sure if it works. Usually sleep is the worst method to do multithreading
             # we just hope network calls for data not so often
             time.sleep(1)
             logging.debug("Waiting till data is available at pos " + str(pos))
 
-    def writeData(self , buf , pos):
+    def writeData(self , extent):
+        pos = extent.getStart()
         logging.debug("Adding more data to deffered upload stream at pos " + str(pos))
         self.__semaphore.acquire()
+        if self.cancelled():
+            return
         logging.debug("Added more data to deffered upload stream at pos " + str(pos))
         with self.__dictLock:
-            self.__parts[pos] = buf
+            self.__parts[pos] = extent
 
     def seek(self, pos):
         self.__pos = pos
@@ -136,8 +142,13 @@ class DefferedUploadDataStream(object):
     def getSize(self):
         return self.__size
 
+    def getCompletedSize(self):
+        return self.__completeDataSize 
+
     def cancel(self):
         self.__cancel = True
+        # not the best practice but the only way to unblock the writing trhead
+        self.__semaphore.release()
 
     def cancelled(self):
         return self.__cancel
@@ -201,13 +212,7 @@ def swiftUploadThreadRoutine(proxyFileObj, container, upload_object, swiftServic
                             )
             else:
                 error = r['error']
-                logging.error("!!!ERROR: while uploading %s" % error)
-                too_large = (isinstance(error, swiftclient.exceptions.ClientException) and
-                                error.http_status == 413)
-                if too_large and options.verbose > 0:
-                    logging.error(
-                            "Consider using the --segment-size option "
-                            "to chunk the object")
+                logging.error("!!!ERROR: while uploading %s %s" % (error, repr(r)))
                 proxyFileObj.cancel()
                 return
 
@@ -243,7 +248,8 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
         self.__nullMd5 = md5encoder.hexdigest()
         self.__sslCompression = compression
 
-        self.__segmentSize = max(int(resulting_size_bytes / 64) , self.__chunkSize) # max segment size is 100
+        # max segment number is 1000 (it's configurable see http://docs.openstack.org/developer/swift/middleware.html )
+        self.__segmentSize = max(int(resulting_size_bytes / 512) , self.__chunkSize) 
 
         self.__proxyFileObj  = None
         self.__uploadedSize = 0
@@ -291,14 +297,13 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
                 os.stat = defferedStat
 
            deffered_path = "deffered://"+self.__diskName
-           self.__proxyFileObj = DefferedUploadDataStream(deffered_path , self.__diskSize, self.__chunkSize, self.__uploadThreads*4)
+           max_part_number = self.__uploadThreads*(int((self.__segmentSize-1)/self.__chunkSize)+1) # set part number enough to have all upload threads working
+           self.__proxyFileObj = DefferedUploadDataStream(deffered_path , self.__diskSize, self.__chunkSize, max_part_number)
            upload_object = SwiftUploadObject(deffered_path,self.__diskName)
            self.__thread = threading.Thread(target = swiftUploadThreadRoutine, args=(self.__proxyFileObj,self.__containerName,upload_object, self.__swiftService) )
            self.__thread.start()
       
-       self.__proxyFileObj.writeData(extent.getData() , extent.getStart())
-
-       self.__uploadedSize = self.__uploadedSize + extent.getSize()
+       self.__proxyFileObj.writeData(extent)
 
        if self.__proxyFileObj.cancelled():
            logging.error("Upload process is cancelled due to failures")
@@ -401,7 +406,9 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
         """
         Gets overall size of data actually uploaded (not skipped) in bytes.
         """
-        return self.__uploadedSize
+        if self.__proxyFileObj == None:
+            return 0
+        return self.__proxyFileObj.getCompletedSize()
 
     def close(self):
         """

@@ -14,5 +14,6 @@ class SparseRawMediaFactory(ImageMediaFactory.ImageMediaFactory):
         
         
     def createMedia(self , imagepath , imagesize):
-        return SparseRawMedia.SparseRawMedia(imagepath, imagesize)
+        media = SparseRawMedia.SparseRawMedia(imagepath, imagesize)
+        return media
 
