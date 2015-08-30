@@ -109,10 +109,10 @@ class DefferedUploadDataStream(object):
             interval_start = self.__chunksize * int(pos / self.__chunksize)
             with self.__dictLock:
                 if self.__parts.has_key(interval_start):
-                    #logging.debug("Getting data at pos " + str(pos) + " of len " + str(len) )
+                    logging.debug("Getting data at pos " + str(pos) + " of len " + str(len) )
                     part = self.__parts[interval_start]
                     data = part.getData()[pos-interval_start:pos-interval_start+len] # now we read all data from the extent
-                    if pos-interval_start+len == self.__chunksize:
+                    if pos-interval_start+len >= self.__chunksize:
                         del self.__parts[interval_start]
                         self.__semaphore.release()
                         logging.debug("Removed entry from deffered upload stream at pos " + str(interval_start) )
@@ -297,7 +297,7 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
                 os.stat = defferedStat
 
            deffered_path = "deffered://"+self.__diskName
-           max_part_number = self.__uploadThreads*(int((self.__segmentSize-1)/self.__chunkSize)+1) # set part number enough to have all upload threads working
+           max_part_number = self.__uploadThreads*(int((self.__segmentSize-1)/self.__chunkSize)+2) # set part number enough to have all upload threads working
            self.__proxyFileObj = DefferedUploadDataStream(deffered_path , self.__diskSize, self.__chunkSize, max_part_number)
            upload_object = SwiftUploadObject(deffered_path,self.__diskName)
            self.__thread = threading.Thread(target = swiftUploadThreadRoutine, args=(self.__proxyFileObj,self.__containerName,upload_object, self.__swiftService) )
