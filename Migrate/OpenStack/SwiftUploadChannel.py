@@ -109,7 +109,7 @@ class DefferedUploadDataStream(object):
             interval_start = self.__chunksize * int(pos / self.__chunksize)
             with self.__dictLock:
                 if self.__parts.has_key(interval_start):
-                    logging.debug("Getting data at pos " + str(pos) + " of len " + str(len) )
+                    #logging.debug("Getting data at pos " + str(pos) + " of len " + str(len) )
                     part = self.__parts[interval_start]
                     data = part.getData()[pos-interval_start:pos-interval_start+len] # now we read all data from the extent
                     if pos-interval_start+len >= self.__chunksize:
@@ -250,6 +250,8 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
 
         # max segment number is 1000 (it's configurable see http://docs.openstack.org/developer/swift/middleware.html )
         self.__segmentSize = max(int(resulting_size_bytes / 512) , self.__chunkSize) 
+        if self.__segmentSize % self.__chunkSize:
+            self.__segmentSize = self.__segmentSize - (self.__segmentSize % self.__chunkSize) # make segment size an integer of chunks
 
         self.__proxyFileObj  = None
         self.__uploadedSize = 0
