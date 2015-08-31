@@ -52,7 +52,7 @@ from keystoneclient.auth.identity import v2
 from keystoneclient import session
 from novaclient import client
 import glanceclient
-import glanceclient.v1.client as glclient
+import glanceclient.client as glclient
 
 import tarfile
 import StringIO
@@ -78,21 +78,23 @@ class GlanceUploadChannel(UploadChannel.UploadChannel):
     This class may work in two modes: either uploading existing data or pointing glance to outer source url where the image may be downloaded
     """
 
-    def __init__(self, result_disk_size_bytes, server_url , tennant_name , username , password, disk_format = "vhd", image_name=None, resume_upload = False , chunksize=64*1024 , upload_threads=1 , queue_size=1 , container_format="bare" ):
+    def __init__(self, result_disk_size_bytes, server_url , tennant_name , username , password, disk_format = "vhd", image_name=None, resume_upload = False , chunksize=64*1024 , upload_threads=1 , queue_size=1 , container_format="bare" , version="1"):
         """constructor"""
         keystone = ksclient.Client(auth_url=server_url,   username=username, password=password, tenant_name= tennant_name)
         glance_endpoint = keystone.service_catalog.url_for(service_type='image')
         self.__auth = keystone.auth_token
-        self.__glance = glclient.Client(glance_endpoint,token=self.__auth)
+        self.__glance = glclient.Client(version,glance_endpoint,token=self.__auth)
         if image_name:
             self.__name = image_name
         else:
-            self.__name = "Cloudscraper-img-"+str(int(time.clock()))
+            self.__name = "Cloudscraper-img-"+str(int(time.time()))
 
         images = self.__glance.images.list()
         logging.debug("Connected to glance. Available images:")
+        
         for image in images:
             logging.debug(image.id)
+            logging.debug(repr(image.__dict__))
 
         self.__disk_format = disk_format
         if "raw" in self.__disk_format:
@@ -118,7 +120,9 @@ class GlanceUploadChannel(UploadChannel.UploadChannel):
         size_gb = int((int(self.__diskSize)-1) / (1024*1024*1024)) + 1
         if self.__imageUrl:
             logging.info("Creating image based on " + init_data_link)
-        self.__image = self.__glance.images.create(name=self.__name, disk_format=self.__disk_format ,container_format=self.__container , copy_from = self.__imageUrl, min_disk=size_gb)
+            self.__image = self.__glance.images.create(name=self.__name, disk_format=self.__disk_format ,container_format=self.__container , location = self.__imageUrl, min_disk=size_gb)
+        else:
+            self.__image = self.__glance.images.create(name=self.__name, disk_format=self.__disk_format ,container_format=self.__container)
 
         return True
 
@@ -163,8 +167,9 @@ class GlanceUploadChannel(UploadChannel.UploadChannel):
         if self.__proxyFileObj:
             self.__proxyFileObj.complete()
         while 1:
+            
             image = self.__glance.images.get(self.__image.id)
-            logging.info(repr(image))
+            logging.info(repr(image.__dict__))
             if image.status == "active":
                 break
             if image.status == "error" or image.status == "killed":
