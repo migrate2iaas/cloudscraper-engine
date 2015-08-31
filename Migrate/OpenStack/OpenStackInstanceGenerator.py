@@ -248,9 +248,9 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
                             logging.info("Found ip pool by name " + pool.name)
 
             logging.info("Allocating new external IP from pool " + ip_pool.name)
-            new_ip = self.__nova.floating_ips.create(ip_pool.id)
+            new_ip = self.__nova.floating_ips.create(ip_pool.name)
             server.add_floating_ip(new_ip)
-            external_ip = new_ip.addr
+            external_ip = new_ip.ip
         except Exception as e:
             logging.warn("! Unable to add external ip to the server! Please, contact your cloud support")
 
