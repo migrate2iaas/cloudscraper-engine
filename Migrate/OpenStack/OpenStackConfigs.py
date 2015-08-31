@@ -28,7 +28,7 @@ import os
 
 class OpenStackCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self, server_url, username , tennant_name, password, network_uuid = None , disk_format="vhd", container_format="bare",\
+    def __init__(self, server_url, username , tennant_name, password, network_name = None , disk_format="vhd", container_format="bare", flavor=None, ip_pool_name=None,\
         swift_server_url = None , swift_tennant_name = None , swift_username = None , swift_password = None , swift_container="cloudscraper-upload" , compression=0, chunksize=10*1024*1024):
         """
         Constructor
@@ -39,8 +39,10 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         self.__password = password
         self.__chunkSize = chunksize
         self.__disk_format = str(disk_format).lower()
-        self.__network = network_uuid
+        self.__network = network_name
         self.__container_format = container_format
+        self.__instanceFlavor = flavor
+        self.__publicIpPool = ip_pool_name
 
         self.__swiftUrl = swift_server_url 
         self.__swiftTennant = swift_tennant_name 
@@ -94,7 +96,8 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
 
     def getZone(self):
         """returns """
-        return self.__tennant
+        # pool is very alike availability zone. Not sure whether they are the same or just interrelated in the sys architectures on hand
+        return self.__publicIpPool
 
     def getRegion(self):
         return self.__server
@@ -106,7 +109,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         return self.__chunkSize
 
     def getInstanceType(self):
-        return ""
+        return self.__instanceFlavor
 
     def getServerName(self):
         return ""

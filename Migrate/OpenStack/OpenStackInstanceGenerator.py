@@ -35,8 +35,9 @@ import VmVolume
 class OpenStackInstance(VmInstance.VmInstance):
     """OpenStack instance"""
 
-    def __init__(self, server):
+    def __init__(self, server, public_ip = None):
         self.__server = server
+        self.__ip = public_ip
 
     def run(self):
         """starts instance"""
@@ -52,7 +53,16 @@ class OpenStackInstance(VmInstance.VmInstance):
 
     def getIp(self):
         """returns public ip string"""
-        return self.__server['accessIPv4']
+        if self.__ip:
+            return self.__ip
+
+        for (network_name,network) in self.__server.addresses.iteritems():
+            logging.info("Server connected to the network " + str(network_name))
+            for addr in network:
+                logging.info("Found ip address for the server: " + addr['addr'])
+                if addr['OS-EXT-IPS:type'] == "floating":
+                    return str(addr['addr'])
+            
 
     def deallocate(self , subresources=True):
         """deallocates a VM
@@ -138,37 +148,60 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
     def makeInstanceFromImage(self , imageid, initialconfig, instancename):
         """generates cloud server instances from uploaded images"""
 
-        images = self.__nova.images.list()
-        logging.info("Images found:")
-        for image in images:
-            logging.info(str(image.__dict__))
-        flavors = self.__nova.flavors.list()
-        flavor = flavors[0]
+        # just some debug output
+        logging.debug("Servers found:")
         servers =self.__nova.servers.list()
         for server in servers:
-            logging.info(str(server.__dict__))
+            logging.debug(str(server.__dict__))
 
+        images = self.__nova.images.list()
+        logging.debug("Images found:")
+        for image in images:
+            logging.debug(str(image.__dict__))
+        
+
+        flavors = self.__nova.flavors.list()
+        flavor = flavors[0]
+        if initialconfig:
+           if initialconfig.getInstanceType():
+               flavor_name = initialconfig.getInstanceType()
+               logging.info("Seeking for flavor named " + flavor_name )
+               found = False
+               for flv in flavors:
+                   if flv.name == flavor_name:
+                       flavor = flv
+                       logging.info("Machine flavor will be: " + flv.name)
+                       found = True
+                       break
+               if not found:
+                   logging.warn("! Flavor " +flavor_name + " not found. Using default one: " + flavor.name)
+       
+
+
+        # prepare network
         nics = None
-        #TODO: to the config
-        networkid = '1a29f2c3-27f5-4473-9bcc-483fab79e10e'
+
+        network_name = "network-for-az1"
         if initialconfig:
            if initialconfig.getSubnet():
-               networkid = initialconfig.getSubnet()
+               network_name = initialconfig.getSubnet()
 
-        networks =self.__nova.networks.list()
+        networks = self.__nova.networks.list()
         for network in networks:
             logging.info(str(network.__dict__))
-            if str(network.id) == str(networkid):
+            if str(network.label) == str(network_name):
                 nic = dict()
                 nic['net-id'] = network.id
                 nics = list()
                 nics.append(nic)
+                break
         
-        
+        if not nics:
+            logging.warning("!Network with label \'" + network_name +  "\' has not been found")
+
+        # create server
         image = self.__nova.images.get(imageid)
         logging.info(">>> Creating new server from image " + imageid)
-       
-
         server = self.__nova.servers.create(instancename , image , flavor=flavor, nics = nics)
 
         #wait for server to be created
@@ -188,13 +221,40 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
                 # sometimes this parm is not set just when build is requested
                 break
         
-        logging.info("Server in state " + server.__dict__['OS-EXT-STS:vm_state'])
+        logging.info(">>> New server in" + server.__dict__['OS-EXT-STS:vm_state'] + " state " )
+        logging.info(str(server.__dict__))
         if (server.__dict__['OS-EXT-STS:vm_state'] == 'error'):
             logging.error("!!!Error OpenStack cloud failed to create server " + server.__dict__["_info"].fault.message) 
             return None
             
+        # configure outbound network
+        logging.info(">>> Enabling external network")
+        
+        external_ip = None
+        try:
+            #TODO: pass the pool via config (e.g. like availablilty zone?)
+            pools = self.__nova.floating_ip_pools.list()
+            ip_pool = pools[0]
+            
+            if initialconfig:
+                if initialconfig.getZone():
+                    zone_name = initialconfig.getZone()
+                    # we treat zone name as pool name. Maybe there is a way to interrelate them. Not sure for now
+                    logging.debug("IP pools found:")
+                    for pool in pools:
+                        logging.debug(str(pool.__dict__))
+                        if pool.name == zone_name:
+                            ip_pool = pool
+                            logging.info("Found ip pool by name " + pool.name)
 
-        return OpenStackInstance(server)
+            logging.info("Allocating new external IP from pool " + ip_pool.name)
+            new_ip = self.__nova.floating_ips.create(ip_pool.id)
+            server.add_floating_ip(new_ip)
+            external_ip = new_ip.addr
+        except Exception as e:
+            logging.warn("! Unable to add external ip to the server! Please, contact your cloud support")
+
+        return OpenStackInstance(server , external_ip)
         
 
 

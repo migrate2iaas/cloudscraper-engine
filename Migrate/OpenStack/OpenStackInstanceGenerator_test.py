@@ -30,15 +30,15 @@ import OpenStackInstanceGenerator
 
 
 
-class onAppInstanceGenerator_test(unittest.TestCase):
+class OpenStackInstanceGenerator_test(unittest.TestCase):
     """CLASS class unittest"""
 
     #--------------------- Tests:
     
     def test_create(self):
         """creates new VM"""
-        self.generator.makeInstanceFromImage("3e963f51-2a4c-47d6-b4c6-3171f9d14467" , None, "cloduscraper-test-server")
-        
+        vm = self.generator.makeInstanceFromImage("3e963f51-2a4c-47d6-b4c6-3171f9d14467" , None, "cloduscraper-test-server")
+        ip = vm.getIp()
         return
 
 

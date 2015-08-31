@@ -176,9 +176,8 @@ class GlanceUploadChannel(UploadChannel.UploadChannel):
         if self.__proxyFileObj:
             self.__proxyFileObj.complete()
         while 1:
-            
             image = self.__glance.images.get(self.__image.id)
-            logging.info(repr(image.__dict__))
+            logging.debug(repr(image.__dict__))
             if image.status == "active":
                 break
             if image.status == "error" or image.status == "killed":
