@@ -281,7 +281,7 @@ class MigratorConfigurer(object):
 
         adjust_override = self.getOverrides(config , configfile)
         image = OpenStackConfigs.OpenStackMigrateConfig(volumes , factory, 'x86_64' , imagetype)
-        cloud = OpenStackConfigs.OpenStackCloudOptions(endpoint , user, tennant, password, network, imagetype, container, flavor = flavor, ip_pool = ip_pool,\
+        cloud = OpenStackConfigs.OpenStackCloudOptions(endpoint , user, tennant, password, network, imagetype, container, flavor = flavor, ip_pool_name = ip_pool,\
             swift_server_url = swift_server_url , swift_tennant_name = swift_tennant_name , swift_username = swift_username , swift_password = swift_password , swift_container=swift_container , compression=swift_compression)
         return (image,adjust_override,cloud)
 
