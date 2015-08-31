@@ -167,9 +167,7 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
         
         image = self.__nova.images.get(imageid)
         logging.info(">>> Creating new server from image " + imageid)
-        #TODO: get metadata from configs
-        metadata = {'isolate_os':'windows' , 'requires_ssh_key':'false' , 'windows12':'true'}
-        self.__nova.images.set_meta(image, metadata)
+       
 
         server = self.__nova.servers.create(instancename , image , flavor=flavor, nics = nics)
 
@@ -179,11 +177,12 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
         while True:
             time.sleep(interval_to_wait)
             waited = waited + interval_to_wait
-            if (waited > interval_to_wait):
-                logging.warning("! Server is still building, aboritng wait operation.")
+            if (waited > self.__vmbuild_timeout_sec):
+                logging.warning("! Server is still building.")
             servers = self.__nova.servers.list()
             for upd_server in servers:
                  if server.id == upd_server.id:
+                     logging.debug(repr(server.__dict__))
                      server = upd_server
             if not server.__dict__['OS-EXT-STS:vm_state'] == "building":
                 # sometimes this parm is not set just when build is requested

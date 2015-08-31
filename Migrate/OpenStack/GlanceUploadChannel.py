@@ -119,10 +119,19 @@ class GlanceUploadChannel(UploadChannel.UploadChannel):
         self.__imageUrl = init_data_link
         size_gb = int((int(self.__diskSize)-1) / (1024*1024*1024)) + 1
         if self.__imageUrl:
-            logging.info("Creating image based on " + init_data_link)
+            logging.info("Creating image referencing to " + init_data_link)
             self.__image = self.__glance.images.create(name=self.__name, disk_format=self.__disk_format ,container_format=self.__container , location = self.__imageUrl, min_disk=size_gb)
         else:
             self.__image = self.__glance.images.create(name=self.__name, disk_format=self.__disk_format ,container_format=self.__container)
+
+        try: 
+        #TODO: get metadata from configs
+            logging.info("Adding metadata to the image")
+            metadata = {'isolate_os':'windows' , 'requires_ssh_key':'false' , 'windows12':'true'}
+            self.__image.update(properties=metadata)
+        except Exception as e:
+            logging.warn("! Cannot set metadata to imate " + self.__image.name + " (" + self.__image.id + ")")
+            logging.warn(repr(e))
 
         return True
 
