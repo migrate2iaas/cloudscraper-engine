@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>OpenStack\OpenStackUploadChannel_test.py</StartupFile>
+    <StartupFile>Migrate.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -42,6 +42,7 @@
     <Compile Include="Azure\virtualmachine.py" />
     <Compile Include="BackupAdjust.py" />
     <Compile Include="BackupSource.py" />
+    <Compile Include="ChainUploadChannel.py" />
     <Compile Include="CloudConfig.py" />
     <Compile Include="CloudSigma\CloudSigmaConfigs.py" />
     <Compile Include="CloudSigma\CloudSigmaUploadChannel.py" />
@@ -99,11 +100,15 @@
     <Compile Include="onApp\onAppInstanceGenerator.py" />
     <Compile Include="onApp\onAppInstanceGenerator_test.py" />
     <Compile Include="onApp\__init__.py" />
+    <Compile Include="OpenStack\GlanceUploadChannel.py" />
+    <Compile Include="OpenStack\GlanceUploadChannel_test.py" />
     <Compile Include="OpenStack\OpenStackConfigs.py" />
     <Compile Include="OpenStack\OpenStackUploadChannel.py" />
     <Compile Include="OpenStack\OpenStackInstanceGenerator.py" />
     <Compile Include="OpenStack\OpenStackInstanceGenerator_test.py" />
     <Compile Include="OpenStack\OpenStackUploadChannel_test.py" />
+    <Compile Include="OpenStack\SwiftUploadChannel.py" />
+    <Compile Include="OpenStack\SwiftUploadChannel_test.py" />
     <Compile Include="OpenStack\__init__.py" />
     <Compile Include="ProfitBricks\FtpUploadChannel.py" />
     <Compile Include="ProfitBricks\FtpUploadChannel_test.py" />
@@ -119,6 +124,7 @@
     <Compile Include="UploadChannel.py" />
     <Compile Include="Version.py" />
     <Compile Include="VmInstance.py" />
+    <Compile Include="VmVolume.py" />
     <Compile Include="VolumeInfo.py" />
     <Compile Include="Windows\cabinet.py" />
     <Compile Include="Windows\VSS.py" />

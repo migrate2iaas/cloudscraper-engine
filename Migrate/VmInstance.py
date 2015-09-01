@@ -19,6 +19,9 @@ import time
 class VmInstance(object):
     """abstract class for Virtual machine instance in the cloud"""
 
+    def __init__(self , vm_id = None):
+        self.__vmId = vm_id
+
     def run(self):
         """starts instance"""
         raise NotImplementedError
@@ -29,7 +32,7 @@ class VmInstance(object):
 
     def getId(self):
         """returns cloud id of the instance"""
-        raise NotImplementedError
+        return self.__vmId
 
     def checkAlive(self, timeout = 500 , port = 3389):
         """

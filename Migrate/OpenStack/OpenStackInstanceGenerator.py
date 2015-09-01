@@ -36,6 +36,7 @@ class OpenStackInstance(VmInstance.VmInstance):
     """OpenStack instance"""
 
     def __init__(self, server, public_ip = None):
+        super(OpenStackInstance , self).__init__(server.id)
         self.__server = server
         self.__ip = public_ip
 
