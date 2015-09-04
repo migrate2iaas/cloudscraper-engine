@@ -222,10 +222,10 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
                 # sometimes this parm is not set just when build is requested
                 break
         
-        logging.info(">>> New server in" + server.__dict__['OS-EXT-STS:vm_state'] + " state " )
+        logging.info(">>> New server in " + server.__dict__['OS-EXT-STS:vm_state'] + " state " )
         logging.info(str(server.__dict__))
         if (server.__dict__['OS-EXT-STS:vm_state'] == 'error'):
-            logging.error("!!!Error OpenStack cloud failed to create server " + server.__dict__["_info"].fault.message) 
+            logging.error("!!!Error OpenStack cloud failed to create server " + server.__dict__["_info"]["fault"]["message"]) 
             return None
             
         # configure outbound network
