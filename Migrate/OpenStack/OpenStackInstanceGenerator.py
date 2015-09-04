@@ -146,7 +146,7 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
         self.__vmbuild_timeout_sec = int(vmbuild_timeout_sec)
         super(OpenStackInstanceGenerator, self).__init__()
 
-    def __findFlavor(initialconfig , image):
+    def __findFlavor(self, initialconfig , image):
         """Finds matching flavor dependiong on configuration and disk size"""
         flavors = self.__nova.flavors.list()
         # picking the default if no config specified
@@ -167,6 +167,7 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
                logging.info("Seeking for flavor named " + flavor_name + " and size at least " + str(int(image.minDisk)) + " GB")
                found = None
                for flv in flavors:
+                   logging.debug("Found flavor " + repr(flv.__dict__))
                    if flavor_name and flv.name == flavor_name:
                        found = flv
                        break
@@ -177,7 +178,7 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
                           break
 
                if not found:
-                   logging.warn("! Flavor " +flavor_name + " not found. Using default one: " + flavor.name)
+                   logging.warn("! VM instancr flavor (size) not found. Using default one: " + flavor.name)
                else:
                    flavor = found
                    logging.info("Machine flavor will be: " + flavor.name)
