@@ -146,6 +146,45 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
         self.__vmbuild_timeout_sec = int(vmbuild_timeout_sec)
         super(OpenStackInstanceGenerator, self).__init__()
 
+    def __findFlavor(initialconfig , image):
+        """Finds matching flavor dependiong on configuration and disk size"""
+        flavors = self.__nova.flavors.list()
+        # picking the default if no config specified
+        flavor = flavors[0]
+        flavor_name = ""
+        flavor_disk = None
+        
+        if initialconfig:
+           if initialconfig.getInstanceType():
+               flavor_name = initialconfig.getInstanceType()
+
+        if int(image.minDisk) > int(flavor.disk):
+            flavor_disk = int(image.minDisk)
+            if flavor_name:
+                logging.warn("! The selected flavor type is not enough to store the system data. Seeking for flavor possesing enough disk space")
+
+        if flavor_disk or flavor_name:
+               logging.info("Seeking for flavor named " + flavor_name + " and size at least " + str(int(image.minDisk)) + " GB")
+               found = None
+               for flv in flavors:
+                   if flavor_name and flv.name == flavor_name:
+                       found = flv
+                       break
+                   # searching matching disk if machine is not foind
+                   elif flavor_disk:
+                      if flavor_disk < int(flv.disk):
+                          found = flv
+                          break
+
+               if not found:
+                   logging.warn("! Flavor " +flavor_name + " not found. Using default one: " + flavor.name)
+               else:
+                   flavor = found
+                   logging.info("Machine flavor will be: " + flavor.name)
+
+        return flavor
+
+
     def makeInstanceFromImage(self , imageid, initialconfig, instancename):
         """generates cloud server instances from uploaded images"""
 
@@ -160,24 +199,9 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
         for image in images:
             logging.debug(str(image.__dict__))
         
+        image = self.__nova.images.get(imageid)
 
-        flavors = self.__nova.flavors.list()
-        flavor = flavors[0]
-        if initialconfig:
-           if initialconfig.getInstanceType():
-               flavor_name = initialconfig.getInstanceType()
-               logging.info("Seeking for flavor named " + flavor_name )
-               found = False
-               for flv in flavors:
-                   if flv.name == flavor_name:
-                       flavor = flv
-                       logging.info("Machine flavor will be: " + flv.name)
-                       found = True
-                       break
-               if not found:
-                   logging.warn("! Flavor " +flavor_name + " not found. Using default one: " + flavor.name)
-       
-
+        flavor = self.__findFlavor(initialconfig , image)
 
         # prepare network
         nics = None
@@ -201,7 +225,6 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
             logging.warning("!Network with label \'" + network_name +  "\' has not been found")
 
         # create server
-        image = self.__nova.images.get(imageid)
         logging.info(">>> Creating new server from image " + imageid)
         server = self.__nova.servers.create(instancename , image , flavor=flavor, nics = nics)
 
