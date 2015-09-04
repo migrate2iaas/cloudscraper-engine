@@ -1,4 +1,4 @@
-# --------------------------------------------------------
+﻿# --------------------------------------------------------
 __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
@@ -190,16 +190,19 @@ class Migrator(object):
                     logging.info("System copy failed")
                     return None
 
-            #
+            # 13) TODO: attach volumes here!
+            logging.info("Finalizing the instance making it ready for the user")
+            if self.__resultingInstance:
+                self.__resultingInstance.finalize()
         
-        # 8) adjust transfers after all?
-        # Tha place of parallelism and asynchronousity is somewhere here
-        # for now we just save the data here
 
         except Exception as ex:
             traceback.print_exception(sys.exc_info()[0] , sys.exc_info()[1] , sys.exc_info()[2]) 
             logging.error("!!!ERROR: Unexpected error occured " + str(ex))
             logging.error(traceback.format_exc())
+            return None
+            #TODO: set error state
+            # do cleanups? Should write something to the console
             
         finally:
             for channel in self.__dataChannelList.values():
@@ -539,6 +542,10 @@ class Migrator(object):
         generator = None
         volname = ""
         vol = None
+        if description:
+           volname = description
+        else:
+           volname = os.environ['COMPUTERNAME']+"_data_volume"
         #TODO: make volume generator separate class
         if self.__cloudName == "EC2":
             import EC2VolumeGenerator
@@ -555,10 +562,6 @@ class Migrator(object):
             import AzureConfigs
             import AzureInstanceGenerator
             generator = self.__cloudOptions.generateInstanceFactory()
-            if description:
-                volname = description
-            else:
-                volname = os.environ['COMPUTERNAME']+str(datetime.date.today())+"_data"
         else:
             generator = self.__cloudOptions.generateInstanceFactory()
         
@@ -683,5 +686,6 @@ class Migrator(object):
                 except Exception as e:
                     logging.warning("!Cannot attach volume " + str(volume) + " to the instance. Please attach the volume manually via cloud management console")
                     logging.warning(traceback.format_exc())
+
        
         return True

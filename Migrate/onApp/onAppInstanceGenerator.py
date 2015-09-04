@@ -26,7 +26,10 @@ class OnAppBase:
         basicAuth = "";
         def connectOnApp(self, username, password, hostname, port):
                 self.basicAuth = base64.encodestring('%s:%s' % (username, password)).replace('\n', '');
-                self.conn = httplib.HTTPConnection(hostname, port);
+                if int(port)==443:
+                    self.conn = httplib.HTTPSConnection(hostname, port);
+                else:
+                    self.conn = httplib.HTTPConnection(hostname, port);
                 try:
                         logging.info("Connecting to HTTPConnection");
                         self.conn.connect();
@@ -56,12 +59,12 @@ class OnAppBase:
 
 
         def getVersion(self):
-                #Make Request to OnApp with Basic Auth
-                response = self.sendRequest("GET", "/version.json");
-                array = json.loads(response.read());
-                if 'version' in array:
-                        return array['version'];
-                return False;
+            #Make Request to OnApp with Basic Auth
+            response = self.sendRequest("GET", "/version.json");
+            array = json.loads(response.read());
+            if 'version' in array:
+                    return array['version'];
+            return False;
 
         # should split into several classes if needed
         def createVM(self, vmParams):
@@ -79,7 +82,7 @@ class OnAppBase:
             response = self.sendRequest("PUT", "/virtual_machines/"+str(vmid)+".json", request);
             
         def shutdownVM(self , vmid):
-            response = self.sendRequest("POST", "/virtual_machines/"+str(vmid)+"/stop.json");
+            response = self.sendRequest("POST", "/virtual_machines/"+str(vmid)+"/shutdown.json");
 
         def startVM(self, vmid):
             response = self.sendRequest("POST", "/virtual_machines/"+str(vmid)+"/startup.json");
@@ -106,6 +109,14 @@ class OnAppBase:
                 return data;
 
             return
+
+        def getDisks(self , vmid):
+            response = self.sendRequest("GET", "/virtual_machines/"+str(vmid)+"/disks.json");
+            data = json.loads(response.read());
+            if 'disks' in data:
+                return data['disks'];
+            else:
+                return data;
 
         def backupDisk(self , diskid):
             #TODO: analyze responses
@@ -142,10 +153,17 @@ class OnAppBase:
 
 class onAppVM(VmInstance.VmInstance):
     """class representing onapp vm"""
-    def __init__(self , onapp, vmid):
+    def __init__(self , onapp, vmid , minipad_obj = None):
         self.__onapp = onapp
         self.__vmid = vmid
-        
+        self.__minipad_obj = minipad_obj
+    
+    def finalize(self):
+        """finalizes the VM setting it to stopped state ready to be boot whenever user starts it"""
+        if self.__minipad_obj:
+            logging.info("Finalizing the onApp VM making it bootable from attached disk")
+            self.__minipad_obj.finalizeConversion(True)
+        self.stop()
 
     def run(self):
         """starts instance"""
@@ -159,6 +177,7 @@ class onAppVM(VmInstance.VmInstance):
         vm = self.__onapp.getVM(self.__vmid)
         if vm['booted'] == False:
             return True
+        logging.info("Shutting down the onApp VM " + self.__vmid)
         self.__onapp.shutdownVM(self.__vmid)
         
     def getIp(self):
@@ -181,17 +200,27 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
     """on app generator"""
 
     def createDisk(self , name):
-        size = 100;
         parms = {"label":name , "disk_size" : self.__diskSize , "data_store_id" : int(self.__datastore) , "hot_attach" : 1}
         disk_out = self.__onapp.createDisk(self.__minipadId , parms)
         logging.debug(repr(disk_out))
         #self.__diskId = 
         return disk_out['id']
 
-    def attachDiskToMinipad(self, disk):
+    def attachDiskToMinipad(self, diskid):
         """we just wait here to ensure disk attached"""
+        timeout = self.__diskWaitTimeout
+        sleeptime = 30*1 # check every 30 sec
         logging.debug("Waiting till disk is attached")
-        time.sleep(self.__diskWaitTimeout)
+        while timeout > 0:
+            disks = self.__onapp.getDisks(self.__minipadId) 
+            for disk in disks:
+                if disk['disk']['id'] == diskid:
+                    if disk['disk']['built'] == True and disk['disk']['locked'] == False:
+                        logging.debug("The disk is ready")
+                        return 
+            time.sleep(sleeptime)
+            timeout = timeout - sleeptime
+        logging.warn("!The disk is not ready!")
         return
 
     def initCreate(self , initialconfig):
@@ -205,7 +234,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
     def launchMinipadServer(self):
         """ to implement in the inherited class """
         #here we should start minipad from template
-        win_template_disk_size = 20
+        win_template_disk_size = self.__winTemplateDiskSize
         #TODO: licensing should be configurable
         win_licensing_type = "mak"
 
@@ -240,10 +269,14 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         #TODO: customize VM size
         # Here we should customize cloudscraper minipad image
 
-        
-        vmParams = { "label" : name }
-        self.__onapp.editVM(self.__minipadId, vmParams)
-        vm = onAppVM(self.__onapp , self.__minipadId)
+        try:
+            vmParams = { "label" : name }
+            self.__onapp.editVM(self.__minipadId, vmParams)
+        except Exception as e:
+            logging.warn("!Failed to rename the VM " + self.__minipadId + " :" + str(e) + " please see logs for info")
+
+
+        vm = onAppVM(self.__onapp , self.__minipadId , self)
 
         return vm
 
@@ -275,7 +308,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         logging.error("!!!ERROR: Timeout, Cloudscraper target VM is not ready. Please contact the cloud provider.")
         return
 
-    def __init__(self, onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_id = "" , minipad_vm_id = None , vmbuild_timeout=100*60 ):
+    def __init__(self, onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_id = "" , minipad_vm_id = None , vmbuild_timeout=100*60 , win_template_disk_size=20):
         """
         Args:
             onapp_endpoint - cloud endpoint address (ip or dns)
@@ -288,6 +321,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
             minipad_image_id - the template id of minipad to launch
             minipad_vm_id - id if minipad is already created
             vmbuild_timeout: int - timeout in seconds to wait till target minipad VM is built
+            win_template_disk_size: int - the size of minipad VM primary disk in GBs
         """
         self.__onapp = OnAppBase();
         self.__onapp.connectOnApp(onapp_login, onapp_password, onapp_endpoint, str(onapp_port));
@@ -298,11 +332,12 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
 
         self.__diskSize = 100;
         self.__builtTimeOutSec = vmbuild_timeout;
-        self.__diskWaitTimeout = 120 #2 mins
+        self.__diskWaitTimeout = 360 #6 mins
         self.__serviceStartTimeout = 120
         self.__minipadTemplate = minipad_image_id
         self.__minipadId = minipad_vm_id
         self.__datastore = onapp_datastore_id
+        self.__winTemplateDiskSize = win_template_disk_size
         super(onAppInstanceGenerator, self).__init__(preset_ip)
         #TODO: should find datastore id via the label
         

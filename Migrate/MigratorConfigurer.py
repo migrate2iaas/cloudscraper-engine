@@ -1,4 +1,4 @@
-# --------------------------------------------------------
+﻿# --------------------------------------------------------
 __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
@@ -38,6 +38,9 @@ import datetime
 import StreamVmdkMediaFactory
 import ProfitBricksConfig
 import SparseRawMediaFactory
+import VhdQcow2MediaFactory
+import SparseRawMedia
+import WindowsVhdMedia
 
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
@@ -314,6 +317,11 @@ class MigratorConfigurer(object):
         if config.has_option('onApp', 'vm_build_timeout'):
             vm_build_timeout = config.get('onApp', 'vm_build_timeout') 
 
+        wintemplate_size = 20
+        if config.has_option('onApp', 'wintemplate_size'):
+            wintemplate_size = int(config.get('onApp', 'wintemplate_size') )
+
+
         onapp_target_account = None
 
         s3bucket = config.get('onApp', 's3bucket')
@@ -325,8 +333,8 @@ class MigratorConfigurer(object):
 
         image = onAppConfigs.onAppMigrateConfig(volumes , factory, 'x86_64' , imagetype)
         cloud = onAppConfigs.onAppCloudOptions(s3bucket , s3user , s3secret , s3region , onapp_endpoint , onapp_login , \
-            password , onapp_datastore_id, onapp_target_account , onapp_port = onapp_port, preset_ip = minipad_ip, minipad_image_name = minipad_template , minipad_vm_id = minipad_vm_id , vmbuild_timeout_sec = int(vm_build_timeout))
-
+            password , onapp_datastore_id, onapp_target_account , onapp_port = onapp_port, preset_ip = minipad_ip, \
+            minipad_image_name = minipad_template , minipad_vm_id = minipad_vm_id , vmbuild_timeout_sec = int(vm_build_timeout) , wintemplate_size = wintemplate_size)
 
         return (image,adjust_override,cloud)
 
@@ -677,6 +685,16 @@ class MigratorConfigurer(object):
             factory = StreamVmdkMediaFactory.StreamVmdkMediaFactory(compression) 
         if (str(imagetype).lower() == "sparsed" or imagetype.lower() == "sparsed.raw"):
             factory = SparseRawMediaFactory.SparseRawMediaFactory()
+
+        #Here we can do some additional conversation using qemu utilities
+        if (config.has_option('Qemu', 'path') and config.has_option('Qemu', 'dest_imagetype')):
+            qemu_path = config.get('Qemu', 'path')
+            dest_imagetype = config.get('Qemu', 'dest_imagetype')
+            qemu_convert_params = ""
+            if config.has_option('Qemu', 'qemu_convert_params'):
+                qemu_convert_params = int(config.get('Qemu', 'qemu_convert_params'))
+            factory = VhdQcow2MediaFactory.VhdQcow2MediaFactory(factory , qemu_path , dest_imagetype , qemu_convert_params = qemu_convert_params)
+
         return factory
 
     def getImageOptions(self , config):

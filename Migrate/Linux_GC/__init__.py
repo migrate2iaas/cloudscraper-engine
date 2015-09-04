@@ -14,8 +14,8 @@ import logging
 import traceback
 import sys
 
-sys.path.append('./../compute-image-packages/gcimagebundle')
-sys.path.append('./../../compute-image-packages/gcimagebundle')
+sys.path.append('./submodules/compute-image-packages/gcimagebundle')
+sys.path.append('./../submodules/compute-image-packages/gcimagebundle')
 from gcimagebundlelib import *
 from gcimagebundlelib import utils
 from gcimagebundlelib import platform_factory

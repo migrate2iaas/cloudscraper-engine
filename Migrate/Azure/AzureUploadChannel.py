@@ -11,14 +11,7 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 import sys
 
 sys.path.append('.\..')
-sys.path.append('.\..\Amazon')
-sys.path.append('.\..\Windows')
-sys.path.append('.\..\ElasticHosts')
 sys.path.append('.\..\Azure')
-
-sys.path.append('.\Windows')
-sys.path.append('.\Amazon')
-sys.path.append('.\ElasticHosts')
 sys.path.append('.\Azure')
 
 
@@ -48,9 +41,8 @@ import UploadChannel
 import MultithreadUpoadChannel
 from md5 import md5
 
+import Azure
 from azure.storage import *
-
-
 
 
 

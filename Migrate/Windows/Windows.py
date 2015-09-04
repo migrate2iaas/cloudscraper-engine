@@ -49,7 +49,7 @@ class Windows(object):
     adjustRelSvcDir = "..\\resources\\CloudscraperBootAdjust"
 
     # TODO: some init configs could be read here, e.g. Windows configs
-    def __init__(self , insertvirtio=False):
+    def __init__(self , insertvirtio=True):
         self.__filesToDelete = set()
         self.__filesToRename = dict() # key is old name and value is a new one
         self.__vss = VssThruVshadow.VssThruVshadow()
@@ -166,9 +166,9 @@ class Windows(object):
         # note: the deletion is executed in cleanup before the renaming
         files_to_copy = [system32_folder + "\\drivers\\"+self.__bootDriverName, wininstall + "\\inf\\"+ self.__bootDriverInf ]
 
-        #if self.__windowsVersion >= WindowsSystemInfo.WindowsSystemInfo.Win2012:
+       # if self.__windowsVersion >= WindowsSystemInfo.WindowsSystemInfo.Win2012:
             # don't copy files for Win2012, they seem to mess with the system
-        #    files_to_copy = []
+      #      files_to_copy = []
         
         for conflicting_file in files_to_copy:
             if os.path.exists(conflicting_file):
@@ -196,12 +196,12 @@ class Windows(object):
         originalwindir = os.environ['windir']
         windrive = originalwindir.split("\\")[0] #get C: substring
 
-        # copies adjust service
         shutil.copytree(self.__adjustSvcDir , windrive + "\\" + Windows.adjustServiceDir)
         self.__filesToDelete.add(windrive + "\\" + Windows.adjustServiceDir)
 
         if self.__insertVirtio:
             self.__copyVirtIoFiles()
+
         
         
 
@@ -382,7 +382,7 @@ class Windows(object):
         infkeys = win32api.RegEnumKeyEx(driverskey)
         for (keyname, reserved, classname, modtime) in infkeys:
             if "viostor.inf" in keyname:
-                logging.debug("Adding dirver package info to " + hivekeyname+"\\DriverDatabase\\DriverPackages\\" +  keyname + " . Should  be run from the system account")
+                logging.info("Adding dirver package info to " + hivekeyname+"\\DriverDatabase\\DriverPackages\\" +  keyname + " . Should  be run from the system account")
                 self.__injectViostor2012Package(keyname)
 
         driverskey.close()
@@ -406,6 +406,7 @@ class Windows(object):
         self.__mergeReg(root_virtio + "\\virtio.reg")     
 
         if self.__windowsVersion >= WindowsSystemInfo.WindowsSystemInfo.Win2012:
+            logging.info("Adding Win2012+ driver configurations")
             self.__injectViostor2012()
 
         return True
