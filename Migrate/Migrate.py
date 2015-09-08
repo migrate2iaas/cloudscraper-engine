@@ -149,6 +149,7 @@ if __name__ == '__main__':
         parser.add_argument('-b', '--heartbeat', help="Specifies interval in seconds to write hearbeat messages to stdout. No heartbeat if this flag is ommited", type=int)                   
         parser.add_argument('-q', '--statusfile', help="Specifies status file to write current output") 
         parser.add_argument('-v', '--virtio', help="Injects virtio drivers in the running server driver store", action="store_true")
+        parser.add_argument('-j', '--reboottimeout', help="Time to wait in seconds for VM to reboot while doing test run", type=int, default=200)
     
         #new random seed
         random.seed()
@@ -198,10 +199,11 @@ if __name__ == '__main__':
 
         testrun = False
         timeout = 0
+        reboottimeout = 0
         if parser.parse_args().testrun:
             testrun = True
             timeout = parser.parse_args().timeout
-            print timeout
+            reboottimeout = parser.parse_args().resumeupload
 
         resumeupload = False
         if parser.parse_args().resumeupload:
@@ -247,15 +249,13 @@ if __name__ == '__main__':
                os._exit(errno.EFAULT)
 
         # check if server responds in the test scenario
+        # TODO: move the code to spearate file\class, looks ugly
         try:
             if testrun:
-                #import AzureServiceBusResponder
-                #respond = AzureServiceBusResponder.AzureServiceBusResponder("cloudscraper-euwest" , 'Pdw8d/kMGqU0d1m99n3sSrepJu1Q61MwjeLmg0o3lJA=', 'owner' , 'server-up')
-
                 logging.info("\n>>>>>>>>>>>>>>>>> Making test run for an instance to check it alive\n")
                 instance.stop()
                 logging.info("Waiting a bit for server restart")
-                time.sleep(60)
+                time.sleep(reboottimeout)
                 instance.run()
                 logging.info("\n>>>>>>>>>>>>>>>>> Waiting till it responds\n")
                 port = 22
@@ -274,7 +274,10 @@ if __name__ == '__main__':
             os._exit(errno.ERANGE)
             #sys.exit(errno.ERANGE)
         finally:
+            try:
                 instance.stop()
+            except Exception as e:
+                logging.warning("!Cannot stop the instance: " + e.str())
 
         os._exit(0)
     except Exception as e:
