@@ -13,7 +13,7 @@ sys.path.append('./Helper')
 import AmazonConfigs
 import EHConfigs
 import AzureConfigs
-import CloudSigmaConfigs
+#import CloudSigmaConfigs
 import onAppConfigs
 
 import platform
@@ -298,6 +298,8 @@ class MigratorConfigurer(object):
 
     def configCloudSigma(self, configfile, config, password):
         """gets generic parameters for all clouds"""
+        logging.error("!!!ERROR: Cloudsigma support is depricated")
+        
         # generic for other clouds
         (imagedir, image_placement, imagetype) = self.getImageOptions(config)
         volumes = self.createVolumesList(config , configfile, imagedir, imagetype)        
