@@ -246,7 +246,6 @@ class MigratorConfigurer(object):
         if config.has_option('onApp', 'minipad_template'):
             minipad_template = config.get('onApp', 'minipad_template') 
 
-        minipad_linux_template = ""
         #different template for linux. TODO: should be parametrized
         if config.has_option('onApp', 'minipad_linux_template') and not ('nt' in os.name):
             minipad_template = config.get('onApp', 'minipad_linux_template') 
