@@ -130,7 +130,7 @@ if __name__ == '__main__':
         else:
             import Linux
             #making it windows-compatible, should refactor then
-            os.environ["windir"]=Linux.Linux().getSystemDriveName().replace("/dev/" , "").replace("/disk/by-uuid/" , "")
+            os.environ["windir"]=Linux.Linux().getSystemDriveName().replace("/dev/" , "").replace("/disk/by-uuid/" , "").replace("disk/by-uuid/" , "")
             os.environ["COMPUTERNAME"]=os.uname()[1]
 
         #parsing extra option
