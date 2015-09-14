@@ -171,7 +171,9 @@ class onAppVM(VmInstance.VmInstance):
         """starts instance"""
         vm = self.__onapp.getVM(self.__vmid)
         if vm['booted'] == True:
+            logging.info("The VM is already started , skipping " + self.__vmid)
             return True
+        logging.info("Starting the onApp VM " + self.__vmid)
         self.__onapp.startVM(self.__vmid)
 
     def stop(self):

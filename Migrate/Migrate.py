@@ -149,7 +149,7 @@ if __name__ == '__main__':
         parser.add_argument('-b', '--heartbeat', help="Specifies interval in seconds to write hearbeat messages to stdout. No heartbeat if this flag is ommited", type=int)                   
         parser.add_argument('-q', '--statusfile', help="Specifies status file to write current output") 
         parser.add_argument('-v', '--virtio', help="Injects virtio drivers in the running server driver store", action="store_true")
-        parser.add_argument('-j', '--reboottimeout', help="Time to wait in seconds for VM to reboot while doing test run", type=int, default=200)
+        parser.add_argument('-j', '--reboottimeout', help="Time to wait in seconds for VM to reboot while doing test run", type=int, default=600)
     
         #new random seed
         random.seed()
