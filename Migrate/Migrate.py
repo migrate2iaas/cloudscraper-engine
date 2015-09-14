@@ -128,7 +128,7 @@ if __name__ == '__main__':
             #converting to unicode, add "CheckWindows" option
             sys.argv = Windows.win32_unicode_argv()
         else:
-            import Linux
+            import Linux_GC
             #making it windows-compatible, should refactor then
             os.environ["windir"]=Linux.Linux().getSystemDriveName().replace("/dev/" , "")
             os.environ["COMPUTERNAME"]=os.uname()[1]
