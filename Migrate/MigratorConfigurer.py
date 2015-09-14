@@ -246,6 +246,11 @@ class MigratorConfigurer(object):
         if config.has_option('onApp', 'minipad_template'):
             minipad_template = config.get('onApp', 'minipad_template') 
 
+        minipad_linux_template = ""
+        #different template for linux. TODO: should be parametrized
+        if config.has_option('onApp', 'minipad_linux_template') and not ('nt' in os.name()):
+            minipad_template = config.get('onApp', 'minipad_linux_template') 
+
         minipad_vm_id = "" 
         if config.has_option('onApp', 'minipad_vm_id'):
             minipad_vm_id = config.get('onApp', 'minipad_vm_id') 
@@ -254,9 +259,13 @@ class MigratorConfigurer(object):
         if config.has_option('onApp', 'vm_build_timeout'):
             vm_build_timeout = config.get('onApp', 'vm_build_timeout') 
 
+        #TODO: rename the parm to be cross-system
         wintemplate_size = 20
         if config.has_option('onApp', 'wintemplate_size'):
             wintemplate_size = int(config.get('onApp', 'wintemplate_size') )
+
+        if config.has_option('onApp', 'template_size_linux') and not ('nt' in os.name()):
+            wintemplate_size = int(config.get('onApp', 'template_size_linux') )
 
 
         onapp_target_account = None
