@@ -267,6 +267,8 @@ class Linux(object):
         output = p1.communicate()[0]
         lastline = output.split("\n")[1]
         voldev = lastline[:lastline.find(" ")]
+        if os.path.islink(voldev):
+            voldev = os.path.realpath(voldev) #resolve symlinks
         return voldev
 
     def __findLvmDev(self , volgroup):

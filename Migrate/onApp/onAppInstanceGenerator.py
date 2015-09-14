@@ -47,12 +47,14 @@ class OnAppBase:
                     errortext = "HTTP request " + str(type) + " " + str(page) + " to onApp cloud failed!"
                     try:
                         response_data = str(response.read())
-                        logging.error(str(response.status)+":"+ response_data)
+                        logging.error("!!!ERROR: OnApp API call failed " +  str(response.status)+":"+ response_data)
                         data = json.loads(response_data);
                         if "errors" in data:
-                            errortext = errortext + " onApp cloud error: " + str(data["errors"]["base"])
+                            if data["errors"]:
+                                errortext = errortext + " onApp cloud error: " + repr(data["errors"])
                         if "error" in data:
-                            errortext = errortext + " onApp cloud error: " + str(data["error"])
+                            if data["error"]:
+                                errortext = errortext + " onApp cloud error: " + str(data["error"])
                     except Exception as e:
                         logging.error("!!!ERROR: cannot decode onApp error, please see logs")
                     logging.error("!!!ERROR: " + errortext )
