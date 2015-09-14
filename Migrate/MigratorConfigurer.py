@@ -248,7 +248,7 @@ class MigratorConfigurer(object):
 
         minipad_linux_template = ""
         #different template for linux. TODO: should be parametrized
-        if config.has_option('onApp', 'minipad_linux_template') and not ('nt' in os.name()):
+        if config.has_option('onApp', 'minipad_linux_template') and not ('nt' in os.name):
             minipad_template = config.get('onApp', 'minipad_linux_template') 
 
         minipad_vm_id = "" 
@@ -264,7 +264,7 @@ class MigratorConfigurer(object):
         if config.has_option('onApp', 'wintemplate_size'):
             wintemplate_size = int(config.get('onApp', 'wintemplate_size') )
 
-        if config.has_option('onApp', 'template_size_linux') and not ('nt' in os.name()):
+        if config.has_option('onApp', 'template_size_linux') and not ('nt' in os.name):
             wintemplate_size = int(config.get('onApp', 'template_size_linux') )
 
 
