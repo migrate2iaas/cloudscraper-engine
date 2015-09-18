@@ -583,6 +583,7 @@ class MigratorConfigurer(object):
                         letterslist.append(sysvol)
 
             for letter in letterslist:
+                letter = str(letter).strip() #remove spaces between commas
                 if not letter:
                     continue
                 if os.name == 'nt':
