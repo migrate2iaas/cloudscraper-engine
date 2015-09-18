@@ -562,7 +562,7 @@ class Migrator(object):
         else:
             generator = self.__cloudOptions.generateInstanceFactory()
         
-        if generator:
+        if generator and not vol:
             vol = generator.makeVolumeFromImage(imageid , self.__cloudOptions , volname)
 
         if not generator:
