@@ -574,6 +574,7 @@ class MigratorConfigurer(object):
             for letter in letterslist:
                 if not letter:
                     continue
+                letter = str(letter).strip()
                 if os.name == 'nt':
                     devicepath = '\\\\.\\'+letter+':'
                     sys.path.append('./Windows')
