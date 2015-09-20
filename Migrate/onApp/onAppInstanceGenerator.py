@@ -65,7 +65,12 @@ class OnAppBase:
 
         def getVersion(self):
             #Make Request to OnApp with Basic Auth
-            response = self.sendRequest("GET", "/version.json");
+            try:
+                response = self.sendRequest("GET", "/version.json");
+            except ssl.SSLError as sslerror:
+                logging.error("!!!ERROR: failed to have SSL connection. Please check your openssl version is >= 1.0.0. To update your openssl refer to https://sandilands.info/sgordon/upgrade-latest-version-openssl-on-ubuntu ")
+                raise sslerror
+
             array = json.loads(response.read());
             if 'version' in array:
                     return array['version'];
