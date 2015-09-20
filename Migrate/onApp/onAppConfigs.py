@@ -53,6 +53,10 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
         self.__vmBuildTimeout = vmbuild_timeout_sec 
         self.__winTemplateDiskSize = wintemplate_size
 
+        #generate instance factory to test the connection
+        self.__instanceFactory = onAppInstanceGenerator.onAppInstanceGenerator(self.__onapp_endpoint , self.__onapp_login , self.__onapp_password , self.__onapp_datastore_id, self.__onapp_target_account, \
+            self.__onapp_port, self.__preset_ip , self.__minipad_image_name , self.__minipad_vm_id , vmbuild_timeout = self.__vmBuildTimeout , win_template_disk_size = self.__winTemplateDiskSize )
+
         super(onAppCloudOptions, self).__init__()
 
         
@@ -76,10 +80,6 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
             resume_upload = resume , chunksize = self.__chunkSize, walrus = custom , make_link_public=True )
 
     def generateInstanceFactory(self):
-        #generate signleton
-        if not self.__instanceFactory:
-            self.__instanceFactory = onAppInstanceGenerator.onAppInstanceGenerator(self.__onapp_endpoint , self.__onapp_login , self.__onapp_password , self.__onapp_datastore_id, self.__onapp_target_account, \
-            self.__onapp_port, self.__preset_ip , self.__minipad_image_name , self.__minipad_vm_id , vmbuild_timeout = self.__vmBuildTimeout , win_template_disk_size = self.__winTemplateDiskSize )
         return self.__instanceFactory
 
     def getCloudStorage(self):

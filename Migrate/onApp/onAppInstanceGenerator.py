@@ -13,6 +13,7 @@ __copyright__ = "Copyright (C) 2015 Migrate2Iaas"
 import logging
 import traceback
 
+import sys
 import MiniPadInstanceGenerator
 import onApp
 import time
