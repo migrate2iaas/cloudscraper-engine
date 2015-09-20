@@ -21,6 +21,7 @@ import VmInstance
 import socket
 
 import base64, httplib, urllib, urllib2, json, random, string, time, uuid, logging, os, sys;
+import ssl
 
 class OnAppBase:
         conn = False;
@@ -68,7 +69,7 @@ class OnAppBase:
             try:
                 response = self.sendRequest("GET", "/version.json");
             except ssl.SSLError as sslerror:
-                logging.error("!!!ERROR: failed to have SSL connection. Please check your openssl version is >= 1.0.0. To update your openssl refer to https://sandilands.info/sgordon/upgrade-latest-version-openssl-on-ubuntu ")
+                logging.error("!!!ERROR: failed to have SSL connection. Please check your openssl version is >= 1.0.0. Update your openssl. (see e.g. https://sandilands.info/sgordon/upgrade-latest-version-openssl-on-ubuntu)")
                 raise sslerror
 
             array = json.loads(response.read());
