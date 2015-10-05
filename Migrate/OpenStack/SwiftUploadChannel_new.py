@@ -40,6 +40,7 @@ import DataExtent
 import base64
 import math
 import json
+import pickle
 from md5 import md5
 
 from swiftclient.service import get_conn, process_options #, split_headers
@@ -54,10 +55,12 @@ class DefferedMultifileUploadFileProxy(object):
     def __init__(self , deffered_data):
         self.__pos = 0
         self.__data = deffered_data
+        self.__md5encoder = md5()
 
     def read(self , len):
         data = self.__data.readData(len , self.__pos)
         self.__pos += len
+        self.__md5encoder.update(data)
         return data
 
     def write(self, buf):
@@ -74,6 +77,9 @@ class DefferedMultifileUploadFileProxy(object):
 
     def seek(self, pos, whence=0):
         self.__pos = pos
+
+    def getMD5(self):
+        return self.__md5encoder.hexdigest()
 
 
 class DefferedUploadDataStream(object):
@@ -100,10 +106,10 @@ class DefferedUploadDataStream(object):
         self.__completeDataSize = 0
 
     def readData(self , len , pos):
-        if pos == self.__size:
+        if self.__completeDataSize == self.__size:
             return ""
 
-        while 1:
+        while True:
             interval_start = self.__chunksize * int(pos / self.__chunksize)
             with self.__dictLock:
                 if self.__parts.has_key(interval_start):
@@ -124,7 +130,7 @@ class DefferedUploadDataStream(object):
             time.sleep(1)
             logging.debug("Waiting till data is available for stream '" + self.__name + "' at pos " + str(pos))
 
-    def writeData(self , extent):
+    def writeData(self, extent):
         pos = extent.getStart()
         logging.debug("Adding more data to deffered upload stream '" + self.__name + "' at pos " + str(pos))
         self.__semaphore.acquire()
@@ -136,6 +142,9 @@ class DefferedUploadDataStream(object):
 
     def seek(self, pos):
         self.__pos = pos
+
+    def getName(self):
+        return self.__name
 
     def getSize(self):
         return self.__size
@@ -154,76 +163,108 @@ class DefferedUploadDataStream(object):
     def cancelled(self):
         return self.__cancel
 
+class SwiftUploadQueueTask(object):
+    def __init__(self, connection, container_name, disk_name, stream_proxy, channel):
+        self.__swiftConnection = connection
+        self.__containerName = container_name
+        self.__diskName = disk_name
+        self.__streamProxy = stream_proxy
+        self.__channel = channel
 
-class SwiftUploadTask(MultithreadUpoadChannel.UploadTask):
-    def __init__(self,
-                 container,
-                 keyname,
-                 offset,
-                 size,
-                 data_getter,
-                 channel,
-                 alternative_source_bucket=None,
-                 alternative_source_keyname=None):
-        self.__targetContainer = container
-        self.__targetKeyname = keyname
-        self.__targetSize = size
-        self.__dataGetter = data_getter 
-        self.__targetOffset = offset
-        self.__alternativeKey = alternative_source_keyname
-        self.__alternativeBucket = alternative_source_bucket
-        
-        super(SwiftUploadTask, self).__init__(channel, size, offset)
+    def getSwiftConnection(self):
+        return self.__swiftConnection
 
+    def getContainerName(self):
+        return self.__containerName
 
-    def getTargetKey(self):
-        return self.__targetKeyname
+    def getDiskName(self):
+        return self.__diskName
+
+    def getStreamProxy(self):
+        return self.__streamProxy
+
+    def getChannel(self):
+        return self.__channel
 
 
-    def getTargetContainer(self):
-        return self.__targetContainer
+class SwiftUploadThread(threading.Thread):
+    """thread making all uploading works"""
+    def __init__(self, queue, lock, skip_existing = False):
+        self.__uploadQueue = queue
+        self.__skipExisting = skip_existing
+        self.__fileLock = lock
+        super(SwiftUploadThread, self).__init__()
 
+    def run(self):
+        if self.__skipExisting:
+            logging.debug("Upload thread started with reuploading turned on")
 
-    def getData(self):
-        return str(self.__dataGetter)[0:self.__targetSize]
+        while True:
+            upload_task = self.__uploadQueue.get()
 
+            # Means it's time to exit
+            if upload_task == None:
+                return
 
-    def getDataMd5(self):
-        md5encoder = md5()
-        data = self.getData()
-        md5encoder.update(data)
-        return md5encoder.hexdigest()
+            results_dict = {}
+            stream_proxy = upload_task.getStreamProxy()
+            file_proxy = stream_proxy.getFileProxy(stream_proxy.getName())
+            segment_path = '%s/slo/%s' % (upload_task.getDiskName(), stream_proxy.getName())
+            connection = upload_task.getSwiftConnection()
 
+            res = {
+                'success': False,
+                'action': 'upload_segment',
+                'segment_size': stream_proxy.getSize(),
+                'segment_index': int(stream_proxy.getName()),
+                'segment_path': '/%s/%s' % (upload_task.getContainerName(), segment_path)}
+            try:
+                if self.__skipExisting:
+                    seg_res = upload_task.getChannel().getSegmentResults()
+                    segment = next((i for i in seg_res if i['segment_path'] == res['segment_path']), None)
+                    if segment is not None:
+                        headers = connection.head_object(upload_task.getContainerName(), segment_path)
+                        if headers['etag'] == segment['segment_etag']:
+                            self.__uploadQueue.task_done()
+                            continue
 
-    # specifies the alternitive availble path. 
-    # alternative source seem to be interesting concept. get something from another place. maybe deferred
-    def isAlternitiveAvailable(self):
-        return False
-        #return self.__alternativeKey != None and self.__alternativeBucket != None
+                etag = connection.put_object(
+                    upload_task.getContainerName(),
+                    segment_path,
+                    file_proxy,
+                    chunk_size=stream_proxy.getChunkSize(),
+                    response_dict=results_dict)
+                segment_md5 = file_proxy.getMD5()
+                if etag != segment_md5:
+                    raise ClientException('Segment {0}: upload verification failed: '
+                                          'md5 mismatch, local {1} != remote {2} '
+                                          '(remote segment has not been removed)'
+                                          .format(segment_name, segment_md5, etag))
 
+                res.update({
+                    'success': True,
+                    'response_dict': results_dict,
+                    'segment_etag': etag,
+                    'attempts': connection.attempts
+                })
+                upload_task.getChannel().appendSegmentResult(res)
 
-    #TODO: find more generic way
-    # sometimes source could be active too
-    def setAlternativeUploadPath(self, alternative_source_bucket = None, alternative_source_keyname = None):
-        return None
+                # Dumping segment results for resuming upload, if needed
+                try:
+                    self.__fileLock.acquire()
+                    with open(upload_task.getContainerName() + '.' + upload_task.getDiskName() + '.txt', 'w') as file:
+                        json.dump(upload_task.getChannel().getSegmentResults(), file)
+                finally:
+                    self.__fileLock.release()
 
+            except (ClientException, Exception) as err:
+                logging.error("!!!ERROR: " + err.message)
+                logging.error(traceback.format_exc())
+                res.update({'success': False})
 
-    #some dedup staff
-    def getAlternativeKeyName(self):
-        return ""
+            self.__uploadQueue.task_done()
 
-
-    def getAlternativeContainer(self):
-        return ""
-
-
-    def getAlternativeKey(self):
-        """gets alternative key object"""
-        return ""
-        #return self.__targetBucket.get_key(self.__alternativeKey)
-
-
-class SwiftUploadChannel_new(MultithreadUpoadChannel.MultithreadUpoadChannel):
+class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     """
     Upload channel for Swift implementation
     Implements multithreaded fie upload to Openstack Swift
@@ -239,34 +280,32 @@ class SwiftUploadChannel_new(MultithreadUpoadChannel.MultithreadUpoadChannel):
                  container_name,
                  compression=False,
                  resume_upload=False,
-                 chunksize=10*1024*1024,
-                 upload_threads=10,
+                 chunk_size=65536,
+                 upload_threads=4,
                  queue_size=16):
         """constructor"""
-        self.__chunkSize = 512*1024#chunksize
         self.__accountName = username
         self.__containerName = container_name
         self.__diskName = disk_name
+        self.__chunkSize = chunk_size
+        self.__segmentSize = 20 * self.__chunkSize
+        self.__diskSize = resulting_size_bytes
         self.__accessKey = password
         self.__resumeUpload = resume_upload
         self.__uploadThreads = upload_threads
         self.__serverUrl = server_url
-        self.__diskSize = resulting_size_bytes
         self.__sslCompression = compression
         self.__segmentFutures = []
+        #
+        # # max segment number is 1000 (it's configurable see http://docs.openstack.org/developer/swift/middleware.html )
+        # self.__segmentSize = 2*1024*1024#2 * self.__chunkSize#max(int(resulting_size_bytes / 512), self.__chunkSize)
+        # # if self.__segmentSize % self.__chunkSize:
+        # #     # make segment size an integer of chunks
+        # #     self.__segmentSize = self.__segmentSize - (self.__segmentSize % self.__chunkSize)
+        #
+        # self.__uploadedSize = 0
 
-        # self.__nullData = bytearray(self.__chunkSize)
-        # md5encoder = md5()
-        # md5encoder.update(self.__nullData)
-        # self.__nullMd5 = md5encoder.hexdigest()
-
-        # max segment number is 1000 (it's configurable see http://docs.openstack.org/developer/swift/middleware.html )
-        self.__segmentSize = 2*1024*1024#2 * self.__chunkSize#max(int(resulting_size_bytes / 512), self.__chunkSize)
-        # if self.__segmentSize % self.__chunkSize:
-        #     # make segment size an integer of chunks
-        #     self.__segmentSize = self.__segmentSize - (self.__segmentSize % self.__chunkSize)
-
-        self.__uploadedSize = 0
+        # Creating swift connection
         self.__serviceOpts = {'auth': server_url,
                               'user': tennant_name + ':' + self.__accountName,
                               'key': self.__accessKey,
@@ -280,20 +319,60 @@ class SwiftUploadChannel_new(MultithreadUpoadChannel.MultithreadUpoadChannel):
         process_options(self.__serviceOpts)
         self.__swiftConnection = get_conn(self.__serviceOpts)
 
+        # Loading segment results if resuming upload, clearing file otherwise
+        open_opt = 'w'
+        if self.__resumeUpload:
+            open_opt = 'r'
+        try:
+            with open(self.__containerName + '.' + self.__diskName + '.txt', open_opt) as file:
+                self.__segmentFutures = json.load(file)
+        except Exception:
+            pass
+
+        # Creating all proxy segments and put them to queue
+        self.__uploadQueue = Queue.Queue()
+
         offset = 0
+        segment_size = self.__segmentSize
+        chunk_size = self.__chunkSize
         while offset < self.__diskSize:
-            if self.__diskSize - offset < self.__chunkSize:
-                segment_size = chunk_size = self.__diskSize - offset
-            else:
-                chunk_size = self.__chunkSize
-                segment_size = self.__segmentSize
-            DefferedUploadDataStream(str(int(offset / self.__segmentSize)), segment_size, chunk_size)
-            offset = offset + self.__segmentSize
-        self.__uploadSegmentsJob = threading.Thread(target = self.uploadSegment, args = (container_name, disk_name))
-        self.__uploadSegmentsJob.start()
+            if self.__diskSize - offset < segment_size:
+                segment_size = self.__diskSize - offset
+            stream = DefferedUploadDataStream('%08d' % int(offset / self.__segmentSize), segment_size, chunk_size)
+            uploadtask = SwiftUploadQueueTask(
+                self.__swiftConnection,
+                self.__containerName,
+                self.__diskName,
+                stream,
+                self)
+            self.__uploadQueue.put(uploadtask)
+            offset += segment_size
 
-        super(SwiftUploadChannel_new, self).__init__(resulting_size_bytes, resume_upload, chunksize, upload_threads, queue_size)
+        # Creating working threads
+        self.__workThreads = []
+        file_lock = threading.Lock()
+        for i in range(self.__uploadThreads):
+            thread = SwiftUploadThread(self.__uploadQueue, file_lock, self.__resumeUpload)
+            thread.start()
+            self.__workThreads.append(thread)
 
+        super(SwiftUploadChannel_new, self).__init__()
+
+    def uploadData(self, extent):
+        try:
+            segment_name = '%08d' % int(extent.getStart() / self.__segmentSize)
+            stream = DefferedUploadDataStream.getStream(segment_name)
+            new_extent = DataExtent.DataExtent(extent.getStart() % self.__segmentSize, extent.getSize())
+            new_extent.setData(extent.getData())
+            stream.writeData(new_extent)
+        except Exception as err:
+            pass
+
+    def appendSegmentResult(self, segment):
+        self.__segmentFutures.append(segment)
+
+    def getSegmentResults(self):
+        return self.__segmentFutures
  
     def initStorage(self, init_data_link=""):
         """
@@ -316,12 +395,11 @@ class SwiftUploadChannel_new(MultithreadUpoadChannel.MultithreadUpoadChannel):
             self.__swiftConnection.post_container(res['container'], headers=res['headers'], response_dict=resp_dict)
 
             res['success'] = True
-        except ClientException as err:
-            logging.error("!!!ERROR: " + err.message)
-        except Exception as err:
+        except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
 
         return res['success']
+
 
     def getUploadPath(self):
         """
@@ -330,134 +408,21 @@ class SwiftUploadChannel_new(MultithreadUpoadChannel.MultithreadUpoadChannel):
         """
         return self.__diskName
 
+
     def getTransferChunkSize(self):
         return self.__chunkSize
 
-    def createUploadTask(self, extent):
-        """ 
-        Protected method. Creates upload task to add it the queue 
-        Returns UploadTask (or any of inherited class) object
 
-        Args:
-            extent: DataExtent - extent of the image to be uploaded. Its size and offset should be integral
-                of chunk size. The only exception is last chunk.
-
-        """
-        start = extent.getStart()
-        size = extent.getSize()
-        data = extent.getData()
-
-        segment_name = str(int(start / self.__segmentSize))
-        logging.debug("Creating upload task for segment '" + segment_name + "' offset:" +
-                      str(start) + " and size "+str(size) + " chunk: " + str(self.getTransferChunkSize()))
-
-        return SwiftUploadTask(self.__containerName, segment_name, start, size, data, self)
-
-    def uploadChunk(self, uploadtask):
-        """
-        Protected. Uploads one chunk of data
-        Called by the worker thread internally.
-        Could throw any non-recoverable errors
-        """
-        offset = uploadtask.getUploadOffset() % self.__segmentSize
-        size = uploadtask.getUploadSize()
-        data = uploadtask.getData()
-
-        extent = DataExtent.DataExtent(offset, size)
-        extent.setData(data)
-        DefferedUploadDataStream.getStream(uploadtask.getTargetKey()).writeData(extent)
-        uploadtask.notifyDataTransfered()
-        # container_name = uploadtask.getTargetContainer()
-        # disk_name = uploadtask.getTargetKey()
-        #
-        #
-        # chunk_range = 'bytes={}-{}'.format(offset, offset + size - 1)
-        #
-        #
-        # try:
-        #     headers = self.__swiftConnection.head_object(container_name, segment_name)
-        #     if headers['etag'] == uploadtask.getDataMd5():
-        #         headers['segment_location'] = '/' + str(container_name) + '/' + segment_name
-        #         headers['segment_etag'] = headers['etag']
-        #         headers['segment_size'] = headers['content-length']
-        #         headers['segment_offset'] = offset
-        #         self.__segmentFutures.append(headers)
-        #         logging.info("%s/%s range %s skipped", container_name, disk_name, chunk_range)
-        #         uploadtask.notifyDataSkipped()
-        #     else:
-        #         res = self.uploadSegment(self.__containerName, segment_name, uploadtask)
-        #         res['segment_offset'] = offset
-        #         self.__segmentFutures.append(res)
-        #         logging.info("%s/%s range %s uploaded", str(container_name), disk_name, chunk_range)
-        #         uploadtask.notifyDataTransfered()
-        # except ClientException as err:
-        #     if err.http_status == 404:
-        #         try:
-        #             res = self.uploadSegment(self.__containerName, segment_name, uploadtask)
-        #             res['segment_offset'] = offset
-        #             logging.info("%s/%s range %s uploaded", str(container_name), disk_name, chunk_range)
-        #             uploadtask.notifyDataTransfered()
-        #         except ClientException:
-        #             raise
-        #     else:
-        #         logging.warning("!Failed to upload data: %s/%s range %s", str(container_name), disk_name, chunk_range)
-        #         logging.warning("Exception = " + err.message)
-        #         logging.error(traceback.format_exc())
-        #        raise
-
-        return True
-
-
-    def uploadSegment(self, container, disk_name):
-        """
-        """
-        for stream in DefferedUploadDataStream.opened_streams:
-            segment = DefferedUploadDataStream.getFileProxy(stream)
-            segment_name = '%s/slo/%08d' % (disk_name, int(stream))
-
-            results_dict = {}
-            res = {
-                'success': False,
-                'action': 'upload_segment',
-                'segment_size': segment.size(),
-                'segment_index': int(stream),
-                'segment_location': '/%s/%s' % (container, segment_name)}
-            try:
-                etag = self.__swiftConnection.put_object(container,
-                                                         segment_name,
-                                                         segment,
-                                                         chunk_size=segment.chunk_size(),
-                                                         response_dict=results_dict)
-
-                # if etag != uploadtask.getDataMd5():
-                #     raise ClientException('Segment {0}: upload verification failed: '
-                #                           'md5 mismatch, local {1} != remote {2} '
-                #                           '(remote segment has not been removed)'
-                #                           .format(segment_name, uploadtask.getDataMd5(), etag))
-
-                res.update({
-                    'success': True,
-                    'response_dict': results_dict,
-                    'segment_etag': etag,
-                    'attempts': self.__swiftConnection.attempts
-                })
-                self.__segmentFutures.append(res)
-
-            except ClientException as err:
-                logging.error("!!!ERROR: " + err.message)
-                res.update({'success': False})
-
-        return res
+    def waitTillUploadComplete(self):
+        """Waits till upload completes"""
+        logging.debug("Upload complete, waiting for threads to complete");
+        self.__uploadQueue.join()
+        return
 
     def confirm(self):
         """
         Confirms good upload
         """
-        self.__uploadSegmentsJob.join()
-
-        if self.unsuccessfulUpload():
-            logging.error("!!!ERROR: there were upload failures. Please, try again by choosing resume upload option!")
-            return None
 
         options = {'verbose': 2}
         options = dict(self.__serviceOpts, **options)
@@ -469,7 +434,7 @@ class SwiftUploadChannel_new(MultithreadUpoadChannel.MultithreadUpoadChannel):
             self.__segmentFutures.sort(key=lambda di: di['segment_index'])
 
             manifest_data = json.dumps([{
-                    'path': d['segment_location'],
+                    'path': d['segment_path'],
                     'etag': d['segment_etag'],
                     'size_bytes': d['segment_size']
             } for d in self.__segmentFutures
@@ -540,36 +505,56 @@ class SwiftUploadChannel_new(MultithreadUpoadChannel.MultithreadUpoadChannel):
         return base_url_part+path #+url
 
 
+    def getTransferChunkSize(self):
+       """
+       Gets the size of transfer chunk in bytes.
+       All the data except the last chunk should be aligned and be integral of this size
+       """
+
+       return self.__chunkSize
+
+    def getDataTransferRate(self):
+       """
+       Return:
+            float: approx. number of bytes transfered per second
+       """
+       return 0
+
+
+    def getOverallDataSkipped(self):
+        """
+        Gets overall size of data skipped in bytes.
+        Data is skipped by the channel when the block with same checksum is already present in the cloud
+        """
+        return 0
+
+
+    def getOverallDataTransfered(self):
+        """
+        Gets overall size of data actually uploaded (not skipped) in bytes.
+        """
+        if self.__proxyFileObj == None:
+            return 0
+        return self.__proxyFileObj.getCompletedSize()
+
+
+    def close(self):
+        """
+        Closes the channel, deallocates any associated resources
+        """
+        return
+
+
+    def getImageSize(self):
+        """
+        Gets image data size to be uploaded
+        """
+        return self.__diskSize
+
+
     def getDiskUploadedProperty(self):
         """
         Returns amount of data already uploaded as it saved in the cloud storage
         This data could be loaded from the disk object on cloud side which channel represents
         """
         return 0
-
-
-    def loadDiskUploadedProperty(self):
-        logging.debug("Loading disk properties");
-        if self.__preUpload:
-            return self.__preUpload
-        properties = dict()
-        #try:
-        #    properties = self.__blobService.get_blob_metadata(self.__containerName, self.__diskName);
-        #    logging.debug("Got properties: " + properties.__repr__())
-        #    self.__preUpload = properties['x-ms-meta-cloudscraper_uploaded'];
-        #except Exception as ex:
-        #    logging.warning("!Cannot get amount of data already uploaded to the blob. Gonna make full reupload then.")
-        #    logging.warning("Exception = " + str(ex)) 
-        #    logging.error(traceback.format_exc())
-        #    logging.error(repr(properties))
-        #    return False
-        return True
-
-
-    def updateDiskUploadedProperty(self , newvalue):
-        """
-        function to set property to the disk in cloud on the amount of data transfered
-        Returns if the update was successful, doesn't throw
-        """
-
-        return True    
