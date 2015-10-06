@@ -23,6 +23,16 @@ from OpenStack import SwiftUploadChannel_new
 class SwiftUploadChannel_test(unittest.TestCase):
     """SwiftUploadChannel class unittest"""
 
+    @classmethod
+    def read_in_chunks(cls, file_object, chunk_size=1024*1024):
+        while True:
+            data = file_object.read(chunk_size)
+            if not data:
+                break
+            data_ext = DataExtent.DataExtent(file_object.tell() - chunk_size, len(data))
+            data_ext.setData(data)
+            yield data_ext
+
     #--------------------- Tests:
     
     # def test_small(self):
@@ -80,64 +90,54 @@ class SwiftUploadChannel_test(unittest.TestCase):
             disk_name="medium.file")
         channel.initStorage()
 
-        file = open(filename, "rb")
-        datasize = channel.getTransferChunkSize()
-        dataplace = 0
-        while 1:
-            try:
-               data = file.read(datasize)
-            except EOFError:
-               break
-            if len(data) == 0:
-               break
-            dataext = DataExtent.DataExtent(dataplace , len(data))
-            dataplace = dataplace + len(data)
-            dataext.setData(data)
-            channel.uploadData(dataext)
+        file_object = open(filename, "rb")
+        try:
+            for piece in self.read_in_chunks(file_object, channel.getTransferChunkSize()):
+                channel.uploadData(piece)
 
-        channel.waitTillUploadComplete()
-        channel.confirm()
+            channel.waitTillUploadComplete()
+            channel.confirm()
+        except Exception as err:
+            logging.error(err)
+            channel.close()
+            raise
+
+        file_object.close()
         channel.close()
-
         return
 
 
-    # def test_large(self):
-    #     """test1 desctiption"""
-    #
-    #     filename = 'D:\\cloudscraper-test-files\\large_6gb.file'
-    #     size = os.stat(filename).st_size
-    #
-    #     channel = SwiftUploadChannel_new.SwiftUploadChannel_new(
-    #        size,
-    #        server_url="https://eu01-auth.webzilla.com:5000/v2.0",
-    #        user_name="3186",
-    #        tennant_name="2344",
-    #        password="icafLFsmAOswwISn",
-    #        container_name="testcontainer1",
-    #        disk_name="large_6gb.file")
-    #     channel.initStorage()
-    #
-    #     file = open(filename, "rb")
-    #     datasize = channel.getTransferChunkSize()
-    #     dataplace = 0
-    #     while 1:
-    #        try:
-    #            data = file.read(datasize)
-    #        except EOFError:
-    #            break
-    #        if len(data) == 0:
-    #            break
-    #        dataext = DataExtent.DataExtent(dataplace , len(data))
-    #        dataplace = dataplace + len(data)
-    #        dataext.setData(data)
-    #        channel.uploadData(dataext)
-    #
-    #     channel.waitTillUploadComplete()
-    #     channel.confirm()
-    #     channel.close()
-    #
-    #     return
+    def test_large(self):
+        """test1 desctiption"""
+
+        filename = 'D:\\cloudscraper-test-files\\large_6gb.file'
+        size = os.stat(filename).st_size
+
+        channel = SwiftUploadChannel_new.SwiftUploadChannel_new(
+           size,
+           server_url="https://eu01-auth.webzilla.com:5000/v2.0",
+           user_name="3186",
+           tennant_name="2344",
+           password="icafLFsmAOswwISn",
+           container_name="testcontainer1",
+           disk_name="large_6gb.file")
+        channel.initStorage()
+
+        file_object = open(filename, "rb")
+        try:
+            for piece in self.read_in_chunks(file_object, channel.getTransferChunkSize()):
+                channel.uploadData(piece)
+
+            channel.waitTillUploadComplete()
+            channel.confirm()
+        except Exception as err:
+            logging.error(err)
+            channel.close()
+            raise
+
+        file_object.close()
+        channel.close()
+        return
 
     #---------------------- Init and Deinit:
     def setUp(self):
@@ -162,6 +162,6 @@ class SwiftUploadChannel_test(unittest.TestCase):
         """frees any global resources allocated for the test """
         return
 
-       
+
 if __name__ == '__main__':
     unittest.main()

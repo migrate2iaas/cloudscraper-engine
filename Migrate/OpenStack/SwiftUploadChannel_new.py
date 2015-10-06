@@ -97,17 +97,18 @@ class DefferedUploadDataStream(object):
     def getStream(name):
         return DefferedUploadDataStream.opened_streams[name]
 
-    def __init__(self , name , size, chunksize, max_part_number=100):
+    def __init__(self , name , size, chunksize, semaphore):
         self.__name = name
         self.__pos = 0
         self.__size = size
         self.__parts = dict()
         self.__chunksize = chunksize
         DefferedUploadDataStream.opened_streams[name] = self
-        self.__semaphore = threading.Semaphore(max_part_number)
+        self.__semaphore = semaphore
         self.__dictLock = threading.Lock()
         self.__cancel = False
         self.__completeDataSize = 0
+        self.__writeCount = 0
 
     def readData(self, len , pos):
         if self.__completeDataSize == self.__size:
@@ -289,7 +290,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             resume_upload=False,
             chunk_size=1024*1024,
             upload_threads=4,
-            queue_size=16):
+            queue_size=8):
         """constructor"""
         self.__containerName = container_name
         self.__diskName = disk_name
@@ -325,6 +326,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         offset = 0
         segment_size = self.__segmentSize
         chunk_size = self.__chunkSize
+        semaphore = threading.Semaphore(upload_threads * queue_size)
         while offset < self.__diskSize:
             if self.__diskSize - offset < segment_size:
                 segment_size = self.__diskSize - offset
@@ -342,7 +344,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                     'etag': None,
                     'size': segment_size}
                 self.__segmentFutures.append(res)
-            stream = DefferedUploadDataStream(index, segment_size, chunk_size)
+            stream = DefferedUploadDataStream(index, segment_size, chunk_size, semaphore)
             uploadtask = SwiftUploadQueueTask(
                 self.__containerName,
                 self.__diskName,
