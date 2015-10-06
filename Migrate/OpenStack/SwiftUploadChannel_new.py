@@ -43,6 +43,7 @@ import json
 import pickle
 from md5 import md5
 
+import swiftclient.client
 from swiftclient.service import get_conn, process_options #, split_headers
 from swiftclient.command_helpers import stat_account
 from swiftclient.service import _default_global_options, _default_local_options
@@ -78,6 +79,9 @@ class DefferedMultifileUploadFileProxy(object):
     def seek(self, pos, whence=0):
         self.__pos = pos
 
+    def cancel(self):
+        self.__data.cancel()
+
     def getMD5(self):
         return self.__md5encoder.hexdigest()
 
@@ -105,7 +109,7 @@ class DefferedUploadDataStream(object):
         self.__cancel = False
         self.__completeDataSize = 0
 
-    def readData(self , len , pos):
+    def readData(self, len , pos):
         if self.__completeDataSize == self.__size:
             return ""
 
@@ -164,8 +168,7 @@ class DefferedUploadDataStream(object):
         return self.__cancel
 
 class SwiftUploadQueueTask(object):
-    def __init__(self, connection, container_name, disk_name, stream_proxy, channel):
-        self.__swiftConnection = connection
+    def __init__(self, container_name, disk_name, stream_proxy, channel):
         self.__containerName = container_name
         self.__diskName = disk_name
         self.__streamProxy = stream_proxy
@@ -189,7 +192,8 @@ class SwiftUploadQueueTask(object):
 
 class SwiftUploadThread(threading.Thread):
     """thread making all uploading works"""
-    def __init__(self, queue, lock, skip_existing = False):
+    def __init__(self, connection, queue, lock, skip_existing = False):
+        self.__swiftConnection = connection
         self.__uploadQueue = queue
         self.__skipExisting = skip_existing
         self.__fileLock = lock
@@ -208,59 +212,60 @@ class SwiftUploadThread(threading.Thread):
 
             results_dict = {}
             stream_proxy = upload_task.getStreamProxy()
+            index = int(stream_proxy.getName())
             file_proxy = stream_proxy.getFileProxy(stream_proxy.getName())
-            segment_path = '%s/slo/%s' % (upload_task.getDiskName(), stream_proxy.getName())
-            connection = upload_task.getSwiftConnection()
 
-            res = {
-                'success': False,
-                'action': 'upload_segment',
-                'segment_size': stream_proxy.getSize(),
-                'segment_index': int(stream_proxy.getName()),
-                'segment_path': '/%s/%s' % (upload_task.getContainerName(), segment_path)}
             try:
+                seg_res = upload_task.getChannel().getSegmentResults()
+                segment = next(i for i in seg_res if i['index'] == index)
+                is_exists = False
+
                 if self.__skipExisting:
-                    seg_res = upload_task.getChannel().getSegmentResults()
-                    segment = next((i for i in seg_res if i['segment_path'] == res['segment_path']), None)
-                    if segment is not None:
-                        headers = connection.head_object(upload_task.getContainerName(), segment_path)
-                        if headers['etag'] == segment['segment_etag']:
-                            self.__uploadQueue.task_done()
-                            continue
+                    headers = self.__swiftConnection.head_object(upload_task.getContainerName(), segment['path'])
+                    if headers['etag'] == segment['etag']:
+                        segment.update({
+                            'action': 'skip_segment',
+                            'success': True
+                        })
+                        is_exists = True
 
-                etag = connection.put_object(
-                    upload_task.getContainerName(),
-                    segment_path,
-                    file_proxy,
-                    chunk_size=stream_proxy.getChunkSize(),
-                    response_dict=results_dict)
-                segment_md5 = file_proxy.getMD5()
-                if etag != segment_md5:
-                    raise ClientException('Segment {0}: upload verification failed: '
-                                          'md5 mismatch, local {1} != remote {2} '
-                                          '(remote segment has not been removed)'
-                                          .format(segment_name, segment_md5, etag))
+                results_dict = {}
+                if is_exists is False:
+                    etag = self.__swiftConnection.put_object(
+                        upload_task.getContainerName(),
+                        segment['path'],
+                        file_proxy,
+                        chunk_size=stream_proxy.getChunkSize(),
+                        response_dict=results_dict)
+                    segment_md5 = file_proxy.getMD5()
+                    if etag != segment_md5:
+                        raise ClientException(
+                            'Segment {0}: upload verification failed: '
+                            'md5 mismatch, local {1} != remote {2} '
+                            '(remote segment has not been removed)'
+                            .format(segment['path'], segment_md5, etag))
 
-                res.update({
-                    'success': True,
-                    'response_dict': results_dict,
-                    'segment_etag': etag,
-                    'attempts': connection.attempts
-                })
-                upload_task.getChannel().appendSegmentResult(res)
+                    segment.update({
+                        'success': True,
+                        'action': 'upload_segment',
+                        'etag': etag
+                    })
 
                 # Dumping segment results for resuming upload, if needed
                 try:
                     self.__fileLock.acquire()
                     with open(upload_task.getContainerName() + '.' + upload_task.getDiskName() + '.txt', 'w') as file:
-                        json.dump(upload_task.getChannel().getSegmentResults(), file)
+                        json.dump(seg_res, file)
                 finally:
                     self.__fileLock.release()
 
             except (ClientException, Exception) as err:
                 logging.error("!!!ERROR: " + err.message)
-                logging.error(traceback.format_exc())
-                res.update({'success': False})
+                _traceback = traceback.format_exc()
+                logging.error(_traceback)
+                segment.update({'exception': {'message': err, 'traceback': _traceback}})
+            finally:
+                file_proxy.cancel()
 
             self.__uploadQueue.task_done()
 
@@ -270,54 +275,39 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     Implements multithreaded fie upload to Openstack Swift
     """
 
-    def __init__(self,
-                 resulting_size_bytes,
-                 server_url,
-                 username,
-                 tennant_name,
-                 password,
-                 disk_name, 
-                 container_name,
-                 compression=False,
-                 resume_upload=False,
-                 chunk_size=65536,
-                 upload_threads=4,
-                 queue_size=16):
+    def __init__(
+            self,
+            resulting_size_bytes,
+            server_url,
+            user_name,
+            tennant_name,
+            password,
+            disk_name,
+            container_name,
+            retries=3,
+            compression=False,
+            resume_upload=False,
+            chunk_size=1024*1024,
+            upload_threads=4,
+            queue_size=16):
         """constructor"""
-        self.__accountName = username
         self.__containerName = container_name
         self.__diskName = disk_name
         self.__chunkSize = chunk_size
-        self.__segmentSize = 20 * self.__chunkSize
         self.__diskSize = resulting_size_bytes
-        self.__accessKey = password
         self.__resumeUpload = resume_upload
-        self.__uploadThreads = upload_threads
-        self.__serverUrl = server_url
-        self.__sslCompression = compression
         self.__segmentFutures = []
-        #
-        # # max segment number is 1000 (it's configurable see http://docs.openstack.org/developer/swift/middleware.html )
-        # self.__segmentSize = 2*1024*1024#2 * self.__chunkSize#max(int(resulting_size_bytes / 512), self.__chunkSize)
-        # # if self.__segmentSize % self.__chunkSize:
-        # #     # make segment size an integer of chunks
-        # #     self.__segmentSize = self.__segmentSize - (self.__segmentSize % self.__chunkSize)
-        #
+
+        # Max segment number is 1000 (it's configurable see http://docs.openstack.org/developer/swift/middleware.html )
+        self.__segmentSize = max(int(self.__diskSize / 512), self.__chunkSize)
+        if self.__segmentSize % self.__chunkSize:
+            # Make segment size an integer of chunks
+            self.__segmentSize = self.__segmentSize - (self.__segmentSize % self.__chunkSize)
+
         # self.__uploadedSize = 0
 
-        # Creating swift connection
-        self.__serviceOpts = {'auth': server_url,
-                              'user': tennant_name + ':' + self.__accountName,
-                              'key': self.__accessKey,
-                              'auth_version': '2',
-                              'snet': False,
-                              'segment_threads': upload_threads,
-                              'segment_size': self.__segmentSize,
-                              'ssl_compression': self.__sslCompression}
-
-        self.__serviceOpts = dict(_default_global_options, **dict(_default_local_options, **self.__serviceOpts))
-        process_options(self.__serviceOpts)
-        self.__swiftConnection = get_conn(self.__serviceOpts)
+        # Minimum file size to upload using static large object is 1mb
+        # (see http://docs.openstack.org/developer/swift/middleware.html)
 
         # Loading segment results if resuming upload, clearing file otherwise
         open_opt = 'w'
@@ -338,9 +328,22 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         while offset < self.__diskSize:
             if self.__diskSize - offset < segment_size:
                 segment_size = self.__diskSize - offset
-            stream = DefferedUploadDataStream('%08d' % int(offset / self.__segmentSize), segment_size, chunk_size)
+
+            index = '%08d' % int(offset / self.__segmentSize)
+            # If resuming upload, we doesnt need to append new segments,
+            # to avoid creating them twice in the list
+            if self.__resumeUpload is False:
+                res = {
+                    'action': 'empty',
+                    'success': False,
+                    'exception': {'message': None, 'traceback': None},
+                    'index': int(index),
+                    'path': '%s/slo/%s' % (self.__diskName, index),
+                    'etag': None,
+                    'size': segment_size}
+                self.__segmentFutures.append(res)
+            stream = DefferedUploadDataStream(index, segment_size, chunk_size)
             uploadtask = SwiftUploadQueueTask(
-                self.__swiftConnection,
                 self.__containerName,
                 self.__diskName,
                 stream,
@@ -348,11 +351,26 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             self.__uploadQueue.put(uploadtask)
             offset += segment_size
 
+        # We need to dump self.__segmentFutures, because if no segment were uploadded
+        # for now, second run with resuming upload will cause and empty segments list
+        with open(self.__containerName + '.' + self.__diskName + '.txt', 'w') as file:
+            json.dump(self.__segmentFutures, file)
+
         # Creating working threads
         self.__workThreads = []
         file_lock = threading.Lock()
-        for i in range(self.__uploadThreads):
-            thread = SwiftUploadThread(self.__uploadQueue, file_lock, self.__resumeUpload)
+        for i in range(upload_threads):
+            # The last connection self.__swiftConnection needed to confirm purposes
+            self.__swiftConnection = swiftclient.client.Connection(
+                server_url,
+                tennant_name + ':' + user_name,
+                password,
+                retries,
+                auth_version='2',
+                snet=False,
+                ssl_compression=compression)
+
+            thread = SwiftUploadThread(self.__swiftConnection, self.__uploadQueue, file_lock, self.__resumeUpload)
             thread.start()
             self.__workThreads.append(thread)
 
@@ -368,8 +386,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         except Exception as err:
             pass
 
-    def appendSegmentResult(self, segment):
-        self.__segmentFutures.append(segment)
+        return True
 
     def getSegmentResults(self):
         return self.__segmentFutures
@@ -423,20 +440,14 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         """
         Confirms good upload
         """
-
-        options = {'verbose': 2}
-        options = dict(self.__serviceOpts, **options)
-        account_stat = {
-            'action': 'stat_account',
-            'success': True,
-        }
+        storage_url = None
         try:
-            self.__segmentFutures.sort(key=lambda di: di['segment_index'])
+            self.__segmentFutures.sort(key=lambda di: di['index'])
 
             manifest_data = json.dumps([{
-                    'path': d['segment_path'],
-                    'etag': d['segment_etag'],
-                    'size_bytes': d['segment_size']
+                    'path': self.__containerName + '/' + d['path'],
+                    'etag': d['etag'],
+                    'size_bytes': d['size']
             } for d in self.__segmentFutures
             ])
 
@@ -449,60 +460,12 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                 query_string='multipart-manifest=put',
                 response_dict=mr
             )
-
-            items, headers = stat_account(self.__swiftConnection, options=options)
-            account_stat.update({
-                'items': items,
-                'headers': headers
-            })
-            logging.debug("Account stat: " + repr(account_stat))
-        except ClientException as err:
+            storage_url = self.__swiftConnection.url + '/' + self.__containerName + '/' + self.__diskName
+        except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
-            account_stat.update({'success': False})
-            return None
-        except Exception as err:
-            logging.error("!!!ERROR: " + err.message)
-            account_stat.update({'success': False})
-            return None
+            raise
 
-        # TODO: refactor code below
-        storage_url = ""
-        for stat_tuples in account_stat['items']:
-            if str(stat_tuples[0]) == "StorageURL":
-                storage_url = stat_tuples[1]
-                break
-
-        if not storage_url:
-            logging.error("!!!ERROR: cannot find storage account url!")
-            return None
-
-        if account_stat['headers'].has_key('X-Account-Meta-Temp-URL-Key'):
-            key = account_stat['headers']['X-Account-Meta-Temp-URL-Key']
-        elif account_stat['headers'].has_key('X-Account-Meta-Temp-URL-Key'.lower()):
-            key = account_stat['headers']['X-Account-Meta-Temp-URL-Key'.lower()]
-        else:
-            key = None
-        # else:
-        #     logging.info("Account URL Key not found, setting our own one")
-        #     key = self.__accessKey
-        #     options = {'headers': {'': key}}
-        #     self.__swiftService.post(options=options)
-
-        logging.info(repr(account_stat))
-        path_url_part = storage_url[storage_url.find("/v1/"):]
-        base_url_part = storage_url.replace(path_url_part , "")
-        path = path_url_part+"/"+self.__containerName+"/"+self.__diskName
-        method = "GET"
-
-        seconds =  24*60*60 # 24 hours
-        # dunno but Webzilla takes milliseconds instead of seconds
-        milliseconds = int(time.time())*1000 + seconds*1000 - time.time() + seconds
-        #milliseconds = 1440535811144 - time.time()
-        #key should be set as metdata Temp-URL-Key:
-        url = generate_temp_url(path, milliseconds, key, method)
-        logging.debug("Swift temp url is " + url)
-        # temp url doesn't work if object is not public - glance ignores the URI signature and parms when making request
-        return base_url_part+path #+url
+        return storage_url
 
 
     def getTransferChunkSize(self):
@@ -558,3 +521,9 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         This data could be loaded from the disk object on cloud side which channel represents
         """
         return 0
+
+    def close(self):
+        """Closes the channel, sending all upload threads signal to end their operation"""
+        logging.debug("Closing the upload threads, End signal message was sent")
+        for thread in self.__workThreads:
+            self.__uploadQueue.put(None)

@@ -25,20 +25,59 @@ class SwiftUploadChannel_test(unittest.TestCase):
 
     #--------------------- Tests:
     
-    def test_a_small_file(self):
+    # def test_small(self):
+    #     """test1 desctiption"""
+    #
+    #     filename = 'D:\\cloudscraper-test-files\\small.file'
+    #     size = os.stat(filename).st_size
+    #
+    #     channel = SwiftUploadChannel_new.SwiftUploadChannel_new(
+    #         size,
+    #         server_url="https://eu01-auth.webzilla.com:5000/v2.0",
+    #         user_name="3186",
+    #         tennant_name="2344",
+    #         password="icafLFsmAOswwISn",
+    #         container_name="testcontainer1",
+    #         disk_name="small.file")
+    #     channel.initStorage()
+    #
+    #     file = open(filename, "rb")
+    #     datasize = channel.getTransferChunkSize()
+    #     dataplace = 0
+    #     while 1:
+    #         try:
+    #             data = file.read(datasize)
+    #         except EOFError:
+    #             break
+    #         if len(data) == 0:
+    #             break
+    #         dataext = DataExtent.DataExtent(dataplace , len(data))
+    #         dataplace = dataplace + len(data)
+    #         dataext.setData(data)
+    #         channel.uploadData(dataext)
+    #
+    #     channel.waitTillUploadComplete()
+    #     channel.confirm()
+    #     channel.close()
+    #
+    #     return
+
+
+    def test_medium(self):
         """test1 desctiption"""
-        
-        filename = 'D:\\Development\\explorer.exe'
+
+        filename = 'D:\\cloudscraper-test-files\\medium.file'
         size = os.stat(filename).st_size
 
         channel = SwiftUploadChannel_new.SwiftUploadChannel_new(
             size,
             server_url="https://eu01-auth.webzilla.com:5000/v2.0",
-            username="3186",
+            user_name="3186",
             tennant_name="2344",
             password="icafLFsmAOswwISn",
-            disk_name="testfile1",
-            container_name="testcontainer1")
+            retries=3,
+            container_name="testcontainer2",
+            disk_name="medium.file")
         channel.initStorage()
 
         file = open(filename, "rb")
@@ -46,11 +85,11 @@ class SwiftUploadChannel_test(unittest.TestCase):
         dataplace = 0
         while 1:
             try:
-                data = file.read(datasize)
+               data = file.read(datasize)
             except EOFError:
-                break
+               break
             if len(data) == 0:
-                break
+               break
             dataext = DataExtent.DataExtent(dataplace , len(data))
             dataplace = dataplace + len(data)
             dataext.setData(data)
@@ -58,23 +97,31 @@ class SwiftUploadChannel_test(unittest.TestCase):
 
         channel.waitTillUploadComplete()
         channel.confirm()
+        channel.close()
 
         return
 
-    #def test_large_vhd(self):
-    #    """test1 desctiption"""
-        
-    #    filename = 'E:\\vms\\win2003x64\\sysec2tmp.vhd'
-    #    size = os.stat(filename).st_size
 
-    #    channel = SwiftUploadChannel.SwiftUploadChannel(size , server_url="https://eu01-auth.webzilla.com:5000/v2.0" , username="3186" , tennant_name="2344" , password = "icafLFsmAOswwISn",\
-    #        disk_name = "testdisk1_3gb", container_name = "testcontainer1")
-    #    channel.initStorage()
-
-    #    file = open(filename , "rb")
-    #    datasize = channel.getTransferChunkSize()
-    #    dataplace = 0
-    #    while 1:
+    # def test_large(self):
+    #     """test1 desctiption"""
+    #
+    #     filename = 'D:\\cloudscraper-test-files\\large_6gb.file'
+    #     size = os.stat(filename).st_size
+    #
+    #     channel = SwiftUploadChannel_new.SwiftUploadChannel_new(
+    #        size,
+    #        server_url="https://eu01-auth.webzilla.com:5000/v2.0",
+    #        user_name="3186",
+    #        tennant_name="2344",
+    #        password="icafLFsmAOswwISn",
+    #        container_name="testcontainer1",
+    #        disk_name="large_6gb.file")
+    #     channel.initStorage()
+    #
+    #     file = open(filename, "rb")
+    #     datasize = channel.getTransferChunkSize()
+    #     dataplace = 0
+    #     while 1:
     #        try:
     #            data = file.read(datasize)
     #        except EOFError:
@@ -85,54 +132,21 @@ class SwiftUploadChannel_test(unittest.TestCase):
     #        dataplace = dataplace + len(data)
     #        dataext.setData(data)
     #        channel.uploadData(dataext)
-
-    #    channel.waitTillUploadComplete()
-    #    channel.confirm()
-
-    #    return
-    # #--------------------- Tests:
-    
-    #def test_medium_qcow2(self):
-    #    """test1 desctiption"""
-        
-    #    filename = 'E:\\openstack-ubuntu.qcow2'
-    #    size = os.stat(filename).st_size
-
-    #    channel = SwiftUploadChannel.SwiftUploadChannel(size , server_url="https://eu01-auth.webzilla.com:5000/v2.0" , username="3186" , tennant_name="2344" , password = "icafLFsmAOswwISn",\
-    #        disk_name = "openstack-ubuntu.qcow2", container_name = "testcontainer2")
-    #    channel.initStorage()
-
-    #    file = open(filename , "rb")
-    #    datasize = channel.getTransferChunkSize()
-    #    dataplace = 0
-    #    while 1:
-    #        try:
-    #            data = file.read(datasize)
-    #        except EOFError:
-    #            break
-    #        if len(data) == 0:
-    #            break
-    #        dataext = DataExtent.DataExtent(dataplace , len(data))
-    #        dataplace = dataplace + len(data)
-    #        dataext.setData(data)
-    #        channel.uploadData(dataext)
-
-    #    channel.waitTillUploadComplete()
-    #    channel.confirm()
-
-    #    return
+    #
+    #     channel.waitTillUploadComplete()
+    #     channel.confirm()
+    #     channel.close()
+    #
+    #     return
 
     #---------------------- Init and Deinit:
     def setUp(self):
         """sets up the object before any single test"""
-        
-        
         return
 
     def tearDown(self):
         """frees the resources after any single test"""
-        
-        return 
+        return
 
     @classmethod
     def setUpClass(cls):
