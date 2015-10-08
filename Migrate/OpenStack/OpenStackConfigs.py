@@ -29,7 +29,8 @@ import os
 class OpenStackCloudOptions(CloudConfig.CloudConfig):
     
     def __init__(self, server_url, username , tennant_name, password, network_name = None , disk_format="vhd", container_format="bare", flavor=None, ip_pool_name=None,\
-        swift_server_url = None , swift_tennant_name = None , swift_username = None , swift_password = None , swift_container="cloudscraper-upload" , compression=0, chunksize=10*1024*1024):
+        swift_server_url = None , swift_tennant_name = None , swift_username = None , swift_password = None , swift_container="cloudscraper-upload" , compression=0, chunksize=10*1024*1024,
+        use_new_channel=False):
         """
         Constructor
         """
@@ -43,6 +44,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         self.__container_format = container_format
         self.__instanceFlavor = flavor
         self.__publicIpPool = ip_pool_name
+        self.__useNewChannel = use_new_channel
 
         self.__swiftUrl = swift_server_url 
         self.__swiftTennant = swift_tennant_name 
@@ -71,10 +73,25 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             imagesize: long - image file size in bytes
         """
 
-        return OpenStackUploadChannel.OpenStackUploadChannel(imagesize , self.__server , self.__tennant , self.__username , self.__password , self.__disk_format, \
-            targetname, resume, self.__chunkSize , self.__container_format, \
-            swift_server_url = self.__swiftUrl , swift_tennant_name = self.__swiftTennant , swift_username = self.__swiftUsername , swift_password = self.__swiftPassword ,\
-            disk_name = targetname, container_name = self.__swiftContainer , compression = self.__compression);
+        return OpenStackUploadChannel.OpenStackUploadChannel(
+            imagesize,
+            self.__server,
+            self.__tennant,
+            self.__username,
+            self.__password,
+            self.__disk_format,
+            targetname,
+            resume,
+            self.__chunkSize,
+            self.__container_format,
+            swift_server_url=self.__swiftUrl,
+            swift_tennant_name=self.__swiftTennant,
+            swift_username=self.__swiftUsername,
+            swift_password=self.__swiftPassword,
+            disk_name=targetname,
+            container_name=self.__swiftContainer,
+            compression=self.__compression,
+            use_new_channel=self.__useNewChannel)
 
     def generateInstanceFactory(self):
         return OpenStackInstanceGenerator.OpenStackInstanceGenerator(self.__server , self.__tennant , self.__username , self.__password)

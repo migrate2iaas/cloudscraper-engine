@@ -282,6 +282,10 @@ class MigratorConfigurer(object):
         if config.has_option('OpenStack', 'swift_compression'):
             swift_compression = config.get('OpenStack', 'swift_compression')
 
+        use_new_channel = False
+        if config.has_option('OpenStack', 'use_new_channel'):
+            use_new_channel = config.get('OpenStack', 'use_new_channel')
+
         adjust_override = self.getOverrides(config , configfile)
         image = OpenStackConfigs.OpenStackMigrateConfig(volumes , factory, 'x86_64' , imagetype)
         cloud = OpenStackConfigs.OpenStackCloudOptions(endpoint , user, tennant, password, network, imagetype, container, flavor = flavor, ip_pool_name = ip_pool,\

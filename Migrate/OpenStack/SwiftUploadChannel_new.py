@@ -353,7 +353,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             self.__uploadQueue.put(uploadtask)
             offset += segment_size
 
-        # We need to dump self.__segmentFutures, because if no segment were uploadded
+        # We need to dump self.__segmentFutures, because if no segment were uploaded
         # for now, second run with resuming upload will cause and empty segments list
         with open(self.__containerName + '.' + self.__diskName + '.txt', 'w') as file:
             json.dump(self.__segmentFutures, file)
@@ -475,8 +475,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
        Gets the size of transfer chunk in bytes.
        All the data except the last chunk should be aligned and be integral of this size
        """
-
        return self.__chunkSize
+
 
     def getDataTransferRate(self):
        """
@@ -503,13 +503,6 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         return self.__proxyFileObj.getCompletedSize()
 
 
-    def close(self):
-        """
-        Closes the channel, deallocates any associated resources
-        """
-        return
-
-
     def getImageSize(self):
         """
         Gets image data size to be uploaded
@@ -523,6 +516,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         This data could be loaded from the disk object on cloud side which channel represents
         """
         return 0
+
 
     def close(self):
         """Closes the channel, sending all upload threads signal to end their operation"""

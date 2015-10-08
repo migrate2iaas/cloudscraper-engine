@@ -19,7 +19,7 @@ import keystoneclient.v2_0.client as ksclient
 from keystoneclient.auth.identity import v2
 from keystoneclient import session
 from novaclient import client
-from cinderclient.v2 import client as ciclient
+#from cinderclient.v2 import client as ciclient
 
 import logging
 import traceback
