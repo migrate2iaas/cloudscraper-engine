@@ -498,9 +498,13 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         """
         Gets overall size of data actually uploaded (not skipped) in bytes.
         """
-        if self.__proxyFileObj == None:
-            return 0
-        return self.__proxyFileObj.getCompletedSize()
+        completed_size = 0;
+        try:
+            for name in DefferedUploadDataStream.opened_streams:
+                completed_size += DefferedUploadDataStream.getStream(name).getCompletedSize()
+        except Exception as err:
+            logging.debug("Unable to calculete completed data size: " + err.message())
+        return completed_size
 
 
     def getImageSize(self):
