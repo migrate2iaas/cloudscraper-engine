@@ -288,13 +288,13 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             retries=3,
             compression=False,
             resume_upload=False,
-            chunk_size=1024*1024,
+            chunksize=1024*1024,
             upload_threads=4,
             queue_size=8):
         """constructor"""
         self.__containerName = container_name
         self.__diskName = disk_name
-        self.__chunkSize = chunk_size
+        self.__chunkSize = chunksize
         self.__diskSize = resulting_size_bytes
         self.__resumeUpload = resume_upload
         self.__segmentFutures = []
@@ -325,7 +325,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         offset = 0
         segment_size = self.__segmentSize
-        chunk_size = self.__chunkSize
+        chunksize = self.__chunkSize
         semaphore = threading.Semaphore(upload_threads * queue_size)
         while offset < self.__diskSize:
             if self.__diskSize - offset < segment_size:
@@ -344,7 +344,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                     'etag': None,
                     'size': segment_size}
                 self.__segmentFutures.append(res)
-            stream = DefferedUploadDataStream(index, segment_size, chunk_size, semaphore)
+            stream = DefferedUploadDataStream(index, segment_size, chunksize, semaphore)
             uploadtask = SwiftUploadQueueTask(
                 self.__containerName,
                 self.__diskName,
