@@ -140,6 +140,8 @@ class DefferedUploadDataStream(object):
         logging.debug("Adding more data to deffered upload stream '" + self.__name + "' at pos " + str(pos))
         self.__semaphore.acquire()
         if self.cancelled():
+            logging.debug("Stream '" + self.__name + "' is canceled")
+            self.__semaphore.release()
             return
         logging.debug("Added more data to deffered upload stream '" + self.__name + "' at pos " + str(pos))
         with self.__dictLock:
@@ -268,12 +270,11 @@ class SwiftUploadThread(threading.Thread):
                 logging.error("!!!ERROR: " + err.message)
                 _traceback = traceback.format_exc()
                 logging.error(_traceback)
-                segment.update({'exception': {'message': err, 'traceback': _traceback}})
             finally:
-                break
                 file_proxy.cancel()
 
             self.__uploadQueue.task_done()
+
 
 class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     """
@@ -285,7 +286,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             self,
             resulting_size_bytes,
             server_url,
-            user_name,
+            username,
             tennant_name,
             password,
             disk_name,
@@ -370,7 +371,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             # The last connection self.__swiftConnection needed to confirm purposes
             self.__swiftConnection = swiftclient.client.Connection(
                 server_url,
-                tennant_name + ':' + user_name,
+                tennant_name + ':' + username,
                 password,
                 retries,
                 auth_version='2',
@@ -449,6 +450,11 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         """
         storage_url = None
         try:
+            # If segment dictionary has error:
+            for i in self.__segmentFutures:
+                if i['success'] == False:
+                    raise ClientException("Failure due uploading segment(s)")
+
             self.__segmentFutures.sort(key=lambda di: di['index'])
 
             manifest_data = json.dumps([{
