@@ -221,14 +221,18 @@ class SwiftUploadThread(threading.Thread):
                 segment = next(i for i in seg_res if i['index'] == index)
                 is_exists = False
 
-                if self.__skipExisting:
-                    headers = self.__swiftConnection.head_object(upload_task.getContainerName(), segment['path'])
-                    if headers['etag'] == segment['etag']:
-                        segment.update({
-                            'action': 'skip_segment',
-                            'success': True
-                        })
-                        is_exists = True
+                # Trying to hey etag for existing segment
+                try:
+                    if self.__skipExisting:
+                        headers = self.__swiftConnection.head_object(upload_task.getContainerName(), segment['path'])
+                        if headers['etag'] == segment['etag']:
+                            segment.update({
+                                'action': 'skip_segment',
+                                'success': True
+                            })
+                            is_exists = True
+                except ClientException:
+                    pass
 
                 results_dict = {}
                 if is_exists is False:
@@ -266,6 +270,7 @@ class SwiftUploadThread(threading.Thread):
                 logging.error(_traceback)
                 segment.update({'exception': {'message': err, 'traceback': _traceback}})
             finally:
+                break
                 file_proxy.cancel()
 
             self.__uploadQueue.task_done()
