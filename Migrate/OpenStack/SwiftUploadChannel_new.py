@@ -442,6 +442,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         """Waits till upload completes"""
         logging.debug("Upload complete, waiting for threads to complete");
         self.__uploadQueue.join()
+        self.close()
         return
 
     def confirm(self):

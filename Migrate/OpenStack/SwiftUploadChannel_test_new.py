@@ -95,7 +95,6 @@ class SwiftUploadChannel_test(unittest.TestCase):
 
         channel.waitTillUploadComplete()
         channel.confirm()
-        channel.close()
 
         return
 
