@@ -312,6 +312,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             # Make segment size an integer of chunks
             self.__segmentSize = self.__segmentSize - (self.__segmentSize % self.__chunkSize)
 
+        logging.info("Segment size: " + str(self.__segmentSize) + " chunk size: " + str(self.__chunkSize))
         # self.__uploadedSize = 0
 
         # Minimum file size to upload using static large object is 1mb
@@ -374,6 +375,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             self.__uploadBegin = True
 
         try:
+            logging.debug("Uploading extent: offset: " + str(extent.getStart()) + " size: " + str(extent.getSize()))
             segment_name = '%08d' % int(extent.getStart() / self.__segmentSize)
             stream = DefferedUploadDataStream.getStream(segment_name)
             new_extent = DataExtent.DataExtent(extent.getStart() % self.__segmentSize, extent.getSize())
