@@ -103,7 +103,6 @@ class DefferedUploadDataStream(object):
         self.__dictLock = threading.Lock()
         self.__cancel = False
         self.__completeDataSize = 0
-        self.__writeCount = 0
 
     def readData(self, len , pos):
         if self.__completeDataSize == self.__size or self.cancelled():
@@ -132,11 +131,7 @@ class DefferedUploadDataStream(object):
 
     def writeData(self, extent):
         pos = extent.getStart()
-        logging.debug("Adding more data to deffered upload stream '" + self.__name + "' at pos " + str(pos))
-        self.__semaphore.acquire()
         if self.cancelled():
-            logging.debug("Stream '" + self.__name + "' is canceled")
-            self.__semaphore.release()
             return
         logging.debug("Added more data to deffered upload stream '" + self.__name + "' at pos " + str(pos))
         with self.__dictLock:
@@ -260,8 +255,8 @@ class SwiftUploadThread(threading.Thread):
                 logging.error("!!!ERROR: " + err.message)
                 _traceback = traceback.format_exc()
                 logging.error(_traceback)
-            finally:
-                file_proxy.cancel()
+                if not file_proxy.cancelled():
+                    file_proxy.cancel()
 
             self.__uploadChannel.getUploadQueue().task_done()
 
@@ -312,6 +307,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             # Make segment size an integer of chunks
             self.__segmentSize = self.__segmentSize - (self.__segmentSize % self.__chunkSize)
 
+        self.__uploadSemaphore = threading.BoundedSemaphore(self.__uploadThreads * self.__segmentSize / self.__chunkSize)
         logging.info("Segment size: " + str(self.__segmentSize) + " chunk size: " + str(self.__chunkSize))
         # self.__uploadedSize = 0
 
@@ -334,7 +330,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         offset = 0
         segment_size = self.__segmentSize
         chunksize = self.__chunkSize
-        semaphore = threading.Semaphore(4 * upload_threads * queue_size)
+
         while offset < self.__diskSize:
             if self.__diskSize - offset < segment_size:
                 segment_size = self.__diskSize - offset
@@ -352,7 +348,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                     'etag': None,
                     'size': segment_size}
                 self.__segmentFutures.append(res)
-            stream = DefferedUploadDataStream(index, segment_size, chunksize, semaphore)
+            stream = DefferedUploadDataStream(index, segment_size, chunksize, self.__uploadSemaphore)
             uploadtask = SwiftUploadQueueTask(self, stream)
             self.__uploadQueue.put(uploadtask)
             offset += segment_size
@@ -365,16 +361,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         super(SwiftUploadChannel_new, self).__init__()
 
     def uploadData(self, extent):
-        if self.__uploadBegin is False:
-            # Creating working threads
-            file_lock = threading.Lock()
-            for i in range(self.__uploadThreads):
-                thread = SwiftUploadThread(self, file_lock)
-                thread.start()
-                self.__workThreads.append(thread)
-            self.__uploadBegin = True
-
         try:
+            self.__uploadSemaphore.acquire()
             logging.debug("Uploading extent: offset: " + str(extent.getStart()) + " size: " + str(extent.getSize()))
             segment_name = '%08d' % int(extent.getStart() / self.__segmentSize)
             stream = DefferedUploadDataStream.getStream(segment_name)
@@ -383,6 +371,15 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             stream.writeData(new_extent)
         except Exception as err:
             pass
+
+        if self.__uploadBegin is False:
+            # Creating working threads
+            file_lock = threading.Lock()
+            for i in range(self.__uploadThreads):
+                thread = SwiftUploadThread(self, file_lock)
+                thread.start()
+                self.__workThreads.append(thread)
+            self.__uploadBegin = True
 
         return True
 
