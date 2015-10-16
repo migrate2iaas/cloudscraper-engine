@@ -334,7 +334,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         offset = 0
         segment_size = self.__segmentSize
         chunksize = self.__chunkSize
-        semaphore = threading.Semaphore(upload_threads * queue_size)
+        semaphore = threading.Semaphore(4 * upload_threads * queue_size)
         while offset < self.__diskSize:
             if self.__diskSize - offset < segment_size:
                 segment_size = self.__diskSize - offset
