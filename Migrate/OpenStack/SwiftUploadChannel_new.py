@@ -442,6 +442,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         """Waits till upload completes"""
         logging.debug("Upload complete, waiting for threads to complete");
         self.__uploadQueue.join()
+        logging.info("Upload threads are completed, closing threads")
         self.close()
         return
 
@@ -449,6 +450,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         """
         Confirms good upload
         """
+        logging.info("Confirming good upload")
         storage_url = None
         try:
             # If segment dictionary has error:
