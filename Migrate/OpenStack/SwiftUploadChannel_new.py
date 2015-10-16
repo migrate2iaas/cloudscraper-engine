@@ -44,12 +44,7 @@ import pickle
 from md5 import md5
 
 import swiftclient.client
-from swiftclient.service import get_conn, process_options #, split_headers
-from swiftclient.command_helpers import stat_account
-from swiftclient.service import _default_global_options, _default_local_options
-from swiftclient.service import SwiftError#, SwiftUploadObject
 from swiftclient.exceptions import ClientException
-#from swiftclient.client import Connection
 from swiftclient.utils import generate_temp_url
 
 class DefferedMultifileUploadFileProxy(object):
@@ -111,7 +106,7 @@ class DefferedUploadDataStream(object):
         self.__writeCount = 0
 
     def readData(self, len , pos):
-        if self.__completeDataSize == self.__size:
+        if self.__completeDataSize == self.__size or self.cancelled():
             return ""
 
         while True:
@@ -164,6 +159,7 @@ class DefferedUploadDataStream(object):
 
     def cancel(self):
         self.__cancel = True
+        del self.__parts;
         # not the best practice but the only way to unblock the writing trhead
         self.__semaphore.release()
 
@@ -171,43 +167,36 @@ class DefferedUploadDataStream(object):
         return self.__cancel
 
 class SwiftUploadQueueTask(object):
-    def __init__(self, container_name, disk_name, stream_proxy, channel):
-        self.__containerName = container_name
-        self.__diskName = disk_name
+    def __init__(self, upload_channel, stream_proxy):
         self.__streamProxy = stream_proxy
-        self.__channel = channel
-
-    def getSwiftConnection(self):
-        return self.__swiftConnection
-
-    def getContainerName(self):
-        return self.__containerName
-
-    def getDiskName(self):
-        return self.__diskName
+        self.__uploadChannel = upload_channel
 
     def getStreamProxy(self):
         return self.__streamProxy
 
     def getChannel(self):
-        return self.__channel
+        return self.__uploadChannel
 
 
 class SwiftUploadThread(threading.Thread):
     """thread making all uploading works"""
-    def __init__(self, connection, queue, lock, skip_existing = False):
-        self.__swiftConnection = connection
-        self.__uploadQueue = queue
-        self.__skipExisting = skip_existing
+    def __init__(self, upload_channel, lock):
+        self.__uploadChannel = upload_channel
         self.__fileLock = lock
         super(SwiftUploadThread, self).__init__()
 
     def run(self):
-        if self.__skipExisting:
+        if self.__uploadChannel.skipExisting():
             logging.debug("Upload thread started with reuploading turned on")
 
+        connection = None
+        try:
+            connection = self.__uploadChannel.createConnection()
+        except Exception:
+            raise
+
         while True:
-            upload_task = self.__uploadQueue.get()
+            upload_task = self.__uploadChannel.getUploadQueue().get()
 
             # Means it's time to exit
             if upload_task == None:
@@ -219,14 +208,15 @@ class SwiftUploadThread(threading.Thread):
             file_proxy = stream_proxy.getFileProxy(stream_proxy.getName())
 
             try:
-                seg_res = upload_task.getChannel().getSegmentResults()
+                # Getting segments dictionary
+                seg_res = self.__uploadChannel.getSegmentResults()
                 segment = next(i for i in seg_res if i['index'] == index)
                 is_exists = False
 
-                # Trying to hey etag for existing segment
+                # Trying to check etag for existing segment
                 try:
-                    if self.__skipExisting:
-                        headers = self.__swiftConnection.head_object(upload_task.getContainerName(), segment['path'])
+                    if self.__uploadChannel.skipExisting():
+                        headers = connection.head_object(self.__uploadChannel.getContainerName(), segment['path'])
                         if headers['etag'] == segment['etag']:
                             segment.update({
                                 'action': 'skip_segment',
@@ -238,8 +228,8 @@ class SwiftUploadThread(threading.Thread):
 
                 results_dict = {}
                 if is_exists is False:
-                    etag = self.__swiftConnection.put_object(
-                        upload_task.getContainerName(),
+                    etag = connection.put_object(
+                        self.__uploadChannel.getContainerName(),
                         segment['path'],
                         file_proxy,
                         chunk_size=stream_proxy.getChunkSize(),
@@ -261,7 +251,7 @@ class SwiftUploadThread(threading.Thread):
                 # Dumping segment results for resuming upload, if needed
                 try:
                     self.__fileLock.acquire()
-                    with open(upload_task.getContainerName() + '.' + upload_task.getDiskName() + '.txt', 'w') as file:
+                    with open(self.__uploadChannel.getContainerName() + '.' + self.__uploadChannel.getDiskName() + '.txt', 'w') as file:
                         json.dump(seg_res, file)
                 finally:
                     self.__fileLock.release()
@@ -273,7 +263,9 @@ class SwiftUploadThread(threading.Thread):
             finally:
                 file_proxy.cancel()
 
-            self.__uploadQueue.task_done()
+            self.__uploadChannel.getUploadQueue().task_done()
+
+        connection.close()
 
 
 class SwiftUploadChannel_new(UploadChannel.UploadChannel):
@@ -298,12 +290,21 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             upload_threads=4,
             queue_size=8):
         """constructor"""
+        self.__serverURL = server_url;
+        self.__userName = username;
+        self.__tennantName = tennant_name;
+        self.__password = password;
+        self.__retries = retries;
+        self.__compression = compression;
         self.__containerName = container_name
         self.__diskName = disk_name
         self.__chunkSize = chunksize
         self.__diskSize = resulting_size_bytes
         self.__resumeUpload = resume_upload
         self.__segmentFutures = []
+        self.__uploadBegin=False
+        self.__workThreads = []
+        self.__uploadThreads = upload_threads
 
         # Max segment number is 1000 (it's configurable see http://docs.openstack.org/developer/swift/middleware.html )
         self.__segmentSize = max(int(self.__diskSize / 512), self.__chunkSize)
@@ -351,11 +352,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                     'size': segment_size}
                 self.__segmentFutures.append(res)
             stream = DefferedUploadDataStream(index, segment_size, chunksize, semaphore)
-            uploadtask = SwiftUploadQueueTask(
-                self.__containerName,
-                self.__diskName,
-                stream,
-                self)
+            uploadtask = SwiftUploadQueueTask(self, stream)
             self.__uploadQueue.put(uploadtask)
             offset += segment_size
 
@@ -364,27 +361,18 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         with open(self.__containerName + '.' + self.__diskName + '.txt', 'w') as file:
             json.dump(self.__segmentFutures, file)
 
-        # Creating working threads
-        self.__workThreads = []
-        file_lock = threading.Lock()
-        for i in range(upload_threads):
-            # The last connection self.__swiftConnection needed to confirm purposes
-            self.__swiftConnection = swiftclient.client.Connection(
-                server_url,
-                tennant_name + ':' + username,
-                password,
-                retries,
-                auth_version='2',
-                snet=False,
-                ssl_compression=compression)
-
-            thread = SwiftUploadThread(self.__swiftConnection, self.__uploadQueue, file_lock, self.__resumeUpload)
-            thread.start()
-            self.__workThreads.append(thread)
-
         super(SwiftUploadChannel_new, self).__init__()
 
     def uploadData(self, extent):
+        if self.__uploadBegin is False:
+            # Creating working threads
+            file_lock = threading.Lock()
+            for i in range(self.__uploadThreads):
+                thread = SwiftUploadThread(self, file_lock)
+                thread.start()
+                self.__workThreads.append(thread)
+            self.__uploadBegin = True
+
         try:
             segment_name = '%08d' % int(extent.getStart() / self.__segmentSize)
             stream = DefferedUploadDataStream.getStream(segment_name)
@@ -398,7 +386,29 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
     def getSegmentResults(self):
         return self.__segmentFutures
- 
+
+    def getContainerName(self):
+        return self.__containerName
+
+    def getDiskName(self):
+        return self.__diskName
+
+    def skipExisting(self):
+        return self.__resumeUpload
+
+    def getUploadQueue(self):
+        return self.__uploadQueue
+
+    def createConnection(self):
+        return swiftclient.client.Connection(
+            self.__serverURL,
+            self.__tennantName + ':' + self.__userName,
+            self.__password,
+            self.__retries,
+            auth_version='2',
+            snet=False,
+            ssl_compression=self.__compression)
+
     def initStorage(self, init_data_link=""):
         """
         Inits storage to run upload
@@ -412,16 +422,19 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         resp_dict = {}
         try:
+            connection = self.createConnection()
             res['action'] = 'put_container'
-            self.__swiftConnection.put_container(res['container'], headers=res['headers'], response_dict=resp_dict)
+            connection.put_container(res['container'], headers=res['headers'], response_dict=resp_dict)
 
             res['action'] = 'post_container'
             res['headers'] = {'X-Container-Read': '.r:*'}
-            self.__swiftConnection.post_container(res['container'], headers=res['headers'], response_dict=resp_dict)
+            connection.post_container(res['container'], headers=res['headers'], response_dict=resp_dict)
 
             res['success'] = True
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
+        finally:
+            connection.close()
 
         return res['success']
 
@@ -468,7 +481,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             ])
 
             mr = {}
-            self.__swiftConnection.put_object(
+            connection = self.createConnection()
+            connection.put_object(
                 self.__containerName,
                 self.__diskName,
                 manifest_data,
@@ -476,7 +490,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                 query_string='multipart-manifest=put',
                 response_dict=mr
             )
-            storage_url = self.__swiftConnection.url + '/' + self.__containerName + '/' + self.__diskName
+            storage_url = connection.url + '/' + self.__containerName + '/' + self.__diskName
+            connection.close()
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
             raise

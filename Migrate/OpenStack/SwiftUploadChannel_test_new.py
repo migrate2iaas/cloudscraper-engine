@@ -75,7 +75,8 @@ class SwiftUploadChannel_test(unittest.TestCase):
             username="3186",
             tennant_name="2344",
             password="icafLFsmAOswwISn",\
-            disk_name="openstack-ubuntu.qcow2", container_name = "testcontainer2")
+            disk_name="medium.file",
+            container_name="testcontainer2")
         channel.initStorage()
 
         file = open(filename, "rb")
