@@ -310,10 +310,6 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         self.__uploadSemaphore = threading.BoundedSemaphore(self.__uploadThreads * self.__segmentSize / self.__chunkSize)
         logging.info("Segment size: " + str(self.__segmentSize) + " chunk size: " + str(self.__chunkSize))
-        # self.__uploadedSize = 0
-
-        # Minimum file size to upload using static large object is 1mb
-        # (see http://docs.openstack.org/developer/swift/middleware.html)
 
         # Loading segment results if resuming upload, clearing file otherwise
         open_opt = 'w'
@@ -362,9 +358,13 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         super(SwiftUploadChannel_new, self).__init__()
 
     def uploadData(self, extent):
+        logging.debug("Uploading extent: offset: " + str(extent.getStart()) + " size: " + str(extent.getSize()))
+
+        # __uploadSemaphore released when data is reading or when proxy file stream canceled (in working thread)
+        self.__uploadSemaphore.acquire()
         try:
-            logging.debug("Uploading extent: offset: " + str(extent.getStart()) + " size: " + str(extent.getSize()))
-            self.__uploadSemaphore.acquire()
+            # We creating new file proxy streams for each segment.
+            # So we need to recalculate data extents that relative to this segment.
             segment_name = '%08d' % int(extent.getStart() / self.__segmentSize)
             stream = DefferedUploadDataStream.getStream(segment_name)
             new_extent = DataExtent.DataExtent(extent.getStart() % self.__segmentSize, extent.getSize())
@@ -373,16 +373,20 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         except Exception as err:
             pass
 
-        if self.__uploadBegin is False:
-            # Creating working threads
-            file_lock = threading.Lock()
-            for i in range(self.__uploadThreads):
-                thread = SwiftUploadThread(self, file_lock)
-                thread.start()
-                self.__workThreads.append(thread)
+        # We need to create upload threads only once, when upload data begins.
+        # It's not good place to create threads in class construcor or initStorage()
+        # function, because data is not available at this moment and threads (and connections)
+        # waits to much.
+        if not self.__uploadBegin:
+            self.__createUploadThreads()
             self.__uploadBegin = True
 
         return True
+
+    def __createUploadThreads(self):
+        # Creating working threads
+        for i in range(self.__uploadThreads):
+            self.__workThreads.append(SwiftUploadThread(self, threading.Lock()).start())
 
     def getSegmentResults(self):
         return self.__segmentFutures
