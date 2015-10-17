@@ -153,10 +153,12 @@ class DefferedUploadDataStream(object):
         return self.__completeDataSize
 
     def cancel(self):
-        self.__cancel = True
-        del self.__parts;
-        # not the best practice but the only way to unblock the writing trhead
-        self.__semaphore.release()
+        if not self.__cancel:
+            self.__cancel = True
+            for part in self.__parts:
+                # not the best practice but the only way to unblock the writing trhead
+                self.__semaphore.release()
+            del self.__parts;
 
     def cancelled(self):
         return self.__cancel
@@ -255,10 +257,9 @@ class SwiftUploadThread(threading.Thread):
                 logging.error("!!!ERROR: " + err.message)
                 _traceback = traceback.format_exc()
                 logging.error(_traceback)
-                if not file_proxy.cancelled():
-                    file_proxy.cancel()
-
-            self.__uploadChannel.getUploadQueue().task_done()
+            finally:
+                file_proxy.cancel()
+                self.__uploadChannel.getUploadQueue().task_done()
 
         connection.close()
 
@@ -362,8 +363,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
     def uploadData(self, extent):
         try:
-            self.__uploadSemaphore.acquire()
             logging.debug("Uploading extent: offset: " + str(extent.getStart()) + " size: " + str(extent.getSize()))
+            self.__uploadSemaphore.acquire()
             segment_name = '%08d' % int(extent.getStart() / self.__segmentSize)
             stream = DefferedUploadDataStream.getStream(segment_name)
             new_extent = DataExtent.DataExtent(extent.getStart() % self.__segmentSize, extent.getSize())
@@ -406,7 +407,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             self.__retries,
             auth_version='2',
             snet=False,
-            ssl_compression=self.__compression)
+            ssl_compression=self.__compression,
+            timeout=86400)
 
     def initStorage(self, init_data_link=""):
         """
