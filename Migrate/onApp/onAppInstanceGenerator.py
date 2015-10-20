@@ -69,7 +69,7 @@ class OnAppBase:
             try:
                 response = self.sendRequest("GET", "/version.json");
             except ssl.SSLError as sslerror:
-                logging.error("!!!ERROR: failed to have SSL connection. Please check your openssl version is >= 1.0.0. Update your openssl. (see e.g. https://sandilands.info/sgordon/upgrade-latest-version-openssl-on-ubuntu)")
+                logging.error("!!!ERROR: failed to have SSL connection. Please check your openssl version is >= 1.0.1. Update your openssl by downloading and compiling openssl 1.0.1+ latest source.")
                 raise sslerror
 
             array = json.loads(response.read());
@@ -250,7 +250,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         #here we should start minipad from template
         win_template_disk_size = self.__winTemplateDiskSize
         #TODO: licensing should be configurable
-        win_licensing_type = "mak"
+        win_licensing_type = self.__winLicense 
 
 
         if not self.__minipadId and not self.__minipadTemplate:
@@ -320,7 +320,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         logging.error("!!!ERROR: Timeout, Cloudscraper target VM does not respond to RDP probe. Please contact the cloud provider.")
         return
 
-    def __init__(self, onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_id = "" , minipad_vm_id = None , vmbuild_timeout=100*60 , win_template_disk_size=20):
+    def __init__(self, onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_id = "" , minipad_vm_id = None , vmbuild_timeout=100*60 , win_template_disk_size=20 , win_license = "mak"):
         """
         Args:
             onapp_endpoint - cloud endpoint address (ip or dns)
@@ -334,6 +334,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
             minipad_vm_id - id if minipad is already created
             vmbuild_timeout: int - timeout in seconds to wait till target minipad VM is built
             win_template_disk_size: int - the size of minipad VM primary disk in GBs
+            win_license: str - can be 'kms','mak', or 'own' see onApp API docs for more info
         """
         self.__onapp = OnAppBase();
         self.__onapp.connectOnApp(onapp_login, onapp_password, onapp_endpoint, str(onapp_port));
@@ -351,6 +352,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         self.__datastore = onapp_datastore_id
         self.__winTemplateDiskSize = win_template_disk_size
         self.__targetOsName = "Windows"
+        self.__winLicense = win_license
         super(onAppInstanceGenerator, self).__init__(preset_ip)
         #TODO: should find datastore id via the label
         

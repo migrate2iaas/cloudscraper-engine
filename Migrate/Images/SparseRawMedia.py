@@ -29,7 +29,8 @@ class SparseRawMedia(ImageMedia.ImageMedia):
         """
             Returns the size (in bytes) of virtual disk represented by the image.
         """
-        return self.__size
+        # NOTE: it may be truncated outside so we should update the max size too
+        return max(self.__size, self.getImageSize())
 
     def getImageSize(self):
         """

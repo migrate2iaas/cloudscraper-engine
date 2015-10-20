@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Linux_GC\NbdBundle_utils.py</StartupFile>
+    <StartupFile>onApp\onAppInstanceGenerator_test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>

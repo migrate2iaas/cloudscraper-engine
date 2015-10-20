@@ -395,12 +395,13 @@ class Migrator(object):
             
                 #TODO: create kinda callbacks for transfers to monitor them
                 self.__systemTransferTarget.transferRawData(extents)
-
-                self.__systemTransferTarget.close()
-
                 # free VSS snapshot if Windows
                 if self.__runOnWindows:
                     self.__windows.freeDataBackupSource(self.__systemBackupSource.getBackupDataSource())
+
+            self.__systemTransferTarget.close()
+
+            
             
         
         # we save the config to reflect the image generated is ready. 
