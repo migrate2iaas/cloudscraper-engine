@@ -85,10 +85,11 @@ class DefferedUploadFileProxy(object):
 
 class SwiftUploadThread(threading.Thread):
     """thread making all uploading works"""
-    def __init__(self, upload_channel, file_proxy, index):
+    def __init__(self, upload_channel, file_proxy, index, file_lock):
         self.__uploadChannel = upload_channel
         self.__fileProxy = file_proxy
         self.__index = index
+        self.__fileLock = file_lock
         super(SwiftUploadThread, self).__init__()
 
     def run(self):
@@ -116,15 +117,24 @@ class SwiftUploadThread(threading.Thread):
             # Trying to check etag for existing segment
             try:
                 if self.__uploadChannel.skipExisting():
+                    # Trying to find segment in resume upload list, which was loaded from disk
+                    resume_segments = self.__uploadChannel.getResumeSegmentResults()
+                    for i in resume_segments:
+                        if res['index'] == i['index']:
+                            res.update({'etag': i['etag']})
+                            break
+
                     headers = connection.head_object(self.__uploadChannel.getContainerName(), res['path'])
                     if headers['etag'] == res['etag']:
-                        segment.update({
+                        res.update({
                             'action': 'skip_segment',
                             'success': True
                         })
                         is_exists = True
             except ClientException:
-                pass #TODO: add comment
+                # Passing exception here, it's means that when we unable to check
+                # uploaded segment (it's missing or etag mismatch) we reuploading that segment
+                pass
 
             results_dict = {}
             if is_exists is False:
@@ -147,15 +157,15 @@ class SwiftUploadThread(threading.Thread):
                     'action': 'upload_segment',
                     'etag': etag
                 })
-                self.__uploadChannel.appendSegmentResult(res)
+
+            self.__uploadChannel.appendSegmentResult(res)
+            # Dumping segment results for resuming upload, if needed
+            with self.__fileLock:
+                with open(self.__uploadChannel.getContainerName() + '.' + self.__uploadChannel.getDiskName() + '.txt', 'w') as file:
+                    json.dump(self.__uploadChannel.getSegmentResults(), file)
 
             # Notify that upload complete
             self.__fileProxy.setComplete()
-
-            # Dumping segment results for resuming upload, if needed
-            with threading.Lock():
-                with open(self.__uploadChannel.getContainerName() + '.' + self.__uploadChannel.getDiskName() + '.txt', 'w') as file:
-                    json.dump(self.__uploadChannel.getSegmentResults(), file)
 
         except (ClientException, Exception) as err:
             self.__fileProxy.cancel()
@@ -204,7 +214,9 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__uploadThreads = threading.BoundedSemaphore(upload_threads)
         self.__segmentQueueSize = queue_size
         self.__segmentsList = []
+        self.__resumeSegmentsList = []
         self.__fileProxies = []
+        self.__fileLock = threading.Lock()
 
         # Max segment number is 1000 (it's configurable see http://docs.openstack.org/developer/swift/middleware.html )
         self.__segmentSize = max(int(self.__diskSize / 512), self.__chunkSize)
@@ -220,7 +232,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             open_opt = 'r'
         try:
             with open(self.__containerName + '.' + self.__diskName + '.txt', open_opt) as file:
-                self.__segmentsList = json.load(file)
+                self.__resumeSegmentsList = json.load(file)
         except Exception:
             pass
 
@@ -245,7 +257,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             else:
                 segment_size = self.__segmentSize
             self.__fileProxies.insert(index, DefferedUploadFileProxy(self.__segmentQueueSize, segment_size))
-            SwiftUploadThread(self, self.__fileProxies[index], index).start()
+            SwiftUploadThread(self, self.__fileProxies[index], index, self.__fileLock).start()
 
         self.__fileProxies[index].write(extent)
 
@@ -256,6 +268,9 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
     def getSegmentResults(self):
         return self.__segmentsList
+
+    def getResumeSegmentResults(self):
+        return self.__resumeSegmentsList
 
     def appendSegmentResult(self, result):
          return self.__segmentsList.append(result)
