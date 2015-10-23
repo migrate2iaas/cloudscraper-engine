@@ -117,7 +117,9 @@
     <Compile Include="OpenStack\OpenStackInstanceGenerator_test.py" />
     <Compile Include="OpenStack\OpenStackUploadChannel_test.py" />
     <Compile Include="OpenStack\SwiftUploadChannel.py" />
+    <Compile Include="OpenStack\SwiftUploadChannel_new.py" />
     <Compile Include="OpenStack\SwiftUploadChannel_test.py" />
+    <Compile Include="OpenStack\SwiftUploadChannel_test_new.py" />
     <Compile Include="OpenStack\__init__.py" />
     <Compile Include="ProfitBricks\FtpUploadChannel.py" />
     <Compile Include="ProfitBricks\FtpUploadChannel_test.py" />
