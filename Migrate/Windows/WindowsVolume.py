@@ -203,7 +203,7 @@ class WindowsVolume(object):
             volextent = DataExtent(extent.Lcn * self.__bytesPerCluster, (extent.NextVcn - current_file_vcn) * self.__bytesPerCluster )
             volextent.setData(DeferedReader(volextent, self) )
             volextents.append(volextent)
-            logging.debug("Found extent # " + extent_count + " " + str(volextent))
+            logging.debug("Found extent # " + str(extent_count) + " " + str(volextent))
 
             current_file_vcn = extent.NextVcn
             buffer_offset = buffer_offset + struct.calcsize("@qq")
