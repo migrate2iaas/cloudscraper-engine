@@ -1,4 +1,5 @@
 # --------------------------------------------------------
+???# --------------------------------------------------------
 __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
@@ -15,6 +16,8 @@ import EHConfigs
 import AzureConfigs
 #import CloudSigmaConfigs
 import onAppConfigs
+import OpenStack
+from OpenStack import OpenStackConfigs
 
 import platform
 import shutil
@@ -38,6 +41,9 @@ import StreamVmdkMediaFactory
 import ProfitBricksConfig
 import SparseRawMediaFactory
 import QemuImgMediaFactory
+import VhdQcow2MediaFactory
+import SparseRawMedia
+import WindowsVhdMedia
 
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
@@ -226,8 +232,72 @@ class MigratorConfigurer(object):
         if config.has_section('onApp'):
             return self.configOnApp(configfile, config , password )
 
+        if config.has_section('OpenStack'):
+            return self.configOpenStack(configfile, config , password )
+
         logging.error("!!!ERROR: No appropriate config entry found. Config is corrupted or target cloud is not supported by the software version")
         return None
+
+    def configOpenStack(self , configfile, config, password):
+        (imagedir, image_placement, imagetype) = self.getImageOptions(config)
+        volumes = self.createVolumesList(config , configfile, imagedir, imagetype)        
+        factory = self.createImageFactory(config , image_placement , imagetype)
+        
+        user = config.get('OpenStack', 'user')
+        endpoint = config.get('OpenStack', 'endpoint')
+        tennant = config.get('OpenStack', 'tennant')
+        network = None
+        if config.has_option('OpenStack', 'network'):
+            network = config.get('OpenStack', 'network')
+
+        flavor = None
+        if config.has_option('OpenStack', 'flavor'):
+            flavor = config.get('OpenStack', 'flavor')
+
+        ip_pool = None
+        if config.has_option('OpenStack', 'ip_pool'):
+            ip_pool = config.get('OpenStack', 'ip_pool')
+
+        container = "bare"
+        if config.has_option('OpenStack', 'container'):
+            network = config.get('OpenStack', 'container')
+        #TODO: we may add flavors here
+
+        # Swift specific parameters (if different from the major cloud ones)
+        swift_server_url = endpoint
+        if config.has_option('OpenStack', 'swift_endpoint'):
+            swift_server_url = config.get('OpenStack', 'swift_endpoint')
+
+        swift_tennant_name = tennant
+        if config.has_option('OpenStack', 'swift_tennant'):
+            swift_tennant_name = config.get('OpenStack', 'swift_tennant')
+
+        swift_username = user
+        if config.has_option('OpenStack', 'swift_user'):
+            swift_username = config.get('OpenStack', 'swift_user')
+
+        swift_password = user
+        if config.has_option('OpenStack', 'swift_password'):
+            swift_password = config.get('OpenStack', 'swift_password')
+
+        swift_container = "cloudscraper-"+str(int(time.time()))
+        if config.has_option('OpenStack', 'swift_container'):
+            swift_container = config.get('OpenStack', 'swift_container')
+
+        swift_compression = 0
+        if config.has_option('OpenStack', 'swift_compression'):
+            swift_compression = config.get('OpenStack', 'swift_compression')
+
+        use_new_channel = False
+        if config.has_option('OpenStack', 'use_new_channel'):
+            use_new_channel = config.get('OpenStack', 'use_new_channel')
+
+        adjust_override = self.getOverrides(config , configfile)
+        image = OpenStackConfigs.OpenStackMigrateConfig(volumes , factory, 'x86_64' , imagetype)
+        cloud = OpenStackConfigs.OpenStackCloudOptions(endpoint , user, tennant, password, network, imagetype, container, flavor = flavor, ip_pool_name = ip_pool,\
+            swift_server_url = swift_server_url , swift_tennant_name = swift_tennant_name , swift_username = swift_username ,
+            swift_password = swift_password , swift_container=swift_container , compression=swift_compression , use_new_channel=use_new_channel)
+        return (image,adjust_override,cloud)
 
     def configOnApp(self, configfile, config, password):
          # generic for other clouds
@@ -645,10 +715,16 @@ class MigratorConfigurer(object):
             factory = StreamVmdkMediaFactory.StreamVmdkMediaFactory(compression) 
         if (str(imagetype).lower() == "sparsed" or imagetype.lower() == "sparsed.raw"):
             factory = SparseRawMediaFactory.SparseRawMediaFactory()
-        
-        if not factory and (not os.name == 'nt') and image_placement == "local":  
-            #TODO: should pass the type parm here so QemuImgMedia makes no guesses on disk types (they can be misleading)      
-            factory = QemuImgMediaFactory.QemuImgMediaFactory()
+
+
+        #Here we can do some additional conversation using qemu utilities
+        if (config.has_option('Qemu', 'path') and config.has_option('Qemu', 'dest_imagetype')):
+            qemu_path = config.get('Qemu', 'path')
+            dest_imagetype = config.get('Qemu', 'dest_imagetype')
+            qemu_convert_params = ""
+            if config.has_option('Qemu', 'qemu_convert_params'):
+                qemu_convert_params = int(config.get('Qemu', 'qemu_convert_params'))
+            factory = VhdQcow2MediaFactory.VhdQcow2MediaFactory(factory , qemu_path , dest_imagetype , qemu_convert_params = qemu_convert_params)
 
         return factory
 
