@@ -580,6 +580,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         # 1) Exclude files not needed
         # TODO: find all the pagefiles
         if self.__adjustConfig.removePageFile():
+            logging.info("Skipping pagefile blocks")
             self.removeFile("pagefile.sys")
             self.removeFile("hiberfil.sys")
 
