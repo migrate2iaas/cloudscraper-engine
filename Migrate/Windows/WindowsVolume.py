@@ -195,6 +195,7 @@ class WindowsVolume(object):
         current_file_vcn = retrieval_pointers_buffer_header.StartingVcn
         volextents = list() 
         extenttuple = namedtuple('Extents', 'NextVcn Lcn')
+        logging.debug("Iterating thru "+ int(retrieval_pointers_buffer_header.ExtentCount) + " of extents")
         while extent_count < retrieval_pointers_buffer_header.ExtentCount:
             
             extent = extenttuple._make(struct.unpack_from("@qq", outbuffer[buffer_offset:buffer_offset+struct.calcsize("@qq")]))
@@ -202,7 +203,7 @@ class WindowsVolume(object):
             volextent = DataExtent(extent.Lcn * self.__bytesPerCluster, (extent.NextVcn - current_file_vcn) * self.__bytesPerCluster )
             volextent.setData(DeferedReader(volextent, self) )
             volextents.append(volextent)
-            logging.debug("Found extent " + str(volextent))
+            logging.debug("Found extent # " + extent_count + " " + str(volextent))
 
             current_file_vcn = extent.NextVcn
             buffer_offset = buffer_offset + struct.calcsize("@qq")

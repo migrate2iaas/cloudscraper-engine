@@ -116,12 +116,7 @@ def chk_limits():
 
 if __name__ == '__main__':
     try:
-        #Turning on the logging
-        logging.basicConfig(format='%(asctime)s %(message)s' , filename='../../logs/migrate.log',level=logging.DEBUG)    
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.INFO)
-        logging.getLogger().addHandler(handler)
-
+        
         # little hacks to pre-configure env and args
         if os.name == 'nt':
             import Windows
@@ -149,6 +144,16 @@ if __name__ == '__main__':
         parser.add_argument('-b', '--heartbeat', help="Specifies interval in seconds to write hearbeat messages to stdout. No heartbeat if this flag is ommited", type=int)                   
         parser.add_argument('-q', '--statusfile', help="Specifies status file to write current output") 
         parser.add_argument('-v', '--virtio', help="Injects virtio drivers in the running server driver store", action="store_true")
+        parser.add_argument('-l', '--logfile', help="Specifies the place to store full log")
+
+        logfile = "../../logs/migrate.log"
+        if parser.parse_args().logfile:
+            logfile = parser.parse_args().logfile
+        #Turning on the logging
+        logging.basicConfig(format='%(asctime)s %(message)s' , filename=logfile,level=logging.DEBUG)    
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.INFO)
+        logging.getLogger().addHandler(handler)
     
         #new random seed
         random.seed()
