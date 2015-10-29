@@ -15,8 +15,8 @@ import EHConfigs
 import AzureConfigs
 #import CloudSigmaConfigs
 import onAppConfigs
-import OpenStack
-from OpenStack import OpenStackConfigs
+#import OpenStack
+#from OpenStack import OpenStackConfigs
 
 import platform
 import shutil
