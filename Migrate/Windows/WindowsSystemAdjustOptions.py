@@ -25,6 +25,7 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
          self.__adjustTcpIp = False
          self.__virtIoPath = ""
          self.__injectPostprocess = False
+         self.__removePageFile = True
          
          originalwindir = os.environ['windir']
          windir = originalwindir.split(":\\")[-1] #get substring after X:\
@@ -60,6 +61,7 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
          self.__adjustTcpIp = self.__getValue(config , 'adjust-tcpip' , self.__adjustTcpIp)
          self.__virtIoPath = self.__getValue(config , 'virtio' , self.__virtIoPath)
          self.__injectPostprocess = self.__getValue(config , 'postprocess' , self.__injectPostprocess)
+         self.__removePageFile = self.__getValue(config , 'pagefile' , self.__removePageFile)
 
          #TODO: load ini config setting these values
          #get config class from the service
@@ -136,3 +138,7 @@ class WindowsSystemAdjustOptions(SystemAdjustOptions.SystemAdjustOptions):
      def injectPostprocess(self):
          """checks if postprocess service is needed to be injected"""
          return self.__injectPostprocess
+
+     def removePageFile(self):
+         """checks if we have to remove pagefile"""
+         return self.__removePageFile
