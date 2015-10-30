@@ -30,7 +30,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
     
     def __init__(self, server_url, username , tennant_name, password, network_name = None , disk_format="vhd", container_format="bare", flavor=None, ip_pool_name=None,\
         swift_server_url = None , swift_tennant_name = None , swift_username = None , swift_password = None , swift_container="cloudscraper-upload" , compression=0, chunksize=10*1024*1024,
-        use_new_channel=False):
+        use_new_channel=False, resume_file_path=None):
         """
         Constructor
         """
@@ -45,6 +45,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         self.__instanceFlavor = flavor
         self.__publicIpPool = ip_pool_name
         self.__useNewChannel = use_new_channel
+        self.__resumeFilePath = resume_file_path
 
         self.__swiftUrl = swift_server_url 
         self.__swiftTennant = swift_tennant_name 
@@ -91,7 +92,8 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             disk_name=targetname,
             container_name=self.__swiftContainer,
             compression=self.__compression,
-            use_new_channel=self.__useNewChannel)
+            use_new_channel=self.__useNewChannel,
+            resume_file_path=self.__resumeFilePath)
 
     def generateInstanceFactory(self):
         return OpenStackInstanceGenerator.OpenStackInstanceGenerator(self.__server , self.__tennant , self.__username , self.__password)

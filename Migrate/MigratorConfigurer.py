@@ -286,11 +286,16 @@ class MigratorConfigurer(object):
         if config.has_option('OpenStack', 'use_new_channel'):
             use_new_channel = config.get('OpenStack', 'use_new_channel')
 
+        resume_file_path = None
+        if config.has_option('OpenStack', 'resume_file_path'):
+            resume_file_path = config.get('OpenStack', 'resume_file_path')
+
         adjust_override = self.getOverrides(config , configfile)
         image = OpenStackConfigs.OpenStackMigrateConfig(volumes , factory, 'x86_64' , imagetype)
         cloud = OpenStackConfigs.OpenStackCloudOptions(endpoint , user, tennant, password, network, imagetype, container, flavor = flavor, ip_pool_name = ip_pool,\
             swift_server_url = swift_server_url , swift_tennant_name = swift_tennant_name , swift_username = swift_username ,
-            swift_password = swift_password , swift_container=swift_container , compression=swift_compression , use_new_channel=use_new_channel)
+            swift_password = swift_password , swift_container=swift_container , compression=swift_compression , use_new_channel=use_new_channel,
+            resume_file_path=resume_file_path)
         return (image,adjust_override,cloud)
 
     def configOnApp(self, configfile, config, password):

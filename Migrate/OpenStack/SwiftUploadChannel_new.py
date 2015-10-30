@@ -150,7 +150,7 @@ class SwiftUploadThread(threading.Thread):
                         'Segment {0}: upload verification failed: '
                         'md5 mismatch, local {1} != remote {2} '
                         '(remote segment has not been removed)'
-                        .format(segment['path'], segment_md5, etag))
+                        .format(res['path'], segment_md5, etag))
 
                 res.update({
                     'success': True,
@@ -161,8 +161,12 @@ class SwiftUploadThread(threading.Thread):
             self.__uploadChannel.appendSegmentResult(res)
             # Dumping segment results for resuming upload, if needed
             with self.__fileLock:
-                with open(self.__uploadChannel.getContainerName() + '.' + self.__uploadChannel.getDiskName() + '.txt', 'w') as file:
-                    json.dump(self.__uploadChannel.getSegmentResults(), file)
+                try:
+                    with open(self.__uploadChannel.getResumeFilePath(), 'w') as f:
+                        json.dump(self.__uploadChannel.getSegmentResults(), f)
+                except Exception as err:
+                    logging.debug("Unable to dump segments for resuming upload: " + str(err))
+                    pass
 
             # Notify that upload complete
             self.__fileProxy.setComplete()
@@ -170,7 +174,7 @@ class SwiftUploadThread(threading.Thread):
         except (ClientException, Exception) as err:
             self.__fileProxy.cancel()
             logging.error(traceback.format_exc())
-            logging.debug("Exception in upload thread for '%08d'" % self.__index)
+            logging.debug("Exception in upload thread for '%08d' %s" % (self.__index, str(err)))
 
         self.__uploadChannel.completeUploadThread()
         connection.close()
@@ -196,21 +200,23 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             retries=3,
             compression=False,
             resume_upload=False,
+            resume_file_path=None,
             chunksize=10*1024*1024,
             upload_threads=10,
             queue_size=8):
         """constructor"""
-        self.__serverURL = server_url;
-        self.__userName = username;
-        self.__tennantName = tennant_name;
-        self.__password = password;
-        self.__retries = retries;
-        self.__compression = compression;
+        self.__serverURL = server_url
+        self.__userName = username
+        self.__tennantName = tennant_name
+        self.__password = password
+        self.__retries = retries
+        self.__compression = compression
         self.__containerName = container_name
         self.__diskName = disk_name
         self.__chunkSize = chunksize
         self.__diskSize = resulting_size_bytes
         self.__resumeUpload = resume_upload
+        self.__resumeFilePath = resume_file_path
         self.__uploadThreads = threading.BoundedSemaphore(upload_threads)
         self.__segmentQueueSize = queue_size
         self.__segmentsList = []
@@ -222,19 +228,19 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__segmentSize = max(int(self.__diskSize / 512), self.__chunkSize)
         if self.__segmentSize % self.__chunkSize:
             # Make segment size an integer of chunks
-            self.__segmentSize = self.__segmentSize - (self.__segmentSize % self.__chunkSize)
+            self.__segmentSize -= self.__segmentSize % self.__chunkSize
 
         logging.info("Segment size: " + str(self.__segmentSize) + " chunk size: " + str(self.__chunkSize))
 
-        # Loading segment results if resuming upload, clearing file otherwise
-        open_opt = 'w'
+        # Loading segment results if resuming upload
+        # Note: resume upload file overrides when segment uploaded
         if self.__resumeUpload:
-            open_opt = 'r'
-        try:
-            with open(self.__containerName + '.' + self.__diskName + '.txt', open_opt) as file:
-                self.__resumeSegmentsList = json.load(file)
-        except Exception:
-            pass
+            try:
+                with open(self.__resumeFilePath, 'r') as f:
+                    self.__resumeSegmentsList = json.load(f)
+            except Exception as err:
+                logging.error("!!!ERROR: got some troubles with resume upload file: " + str(err))
+                raise
 
         super(SwiftUploadChannel_new, self).__init__()
 
@@ -251,7 +257,6 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             logging.debug("Starting new upload thread for '%08d'" % index)
 
             # Checking if this is the last segment
-            segment_size = 0;
             if extent.getStart() + self.__segmentSize > self.__diskSize:
                 segment_size = self.__diskSize - extent.getStart()
             else:
@@ -283,6 +288,9 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
     def skipExisting(self):
         return self.__resumeUpload
+
+    def getResumeFilePath(self):
+        return self.__resumeFilePath
 
     def getChunkSize(self):
         return self.__chunkSize
