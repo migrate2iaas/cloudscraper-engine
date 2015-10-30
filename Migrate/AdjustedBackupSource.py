@@ -222,7 +222,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                 replacedfile = replacedfile.replace(volname + "\\" , "" , 1)
             try:
                 replacedrange = self.__backupSource.getFileBlockRange(replacedfile)
-            except:
+            except Exception as ex:
                 logging.warning("Cannot get blocks for replaced file " + replacedfile)
                 logging.debug("Reason: " + str(ex))
                 continue
