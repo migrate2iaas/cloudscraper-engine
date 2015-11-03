@@ -179,7 +179,7 @@ cd 10 ac 3c 00 75 f4 c3 00 00 00 00 00 00 00 00 \
         mbr = self.__mbr
         sectoroffset = self.__currentOffset/0x200
         #set the mbr-id
-        mbr[0x1be-6:0x1be-2]=struct.pack('=i',self.__mbrId)
+        mbr[0x1be-6:0x1be-2]=struct.pack('=I',self.__mbrId)
         #part entry offset
         partentry = 0x1be + self.__partitionsCreated * 0x10
         mbr[partentry] = 0x80 # boot indicator
@@ -193,10 +193,10 @@ cd 10 ac 3c 00 75 f4 c3 00 00 00 00 00 00 00 00 \
         mbr[partentry+6] = 0xFF
         mbr[partentry+7] = 0xFF
         #the standeard offset is 0x0800 sectors (1Mb)
-        mbr[partentry+8:partentry+0xc] = struct.pack('=i',sectoroffset)
+        mbr[partentry+8:partentry+0xc] = struct.pack('=I',sectoroffset)
         #the size 
         #NOTE: error is reported when it's more than 1TB
-        mbr[partentry+0xc:partentry+0x10] = struct.pack('=i',int(size/0x200))
+        mbr[partentry+0xc:partentry+0x10] = struct.pack('=I',int(size/0x200))
         
         #NOTE: nevertheless we track it several volumes on the same disk case was not tested
         
