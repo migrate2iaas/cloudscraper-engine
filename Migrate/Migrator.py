@@ -24,6 +24,7 @@ import SystemAdjustOptions
 import GzipChunkMedia
 import SimpleTransferTarget
 import ProxyTransferTarget
+import VmInstance
 
 class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT reside"""
