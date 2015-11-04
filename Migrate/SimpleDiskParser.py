@@ -195,7 +195,6 @@ cd 10 ac 3c 00 75 f4 c3 00 00 00 00 00 00 00 00 \
         #the standeard offset is 0x0800 sectors (1Mb)
         mbr[partentry+8:partentry+0xc] = struct.pack('=I',sectoroffset)
         #the size 
-        #NOTE: error is reported when it's more than 1TB
         mbr[partentry+0xc:partentry+0x10] = struct.pack('=I',int(size/0x200))
         
         #NOTE: nevertheless we track it several volumes on the same disk case was not tested

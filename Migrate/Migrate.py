@@ -258,7 +258,7 @@ if __name__ == '__main__':
                 #respond = AzureServiceBusResponder.AzureServiceBusResponder("cloudscraper-euwest" , 'Pdw8d/kMGqU0d1m99n3sSrepJu1Q61MwjeLmg0o3lJA=', 'owner' , 'server-up')
 
                 logging.info("\n>>>>>>>>>>>>>>>>> Making test run for an instance to check it alive\n")
-                instance.stop()
+                #instance.stop() should be stopped\finalized already
                 logging.info("Waiting a bit for server restart")
                 time.sleep(60)
                 instance.run()
