@@ -36,11 +36,11 @@ class DefferedFTPFile(file):
 
     def read(self, size):
         """emulate read"""
-        logging.info("Requested " + str(size) + " bytes to transfer via FTP")
+        #logging.info("Requested " + str(size) + " bytes to transfer via FTP")
         data = self.__queue.get()
         if data == None:
             return None
-        logging.info("Transfering " + str(len(data)) + " bytes via FTP")
+        #logging.info("Transfering " + str(len(data)) + " bytes via FTP")
         self.__readPosition = self.__readPosition  + len(data)
         return data
 
