@@ -265,7 +265,7 @@ if __name__ == '__main__':
         try:
             if testrun:
                 logging.info("\n>>>>>>>>>>>>>>>>> Making test run for an instance to check it alive\n")
-                instance.stop()
+                #instance.stop() should be stopped\finalized already
                 logging.info("Waiting a bit for server restart")
                 time.sleep(reboottimeout)
                 instance.run()
