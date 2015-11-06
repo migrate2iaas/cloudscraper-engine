@@ -252,8 +252,9 @@ if __name__ == '__main__':
                os._exit(errno.EFAULT)
 
         # check if server responds in the test scenario
-        try:
-            if testrun:
+        if testrun:
+            try:
+            
                 #import AzureServiceBusResponder
                 #respond = AzureServiceBusResponder.AzureServiceBusResponder("cloudscraper-euwest" , 'Pdw8d/kMGqU0d1m99n3sSrepJu1Q61MwjeLmg0o3lJA=', 'owner' , 'server-up')
 
@@ -271,14 +272,14 @@ if __name__ == '__main__':
                     logging.info("\n>>>>>>>>>>>>>>>>> Transfer post-check ended successfully\n")
                 else:
                     logging.error("!!!ERROR: Transfer process post-check ended unsuccessfully for " + str(instance) + " at " + str(cloud.getTargetCloud()) + " , " + str(cloud.getRegion()));
-        except Exception as e:
-            logging.error("\n!!!ERROR: failed tomake a test check! ")
-            logging.error("\n!!!ERROR: " + str(e) )
-            logging.error(traceback.format_exc())
-            logging.info("\n!!!ERROR: Transfer process post-check ended unsuccessfully\n")
-            os._exit(errno.ERANGE)
-            #sys.exit(errno.ERANGE)
-        finally:
+            except Exception as e:
+                logging.error("\n!!!ERROR: failed tomake a test check! ")
+                logging.error("\n!!!ERROR: " + str(e) )
+                logging.error(traceback.format_exc())
+                logging.info("\n!!!ERROR: Transfer process post-check ended unsuccessfully\n")
+                os._exit(errno.ERANGE)
+                #sys.exit(errno.ERANGE)
+            finally:
                 instance.stop()
 
         os._exit(0)
