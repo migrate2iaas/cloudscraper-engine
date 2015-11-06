@@ -122,7 +122,7 @@ def chk_limits():
 
 if __name__ == '__main__':
     try:
-        
+          
         # little hacks to pre-configure env and args
         if os.name == 'nt':
             import Windows
@@ -261,9 +261,12 @@ if __name__ == '__main__':
                os._exit(errno.EFAULT)
 
         # check if server responds in the test scenario
-        # TODO: move the code to spearate file\class, looks ugly
-        try:
-            if testrun:
+        if testrun:
+            try:
+            
+                #import AzureServiceBusResponder
+                #respond = AzureServiceBusResponder.AzureServiceBusResponder("cloudscraper-euwest" , 'Pdw8d/kMGqU0d1m99n3sSrepJu1Q61MwjeLmg0o3lJA=', 'owner' , 'server-up')
+
                 logging.info("\n>>>>>>>>>>>>>>>>> Making test run for an instance to check it alive\n")
                 #instance.stop() should be stopped\finalized already
                 logging.info("Waiting a bit for server restart")
@@ -278,25 +281,25 @@ if __name__ == '__main__':
                     logging.info("\n>>>>>>>>>>>>>>>>> Transfer post-check ended successfully\n")
                 else:
                     logging.error("!!!ERROR: Transfer process post-check ended unsuccessfully for " + str(instance) + " at " + str(cloud.getTargetCloud()) + " , " + str(cloud.getRegion()));
-        except Exception as e:
-            logging.error("\n!!!ERROR: failed tomake a test check! ")
-            logging.error("\n!!!ERROR: " + str(e) )
-            logging.error(traceback.format_exc())
-            logging.info("\n!!!ERROR: Transfer process post-check ended unsuccessfully\n")
-            os._exit(errno.ERANGE)
-            #sys.exit(errno.ERANGE)
-        finally:
-            try:
-                instance.stop()
             except Exception as e:
-                logging.warning("!Cannot stop the instance: " + e.str())
+                logging.error("\n!!!ERROR: failed tomake a test check! ")
+                logging.error("\n!!!ERROR: " + str(e) )
+                logging.error(traceback.format_exc())
+                logging.info("\n!!!ERROR: Transfer process post-check ended unsuccessfully\n")
+                os._exit(errno.ERANGE)
+                #sys.exit(errno.ERANGE)
+            finally:
+                try:
+                    instance.stop()
+                except Exception as e:
+                    logging.warning("!Cannot stop the instance: " + e.str())
+                    os._exit(0)
 
-        os._exit(0)
     except Exception as e:
-         logging.error("\n!!!ERROR: Unexpected error during init")
-         logging.error("\n!!!ERROR: " + str(e) )
-         logging.error(traceback.format_exc())
-         logging.info("\n!!!ERROR: Transfer process ended unsuccessfully\n")
-         os._exit(errno.ERANGE)
+           logging.error("\n!!!ERROR: Unexpected error during init")
+           logging.error("\n!!!ERROR: " + str(e) )
+           logging.error(traceback.format_exc())
+           logging.info("\n!!!ERROR: Transfer process ended unsuccessfully\n")
+           os._exit(errno.ERANGE)
     finally:
         os._exit(0)
