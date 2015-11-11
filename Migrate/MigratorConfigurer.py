@@ -286,7 +286,7 @@ class MigratorConfigurer(object):
         if config.has_option('OpenStack', 'use_new_channel'):
             use_new_channel = config.get('OpenStack', 'use_new_channel')
 
-        resume_file_path = None
+        resume_file_path = "C:\\cloudscraper-resume.json"
         if config.has_option('OpenStack', 'resume_file_path'):
             resume_file_path = config.get('OpenStack', 'resume_file_path')
 
