@@ -11,257 +11,175 @@ sys.path.append('.\OpenStack')
 
 import os 
 import hashlib
-import threading
 import Queue
-import DataExtent
 import time
 import io
-import tempfile
-import warnings
 
-import sys
-import os
 import MigrateExceptions
-import subprocess
-import re
 import traceback
 
-import zlib
-import gzip
 import StringIO
-
 import logging
 import threading 
-import datetime
 import UploadChannel
-import MultithreadUpoadChannel
 import DataExtent
 
-import base64
-import math
 import json
-import pickle
 from md5 import md5
 
 import swiftclient.client
 from swiftclient.exceptions import ClientException
-from swiftclient.utils import generate_temp_url
 
-class DefferedMultifileUploadFileProxy(object):
-    def __init__(self , deffered_data):
-        self.__pos = 0
-        self.__data = deffered_data
-        self.__md5encoder = md5()
-
-    def read(self , len):
-        data = self.__data.readData(len , self.__pos)
-        self.__pos += len
-        self.__md5encoder.update(data)
-        return data
-
-    def write(self, buf):
-        raise NotImplementedError
-
-    def close(self):
-        pass
-
-    def size(self):
-        return self.__data.getSize()
-
-    def chunk_size(self):
-        return self.__data.getChunkSize()
-
-    def seek(self, pos, whence=0):
-        self.__pos = pos
-
-    def cancel(self):
-        self.__data.cancel()
-
-    def getMD5(self):
-        return self.__md5encoder.hexdigest()
-
-
-class DefferedUploadDataStream(object):
-
-    opened_streams = dict()
-    @staticmethod
-    def getFileProxy(name):
-        return DefferedMultifileUploadFileProxy(DefferedUploadDataStream.opened_streams[name])
-
-    @staticmethod
-    def getStream(name):
-        return DefferedUploadDataStream.opened_streams[name]
-
-    def __init__(self , name , size, chunksize, semaphore):
-        self.__name = name
-        self.__pos = 0
-        self.__size = size
-        self.__parts = dict()
-        self.__chunksize = chunksize
-        DefferedUploadDataStream.opened_streams[name] = self
-        self.__semaphore = semaphore
-        self.__dictLock = threading.Lock()
+class DefferedUploadFileProxy(object):
+    def __init__(self, queue_size, size):
+        self.__inner_queue = Queue.Queue(queue_size)
         self.__cancel = False
-        self.__completeDataSize = 0
+        self.__size = size
+        self.__readed_size = 0
+        self.__md5encoder = md5()
+        self.__completed = threading.Event()
 
-    def readData(self, len , pos):
-        if self.__completeDataSize == self.__size or self.cancelled():
+    def read(self, len):
+        if self.cancelled() or self.__readed_size == self.__size:
             return ""
 
-        while True:
-            interval_start = self.__chunksize * int(pos / self.__chunksize)
-            with self.__dictLock:
-                if self.__parts.has_key(interval_start):
-                    #logging.debug("Getting data at pos " + str(pos) + " of len " + str(len) )
-                    part = self.__parts[interval_start]
-                    data = part.getData()[pos-interval_start:pos-interval_start+len] # now we read all data from the extent
-                    if pos-interval_start+len >= self.__chunksize:
-                        del self.__parts[interval_start]
-                        self.__semaphore.release()
-                        logging.debug("Removed entry from deffered upload stream '" + self.__name + "' at pos " + str(interval_start))
-                    if data == None:
-                        logging.warning("!No data available")
-                        data = ""
-                    self.__completeDataSize = self.__completeDataSize + data.__len__()
-                    return data
-            # not sure if it works. Usually sleep is the worst method to do multithreading
-            # we just hope network calls for data not so often
-            time.sleep(1)
-            logging.debug("Waiting till data is available for stream '" + self.__name + "' at pos " + str(pos))
+        extent = self.__inner_queue.get()
+        logging.debug("Reading data extent: start: " + str(extent.getStart()) + " size: " + str(extent.getSize()))
 
-    def writeData(self, extent):
-        pos = extent.getStart()
-        if self.cancelled():
-            return
-        logging.debug("Added more data to deffered upload stream '" + self.__name + "' at pos " + str(pos))
-        with self.__dictLock:
-            self.__parts[pos] = extent
+        data = extent.getData()
+        self.__md5encoder.update(data)
+        self.__readed_size += data.__len__()
+        self.__inner_queue.task_done()
 
-    def seek(self, pos):
-        self.__pos = pos
+        return data
 
-    def getName(self):
-        return self.__name
+    def write(self, extent):
+        if not self.__cancel:
+            self.__inner_queue.put(extent)
 
     def getSize(self):
         return self.__size
 
-    def getChunkSize(self):
-        return self.__chunksize
-
     def getCompletedSize(self):
-        return self.__completeDataSize
+        return self.__readed_size
+
+    def setComplete(self):
+        self.__completed.set()
+
+    def waitTillComplete(self):
+        if not self.cancelled():
+            self.__completed.wait()
+
+    def getMD5(self):
+        return self.__md5encoder.hexdigest()
 
     def cancel(self):
         if not self.__cancel:
-            self.__cancel = True
-            for part in self.__parts:
-                # not the best practice but the only way to unblock the writing trhead
-                self.__semaphore.release()
-            del self.__parts;
+            with self.__inner_queue.mutex:
+                self.__cancel = True
+                self.__inner_queue.queue.clear()
+                self.setComplete()
 
     def cancelled(self):
         return self.__cancel
 
-class SwiftUploadQueueTask(object):
-    def __init__(self, upload_channel, stream_proxy):
-        self.__streamProxy = stream_proxy
-        self.__uploadChannel = upload_channel
-
-    def getStreamProxy(self):
-        return self.__streamProxy
-
-    def getChannel(self):
-        return self.__uploadChannel
-
-
 class SwiftUploadThread(threading.Thread):
     """thread making all uploading works"""
-    def __init__(self, upload_channel, lock):
+    def __init__(self, upload_channel, file_proxy, index, file_lock):
         self.__uploadChannel = upload_channel
-        self.__fileLock = lock
+        self.__fileProxy = file_proxy
+        self.__index = index
+        self.__fileLock = file_lock
         super(SwiftUploadThread, self).__init__()
 
     def run(self):
         if self.__uploadChannel.skipExisting():
             logging.debug("Upload thread started with reuploading turned on")
 
+        # Trying to connect to swift
         connection = None
         try:
             connection = self.__uploadChannel.createConnection()
         except Exception:
             raise
 
-        while True:
-            upload_task = self.__uploadChannel.getUploadQueue().get()
+        res = {
+            'action': 'empty',
+            'success': False,
+            'index': self.__index,
+            'path': "%s/slo/%08d" % (self.__uploadChannel.getDiskName(), self.__index),
+            'etag': None,
+            'size': self.__fileProxy.getSize(),
+        }
 
-            # Means it's time to exit
-            if upload_task == None:
-                return
+        try:
+            is_exists = False
+            # Trying to check etag for existing segment
+            try:
+                if self.__uploadChannel.skipExisting():
+                    # Trying to find segment in resume upload list, which was loaded from disk
+                    resume_segments = self.__uploadChannel.getResumeSegmentResults()
+                    for i in resume_segments:
+                        if res['index'] == i['index']:
+                            res.update({'etag': i['etag']})
+                            break
+
+                    headers = connection.head_object(self.__uploadChannel.getContainerName(), res['path'])
+                    if headers['etag'] == res['etag']:
+                        res.update({
+                            'action': 'skip_segment',
+                            'success': True
+                        })
+                        is_exists = True
+            except ClientException:
+                # Passing exception here, it's means that when we unable to check
+                # uploaded segment (it's missing or etag mismatch) we reuploading that segment
+                pass
 
             results_dict = {}
-            stream_proxy = upload_task.getStreamProxy()
-            index = int(stream_proxy.getName())
-            file_proxy = stream_proxy.getFileProxy(stream_proxy.getName())
+            if is_exists is False:
+                etag = connection.put_object(
+                    self.__uploadChannel.getContainerName(),
+                    res['path'],
+                    self.__fileProxy,
+                    chunk_size=self.__uploadChannel.getChunkSize(),
+                    response_dict=results_dict)
+                segment_md5 = self.__fileProxy.getMD5()
+                if etag != segment_md5:
+                    raise ClientException(
+                        'Segment {0}: upload verification failed: '
+                        'md5 mismatch, local {1} != remote {2} '
+                        '(remote segment has not been removed)'
+                        .format(res['path'], segment_md5, etag))
 
-            try:
-                # Getting segments dictionary
-                seg_res = self.__uploadChannel.getSegmentResults()
-                segment = next(i for i in seg_res if i['index'] == index)
-                is_exists = False
+                res.update({
+                    'success': True,
+                    'action': 'upload_segment',
+                    'etag': etag
+                })
 
-                # Trying to check etag for existing segment
+            self.__uploadChannel.appendSegmentResult(res)
+            # Dumping segment results for resuming upload, if needed
+            with self.__fileLock:
                 try:
-                    if self.__uploadChannel.skipExisting():
-                        headers = connection.head_object(self.__uploadChannel.getContainerName(), segment['path'])
-                        if headers['etag'] == segment['etag']:
-                            segment.update({
-                                'action': 'skip_segment',
-                                'success': True
-                            })
-                            is_exists = True
-                except ClientException:
+                    with open(self.__uploadChannel.getResumeFilePath(), 'w') as f:
+                        json.dump(self.__uploadChannel.getSegmentResults(), f)
+                except Exception as err:
+                    logging.debug("Unable to dump segments for resuming upload: " + str(err))
                     pass
 
-                results_dict = {}
-                if is_exists is False:
-                    etag = connection.put_object(
-                        self.__uploadChannel.getContainerName(),
-                        segment['path'],
-                        file_proxy,
-                        chunk_size=stream_proxy.getChunkSize(),
-                        response_dict=results_dict)
-                    segment_md5 = file_proxy.getMD5()
-                    if etag != segment_md5:
-                        raise ClientException(
-                            'Segment {0}: upload verification failed: '
-                            'md5 mismatch, local {1} != remote {2} '
-                            '(remote segment has not been removed)'
-                            .format(segment['path'], segment_md5, etag))
+            # Notify that upload complete
+            self.__fileProxy.setComplete()
 
-                    segment.update({
-                        'success': True,
-                        'action': 'upload_segment',
-                        'etag': etag
-                    })
+        except (ClientException, Exception) as err:
+            self.__fileProxy.cancel()
+            logging.error(traceback.format_exc())
+            logging.debug("Exception in upload thread for '%08d' %s" % (self.__index, str(err)))
 
-                # Dumping segment results for resuming upload, if needed
-                try:
-                    self.__fileLock.acquire()
-                    with open(self.__uploadChannel.getContainerName() + '.' + self.__uploadChannel.getDiskName() + '.txt', 'w') as file:
-                        json.dump(seg_res, file)
-                finally:
-                    self.__fileLock.release()
-
-            except (ClientException, Exception) as err:
-                logging.error("!!!ERROR: " + err.message)
-                _traceback = traceback.format_exc()
-                logging.error(_traceback)
-            finally:
-                file_proxy.cancel()
-                self.__uploadChannel.getUploadQueue().task_done()
-
+        self.__uploadChannel.completeUploadThread()
         connection.close()
+
+        logging.debug("Upload thread for '%08d' done" % self.__index)
 
 
 class SwiftUploadChannel_new(UploadChannel.UploadChannel):
@@ -282,114 +200,85 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             retries=3,
             compression=False,
             resume_upload=False,
-            chunksize=1024*1024,
-            upload_threads=4,
+            resume_file_path=None,
+            chunksize=10*1024*1024,
+            upload_threads=10,
             queue_size=8):
         """constructor"""
-        self.__serverURL = server_url;
-        self.__userName = username;
-        self.__tennantName = tennant_name;
-        self.__password = password;
-        self.__retries = retries;
-        self.__compression = compression;
+        self.__serverURL = server_url
+        self.__userName = username
+        self.__tennantName = tennant_name
+        self.__password = password
+        self.__retries = retries
+        self.__compression = compression
         self.__containerName = container_name
         self.__diskName = disk_name
         self.__chunkSize = chunksize
         self.__diskSize = resulting_size_bytes
         self.__resumeUpload = resume_upload
-        self.__segmentFutures = []
-        self.__uploadBegin=False
-        self.__workThreads = []
-        self.__uploadThreads = upload_threads
+        self.__resumeFilePath = resume_file_path
+        self.__uploadThreads = threading.BoundedSemaphore(upload_threads)
+        self.__segmentQueueSize = queue_size
+        self.__segmentsList = []
+        self.__resumeSegmentsList = []
+        self.__fileProxies = []
+        self.__fileLock = threading.Lock()
 
         # Max segment number is 1000 (it's configurable see http://docs.openstack.org/developer/swift/middleware.html )
         self.__segmentSize = max(int(self.__diskSize / 512), self.__chunkSize)
         if self.__segmentSize % self.__chunkSize:
             # Make segment size an integer of chunks
-            self.__segmentSize = self.__segmentSize - (self.__segmentSize % self.__chunkSize)
+            self.__segmentSize -= self.__segmentSize % self.__chunkSize
 
-        self.__uploadSemaphore = threading.BoundedSemaphore(self.__uploadThreads * self.__segmentSize / self.__chunkSize)
         logging.info("Segment size: " + str(self.__segmentSize) + " chunk size: " + str(self.__chunkSize))
 
-        # Loading segment results if resuming upload, clearing file otherwise
-        open_opt = 'w'
+        # Loading segment results if resuming upload
+        # Note: resume upload file overrides when segment uploaded
         if self.__resumeUpload:
-            open_opt = 'r'
-        try:
-            with open(self.__containerName + '.' + self.__diskName + '.txt', open_opt) as file:
-                self.__segmentFutures = json.load(file)
-        except Exception:
-            pass
-
-        # Creating all proxy segments and put them to queue
-        self.__uploadQueue = Queue.Queue()
-
-        offset = 0
-        segment_size = self.__segmentSize
-        chunksize = self.__chunkSize
-
-        while offset < self.__diskSize:
-            if self.__diskSize - offset < segment_size:
-                segment_size = self.__diskSize - offset
-
-            index = '%08d' % int(offset / self.__segmentSize)
-            # If resuming upload, we doesnt need to append new segments,
-            # to avoid creating them twice in the list
-            if self.__resumeUpload is False:
-                res = {
-                    'action': 'empty',
-                    'success': False,
-                    'exception': {'message': None, 'traceback': None},
-                    'index': int(index),
-                    'path': '%s/slo/%s' % (self.__diskName, index),
-                    'etag': None,
-                    'size': segment_size}
-                self.__segmentFutures.append(res)
-            stream = DefferedUploadDataStream(index, segment_size, chunksize, self.__uploadSemaphore)
-            uploadtask = SwiftUploadQueueTask(self, stream)
-            self.__uploadQueue.put(uploadtask)
-            offset += segment_size
-
-        # We need to dump self.__segmentFutures, because if no segment were uploaded
-        # for now, second run with resuming upload will cause and empty segments list
-        with open(self.__containerName + '.' + self.__diskName + '.txt', 'w') as file:
-            json.dump(self.__segmentFutures, file)
+            try:
+                with open(self.__resumeFilePath, 'r') as f:
+                    self.__resumeSegmentsList = json.load(f)
+            except Exception as err:
+                logging.error("!!!ERROR: got some troubles with resume upload file: " + str(err))
+                raise
 
         super(SwiftUploadChannel_new, self).__init__()
 
     def uploadData(self, extent):
-        logging.debug("Uploading extent: offset: " + str(extent.getStart()) + " size: " + str(extent.getSize()))
+        logging.debug("Uploading extent: start: " + str(extent.getStart()) + " size: " + str(extent.getSize()))
 
-        # __uploadSemaphore released when data is reading or when proxy file stream canceled (in working thread)
-        self.__uploadSemaphore.acquire()
-        try:
-            # We creating new file proxy streams for each segment.
-            # So we need to recalculate data extents that relative to this segment.
-            segment_name = '%08d' % int(extent.getStart() / self.__segmentSize)
-            stream = DefferedUploadDataStream.getStream(segment_name)
-            new_extent = DataExtent.DataExtent(extent.getStart() % self.__segmentSize, extent.getSize())
-            new_extent.setData(extent.getData())
-            stream.writeData(new_extent)
-        except Exception as err:
-            pass
+        index = extent.getStart() / self.__segmentSize
+        offset = extent.getStart() % self.__segmentSize
 
-        # We need to create upload threads only once, when upload data begins.
-        # It's not good place to create threads in class construcor or initStorage()
-        # function, because data is not available at this moment and threads (and connections)
-        # waits to much.
-        if not self.__uploadBegin:
-            self.__createUploadThreads()
-            self.__uploadBegin = True
+        # If needed to upload new segment
+        if offset == 0:
+            # Checking if we can create more upload threads, they releases when calls completeUploadThread() routine
+            self.__uploadThreads.acquire()
+            logging.debug("Starting new upload thread for '%08d'" % index)
+
+            # Checking if this is the last segment
+            if extent.getStart() + self.__segmentSize > self.__diskSize:
+                segment_size = self.__diskSize - extent.getStart()
+            else:
+                segment_size = self.__segmentSize
+            self.__fileProxies.insert(index, DefferedUploadFileProxy(self.__segmentQueueSize, segment_size))
+            SwiftUploadThread(self, self.__fileProxies[index], index, self.__fileLock).start()
+
+        self.__fileProxies[index].write(extent)
 
         return True
 
-    def __createUploadThreads(self):
-        # Creating working threads
-        for i in range(self.__uploadThreads):
-            self.__workThreads.append(SwiftUploadThread(self, threading.Lock()).start())
+    def completeUploadThread(self):
+        self.__uploadThreads.release()
 
     def getSegmentResults(self):
-        return self.__segmentFutures
+        return self.__segmentsList
+
+    def getResumeSegmentResults(self):
+        return self.__resumeSegmentsList
+
+    def appendSegmentResult(self, result):
+         return self.__segmentsList.append(result)
 
     def getContainerName(self):
         return self.__containerName
@@ -400,8 +289,11 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     def skipExisting(self):
         return self.__resumeUpload
 
-    def getUploadQueue(self):
-        return self.__uploadQueue
+    def getResumeFilePath(self):
+        return self.__resumeFilePath
+
+    def getChunkSize(self):
+        return self.__chunkSize
 
     def createConnection(self):
         return swiftclient.client.Connection(
@@ -459,10 +351,13 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     def waitTillUploadComplete(self):
         """Waits till upload completes"""
         logging.debug("Upload complete, waiting for threads to complete");
-        self.__uploadQueue.join()
+        # Waiting till upload queues in all proxy files becomes empty
+        for item in self.__fileProxies:
+            item.waitTillComplete()
         logging.info("Upload threads are completed, closing threads")
         self.close()
         return
+
 
     def confirm(self):
         """
@@ -471,19 +366,28 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         logging.info("Confirming good upload")
         storage_url = None
         try:
+            # If segments size and disk size mismatch
+            total_size = 0;
+
             # If segment dictionary has error:
-            for i in self.__segmentFutures:
+            for i in self.__segmentsList:
                 if i['success'] == False:
                     raise ClientException("Failure due uploading segment(s)")
+                else:
+                    total_size += i['size']
 
-            self.__segmentFutures.sort(key=lambda di: di['index'])
+            if total_size != self.__diskSize:
+                raise ClientException("Failure due uploading segments: disk size mismatch")
 
+            # Segments can upload not in sequential order, so we need to sort them for manifest
+            self.__segmentsList.sort(key=lambda di: di['index'])
+
+            # Creating manifest
             manifest_data = json.dumps([{
                     'path': self.__containerName + '/' + d['path'],
                     'etag': d['etag'],
                     'size_bytes': d['size']
-            } for d in self.__segmentFutures
-            ])
+            } for d in self.__segmentsList])
 
             mr = {}
             connection = self.createConnection()
@@ -534,10 +438,11 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         """
         completed_size = 0;
         try:
-            for name in DefferedUploadDataStream.opened_streams:
-                completed_size += DefferedUploadDataStream.getStream(name).getCompletedSize()
+            for file in self.__fileProxies:
+                completed_size += file.getCompletedSize()
         except Exception as err:
             logging.debug("Unable to calculete completed data size: " + err.message())
+
         return completed_size
 
 
@@ -559,5 +464,3 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     def close(self):
         """Closes the channel, sending all upload threads signal to end their operation"""
         logging.debug("Closing the upload threads, End signal message was sent")
-        for thread in self.__workThreads:
-            self.__uploadQueue.put(None)

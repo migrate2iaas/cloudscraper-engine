@@ -33,7 +33,7 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
     def __init__(self, result_disk_size_bytes, server_url , tennant_name , username , password, disk_format = "raw", \
         image_name="cloudscraper-image", resume_upload = False , chunksize=10*1024*1024 , container_format="bare", \
                  swift_server_url = None , swift_tennant_name = None , swift_username = None , swift_password = None , disk_name = "", container_name = "cloudscraper-container" , compression = False, \
-                 upload_threads=10, use_new_channel=False ):
+                 upload_threads=10, use_new_channel=False, resume_file_path=None):
         """constructor"""
         super(OpenStackUploadChannel, self).__init__()
 
@@ -50,7 +50,7 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
 
         if use_new_channel:
             swift = SwiftUploadChannel_new.SwiftUploadChannel_new(result_disk_size_bytes, swift_server_url , swift_username , swift_tennant_name , swift_password , disk_name , container_name , compression ,\
-                resume_upload = resume_upload , chunksize=chunksize , upload_threads=upload_threads  )
+                resume_upload = resume_upload, resume_file_path=resume_file_path, chunksize=chunksize , upload_threads=upload_threads  )
         else:
             swift = SwiftUploadChannel.SwiftUploadChannel(result_disk_size_bytes, swift_server_url , swift_username , swift_tennant_name , swift_password , disk_name , container_name , compression ,\
                 resume_upload = resume_upload , chunksize=chunksize , upload_threads=upload_threads  )
