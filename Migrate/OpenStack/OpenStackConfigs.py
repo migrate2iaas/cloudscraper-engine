@@ -69,7 +69,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
 
         Args:
             targetsize: long - target cloud disk size in bytes
-            targetname: str - arbitrary description to mark the disk after migration (ignored)
+            targetname: str - arbitrary description to mark the disk after migration
             targetid: str - a cloud-defined path describing the upload 
             resume: Boolean - to recreate disk representation (False) or to reupload (True)
             imagesize: long - image file size in bytes
@@ -90,7 +90,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             swift_tennant_name=self.__swiftTennant,
             swift_username=self.__swiftUsername,
             swift_password=self.__swiftPassword,
-            disk_name=targetname,
+            disk_name=targetid,
             container_name=self.__swiftContainer,
             compression=self.__compression,
             use_new_channel=self.__useNewChannel,
