@@ -68,6 +68,8 @@ class DefferedUploadFileProxy(object):
         If skipped set to true then data marked as skipped, not read
         """
         self.__completed.set()
+        #just get one element to avoid deadlocks (works if there is only one writer thread)
+        self.__inner_queue.get_nowait()
 
     def waitTillComplete(self):
         if not self.cancelled():
@@ -80,7 +82,7 @@ class DefferedUploadFileProxy(object):
         if not self.__cancel:
             with self.__inner_queue.mutex:
                 self.__cancel = True
-                self.__inner_queue.queue.clear()
+                self.__inner_queue.queue.clear() # not sure if it works
                 self.setComplete()
 
     def cancelled(self):
