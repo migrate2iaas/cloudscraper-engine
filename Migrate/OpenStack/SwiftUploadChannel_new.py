@@ -129,7 +129,7 @@ class SwiftUploadThread(threading.Thread):
                             break
                         
                     headers = connection.head_object(self.__uploadChannel.getContainerName(), res['path'])
-                    elif headers['etag'] == res['etag'] or self.__ignoreEtag:
+                    if headers['etag'] == res['etag'] or self.__ignoreEtag:
                         res.update({
                             'action': 'skip_segment',
                             'success': True,
