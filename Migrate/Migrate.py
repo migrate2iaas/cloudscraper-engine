@@ -1,4 +1,4 @@
-﻿# --------------------------------------------------------
+# --------------------------------------------------------
 __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
@@ -281,9 +281,10 @@ if __name__ == '__main__':
             #sys.exit(errno.ERANGE)
         finally:
             try:
-                instance.stop()
+                if testrun:
+                    instance.stop()
             except Exception as e:
-                logging.warning("!Cannot stop the instance: " + e.str())
+                logging.warning("!Cannot stop the instance: " + str(e))
 
         os._exit(0)
     except Exception as e:
