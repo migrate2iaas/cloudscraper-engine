@@ -54,7 +54,7 @@ class DefferedUploadFileProxy(object):
         return data
 
     def write(self, extent):
-        if not self.__cancel:
+        if not self.__cancel and not self.__completed.is_set():
             self.__inner_queue.put(extent)
 
     def getSize(self):
