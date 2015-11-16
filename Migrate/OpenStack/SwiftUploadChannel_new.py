@@ -1,4 +1,4 @@
-﻿# --------------------------------------------------------
+# --------------------------------------------------------
 __author__ = "Alexey Kondratiev"
 __copyright__ = "Copyright (C) 2015 Migrate2Iaas"
 #---------------------------------------------------------
@@ -63,7 +63,10 @@ class DefferedUploadFileProxy(object):
     def getCompletedSize(self):
         return self.__readed_size
 
-    def setComplete(self):
+    def setComplete(self , skipped = False):
+        """sets the data is uploaded.
+        If skipped set to true then data marked as skipped, not read
+        """
         self.__completed.set()
 
     def waitTillComplete(self):
@@ -85,11 +88,12 @@ class DefferedUploadFileProxy(object):
 
 class SwiftUploadThread(threading.Thread):
     """thread making all uploading works"""
-    def __init__(self, upload_channel, file_proxy, index, file_lock):
+    def __init__(self, upload_channel, file_proxy, index, file_lock, ignore_etag=False):
         self.__uploadChannel = upload_channel
         self.__fileProxy = file_proxy
         self.__index = index
         self.__fileLock = file_lock
+        self.__ignoreEtag = ignore_etag
         super(SwiftUploadThread, self).__init__()
 
     def run(self):
@@ -123,14 +127,18 @@ class SwiftUploadThread(threading.Thread):
                         if res['index'] == i['index']:
                             res.update({'etag': i['etag']})
                             break
-
+                        
                     headers = connection.head_object(self.__uploadChannel.getContainerName(), res['path'])
-                    if headers['etag'] == res['etag']:
+                    elif headers['etag'] == res['etag'] or self.__ignoreEtag:
                         res.update({
                             'action': 'skip_segment',
-                            'success': True
+                            'success': True,
+                            'etag': headers['etag']
                         })
                         is_exists = True
+                        logging.info("Data upload skipped for "  + res['path']);
+                    else:
+                        logging.warn("! Etag mismatch detected for " + res['path']);
             except ClientException:
                 # Passing exception here, it's means that when we unable to check
                 # uploaded segment (it's missing or etag mismatch) we reuploading that segment
@@ -169,7 +177,7 @@ class SwiftUploadThread(threading.Thread):
                     pass
 
             # Notify that upload complete
-            self.__fileProxy.setComplete()
+            self.__fileProxy.setComplete(is_exists)
 
         except (ClientException, Exception) as err:
             self.__fileProxy.cancel()
@@ -203,7 +211,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             resume_file_path=None,
             chunksize=10*1024*1024,
             upload_threads=10,
-            queue_size=8):
+            queue_size=8,
+            ignore_etag=False):
         """constructor"""
         self.__serverURL = server_url
         self.__userName = username
@@ -223,6 +232,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__resumeSegmentsList = []
         self.__fileProxies = []
         self.__fileLock = threading.Lock()
+        self.__ignoreEtag = ignore_etag
 
         # Max segment number is 1000 (it's configurable see http://docs.openstack.org/developer/swift/middleware.html )
         self.__segmentSize = max(int(self.__diskSize / 512), self.__chunkSize)
@@ -239,8 +249,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                 with open(self.__resumeFilePath, 'r') as f:
                     self.__resumeSegmentsList = json.load(f)
             except Exception as err:
-                logging.error("!!!ERROR: got some troubles with resume upload file: " + str(err))
-                raise
+                logging.warn("!Warning: cannot open file containing segments" + str(err))
 
         super(SwiftUploadChannel_new, self).__init__()
 
@@ -262,7 +271,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             else:
                 segment_size = self.__segmentSize
             self.__fileProxies.insert(index, DefferedUploadFileProxy(self.__segmentQueueSize, segment_size))
-            SwiftUploadThread(self, self.__fileProxies[index], index, self.__fileLock).start()
+            SwiftUploadThread(self, self.__fileProxies[index], index, self.__fileLock, self.__ignoreEtag).start()
 
         self.__fileProxies[index].write(extent)
 
@@ -377,7 +386,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                     total_size += i['size']
 
             if total_size != self.__diskSize:
-                raise ClientException("Failure due uploading segments: disk size mismatch")
+                raise ClientException("Failure due uploading segments: disk size mismatch  " + str(total_size) + "  uploaded " + str(self.__diskSize) + "expected')
 
             # Segments can upload not in sequential order, so we need to sort them for manifest
             self.__segmentsList.sort(key=lambda di: di['index'])
