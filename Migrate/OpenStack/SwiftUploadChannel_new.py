@@ -386,7 +386,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                     total_size += i['size']
 
             if total_size != self.__diskSize:
-                raise ClientException("Failure due uploading segments: disk size mismatch  " + str(total_size) + "  uploaded " + str(self.__diskSize) + "expected')
+                raise ClientException("Not all segments uploaded successfully " + str(total_size) + "  uploaded " + str(self.__diskSize) + " expected")
 
             # Segments can upload not in sequential order, so we need to sort them for manifest
             self.__segmentsList.sort(key=lambda di: di['index'])
