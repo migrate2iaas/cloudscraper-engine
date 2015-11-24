@@ -42,6 +42,12 @@ import sha
 import base64
 
 
+class ArgumentParserError(Exception): pass
+
+class ThrowingArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        raise ArgumentParserError(message)
+
 def encode(key, clear):
     enc = []
     for i in range(len(clear)):
@@ -134,7 +140,7 @@ if __name__ == '__main__':
             os.environ["COMPUTERNAME"]=os.uname()[1]
 
         #parsing extra option
-        parser = argparse.ArgumentParser(description="This script performs creation of virtualized images from the local server, uploading them to S3, converting them to EC2 instances. See http://www.migrate2iaas.com for more details.")
+        parser = argparse.ThrowingArgumentParser(description="This script performs creation of virtualized images from the local server, uploading them to S3, converting them to EC2 instances. See http://www.migrate2iaas.com for more details.")
         parser.add_argument('-k', '--amazonkey', help="Your AWS secret key. ")
         parser.add_argument('-e', '--ehkey', help="Your ElasicHosts API secret key.")
         parser.add_argument('-i', '--cloudsigmapass', help="Your CloudSigma password.")
