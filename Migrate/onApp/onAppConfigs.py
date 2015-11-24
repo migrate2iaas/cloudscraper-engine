@@ -28,7 +28,8 @@ import os
 
 class onAppCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self, s3bucket , s3user , s3password , s3region , onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_name = "" , minipad_vm_id = None , vmbuild_timeout_sec = 120*60 , wintemplate_size = 20 , s3custom = False):
+
+    def __init__(self, s3bucket , s3user , s3password , s3region , onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_name = "" , minipad_vm_id = None , vmbuild_timeout_sec = 120*60 , wintemplate_size = 20 , s3custom = False , vm_boot_timeout = 120):
         """
         Constructor
         """
@@ -52,6 +53,7 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
         self.__instanceFactory = None
         self.__vmBuildTimeout = vmbuild_timeout_sec 
         self.__winTemplateDiskSize = wintemplate_size
+        self.__vmBootTimeout = vm_boot_timeout
 
         #generate instance factory to test the connection
         self.__instanceFactory = onAppInstanceGenerator.onAppInstanceGenerator(self.__onapp_endpoint , self.__onapp_login , self.__onapp_password , self.__onapp_datastore_id, self.__onapp_target_account, \
@@ -80,6 +82,7 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
             resume_upload = resume , chunksize = self.__chunkSize, walrus = custom , walrus_path = "" , walrus_port = 443 , make_link_public=True )
 
     def generateInstanceFactory(self):
+        #generate signleton
         return self.__instanceFactory
 
     def getCloudStorage(self):
