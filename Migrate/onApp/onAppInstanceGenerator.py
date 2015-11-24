@@ -333,7 +333,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         self.__diskSize = 100;
         self.__builtTimeOutSec = vmbuild_timeout;
         self.__diskWaitTimeout = 360 #6 mins
-        self.__serviceStartTimeout = 120
+        self.__serviceStartTimeout = 180
         self.__minipadTemplate = minipad_image_id
         self.__minipadId = minipad_vm_id
         self.__datastore = onapp_datastore_id
