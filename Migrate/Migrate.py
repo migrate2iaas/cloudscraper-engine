@@ -135,7 +135,7 @@ if __name__ == '__main__':
             os.environ["COMPUTERNAME"]=os.uname()[1]
 
         #parsing extra option
-        parser = argparse.ThrowingArgumentParser(description="This script performs creation of virtualized images from the local server, uploading them to S3, converting them to EC2 instances. See http://www.migrate2iaas.com for more details.")
+        parser = ThrowingArgumentParser(description="This script performs creation of virtualized images from the local server, uploading them to S3, converting them to EC2 instances. See http://www.migrate2iaas.com for more details.")
         parser.add_argument('-k', '--amazonkey', help="Your AWS secret key. ")
         parser.add_argument('-e', '--ehkey', help="Your ElasicHosts API secret key.")
         parser.add_argument('-i', '--cloudsigmapass', help="Your CloudSigma password.")
