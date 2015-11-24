@@ -28,7 +28,7 @@ import os
 
 class onAppCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self, s3bucket , s3user , s3password , s3region , onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_name = "" , minipad_vm_id = None , vmbuild_timeout_sec = 120*60 , wintemplate_size = 20):
+    def __init__(self, s3bucket , s3user , s3password , s3region , onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_name = "" , minipad_vm_id = None , vmbuild_timeout_sec = 120*60 , wintemplate_size = 20 , vm_boot_timeout = 120):
         """
         Constructor
         """
@@ -52,6 +52,7 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
         self.__instanceFactory = None
         self.__vmBuildTimeout = vmbuild_timeout_sec 
         self.__winTemplateDiskSize = wintemplate_size
+        self.__vmBootTimeout = vm_boot_timeout
 
         super(onAppCloudOptions, self).__init__()
 
@@ -79,7 +80,7 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
         #generate signleton
         if not self.__instanceFactory:
             self.__instanceFactory = onAppInstanceGenerator.onAppInstanceGenerator(self.__onapp_endpoint , self.__onapp_login , self.__onapp_password , self.__onapp_datastore_id, self.__onapp_target_account, \
-            self.__onapp_port, self.__preset_ip , self.__minipad_image_name , self.__minipad_vm_id , vmbuild_timeout = self.__vmBuildTimeout , win_template_disk_size = self.__winTemplateDiskSize )
+            self.__onapp_port, self.__preset_ip , self.__minipad_image_name , self.__minipad_vm_id , vmbuild_timeout = self.__vmBuildTimeout , win_template_disk_size = self.__winTemplateDiskSize, vm_boot_timeout = self.__vmBootTimeout )
         return self.__instanceFactory
 
     def getCloudStorage(self):
