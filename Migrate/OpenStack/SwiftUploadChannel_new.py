@@ -9,23 +9,23 @@ sys.path.append('.\..')
 sys.path.append('.\..\OpenStack')
 sys.path.append('.\OpenStack')
 
-import os 
-import hashlib
+#import os
+#import hashlib
 import Queue
-import time
-import io
+#import time
+#import io
 
-import MigrateExceptions
+#import MigrateExceptions
 import traceback
 
-import StringIO
+#import StringIO
 import logging
 import threading 
 import UploadChannel
-import DataExtent
+#import DataExtent
 
 import json
-from md5 import md5
+from hashlib import md5
 
 import swiftclient.client
 from swiftclient.exceptions import ClientException
@@ -36,6 +36,7 @@ class DefferedUploadFileProxy(object):
         self.__cancel = False
         self.__size = size
         self.__readed_size = 0
+        self.__skipped_size = 0
         self.__md5encoder = md5()
         self.__completed = threading.Event()
 
@@ -63,13 +64,22 @@ class DefferedUploadFileProxy(object):
     def getCompletedSize(self):
         return self.__readed_size
 
-    def setComplete(self , skipped = False):
+    def getSkippedSize(self):
+        return self.__skipped_size
+
+    def setComplete(self, skipped=False):
         """sets the data is uploaded.
-        If skipped set to true then data marked as skipped, not read
+        Args:
+            skipped (Boolean): set to true then data marked as skipped, not read
         """
+        if skipped:
+            # When we skipping segment its means that we skipping all data,
+            # so skipped size equals segment size
+            self.__skipped_size = self.__size
         self.__completed.set()
-        #just get one element to avoid deadlocks (works if there is only one writer thread)
-        self.__inner_queue.get_nowait()
+
+        # just get one element to avoid deadlocks (works if there is only one writer thread)
+        # self.__inner_queue.get_nowait()
 
     def waitTillComplete(self):
         if not self.cancelled():
@@ -82,8 +92,9 @@ class DefferedUploadFileProxy(object):
         if not self.__cancel:
             with self.__inner_queue.mutex:
                 self.__cancel = True
-                self.__inner_queue.queue.clear() # not sure if it works
-                self.setComplete()
+                self.__completed.clear()
+                # self.__inner_queue.queue.clear() # not sure if it works
+                # self.setComplete(skip)
 
     def cancelled(self):
         return self.__cancel
@@ -138,9 +149,9 @@ class SwiftUploadThread(threading.Thread):
                             'etag': headers['etag']
                         })
                         is_exists = True
-                        logging.info("Data upload skipped for "  + res['path']);
+                        logging.info("Data upload skipped for " + res['path'])
                     else:
-                        logging.warn("! Etag mismatch detected for " + res['path']);
+                        logging.warn("! Etag mismatch detected for " + res['path'])
             except ClientException:
                 # Passing exception here, it's means that when we unable to check
                 # uploaded segment (it's missing or etag mismatch) we reuploading that segment
@@ -183,8 +194,8 @@ class SwiftUploadThread(threading.Thread):
 
         except (ClientException, Exception) as err:
             self.__fileProxy.cancel()
+            logging.error("!!!ERROR: unable to upload segment '%08d', reason: %s" % (res['index'], err.message))
             logging.error(traceback.format_exc())
-            logging.debug("Exception in upload thread for '%08d' %s" % (self.__index, str(err)))
 
         self.__uploadChannel.completeUploadThread()
         connection.close()
@@ -361,7 +372,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
     def waitTillUploadComplete(self):
         """Waits till upload completes"""
-        logging.debug("Upload complete, waiting for threads to complete");
+        logging.debug("Upload complete, waiting for threads to complete")
         # Waiting till upload queues in all proxy files becomes empty
         for item in self.__fileProxies:
             item.waitTillComplete()
@@ -378,17 +389,16 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         storage_url = None
         try:
             # If segments size and disk size mismatch
-            total_size = 0;
+            total_size = 0
 
             # If segment dictionary has error:
             for i in self.__segmentsList:
-                if i['success'] == False:
-                    raise ClientException("Failure due uploading segment(s)")
-                else:
+                if i['success']:
                     total_size += i['size']
 
             if total_size != self.__diskSize:
-                raise ClientException("Not all segments uploaded successfully " + str(total_size) + "  uploaded " + str(self.__diskSize) + " expected")
+                raise ClientException("Not all segments uploaded successfully " + str(total_size) +
+                                      " uploaded " + str(self.__diskSize) + " expected")
 
             # Segments can upload not in sequential order, so we need to sort them for manifest
             self.__segmentsList.sort(key=lambda di: di['index'])
@@ -440,21 +450,28 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         Gets overall size of data skipped in bytes.
         Data is skipped by the channel when the block with same checksum is already present in the cloud
         """
-        return 0
+        total_size = 0
+        try:
+            for f in self.__fileProxies:
+                total_size += f.getSkippedSize()
+        except Exception as err:
+            logging.debug("Unable to calculete skipped data size: " + str(err))
+
+        return total_size
 
 
     def getOverallDataTransfered(self):
         """
         Gets overall size of data actually uploaded (not skipped) in bytes.
         """
-        completed_size = 0;
+        total_size = 0
         try:
-            for file in self.__fileProxies:
-                completed_size += file.getCompletedSize()
+            for f in self.__fileProxies:
+                total_size += f.getCompletedSize()
         except Exception as err:
-            logging.debug("Unable to calculete completed data size: " + err.message())
+            logging.debug("Unable to calculete completed data size: " + str(err))
 
-        return completed_size
+        return total_size
 
 
     def getImageSize(self):
