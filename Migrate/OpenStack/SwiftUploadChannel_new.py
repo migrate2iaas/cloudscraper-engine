@@ -152,9 +152,10 @@ class SwiftUploadThread(threading.Thread):
                         logging.info("Data upload skipped for " + res['path'])
                     else:
                         logging.warn("! Etag mismatch detected for " + res['path'])
-            except ClientException:
+            except (ClientException, Exception) as err:
                 # Passing exception here, it's means that when we unable to check
                 # uploaded segment (it's missing or etag mismatch) we reuploading that segment
+                logging.error("! Unable to reupload segment " + res['path'] + ", " + str(err))
                 pass
 
             results_dict = {}
@@ -257,6 +258,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         # Loading segment results if resuming upload
         # Note: resume upload file overrides when segment uploaded
+        logging.info("Resume upload file path: " + str(self.__resumeFilePath) +
+                     ", resume upload is " + str(self.__resumeUpload))
         if self.__resumeUpload:
             try:
                 with open(self.__resumeFilePath, 'r') as f:
