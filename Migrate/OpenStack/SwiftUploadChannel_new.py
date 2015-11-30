@@ -89,8 +89,13 @@ class DefferedUploadFileProxy(object):
         """
             Releasing all resources here.
         """
-        with self.__inner_queue.mutex:
-            self.__inner_queue.queue.clear()
+        # The way to clear all tasks in queue
+        while not self.__inner_queue.empty():
+            try:
+                self.__inner_queue.get(False)
+            except Queue.Empty:
+                continue
+            self.__inner_queue.task_done()
 
 
 class SwiftUploadThread(threading.Thread):
@@ -145,6 +150,7 @@ class SwiftUploadThread(threading.Thread):
                 # Passing exception here, it's means that when we unable to check
                 # uploaded segment (it's missing or etag mismatch) we reuploading that segment
                 logging.error("! Unable to reupload segment " + res['path'] + ", " + str(err))
+                logging.error(traceback.format_exc())
                 pass
 
             results_dict = {}
@@ -182,6 +188,7 @@ class SwiftUploadThread(threading.Thread):
         except (ClientException, Exception) as err:
             self.__fileProxy.cancel()
             logging.error("!!!ERROR: unable to upload segment '%08d', reason: %s" % (res['index'], err.message))
+            logging.error(traceback.format_exc())
         finally:
             # We should compete every file proxy to avoid deadlocks
             # Notify that upload complete
@@ -251,6 +258,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             self.__segmentSize -= self.__segmentSize % self.__chunkSize
 
         logging.info("Segment size: " + str(self.__segmentSize) + " chunk size: " + str(self.__chunkSize))
+        logging.info("SSL compression is " + str(self.__compression))
 
         # Loading segment results if resuming upload
         # Note: resume upload file overrides when segment uploaded
@@ -341,6 +349,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         }
 
         resp_dict = {}
+        connection = None
         try:
             connection = self.createConnection()
             res['action'] = 'put_container'
@@ -354,7 +363,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
         finally:
-            connection.close()
+            if connection:
+                connection.close()
 
         return res['success']
 
