@@ -4,31 +4,21 @@ __copyright__ = "Copyright (C) 2015 Migrate2Iaas"
 #---------------------------------------------------------
 
 import sys
+import Queue
+import traceback
+import logging
+import threading
+import json
+import swiftclient.client
+import UploadChannel
+
+from hashlib import md5
+from swiftclient.exceptions import ClientException
 
 sys.path.append('.\..')
 sys.path.append('.\..\OpenStack')
 sys.path.append('.\OpenStack')
 
-#import os
-#import hashlib
-import Queue
-#import time
-#import io
-
-#import MigrateExceptions
-import traceback
-
-#import StringIO
-import logging
-import threading 
-import UploadChannel
-#import DataExtent
-
-import json
-from hashlib import md5
-
-import swiftclient.client
-from swiftclient.exceptions import ClientException
 
 class DefferedUploadFileProxy(object):
     def __init__(self, queue_size, size):
@@ -90,14 +80,18 @@ class DefferedUploadFileProxy(object):
 
     def cancel(self):
         if not self.__cancel:
-            with self.__inner_queue.mutex:
-                self.__cancel = True
-                self.__completed.clear()
-                # self.__inner_queue.queue.clear() # not sure if it works
-                # self.setComplete(skip)
+            self.__cancel = True
 
     def cancelled(self):
         return self.__cancel
+
+    def release(self):
+        """
+            Releasing all resources here.
+        """
+        with self.__inner_queue.mutex:
+            self.__inner_queue.queue.clear()
+
 
 class SwiftUploadThread(threading.Thread):
     """thread making all uploading works"""
@@ -113,13 +107,6 @@ class SwiftUploadThread(threading.Thread):
         if self.__uploadChannel.skipExisting():
             logging.debug("Upload thread started with reuploading turned on")
 
-        # Trying to connect to swift
-        connection = None
-        try:
-            connection = self.__uploadChannel.createConnection()
-        except Exception:
-            raise
-
         res = {
             'action': 'empty',
             'success': False,
@@ -129,8 +116,10 @@ class SwiftUploadThread(threading.Thread):
             'size': self.__fileProxy.getSize(),
         }
 
+        is_exists = False
+        connection = None
         try:
-            is_exists = False
+            connection = self.__uploadChannel.createConnection()
             # Trying to check etag for existing segment
             try:
                 if self.__uploadChannel.skipExisting():
@@ -190,19 +179,26 @@ class SwiftUploadThread(threading.Thread):
                     logging.debug("Unable to dump segments for resuming upload: " + str(err))
                     pass
 
-            # Notify that upload complete
-            self.__fileProxy.setComplete(is_exists)
-
         except (ClientException, Exception) as err:
             self.__fileProxy.cancel()
             logging.error("!!!ERROR: unable to upload segment '%08d', reason: %s" % (res['index'], err.message))
-            logging.error(traceback.format_exc())
+        finally:
+            # We should compete every file proxy to avoid deadlocks
+            # Notify that upload complete
+            self.__fileProxy.setComplete(is_exists)
 
-        self.__uploadChannel.completeUploadThread()
-        connection.close()
+            # Each file proxy must be released, because internally it's use Queue
+            # synchronization primitive and it must be released, when, for example, exception happens
+            self.__fileProxy.release()
+
+            # Closing swift connection and completing upload thread.
+            # Every thread creation must call completeUploadThread() function to avoid
+            # uploadThreads semaphore overflowing.
+            if connection:
+                connection.close()
+            self.__uploadChannel.completeUploadThread()
 
         logging.debug("Upload thread for '%08d' done" % self.__index)
-
 
 class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     """
@@ -294,6 +290,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         return True
 
     def completeUploadThread(self):
+        # Releasing semaphore. This call must be for every created upload thread
+        # to avoid thread endless waiting.
         self.__uploadThreads.release()
 
     def getSegmentResults(self):
