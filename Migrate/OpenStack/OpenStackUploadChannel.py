@@ -49,8 +49,11 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
             disk_name = image_name + "." + disk_format
 
         if use_new_channel:
-            swift = SwiftUploadChannel_new.SwiftUploadChannel_new(result_disk_size_bytes, swift_server_url , swift_username , swift_tennant_name , swift_password , disk_name , container_name , compression ,\
-                resume_upload = resume_upload, resume_file_path=resume_file_path, chunksize=chunksize , upload_threads=upload_threads , ignore_etag=ignore_etag  )
+            swift = SwiftUploadChannel_new.SwiftUploadChannel_new(
+                result_disk_size_bytes, swift_server_url, swift_username,
+                swift_tennant_name, swift_password, disk_name, container_name,
+                retries=3, compression=compression, resume_upload=resume_upload, resume_file_path=resume_file_path,
+                chunksize=chunksize, upload_threads=upload_threads, ignore_etag=ignore_etag)
         else:
             swift = SwiftUploadChannel.SwiftUploadChannel(result_disk_size_bytes, swift_server_url , swift_username , swift_tennant_name , swift_password , disk_name , container_name , compression ,\
                 resume_upload = resume_upload , chunksize=chunksize , upload_threads=upload_threads  )
