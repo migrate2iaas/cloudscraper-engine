@@ -1,0 +1,3 @@
+0 class rtl8139 emulated NICs to copy.
+0 class rtl8023xp emulated NICs to copy.
+0 class rtl8023x64 emulated NICs to copy.
