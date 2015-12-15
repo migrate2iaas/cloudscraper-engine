@@ -1,0 +1,126 @@
+0 class rtl8139 emulated NICs to copy.
+0 class rtl8023xp emulated NICs to copy.
+0 class rtl8023x64 emulated NICs to copy.
+0 class xennet emulated NICs to copy.
+1 class xennet6 emulated NICs to copy.
+device id XEN\VIF\0
+driver id {4d36e972-e325-11ce-bfc1-08002be10318}\0012
+linkage 000F3E08
+linkage[0] 000F3E18
+linkage[0] {7066548B-7366-4A2E-BEE9-0618DAF0F233}
+dev uuid {7066548B-7366-4A2E-BEE9-0618DAF0F233}
+transfer nic uuid {7066548B-7366-4A2E-BEE9-0618DAF0F233} mac 12_31_3B_02_85_A3 service xennet
+try to copy registry key SYSTEM\CurrentControlSet\Services\NETBT\Parameters\Interfaces\Tcpip_{7066548B-7366-4A2E-BEE9-0618DAF0F233} to SYSTEM\CurrentControlSet\Services\xennet\Parameters\nics\12_31_3B_02_85_A3\nbt
+transfer NameServerList
+transfered NameServerList
+transfer NetbiosOptions
+transfered NetbiosOptions
+done copy registry key SYSTEM\CurrentControlSet\Services\NETBT\Parameters\Interfaces\Tcpip_{7066548B-7366-4A2E-BEE9-0618DAF0F233} to SYSTEM\CurrentControlSet\Services\xennet\Parameters\nics\12_31_3B_02_85_A3\nbt
+try to copy registry key SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\{7066548B-7366-4A2E-BEE9-0618DAF0F233} to SYSTEM\CurrentControlSet\Services\xennet\Parameters\nics\12_31_3B_02_85_A3\tcpip
+transfer UseZeroBroadcast
+transfered UseZeroBroadcast
+transfer EnableDeadGWDetect
+transfered EnableDeadGWDetect
+transfer EnableDHCP
+transfered EnableDHCP
+transfer NameServer
+transfered NameServer
+transfer Domain
+transfered Domain
+transfer RegistrationEnabled
+transfered RegistrationEnabled
+transfer RegisterAdapterName
+transfered RegisterAdapterName
+transfer DhcpIPAddress
+transfered DhcpIPAddress
+transfer DhcpSubnetMask
+transfered DhcpSubnetMask
+transfer DhcpServer
+transfered DhcpServer
+transfer Lease
+transfered Lease
+transfer LeaseObtainedTime
+transfered LeaseObtainedTime
+transfer T1
+transfered T1
+transfer T2
+transfered T2
+transfer LeaseTerminatesTime
+transfered LeaseTerminatesTime
+transfer AddressType
+transfered AddressType
+transfer IsServerNapAware
+transfered IsServerNapAware
+transfer DhcpConnForceBroadcastFlag
+transfered DhcpConnForceBroadcastFlag
+transfer DhcpInterfaceOptions
+transfered DhcpInterfaceOptions
+transfer DhcpNameServer
+transfered DhcpNameServer
+transfer DhcpDefaultGateway
+transfered DhcpDefaultGateway
+transfer DhcpDomain
+transfered DhcpDomain
+transfer DhcpSubnetMaskOpt
+transfered DhcpSubnetMaskOpt
+done copy registry key SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\{7066548B-7366-4A2E-BEE9-0618DAF0F233} to SYSTEM\CurrentControlSet\Services\xennet\Parameters\nics\12_31_3B_02_85_A3\tcpip
+try to copy registry key SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters\Interfaces\{7066548B-7366-4A2E-BEE9-0618DAF0F233} to SYSTEM\CurrentControlSet\Services\xennet\Parameters\nics\12_31_3B_02_85_A3\tcpip6
+done copy registry key SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters\Interfaces\{7066548B-7366-4A2E-BEE9-0618DAF0F233} to SYSTEM\CurrentControlSet\Services\xennet\Parameters\nics\12_31_3B_02_85_A3\tcpip6
+transfer nic uuid {7066548B-7366-4A2E-BEE9-0618DAF0F233} mac 12_31_3B_02_85_A3 service xennet6
+try to copy registry key SYSTEM\CurrentControlSet\Services\NETBT\Parameters\Interfaces\Tcpip_{7066548B-7366-4A2E-BEE9-0618DAF0F233} to SYSTEM\CurrentControlSet\Services\xennet6\Parameters\nics\12_31_3B_02_85_A3\nbt
+transfer NameServerList
+transfered NameServerList
+transfer NetbiosOptions
+transfered NetbiosOptions
+done copy registry key SYSTEM\CurrentControlSet\Services\NETBT\Parameters\Interfaces\Tcpip_{7066548B-7366-4A2E-BEE9-0618DAF0F233} to SYSTEM\CurrentControlSet\Services\xennet6\Parameters\nics\12_31_3B_02_85_A3\nbt
+try to copy registry key SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\{7066548B-7366-4A2E-BEE9-0618DAF0F233} to SYSTEM\CurrentControlSet\Services\xennet6\Parameters\nics\12_31_3B_02_85_A3\tcpip
+transfer UseZeroBroadcast
+transfered UseZeroBroadcast
+transfer EnableDeadGWDetect
+transfered EnableDeadGWDetect
+transfer EnableDHCP
+transfered EnableDHCP
+transfer NameServer
+transfered NameServer
+transfer Domain
+transfered Domain
+transfer RegistrationEnabled
+transfered RegistrationEnabled
+transfer RegisterAdapterName
+transfered RegisterAdapterName
+transfer DhcpIPAddress
+transfered DhcpIPAddress
+transfer DhcpSubnetMask
+transfered DhcpSubnetMask
+transfer DhcpServer
+transfered DhcpServer
+transfer Lease
+transfered Lease
+transfer LeaseObtainedTime
+transfered LeaseObtainedTime
+transfer T1
+transfered T1
+transfer T2
+transfered T2
+transfer LeaseTerminatesTime
+transfered LeaseTerminatesTime
+transfer AddressType
+transfered AddressType
+transfer IsServerNapAware
+transfered IsServerNapAware
+transfer DhcpConnForceBroadcastFlag
+transfered DhcpConnForceBroadcastFlag
+transfer DhcpInterfaceOptions
+transfered DhcpInterfaceOptions
+transfer DhcpNameServer
+transfered DhcpNameServer
+transfer DhcpDefaultGateway
+transfered DhcpDefaultGateway
+transfer DhcpDomain
+transfered DhcpDomain
+transfer DhcpSubnetMaskOpt
+transfered DhcpSubnetMaskOpt
+done copy registry key SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\{7066548B-7366-4A2E-BEE9-0618DAF0F233} to SYSTEM\CurrentControlSet\Services\xennet6\Parameters\nics\12_31_3B_02_85_A3\tcpip
+try to copy registry key SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters\Interfaces\{7066548B-7366-4A2E-BEE9-0618DAF0F233} to SYSTEM\CurrentControlSet\Services\xennet6\Parameters\nics\12_31_3B_02_85_A3\tcpip6
+done copy registry key SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters\Interfaces\{7066548B-7366-4A2E-BEE9-0618DAF0F233} to SYSTEM\CurrentControlSet\Services\xennet6\Parameters\nics\12_31_3B_02_85_A3\tcpip6
+done {7066548B-7366-4A2E-BEE9-0618DAF0F233}.

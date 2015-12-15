@@ -1,0 +1,57 @@
+[Version]
+Signature="$WINDOWS NT$"
+Class=System
+ClassGUID={4d36e97d-e325-11ce-bfc1-08002be10318} 
+Provider=%Citrix%
+DriverVer=01/20/2012,6.0.2.52988
+CatalogFile=xeniface.cat
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+;*****************************************
+; Xeniface Device  Install Section
+;*****************************************
+
+[Manufacturer]
+%Citrix%=Citrix
+
+[Citrix]
+; DisplayName               Section           DeviceId
+; -----------               -------           --------
+%XenIfaceDevice.DeviceDesc%=XenIface_Device, XENBUS\CLASS&IFACE
+
+[XenIface_Device.NT]
+CopyFiles=XenIface_Device.NT.Copy
+
+[XenIFace_Device.NT.Copy]
+xeniface.sys
+
+;-------------- Service installation
+
+[Xeniface_Device.NT.Services]
+AddService = xeniface, %SPSVCINST_ASSOCSERVICE%, xeniface_Service_Inst
+
+[xeniface_Service_Inst]
+DisplayName    = %xeniface.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START 
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\xeniface.sys
+LoadOrderGroup = Extended Base
+
+
+[SourceDisksNames]
+1 = %DiskId1%,,,""
+
+[SourceDisksFiles]
+xeniface.sys  = 1,,
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+Citrix= "Citrix Systems, Inc." 
+ClassName = "XenIface"
+DiskId1 = "Citrix Tools for Virtual Machines"
+XenIfaceDevice.DeviceDesc = "Xen Interface"
+xeniface.SVCDESC = "Xen Interface Device Driver"
+

@@ -1,0 +1,696 @@
+Call: 621
+detailprint: Ensure we have Microsoft .NET framework installed
+Ensure we have Microsoft .NET framework installed
+File: overwriteflag=0, allowskipfilesflag=2, name="XenGuestAgent.Exe.Config"
+File: wrote 184 to "C:\Program Files\Citrix\XenTools\XenGuestAgent.Exe.Config"
+File: overwriteflag=0, allowskipfilesflag=2, name="XenDpriv.Exe.Config"
+File: wrote 185 to "C:\Program Files\Citrix\XenTools\XenDpriv.Exe.Config"
+detailprint: Microsoft .NET framework is installed
+Microsoft .NET framework is installed
+File: overwriteflag=0, allowskipfilesflag=2, name="xevtchn.sys"
+File: wrote 65664 to "C:\Program Files\Citrix\XenTools\xevtchn.sys"
+File: overwriteflag=0, allowskipfilesflag=2, name="xevtchn.inf"
+File: wrote 2011 to "C:\Program Files\Citrix\XenTools\xevtchn.inf"
+File: overwriteflag=0, allowskipfilesflag=2, name="xevtchn.cat"
+File: wrote 8114 to "C:\Program Files\Citrix\XenTools\xevtchn.cat"
+File: overwriteflag=0, allowskipfilesflag=2, name="xenvif.sys"
+File: wrote 146272 to "C:\Program Files\Citrix\XenTools\xenvif.sys"
+File: overwriteflag=0, allowskipfilesflag=2, name="xenvif.inf"
+File: wrote 1376 to "C:\Program Files\Citrix\XenTools\xenvif.inf"
+File: overwriteflag=0, allowskipfilesflag=2, name="xenvif.cat"
+File: wrote 7634 to "C:\Program Files\Citrix\XenTools\xenvif.cat"
+File: overwriteflag=0, allowskipfilesflag=2, name="xennet.sys"
+File: wrote 34944 to "C:\Program Files\Citrix\XenTools\xennet.sys"
+File: overwriteflag=0, allowskipfilesflag=2, name="xennet6.sys"
+File: wrote 36992 to "C:\Program Files\Citrix\XenTools\xennet6.sys"
+File: overwriteflag=0, allowskipfilesflag=2, name="xennetco.dll"
+File: wrote 64640 to "C:\Program Files\Citrix\XenTools\xennetco.dll"
+File: overwriteflag=0, allowskipfilesflag=2, name="xennet.inf"
+File: wrote 8915 to "C:\Program Files\Citrix\XenTools\xennet.inf"
+File: overwriteflag=0, allowskipfilesflag=2, name="xennet.cat"
+File: wrote 9006 to "C:\Program Files\Citrix\XenTools\xennet.cat"
+File: overwriteflag=0, allowskipfilesflag=2, name="xenvbd.sys"
+File: wrote 72064 to "C:\Program Files\Citrix\XenTools\xenvbd.sys"
+File: overwriteflag=0, allowskipfilesflag=2, name="scsifilt.sys"
+File: wrote 46464 to "C:\Program Files\Citrix\XenTools\scsifilt.sys"
+File: overwriteflag=0, allowskipfilesflag=2, name="xenvbd.cat"
+File: wrote 8610 to "C:\Program Files\Citrix\XenTools\xenvbd.cat"
+File: overwriteflag=0, allowskipfilesflag=2, name="xenvbd.inf"
+File: wrote 2223 to "C:\Program Files\Citrix\XenTools\xenvbd.inf"
+File: overwriteflag=0, allowskipfilesflag=2, name="xeniface.sys"
+File: wrote 46432 to "C:\Program Files\Citrix\XenTools\xeniface.sys"
+File: overwriteflag=0, allowskipfilesflag=2, name="xeniface.inf"
+File: wrote 1462 to "C:\Program Files\Citrix\XenTools\xeniface.inf"
+File: overwriteflag=0, allowskipfilesflag=2, name="xeniface.cat"
+File: wrote 8118 to "C:\Program Files\Citrix\XenTools\xeniface.cat"
+File: overwriteflag=0, allowskipfilesflag=2, name="xenutil.sys"
+File: wrote 219008 to "C:\Program Files\Citrix\XenTools\xenutil.sys"
+File: overwriteflag=0, allowskipfilesflag=2, name="xs.new"
+File: wrote 11776 to "C:\Program Files\Citrix\XenTools\xs.new"
+Rename: xs.new->xs.dll
+File: overwriteflag=0, allowskipfilesflag=2, name="xsutil.new"
+File: wrote 14848 to "C:\Program Files\Citrix\XenTools\xsutil.new"
+Rename: xsutil.dll->xsutil.old
+Rename failed: xsutil.dll->xsutil.old
+Delete: "xsutil.old"
+Rename: xsutil.new->xsutil.dll
+File: overwriteflag=0, allowskipfilesflag=2, name="xs2.new"
+File: wrote 12288 to "C:\Program Files\Citrix\XenTools\xs2.new"
+Rename: xs2.new->xs2.dll
+File: overwriteflag=0, allowskipfilesflag=2, name="VssClient.new"
+File: wrote 69120 to "C:\Program Files\Citrix\XenTools\VssClient.new"
+Rename: VssClient.new->VssClient.dll
+File: overwriteflag=0, allowskipfilesflag=2, name="removedev.exe"
+File: wrote 10752 to "C:\Program Files\Citrix\XenTools\removedev.exe"
+File: overwriteflag=0, allowskipfilesflag=2, name="sync.exe"
+File: wrote 10752 to "C:\Program Files\Citrix\XenTools\sync.exe"
+File: overwriteflag=0, allowskipfilesflag=2, name="xenstore_client.exe"
+File: wrote 9216 to "C:\Program Files\Citrix\XenTools\xenstore_client.exe"
+File: overwriteflag=0, allowskipfilesflag=2, name="query_balloon.exe"
+File: wrote 9728 to "C:\Program Files\Citrix\XenTools\query_balloon.exe"
+File: overwriteflag=0, allowskipfilesflag=2, name="copyvif.exe"
+File: wrote 14848 to "C:\Program Files\Citrix\XenTools\copyvif.exe"
+Jump: 809
+File: overwriteflag=0, allowskipfilesflag=2, name="XenVssProvider.new"
+File: wrote 249856 to "C:\Program Files\Citrix\XenTools\XenVssProvider.new"
+Rename: XenVssProvider.new->XenVssProvider.dll
+File: overwriteflag=0, allowskipfilesflag=2, name="regvss.vbs"
+File: wrote 5419 to "C:\Program Files\Citrix\XenTools\regvss.vbs"
+File: overwriteflag=0, allowskipfilesflag=2, name="install-XenProvider.cmd"
+File: wrote 447 to "C:\Program Files\Citrix\XenTools\install-XenProvider.cmd"
+File: overwriteflag=0, allowskipfilesflag=2, name="uninstall-XenProvider.cmd"
+File: wrote 340 to "C:\Program Files\Citrix\XenTools\uninstall-XenProvider.cmd"
+Jump: 861
+File: overwriteflag=0, allowskipfilesflag=2, name="XenGuestAgent.new"
+File: wrote 49152 to "C:\Program Files\Citrix\XenTools\XenGuestAgent.new"
+Rename: XenGuestAgent.new->XenGuestAgent.exe
+File: overwriteflag=0, allowskipfilesflag=2, name="XenGuestLib.new"
+File: wrote 118784 to "C:\Program Files\Citrix\XenTools\XenGuestLib.new"
+Rename: XenGuestLib.new->XenGuestLib.dll
+File: overwriteflag=0, allowskipfilesflag=2, name="XenDpriv.new"
+File: wrote 49152 to "C:\Program Files\Citrix\XenTools\XenDpriv.new"
+Rename: XenDpriv.new->XenDpriv.exe
+File copy done.
+WriteRegStr: "HKEY_LOCAL_MACHINE\Software\Citrix\XenTools" "xs2.dll"="C:\Program Files\Citrix\XenTools\xs2.dll"
+detailprint: Copying ioemu network settings...
+Exec: command=""C:\Program Files\Citrix\XenTools\copyvif.exe" "emulated" "C:\Program Files\Citrix\XenTools\copyvif.log.txt""
+Exec: success (""C:\Program Files\Citrix\XenTools\copyvif.exe" "emulated" "C:\Program Files\Citrix\XenTools\copyvif.log.txt"")
+Jump: 894
+Jump: 907
+detailprint: Setting SAN Policy...
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\partmgr\Parameters" "SanPolicy"="0x00000001"
+Call: 1136
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1136
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1136
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1136
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1136
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1136
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1136
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+CreateDirectory: "C:\Users\ADMINI~1\AppData\Local\Temp\2" (1)
+File: overwriteflag=0, allowskipfilesflag=2, name="installdriver.exe"
+File: wrote 14336 to "C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe"
+detailprint: SystemStartOptions = /NOEXECUTE=OPTOUT
+Call: 174
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 197
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\xenevtchn" "NOPVBoot"="0x00000001"
+Installing INF files...
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "0" "C:\Program Files\Citrix\XenTools\xenvbd.inf""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "0" "C:\Program Files\Citrix\XenTools\xenvbd.inf"")
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "0" "C:\Program Files\Citrix\XenTools\xevtchn.inf""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "0" "C:\Program Files\Citrix\XenTools\xevtchn.inf"")
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "0" "C:\Program Files\Citrix\XenTools\xenvif.inf""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "0" "C:\Program Files\Citrix\XenTools\xenvif.inf"")
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "0" "C:\Program Files\Citrix\XenTools\xennet.inf""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "0" "C:\Program Files\Citrix\XenTools\xennet.inf"")
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "0" "C:\Program Files\Citrix\XenTools\xeniface.inf""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "0" "C:\Program Files\Citrix\XenTools\xeniface.inf"")
+Remove old unwanted drivers
+Exec: command=""C:\Program Files\Citrix\XenTools\removedev.exe" "/d" "XENBUS\CLASS&IFACE""
+Exec: success (""C:\Program Files\Citrix\XenTools\removedev.exe" "/d" "XENBUS\CLASS&IFACE"")
+Exec: command=""C:\Program Files\Citrix\XenTools\removedev.exe" "/d" "XEN\VIF""
+Exec: success (""C:\Program Files\Citrix\XenTools\removedev.exe" "/d" "XEN\VIF"")
+Exec: command=""C:\Program Files\Citrix\XenTools\removedev.exe" "/d" "XENBUS\CLASS&VIF""
+Exec: success (""C:\Program Files\Citrix\XenTools\removedev.exe" "/d" "XENBUS\CLASS&VIF"")
+Call: 1220
+File: overwriteflag=1, allowskipfilesflag=0, name="C:\Users\ADMINI~1\AppData\Local\Temp\2\nsbD44A.tmp\System.dll"
+File: skipped: "C:\Users\ADMINI~1\AppData\Local\Temp\2\nsbD44A.tmp\System.dll" (overwriteflag=1)
+Call: 1220
+File: overwriteflag=1, allowskipfilesflag=0, name="C:\Users\ADMINI~1\AppData\Local\Temp\2\nsbD44A.tmp\System.dll"
+File: skipped: "C:\Users\ADMINI~1\AppData\Local\Temp\2\nsbD44A.tmp\System.dll" (overwriteflag=1)
+Rename: C:\Windows\system32\drivers\xenutil.sys->C:\Windows\system32\drivers\xenold1.sys
+Rename failed: C:\Windows\system32\drivers\xenutil.sys->C:\Windows\system32\drivers\xenold1.sys
+Delete: "C:\Windows\system32\drivers\xenold1.sys"
+Rename: C:\Windows\system32\drivers\xenvbd.sys->C:\Windows\system32\drivers\xenold2.sys
+Rename failed: C:\Windows\system32\drivers\xenvbd.sys->C:\Windows\system32\drivers\xenold2.sys
+Delete: "C:\Windows\system32\drivers\xenold2.sys"
+Rename: C:\Windows\system32\drivers\xennet.sys->C:\Windows\system32\drivers\xenold3.sys
+Rename failed: C:\Windows\system32\drivers\xennet.sys->C:\Windows\system32\drivers\xenold3.sys
+Delete: "C:\Windows\system32\drivers\xenold3.sys"
+Delete: "C:\Windows\system32\xennetco.dll"
+Rename: C:\Windows\system32\drivers\xevtchn.sys->C:\Windows\system32\drivers\xenold4.sys
+Rename failed: C:\Windows\system32\drivers\xevtchn.sys->C:\Windows\system32\drivers\xenold4.sys
+Delete: "C:\Windows\system32\drivers\xenold4.sys"
+Rename: C:\Windows\system32\drivers\scsifilt.sys->C:\Windows\system32\drivers\xenold5.sys
+Rename failed: C:\Windows\system32\drivers\scsifilt.sys->C:\Windows\system32\drivers\xenold5.sys
+Delete: "C:\Windows\system32\drivers\xenold5.sys"
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\xenvbd\parameters\Device0" "NumberOfRequests"="0x000000fe"
+Installing xenvbd driver...
+detailprint: Installing xenvbd driver...
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "0" "PCI\VEN_5853&DEV_0001&SUBSYS_00015853" "C:\Program Files\Citrix\XenTools\xenvbd.inf" "0""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "0" "PCI\VEN_5853&DEV_0001&SUBSYS_00015853" "C:\Program Files\Citrix\XenTools\xenvbd.inf" "0"")
+Jump: 977
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/d" "0" "C:\Program Files\Citrix\XenTools\xenvbd.inf" "xenvbd_inst" "xenvbd_inst.services""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/d" "0" "C:\Program Files\Citrix\XenTools\xenvbd.inf" "xenvbd_inst" "xenvbd_inst.services"")
+WriteRegStr: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\pci#VEN_5853&dev_0001&subsys_00015853" "Service"="xenvbd"
+WriteRegStr: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\pci#VEN_5853&dev_0001&subsys_00015853" "ClassGUID"="{4D36E97B-E325-11CE-BFC1-08002BE10318}"
+Call: 1220
+File: overwriteflag=1, allowskipfilesflag=0, name="C:\Users\ADMINI~1\AppData\Local\Temp\2\nsbD44A.tmp\System.dll"
+File: skipped: "C:\Users\ADMINI~1\AppData\Local\Temp\2\nsbD44A.tmp\System.dll" (overwriteflag=1)
+Installing xenbus root driver...
+detailprint: Installing xenbus root driver...
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/r" "0" "ROOT\XENEVTCHN" "C:\Program Files\Citrix\XenTools\xevtchn.inf""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/r" "0" "ROOT\XENEVTCHN" "C:\Program Files\Citrix\XenTools\xevtchn.inf"")
+Installing xenvif driver...
+detailprint: Installing xenvif driver...
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "0" "XENBUS\CLASS&VIF" "C:\Program Files\Citrix\XenTools\xenvif.inf" "0""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "0" "XENBUS\CLASS&VIF" "C:\Program Files\Citrix\XenTools\xenvif.inf" "0"")
+Jump: 1003
+Installing xennet driver...
+detailprint: Installing xennet driver...
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "0" "XEN\VIF" "C:\Program Files\Citrix\XenTools\xennet.inf" "0""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "0" "XEN\VIF" "C:\Program Files\Citrix\XenTools\xennet.inf" "0"")
+Jump: 1011
+Installing xeniface driver...
+detailprint: Installing xeniface driver...
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "0" "XENBUS\CLASS&IFACE" "C:\Program Files\Citrix\XenTools\xeniface.inf" "0""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "0" "XENBUS\CLASS&IFACE" "C:\Program Files\Citrix\XenTools\xeniface.inf" "0"")
+Jump: 1019
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control" "ServicesPipeTimeout"="0x000493e0"
+Installing guest agent service...
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/s" "0" \""C:\Program Files\Citrix\XenTools\XenGuestAgent.exe"\""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/s" "0" \""C:\Program Files\Citrix\XenTools\XenGuestAgent.exe"\"")
+Drivers/service installation done.
+detailprint: Drivers/service installation done.
+Generating uninstaller.exe...
+detailprint: Generating uninstaller.exe...
+created uninstaller: 25163, "C:\Program Files\Citrix\XenTools\uninstaller.exe"
+DeleteRegKey: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\XenSource"
+WriteRegStr: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "DisplayVersion"="6.0.57617"
+WriteRegStr: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "DisplayName"="Citrix Tools for Virtual Machines"
+WriteRegStr: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "Publisher"="Citrix Systems, Inc."
+WriteRegStr: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "DisplayIcon"="C:\Program Files\Citrix\XenTools\uninstaller.exe,0"
+WriteRegStr: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "UninstallString"="C:\Program Files\Citrix\XenTools\uninstaller.exe"
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "NoModify"="0x00000001"
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "NoRepair"="0x00000001"
+WriteRegStr: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "URLInfoAbout"="http://www.citrixxenserver.com"
+WriteRegStr: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "URLUpdateInfo"="http://www.citrixxenserver.com"
+WriteRegStr: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\pci#VEN_8086&CC_0101" "Service"="intelide"
+WriteRegStr: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\pci#VEN_8086&CC_0101" "ClassGUID"="{4D36E96A-E325-11CE-BFC1-08002BE10318}"
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Disk" "TimeOutValue"="0x00000078"
+Jump: 1109
+DeleteRegValue: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\xenevtchn" "NOPVBoot"
+Delete: "C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe"
+Delete: DeleteFile("C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe")
+Call: 389
+Jump: 409
+Delete: DeleteFile("C:\Users\ADMINI~1\AppData\Local\Temp\2\nsbD44A.tmp\System.dll")
+RMDir: RemoveDirectory("C:\Users\ADMINI~1\AppData\Local\Temp\2\nsbD44A.tmp\")
+logging set to 1
+Call: 598
+Jump: 601
+Jump: 601
+Jump: 601
+Jump: 601
+Jump: 601
+Jump: 601
+Unable to disable video acceleration. Couldnt find cirrus registry key.
+Jump: 611
+CreateDirectory: "C:\Users\ADMINI~1\AppData\Local\Temp\2" (1)
+File: overwriteflag=0, allowskipfilesflag=2, name="install.dll"
+File: wrote 11264 to "C:\Users\ADMINI~1\AppData\Local\Temp\2\install.dll"
+Preinstall checks...
+detailprint: Preinstall checks...
+Call: 495
+Call: 0
+Call: 1220
+File: overwriteflag=1, allowskipfilesflag=2, name="C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll"
+File: skipped: "C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll" (overwriteflag=1)
+Call: 1220
+File: overwriteflag=1, allowskipfilesflag=0, name="C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll"
+File: skipped: "C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll" (overwriteflag=1)
+Jump: 75
+detailprint: Windows version detected - 2008, Service Pack - 2
+Windows version detected - 2008, Service Pack - 2
+Jump: 537
+Call: 1220
+File: overwriteflag=1, allowskipfilesflag=0, name="C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll"
+File: skipped: "C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll" (overwriteflag=1)
+Call: 1220
+File: overwriteflag=1, allowskipfilesflag=0, name="C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll"
+File: skipped: "C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll" (overwriteflag=1)
+Call: 1220
+File: overwriteflag=1, allowskipfilesflag=0, name="C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll"
+File: skipped: "C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll" (overwriteflag=1)
+Call: 1220
+File: overwriteflag=1, allowskipfilesflag=0, name="C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll"
+File: skipped: "C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll" (overwriteflag=1)
+Call: 1220
+File: overwriteflag=1, allowskipfilesflag=0, name="C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll"
+File: skipped: "C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll" (overwriteflag=1)
+detailprint: pci device detected - 1 0
+Delete: "C:\Users\ADMINI~1\AppData\Local\Temp\2\install.dll"
+Delete: DeleteFile("C:\Users\ADMINI~1\AppData\Local\Temp\2\install.dll")
+Delete: DeleteFile failed("C:\Users\ADMINI~1\AppData\Local\Temp\2\install.dll")
+Call: 362
+Update installation detected!
+detailprint: Update installation detected!
+Jump: 727
+Jump: 729
+Jump: 731
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\SOFTWARE\Citrix\XenTools" "MajorVersion"="0x00000006"
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\SOFTWARE\Citrix\XenTools" "MinorVersion"="0x00000000"
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\SOFTWARE\Citrix\XenTools" "MicroVersion"="0x00000002"
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\SOFTWARE\Citrix\XenTools" "BuildVersion"="0x0000e111"
+WriteRegStr: "HKEY_LOCAL_MACHINE\SOFTWARE\Citrix\XenTools" "Install_Dir"="C:\Program Files\Citrix\XenTools"
+Copying files to C:\Program Files\Citrix\XenTools...
+CreateDirectory: "C:\Program Files\Citrix\XenTools" (1)
+Call: 621
+detailprint: Ensure we have Microsoft .NET framework installed
+Ensure we have Microsoft .NET framework installed
+File: overwriteflag=0, allowskipfilesflag=2, name="XenGuestAgent.Exe.Config"
+File: wrote 184 to "C:\Program Files\Citrix\XenTools\XenGuestAgent.Exe.Config"
+File: overwriteflag=0, allowskipfilesflag=2, name="XenDpriv.Exe.Config"
+File: wrote 185 to "C:\Program Files\Citrix\XenTools\XenDpriv.Exe.Config"
+detailprint: Microsoft .NET framework is installed
+Microsoft .NET framework is installed
+File: overwriteflag=0, allowskipfilesflag=2, name="xevtchn.sys"
+File: wrote 65664 to "C:\Program Files\Citrix\XenTools\xevtchn.sys"
+File: overwriteflag=0, allowskipfilesflag=2, name="xevtchn.inf"
+File: wrote 2011 to "C:\Program Files\Citrix\XenTools\xevtchn.inf"
+File: overwriteflag=0, allowskipfilesflag=2, name="xevtchn.cat"
+File: wrote 8114 to "C:\Program Files\Citrix\XenTools\xevtchn.cat"
+File: overwriteflag=0, allowskipfilesflag=2, name="xenvif.sys"
+File: wrote 146272 to "C:\Program Files\Citrix\XenTools\xenvif.sys"
+File: overwriteflag=0, allowskipfilesflag=2, name="xenvif.inf"
+File: wrote 1376 to "C:\Program Files\Citrix\XenTools\xenvif.inf"
+File: overwriteflag=0, allowskipfilesflag=2, name="xenvif.cat"
+File: wrote 7634 to "C:\Program Files\Citrix\XenTools\xenvif.cat"
+File: overwriteflag=0, allowskipfilesflag=2, name="xennet.sys"
+File: wrote 34944 to "C:\Program Files\Citrix\XenTools\xennet.sys"
+File: overwriteflag=0, allowskipfilesflag=2, name="xennet6.sys"
+File: wrote 36992 to "C:\Program Files\Citrix\XenTools\xennet6.sys"
+File: overwriteflag=0, allowskipfilesflag=2, name="xennetco.dll"
+File: wrote 64640 to "C:\Program Files\Citrix\XenTools\xennetco.dll"
+File: overwriteflag=0, allowskipfilesflag=2, name="xennet.inf"
+File: wrote 8915 to "C:\Program Files\Citrix\XenTools\xennet.inf"
+File: overwriteflag=0, allowskipfilesflag=2, name="xennet.cat"
+File: wrote 9006 to "C:\Program Files\Citrix\XenTools\xennet.cat"
+File: overwriteflag=0, allowskipfilesflag=2, name="xenvbd.sys"
+File: wrote 72064 to "C:\Program Files\Citrix\XenTools\xenvbd.sys"
+File: overwriteflag=0, allowskipfilesflag=2, name="scsifilt.sys"
+File: wrote 46464 to "C:\Program Files\Citrix\XenTools\scsifilt.sys"
+File: overwriteflag=0, allowskipfilesflag=2, name="xenvbd.cat"
+File: wrote 8610 to "C:\Program Files\Citrix\XenTools\xenvbd.cat"
+File: overwriteflag=0, allowskipfilesflag=2, name="xenvbd.inf"
+File: wrote 2223 to "C:\Program Files\Citrix\XenTools\xenvbd.inf"
+File: overwriteflag=0, allowskipfilesflag=2, name="xeniface.sys"
+File: wrote 46432 to "C:\Program Files\Citrix\XenTools\xeniface.sys"
+File: overwriteflag=0, allowskipfilesflag=2, name="xeniface.inf"
+File: wrote 1462 to "C:\Program Files\Citrix\XenTools\xeniface.inf"
+File: overwriteflag=0, allowskipfilesflag=2, name="xeniface.cat"
+File: wrote 8118 to "C:\Program Files\Citrix\XenTools\xeniface.cat"
+File: overwriteflag=0, allowskipfilesflag=2, name="xenutil.sys"
+File: wrote 219008 to "C:\Program Files\Citrix\XenTools\xenutil.sys"
+File: overwriteflag=0, allowskipfilesflag=2, name="xs.new"
+File: wrote 11776 to "C:\Program Files\Citrix\XenTools\xs.new"
+Rename: xs.new->xs.dll
+Rename on reboot: xs.new->xs.dll
+File: overwriteflag=0, allowskipfilesflag=2, name="xsutil.new"
+File: wrote 14848 to "C:\Program Files\Citrix\XenTools\xsutil.new"
+Rename: xsutil.dll->xsutil.old
+Delete: "xsutil.old"
+Delete: DeleteFile("\xsutil.old")
+Delete: DeleteFile on Reboot("\xsutil.old")
+Rename: xsutil.new->xsutil.dll
+File: overwriteflag=0, allowskipfilesflag=2, name="xs2.new"
+File: wrote 12288 to "C:\Program Files\Citrix\XenTools\xs2.new"
+Rename: xs2.new->xs2.dll
+Rename on reboot: xs2.new->xs2.dll
+File: overwriteflag=0, allowskipfilesflag=2, name="VssClient.new"
+File: wrote 69120 to "C:\Program Files\Citrix\XenTools\VssClient.new"
+Rename: VssClient.new->VssClient.dll
+Rename on reboot: VssClient.new->VssClient.dll
+File: overwriteflag=0, allowskipfilesflag=2, name="removedev.exe"
+File: wrote 10752 to "C:\Program Files\Citrix\XenTools\removedev.exe"
+File: overwriteflag=0, allowskipfilesflag=2, name="sync.exe"
+File: wrote 10752 to "C:\Program Files\Citrix\XenTools\sync.exe"
+File: overwriteflag=0, allowskipfilesflag=2, name="xenstore_client.exe"
+File: wrote 9216 to "C:\Program Files\Citrix\XenTools\xenstore_client.exe"
+File: overwriteflag=0, allowskipfilesflag=2, name="query_balloon.exe"
+File: wrote 9728 to "C:\Program Files\Citrix\XenTools\query_balloon.exe"
+File: overwriteflag=0, allowskipfilesflag=2, name="copyvif.exe"
+File: wrote 14848 to "C:\Program Files\Citrix\XenTools\copyvif.exe"
+Jump: 809
+File: overwriteflag=0, allowskipfilesflag=2, name="XenVssProvider.new"
+File: wrote 249856 to "C:\Program Files\Citrix\XenTools\XenVssProvider.new"
+Rename: XenVssProvider.new->XenVssProvider.dll
+Rename on reboot: XenVssProvider.new->XenVssProvider.dll
+File: overwriteflag=0, allowskipfilesflag=2, name="regvss.vbs"
+File: wrote 5419 to "C:\Program Files\Citrix\XenTools\regvss.vbs"
+File: overwriteflag=0, allowskipfilesflag=2, name="install-XenProvider.cmd"
+File: wrote 447 to "C:\Program Files\Citrix\XenTools\install-XenProvider.cmd"
+File: overwriteflag=0, allowskipfilesflag=2, name="uninstall-XenProvider.cmd"
+File: wrote 340 to "C:\Program Files\Citrix\XenTools\uninstall-XenProvider.cmd"
+Jump: 861
+File: overwriteflag=0, allowskipfilesflag=2, name="XenGuestAgent.new"
+File: wrote 49152 to "C:\Program Files\Citrix\XenTools\XenGuestAgent.new"
+Rename: XenGuestAgent.new->XenGuestAgent.exe
+Rename on reboot: XenGuestAgent.new->XenGuestAgent.exe
+File: overwriteflag=0, allowskipfilesflag=2, name="XenGuestLib.new"
+File: wrote 118784 to "C:\Program Files\Citrix\XenTools\XenGuestLib.new"
+Rename: XenGuestLib.new->XenGuestLib.dll
+Rename on reboot: XenGuestLib.new->XenGuestLib.dll
+File: overwriteflag=0, allowskipfilesflag=2, name="XenDpriv.new"
+File: wrote 49152 to "C:\Program Files\Citrix\XenTools\XenDpriv.new"
+Rename: XenDpriv.new->XenDpriv.exe
+Rename on reboot: XenDpriv.new->XenDpriv.exe
+File copy done.
+WriteRegStr: "HKEY_LOCAL_MACHINE\Software\Citrix\XenTools" "xs2.dll"="C:\Program Files\Citrix\XenTools\xs2.dll"
+detailprint: Copying old PV network settings...
+Exec: command=""C:\Program Files\Citrix\XenTools\copyvif.exe" "paravirtual" "C:\Program Files\Citrix\XenTools\copyvif.log.txt""
+Exec: success (""C:\Program Files\Citrix\XenTools\copyvif.exe" "paravirtual" "C:\Program Files\Citrix\XenTools\copyvif.log.txt"")
+Jump: 907
+detailprint: Setting SAN Policy...
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\partmgr\Parameters" "SanPolicy"="0x00000001"
+Call: 1136
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1187
+Jump: 1187
+Jump: 1187
+Call: 478
+detailprint: Removing oem5.inf from DriverStore
+Exec: command=""C:\Windows\system32\pnputil.exe" "-f" "-d" "oem5.inf""
+Exec: success (""C:\Windows\system32\pnputil.exe" "-f" "-d" "oem5.inf"")
+Jump: 494
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1136
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1187
+Call: 478
+detailprint: Removing oem6.inf from DriverStore
+Exec: command=""C:\Windows\system32\pnputil.exe" "-f" "-d" "oem6.inf""
+Exec: success (""C:\Windows\system32\pnputil.exe" "-f" "-d" "oem6.inf"")
+Jump: 494
+Jump: 1142
+Call: 1136
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1187
+Call: 478
+detailprint: Removing oem2.inf from DriverStore
+Exec: command=""C:\Windows\system32\pnputil.exe" "-f" "-d" "oem2.inf""
+Exec: success (""C:\Windows\system32\pnputil.exe" "-f" "-d" "oem2.inf"")
+Jump: 494
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1136
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1136
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1136
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1187
+Call: 478
+detailprint: Removing oem4.inf from DriverStore
+Exec: command=""C:\Windows\system32\pnputil.exe" "-f" "-d" "oem4.inf""
+Exec: success (""C:\Windows\system32\pnputil.exe" "-f" "-d" "oem4.inf"")
+Jump: 494
+Jump: 1142
+Call: 1136
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1142
+Call: 1158
+Jump: 1187
+Call: 478
+detailprint: Removing oem3.inf from DriverStore
+Exec: command=""C:\Windows\system32\pnputil.exe" "-f" "-d" "oem3.inf""
+Exec: success (""C:\Windows\system32\pnputil.exe" "-f" "-d" "oem3.inf"")
+Jump: 494
+Jump: 1142
+CreateDirectory: "C:\Users\ADMINI~1\AppData\Local\Temp\2" (1)
+File: overwriteflag=0, allowskipfilesflag=2, name="installdriver.exe"
+File: wrote 14336 to "C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe"
+detailprint: SystemStartOptions = /NOEXECUTE=OPTOUT
+Call: 174
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 189
+Jump: 197
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\xenevtchn" "NOPVBoot"="0x00000001"
+Installing INF files...
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "65798" "C:\Program Files\Citrix\XenTools\xenvbd.inf""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "65798" "C:\Program Files\Citrix\XenTools\xenvbd.inf"")
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "65798" "C:\Program Files\Citrix\XenTools\xevtchn.inf""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "65798" "C:\Program Files\Citrix\XenTools\xevtchn.inf"")
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "65798" "C:\Program Files\Citrix\XenTools\xenvif.inf""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "65798" "C:\Program Files\Citrix\XenTools\xenvif.inf"")
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "65798" "C:\Program Files\Citrix\XenTools\xennet.inf""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "65798" "C:\Program Files\Citrix\XenTools\xennet.inf"")
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "65798" "C:\Program Files\Citrix\XenTools\xeniface.inf""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/i" "65798" "C:\Program Files\Citrix\XenTools\xeniface.inf"")
+Remove old unwanted drivers
+Exec: command=""C:\Program Files\Citrix\XenTools\removedev.exe" "/d" "XENBUS\CLASS&IFACE""
+Exec: success (""C:\Program Files\Citrix\XenTools\removedev.exe" "/d" "XENBUS\CLASS&IFACE"")
+Exec: command=""C:\Program Files\Citrix\XenTools\removedev.exe" "/d" "XEN\VIF""
+Exec: success (""C:\Program Files\Citrix\XenTools\removedev.exe" "/d" "XEN\VIF"")
+Exec: command=""C:\Program Files\Citrix\XenTools\removedev.exe" "/d" "XENBUS\CLASS&VIF""
+Exec: success (""C:\Program Files\Citrix\XenTools\removedev.exe" "/d" "XENBUS\CLASS&VIF"")
+Call: 1220
+File: overwriteflag=1, allowskipfilesflag=0, name="C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll"
+File: skipped: "C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll" (overwriteflag=1)
+Call: 1220
+File: overwriteflag=1, allowskipfilesflag=0, name="C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll"
+File: skipped: "C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll" (overwriteflag=1)
+Rename: C:\Windows\system32\drivers\xenutil.sys->C:\Windows\system32\drivers\xenold1.sys
+Delete: "C:\Windows\system32\drivers\xenold1.sys"
+Delete: DeleteFile("C:\Windows\system32\drivers\xenold1.sys")
+Rename: C:\Windows\system32\drivers\xenvbd.sys->C:\Windows\system32\drivers\xenold2.sys
+Delete: "C:\Windows\system32\drivers\xenold2.sys"
+Delete: DeleteFile("C:\Windows\system32\drivers\xenold2.sys")
+Rename: C:\Windows\system32\drivers\xennet.sys->C:\Windows\system32\drivers\xenold3.sys
+Rename failed: C:\Windows\system32\drivers\xennet.sys->C:\Windows\system32\drivers\xenold3.sys
+Delete: "C:\Windows\system32\drivers\xenold3.sys"
+Delete: "C:\Windows\system32\xennetco.dll"
+Delete: DeleteFile("C:\Windows\system32\xennetco.dll")
+Rename: C:\Windows\system32\drivers\xevtchn.sys->C:\Windows\system32\drivers\xenold4.sys
+Delete: "C:\Windows\system32\drivers\xenold4.sys"
+Delete: DeleteFile("C:\Windows\system32\drivers\xenold4.sys")
+Rename: C:\Windows\system32\drivers\scsifilt.sys->C:\Windows\system32\drivers\xenold5.sys
+Delete: "C:\Windows\system32\drivers\xenold5.sys"
+Delete: DeleteFile("C:\Windows\system32\drivers\xenold5.sys")
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\xenvbd\parameters\Device0" "NumberOfRequests"="0x000000fe"
+Installing xenvbd driver...
+detailprint: Installing xenvbd driver...
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "65798" "PCI\VEN_5853&DEV_0001&SUBSYS_00015853" "C:\Program Files\Citrix\XenTools\xenvbd.inf" "1""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "65798" "PCI\VEN_5853&DEV_0001&SUBSYS_00015853" "C:\Program Files\Citrix\XenTools\xenvbd.inf" "1"")
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/d" "65798" "C:\Program Files\Citrix\XenTools\xenvbd.inf" "xenvbd_inst" "xenvbd_inst.services""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/d" "65798" "C:\Program Files\Citrix\XenTools\xenvbd.inf" "xenvbd_inst" "xenvbd_inst.services"")
+WriteRegStr: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\pci#VEN_5853&dev_0001&subsys_00015853" "Service"="xenvbd"
+WriteRegStr: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\pci#VEN_5853&dev_0001&subsys_00015853" "ClassGUID"="{4D36E97B-E325-11CE-BFC1-08002BE10318}"
+Call: 1220
+File: overwriteflag=1, allowskipfilesflag=0, name="C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll"
+File: skipped: "C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll" (overwriteflag=1)
+Upgrading xenbus root driver...
+detailprint: Upgrading xenbus root driver...
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "65798" "ROOT\XENEVTCHN" "C:\Program Files\Citrix\XenTools\xevtchn.inf" "1""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "65798" "ROOT\XENEVTCHN" "C:\Program Files\Citrix\XenTools\xevtchn.inf" "1"")
+Jump: 995
+Installing xenvif driver...
+detailprint: Installing xenvif driver...
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "65798" "XENBUS\CLASS&VIF" "C:\Program Files\Citrix\XenTools\xenvif.inf" "1""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "65798" "XENBUS\CLASS&VIF" "C:\Program Files\Citrix\XenTools\xenvif.inf" "1"")
+Installing xennet driver...
+detailprint: Installing xennet driver...
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "65798" "XEN\VIF" "C:\Program Files\Citrix\XenTools\xennet.inf" "1""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "65798" "XEN\VIF" "C:\Program Files\Citrix\XenTools\xennet.inf" "1"")
+Installing xeniface driver...
+detailprint: Installing xeniface driver...
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "65798" "XENBUS\CLASS&IFACE" "C:\Program Files\Citrix\XenTools\xeniface.inf" "1""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/p" "65798" "XENBUS\CLASS&IFACE" "C:\Program Files\Citrix\XenTools\xeniface.inf" "1"")
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\SOFTWARE\Citrix\XenTools" "ServicesPipeTimeout"="0x000493e0"
+Jump: 1029
+Installing guest agent service...
+IfFileExists: file "C:\Program Files\Citrix\XenTools\xenservice.exe" does not exist, jumping 1034
+Exec: command=""C:\Program Files\Citrix\XenTools\XenGuestAgent.exe" "-u""
+Exec: success (""C:\Program Files\Citrix\XenTools\XenGuestAgent.exe" "-u"")
+Exec: command=""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/s" "65798" \""C:\Program Files\Citrix\XenTools\XenGuestAgent.exe"\""
+Exec: success (""C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe" "/s" "65798" \""C:\Program Files\Citrix\XenTools\XenGuestAgent.exe"\"")
+Drivers/service installation done.
+detailprint: Drivers/service installation done.
+Generating uninstaller.exe...
+detailprint: Generating uninstaller.exe...
+created uninstaller: 25163, "C:\Program Files\Citrix\XenTools\uninstaller.exe"
+DeleteRegKey: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\XenSource"
+WriteRegStr: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "DisplayVersion"="6.0.57617"
+WriteRegStr: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "DisplayName"="Citrix Tools for Virtual Machines"
+WriteRegStr: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "Publisher"="Citrix Systems, Inc."
+WriteRegStr: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "DisplayIcon"="C:\Program Files\Citrix\XenTools\uninstaller.exe,0"
+WriteRegStr: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "UninstallString"="C:\Program Files\Citrix\XenTools\uninstaller.exe"
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "NoModify"="0x00000001"
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "NoRepair"="0x00000001"
+WriteRegStr: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "URLInfoAbout"="http://www.citrixxenserver.com"
+WriteRegStr: "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Citrix XenTools" "URLUpdateInfo"="http://www.citrixxenserver.com"
+WriteRegStr: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\pci#VEN_8086&CC_0101" "Service"="intelide"
+WriteRegStr: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\pci#VEN_8086&CC_0101" "ClassGUID"="{4D36E96A-E325-11CE-BFC1-08002BE10318}"
+IfFileExists: file "C:\Program Files\Citrix\XenTools\nsi-backup\boot.ini" does not exist, jumping 1060
+DeleteRegKey: "HKEY_LOCAL_MACHINE\SOFTWARE\Xensource"
+WriteRegDWORD: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Disk" "TimeOutValue"="0x00000078"
+Jump: 1109
+DeleteRegValue: "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\xenevtchn" "NOPVBoot"
+Delete: "C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe"
+Delete: DeleteFile("C:\Users\ADMINI~1\AppData\Local\Temp\2\installdriver.exe")
+Call: 389
+Jump: 240
+WriteINIStr: wrote [Settings] NextButtonText=&Finish in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 2] Bottom=38 in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 3] Top=45 in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 2] Text=Completing the Citrix Tools for Virtual Machines Setup Wizard in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 3] Bottom=185 in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 3] Bottom=85 in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 3] Text=Your computer must be restarted in order to complete the installation of Citrix Tools for Virtual Machines. Do you want to reboot now? in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Settings] Numfields=5 in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 4] Type=RadioButton in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 4] Text=Reboot now in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 4] Left=120 in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 4] Right=321 in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 4] Top=90 in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 4] Bottom=100 in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 4] State=1 in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 5] Type=RadioButton in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 5] Text=I want to manually reboot later in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 5] Left=120 in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 5] Right=321 in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 5] Top=110 in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+WriteINIStr: wrote [Field 5] Bottom=120 in C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini
+Jump: 266
+Call: 1220
+File: overwriteflag=1, allowskipfilesflag=2, name="C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\InstallOptions.dll"
+File: wrote 12800 to "C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\InstallOptions.dll"
+Jump: 301
+Call: 1220
+File: overwriteflag=1, allowskipfilesflag=2, name="C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\InstallOptions.dll"
+File: skipped: "C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\InstallOptions.dll" (overwriteflag=1)
+Delete: DeleteFile("C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\InstallOptions.dll")
+Delete: DeleteFile("C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\ioSpecial.ini")
+Delete: DeleteFile("C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\modern-wizard.bmp")
+Delete: DeleteFile("C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\System.dll")
+RMDir: RemoveDirectory("C:\Users\ADMINI~1\AppData\Local\Temp\2\nsf7A3E.tmp\")

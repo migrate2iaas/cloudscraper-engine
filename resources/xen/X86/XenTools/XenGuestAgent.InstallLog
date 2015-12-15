@@ -1,0 +1,18 @@
+﻿Uninstalling assembly 'C:\Program Files\Citrix\XenTools\XenGuestAgent.exe'.
+Affected parameters are:
+   u = 
+   logfile = C:\Program Files\Citrix\XenTools\XenGuestAgent.InstallLog
+   assemblypath = C:\Program Files\Citrix\XenTools\XenGuestAgent.exe
+Removing EventLog source Citrix Xen Guest Agent.
+Service Citrix Xen Guest Agent is being removed from the system...
+An exception occurred during the uninstallation of the System.ServiceProcess.ServiceInstaller installer.
+System.ComponentModel.Win32Exception: The specified service does not exist as an installed service
+An exception occurred while uninstalling. This exception will be ignored and the uninstall will continue. However, the application might not be fully uninstalled after the uninstall is complete.
+See the contents of the log file for the C:\Program Files\Citrix\XenTools\XenGuestAgent.exe assembly's progress.
+The file is located at C:\Program Files\Citrix\XenTools\XenGuestAgent.InstallLog.
+Rolling back assembly 'C:\Program Files\Citrix\XenTools\XenGuestAgent.exe'.
+Affected parameters are:
+   logtoconsole = 
+   u = 
+   logfile = C:\Program Files\Citrix\XenTools\XenGuestAgent.InstallLog
+   assemblypath = C:\Program Files\Citrix\XenTools\XenGuestAgent.exe
