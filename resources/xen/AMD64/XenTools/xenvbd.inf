@@ -1,0 +1,95 @@
+; 
+;        xenvbd.inf
+;
+;        Citrix XenServer virtual disk driver installation file.
+;
+;        Copyright 2008, Citrix Systems, Inc. All rights reserved.
+; 
+; 
+ 
+ 
+ 
+[Version] 
+Signature = "$Windows NT$" 
+Class=SCSIAdapter
+ClassGUID={4D36E97B-E325-11CE-BFC1-08002BE10318} 
+Provider=%Citrix% 
+CatalogFile=xenvbd.cat
+DriverVer=06/15/2012,6.0.2.56921
+
+[DestinationDirs] 
+DefaultDestDir = 12 
+
+[SourceDisksNames]
+0=%DiskDesc%
+
+[SourceDisksFiles]
+xenutil.sys=0,,
+xenvbd.sys=0,, 
+scsifilt.sys=0,,
+
+[Manufacturer] 
+%Citrix%=Citrix,NTamd64
+
+[Citrix.NTamd64]
+%xenvbdDesc%=xenvbd_Inst,PCI\VEN_fffd&DEV_0101
+%xenvbdDesc%=xenvbd_Inst,PCI\VEN_5853&DEV_0001
+%xenvbdDesc%=xenvbd_Inst,PCI\VEN_5853&DEV_0001&SUBSYS_00015853
+
+[xenvbd_Inst] 
+CopyFiles = xenvbd_Inst_Copyfiles
+AddReg = xenvbd_Inst_AddReg
+
+[xenvbd_Inst_Copyfiles]
+xenutil.sys
+xenvbd.sys
+scsifilt.sys
+
+[xenvbd_Inst_AddReg]
+HKLM, System\CurrentControlSet\Control\Class\{4D36E967-E325-11CE-BFC1-08002BE10318}, LowerFilters, 0x00010008, scsifilt
+
+[xenvbd_Inst.Services] 
+AddService = xenvbd,2,xenvbd_Service,
+AddService = scsifilt, ,scsifilt_Service,
+
+[xenvbd_Service] 
+ServiceType = %SERVICE_KERNEL_DRIVER% 
+StartType = %SERVICE_BOOT_START% 
+ErrorControl = %SERVICE_ERROR_NORMAL% 
+ServiceBinary = %12%\xenvbd.sys 
+LoadOrderGroup = "Scsi Miniport"
+AddReg = pnpsafe_pci_addreg
+
+[pnpsafe_pci_addreg] 
+HKR, Parameters\PnpInterface, 5, 0x00010001, 0x00000001 
+
+[scsifilt_Service]
+ServiceType = %SERVICE_KERNEL_DRIVER%
+StartType = %SERVICE_BOOT_START%
+ErrorControl = %SERVICE_ERROR_NORMAL%
+LoadOrderGroup = Primary Disk
+ServiceBinary = %12%\scsifilt.sys
+
+[Strings] 
+
+;  *******Localizable Strings******* 
+Citrix= "Citrix Systems, Inc." 
+DiskDesc = "Citrix Tools for Virtual Machines" 
+xenvbdDesc= "Citrix PV SCSI Host Adapter"
+
+;  *******Non Localizable Strings******* 
+
+SERVICE_BOOT_START = 0x0 
+SERVICE_SYSTEM_START = 0x1 
+SERVICE_AUTO_START = 0x2 
+SERVICE_DEMAND_START = 0x3 
+SERVICE_DISABLED = 0x4 
+
+SERVICE_KERNEL_DRIVER = 0x1 
+SERVICE_ERROR_IGNORE = 0x0 
+SERVICE_ERROR_NORMAL = 0x1 
+SERVICE_ERROR_SEVERE = 0x2 
+SERVICE_ERROR_CRITICAL = 0x3 
+
+REG_EXPAND_SZ = 0x00020000 
+REG_DWORD = 0x00010001 
