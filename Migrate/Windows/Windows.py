@@ -91,9 +91,9 @@ class Windows(object):
         dir = Windows.xenDir
 
         if WindowsSystemInfo.WindowsSystemInfo().getSystemArcheticture() == WindowsSystemInfo.WindowsSystemInfo.Archx8664:
-            dir = virtiodir + "\\AMD64"
+            dir = dir + "\\AMD64"
         else:
-            dir = virtiodir + "\\X86"
+            dir = dir + "\\X86"
         dir = dir + "\\XenTools"
         return dir
 
