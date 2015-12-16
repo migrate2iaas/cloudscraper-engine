@@ -1,18 +1,35 @@
 SETLOCAL EnableDelayedExpansion
 
-:: installs virtio networks\drivers etc
+set VIRTIO=%~dp0\..\VirtIO\
+
 
 echo "Preved!" >> C:\adjustlog.txt
 
+rem if there is no virtio , go in for xen
+if not exist %VIRTIO% (
+:: installs xen if available
+echo "Searching for xen" >> C:\adjustlog.txt
+if exist %~dp0\..\xen\Citrix_xensetup.exe (
+%~dp0\..\xen\Citrix_xensetup.exe /S
+echo "Xen installed" >> C:\adjustlog.txt
+goto DISABLE_ME
+)
+)
+
+:: installs virtio networks\drivers etc
+
 if defined ProgramFiles(x86) (
     @echo Some 64-bit work
-  set DRVPATH=%~dp0\..\VirtIO\
+  set DRVPATH=%VIRTIO%
   set DEVCON=devcon_64
 ) else (
     @echo Some 32-bit work
-  set DRVPATH=%~dp0\..\VirtIO\
+  set DRVPATH=%VIRTIO%
   set DEVCON=devcon_32
 )
+
+
+
 copy /Y "%~dp0\%DEVCON%.exe" "%~dp0\devcon.exe"
 
 certutil -addstore TrustedPublisher redhat.cer >> C:\adjustlog.txt
@@ -71,6 +88,7 @@ IF ERRORLEVEL 1 (
 
 )
 
+:DISABLE_ME
 echo "Disable autoadjust" >>   C:\adjustlog.txt
 sc config CloudscraperBoot start= demand >>   C:\adjustlog.txt
 
