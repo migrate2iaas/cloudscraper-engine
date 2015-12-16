@@ -144,13 +144,14 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
         self.__minipadVM = None
         self.__volumeType = volume_type
         self.__zone = zone
+        self.__builtTimeOutSec = 180
 
         super(EC2MinipadInstanceGenerator, self).__init__()
    
         
     def startConversion(self,image , ip , import_type = 'ImportInstance' , server_port = 80):
         """override proxy. it waits till server is built and only then starts the conversion"""
-        self.waitTillVMBuilt(self.__minipadId, timeout = self.__builtTimeOutSec )
+        self.waitTillVMBuilt(self.__minipadVM.id, timeout = self.__builtTimeOutSec ) #legacy stuff, should remove
                 
         logging.info("Waiting till service is on")
         #extra wait for service availability
