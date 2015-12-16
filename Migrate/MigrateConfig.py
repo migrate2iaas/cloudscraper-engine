@@ -119,3 +119,6 @@ class MigrateConfig(object):
      
     def insertVirtIo(self):
         return False
+
+    def insertXen(self):
+        return False

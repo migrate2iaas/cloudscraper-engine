@@ -9,6 +9,7 @@ import CloudConfig
 import MigrateConfig
 import S3UploadChannel
 import EC2InstanceGenerator
+import EC2MinipadInstanceGenerator
 
 import time
 import os
@@ -16,7 +17,8 @@ import os
 
 class AmazonCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self, bucket , user , password , newsize , arch , zone , region , machinename , securityid='' , instancetype='m1.small' , chunksize = 10*1024*1024 , disktype='VHD' , keyname_prefix = '' , vpc = "" , custom_host = "", custom_port=80 , custom_suffix="" , use_ssl = True):
+    def __init__(self, bucket , user , password , newsize , arch , zone , region , machinename , securityid='' , instancetype='m1.small' ,\
+        chunksize = 10*1024*1024 , disktype='VHD' , keyname_prefix = '' , vpc = "" , custom_host = "", custom_port=80 , custom_suffix="" , use_ssl = True , minipad = False , minipad_ami = ""):
         """inits with options"""
         super(AmazonCloudOptions, self).__init__()
         self.__bucket = bucket
@@ -40,6 +42,8 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         self.__custom_port = custom_port
         self.__custom_suffix = custom_suffix
         self.__use_ssl = bool(use_ssl)
+        self.__minipad = minipad
+        self.__minipadAmi = minipad_ami
         #TODO: more amazon-specfiic configs needed
     
     def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):   
@@ -67,6 +71,8 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         #No migratiuons to custom host as for now
         if self.__custom_host:
             return None
+        if self.__minipad:
+            return EC2MinipadInstanceGenerator.EC2MinipadInstanceGenerator(self.__region , self.__minipadAmi , self.__user , self.__pass, self.__zone, self.__instanceType , self.__vpc , self.__securityGroup)
         return EC2InstanceGenerator.EC2InstanceGenerator(self.__region)
 
     def getCloudStorage(self):
@@ -112,7 +118,7 @@ class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
 
     #TODO: make docs
     # images is list of VolumeMigrateConfig
-    def __init__(self, images , media_factory , source_arch , imagetype):
+    def __init__(self, images , media_factory , source_arch , imagetype , insert_xen = False):
         super(AmazonMigrateConfig, self).__init__(images, media_factory)
 
         self.__imageArch = source_arch
@@ -121,6 +127,7 @@ class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
         #small fix to recognize more raw types
         if "RAW" in str(imagetype).upper():
             self.__imageType = "RAW"
+        self.__minipadXen = insert_xen
 
     def getSourceOs(self):
         #should make it more flexible
@@ -142,3 +149,6 @@ class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
 
     def insertVirtIo(self):
         return False
+
+    def insertXen(self):
+        return self.__minipadXen

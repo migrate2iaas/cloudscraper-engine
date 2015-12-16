@@ -531,8 +531,8 @@ class MigratorConfigurer(object):
            
         chunksize = 10*1024*1024
         if config.has_option('EC2', 'chunksize'):
-           chunksize = int(config.get('EC2', 'chunksize'))
-           
+           chunksize = int(config.get('EC2', 'chunksize'))   
+
         bucket = ''
 
         try:
@@ -552,6 +552,13 @@ class MigratorConfigurer(object):
             security = config.get('EC2', 'security-group')
         except ConfigParser.NoOptionError as exception:
             logging.info("No security group was speicified, using default one. Note it couldn't be changed afterwards.")
+
+        minipad = None
+        if config.has_option('EC2', 'minipad'):
+            minipad = config.get('EC2', 'minipad')
+        minipad_ami = None
+        if config.has_option('EC2', 'minipad_ami'):
+            minipad_ami = config.get('EC2', 'minipad_ami')
         
         (imagedir, image_placement, imagetype) = self.getImageOptions(config)
         volumes = self.createVolumesList(config , configfile, imagedir, imagetype , s3prefix)        
@@ -562,11 +569,13 @@ class MigratorConfigurer(object):
 
         adjust_override = self.getOverrides(config , configfile)
 
-        image = AmazonConfigs.AmazonMigrateConfig(volumes , factory, imagearch , imagetype)
+        image = AmazonConfigs.AmazonMigrateConfig(volumes , factory, imagearch , imagetype, insert_xen = bool(minipad))
         #TODO: add machine name
         cloud = AmazonConfigs.AmazonCloudOptions(bucket = bucket , user=user , password=password , newsize=newsize , arch=arch , zone= zone \
                                                 , region=region , machinename="" , securityid=security , instancetype=instancetype \
-                                                , chunksize = chunksize, disktype = imagetype , keyname_prefix = s3prefix , vpc=vpcsubnet , custom_host = custom_host , custom_port = custom_port , custom_suffix = custom_suffix , use_ssl = use_ssl )
+                                                , chunksize = chunksize, disktype = imagetype , keyname_prefix = s3prefix , vpc=vpcsubnet \
+                                                , custom_host = custom_host , custom_port = custom_port , custom_suffix = custom_suffix , use_ssl = use_ssl\
+                                                , minipad = minipad , minipad_ami = minipad_ami)
         
 
         return (image,adjust_override,cloud)
