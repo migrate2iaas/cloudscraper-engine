@@ -124,7 +124,10 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
         logging.info(">>> Waiting till Ec2 Cloudscraper VM is ready")
         while timeout > 0:
             timeout = timeout - sleeptime
+            self.__minipadVM.update()
             logging.info("VM state is " + self.__minipadVM.state)
+            if self.__minipadVM.state == "running":
+                break
             time.sleep(sleeptime)
         return
 
@@ -144,7 +147,8 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
         self.__minipadVM = None
         self.__volumeType = volume_type
         self.__zone = zone
-        self.__builtTimeOutSec = 180
+        self.__builtTimeOutSec = 480
+        self.__serviceStartTimeout = 30
 
         super(EC2MinipadInstanceGenerator, self).__init__()
    
@@ -157,7 +161,7 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
         #extra wait for service availability
         time.sleep(self.__serviceStartTimeout)
 
-        return super(onAppInstanceGenerator, self).startConversion(image, ip , import_type , server_port)
+        return super(EC2MinipadInstanceGenerator, self).startConversion(image, ip , import_type , server_port)
 
 
     def getDiskSize(self, imageid_manifest_link):
