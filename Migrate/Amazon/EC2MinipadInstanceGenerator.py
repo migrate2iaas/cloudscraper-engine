@@ -200,7 +200,7 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
             logging.warning("!Cannot get XML manifest file from intermediate storage. Possibly the storage is inaccessible. " + str(e))
 
 
-    def makeInstanceFromImage(self , imageid, initialconfig, instancename, s3owner = "", s3key = "", temp_local_image_path = "" , image_file_size = 0, volume_size_bytes = 0):
+    def makeInstanceFromImage(self , imageid, initialconfig, instancename, s3owner = "", s3key = "", temp_local_image_path = "" , image_file_size = 0, volume_size_bytes = 0 , imagetype='RAW'):
         """makes instance based on image id - link to public image"""
         self.getDiskSize(imageid)
         return super(EC2MinipadInstanceGenerator, self).makeInstanceFromImage(imageid, initialconfig, instancename)
