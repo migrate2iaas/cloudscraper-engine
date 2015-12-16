@@ -64,7 +64,7 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
 
         return S3UploadChannel.S3UploadChannel(self.__bucket , self.__user , self.__pass , targetsize, self.__custom_host or self.__region , targetid or self.__keynamePrefix , self.__diskType , \
             resume_upload = resume , chunksize = self.__chunkSize, \
-            walrus = custom , walrus_path = self.__custom_suffix , walrus_port = self.__custom_port , use_ssl = self.__use_ssl)
+            walrus = custom , walrus_path = self.__custom_suffix , walrus_port = self.__custom_port , use_ssl = self.__use_ssl , make_link_public = bool(self.__minipad))
          
     def generateInstanceFactory(self):
         """returns object of InstanceFactory type to create servers from uploaded images"""
