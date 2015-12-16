@@ -46,10 +46,11 @@ class Windows(object):
     
     # pathes to resource directories
     virtRelIoDir = "..\\resources\\virtio\\1.65"  #TODO: make customizeable
+    xenDir = "..\\resources\\xen"
     adjustRelSvcDir = "..\\resources\\CloudscraperBootAdjust"
 
     # TODO: some init configs could be read here, e.g. Windows configs
-    def __init__(self , insertvirtio=True):
+    def __init__(self , insertvirtio=True , insertxen=True):
         self.__filesToDelete = set()
         self.__filesToRename = dict() # key is old name and value is a new one
         self.__vss = VssThruVshadow.VssThruVshadow()
@@ -59,6 +60,8 @@ class Windows(object):
         self.__adjustSvcDir = Windows.adjustRelSvcDir
         self.__windowsVersion = self.getVersion()
         self.__virtIoDir = self.__setVirtIoSourceDir()
+        self.__xenDir = self.__setXenSourceDir();
+        self.__insertXen = insertxen
         # TODO: move all viostor related stuff elsewhere
         self.__bootDriverName = "viostor.sys"
         self.__bootDriverInf = "viostor.inf"
@@ -83,6 +86,16 @@ class Windows(object):
         else:
             virtiodir = virtiodir + "\\X86"
         return virtiodir
+
+    def __setXenSourceDir(self):
+        dir = Windows.xenDir
+
+        if WindowsSystemInfo.WindowsSystemInfo().getSystemArcheticture() == WindowsSystemInfo.WindowsSystemInfo.Archx8664:
+            dir = virtiodir + "\\AMD64"
+        else:
+            dir = virtiodir + "\\X86"
+        dir = dir + "\\XenTools"
+        return dir
 
     def __executePreprocess(self):
         """executes preprocess bat"""
@@ -194,11 +207,15 @@ class Windows(object):
 
         if self.__insertVirtio:
             self.__copyVirtIoFiles()
+        
+        # copies xen
+        if self.__insertXen:
+            shutil.copytree(self.__xenDir , windrive + "\\" + Windows.adjustServiceDir + "\\xen")
+
         # copies adjust service
         shutil.copytree(self.__adjustSvcDir , windrive + "\\" + Windows.adjustServiceDir)
         self.__filesToDelete.add(windrive + "\\" + Windows.adjustServiceDir)
 
-        
 
 
     def __makeSystemVolumeBootable(self):
