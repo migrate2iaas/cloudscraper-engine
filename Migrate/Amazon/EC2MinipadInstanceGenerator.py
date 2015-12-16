@@ -10,9 +10,13 @@ __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2015 Migrate2Iaas"
 #---------------------------------------------------------
 
+import sys
+
+sys.path.append('.\..')
+
 import logging
 import traceback
-
+import urllib2
 
 import os
 import sys
@@ -47,18 +51,18 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
 
     def createDisk(self , name):
         """adds disk to the vm where image data is stored to"""
-        volume = self.__ec2Connnection.create_volume(self.__diskSizeGB , self.__zone, volume_type = self.__volumeType)
-        if self.__minipadVM:
-            self.__minipadVM.attach_volume(volume.id , '/dev/xvdf')
+        volume = self.__ec2Connnection.create_volume(self.__diskSize , self.__zone, volume_type = self.__volumeType)
+        return volume.id
 
     def attachDiskToMinipad(self, diskid):
-        """we just wait here to ensure disk attached"""
+        """we just wait here to ensure vm is ready"""
         timeout = 180
         sleeptime = 30*1 # check every 30 sec
-        logging.debug("Waiting till disk is attached")
         while timeout > 0:
             time.sleep(sleeptime)
             timeout = timeout - sleeptime
+        if self.__minipadVM:
+            self.__ec2Connnection.attach_volume(diskid , self.__minipadVM.id , '/dev/xvdf')
         return
 
     def initCreate(self , initialconfig):
@@ -76,11 +80,14 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
             group.authorize('tcp', 80, 80, '0.0.0.0/0')
             self.__securityGroup = group.id
         else:
-            self.__ec2Connnection.authorize_security_group(group_id = self.__securityGroup , ip_protocol='tcp', from_port = 80, to_port = 80, cidr_ip = '0.0.0.0/0')
+            try:
+                self.__ec2Connnection.authorize_security_group(group_id = self.__securityGroup , ip_protocol='tcp', from_port = 80, to_port = 80, cidr_ip = '0.0.0.0/0')
+            except Exception as e:
+                logging.warn("!Cannot add security rules to the group " + str(self.__securityGroup) + " Reason: " + str(e))
         
-        reservation = self.__ec2Connnection.run_instances(self.__ami, placement = self.__zone, key_name='Cloudscraper-Minipad-Target',\
+        reservation = self.__ec2Connnection.run_instances(self.__ami, placement = self.__zone,\
             instance_type=self.__instanceType , security_group_ids = [self.__securityGroup] , subnet_id = self.__subnet) 
-        self.__minipadVM = reservation.instances()[0]
+        self.__minipadVM = reservation.instances[0]
 
         return
 
@@ -94,6 +101,7 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
         
         return server ip
         """
+        self.__ec2Connnection.create_tags( [self.__minipadVM.id], {'Name':name} )
         return EC2Instance.EC2Instance(self.__minipadVM.id, self.__user , self.__password  , self.__region)
 
     def detachDiskFromMinipad(self , disk):
@@ -111,11 +119,12 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
         #self.__templateId = template_id
         return
 
-    def waitTillVMBuilt(self , vmid, timeout=30*60):
+    def waitTillVMBuilt(self , vmid, timeout=3*60):
         sleeptime = 60*1 # check every minute
         logging.info(">>> Waiting till Ec2 Cloudscraper VM is ready")
         while timeout > 0:
             timeout = timeout - sleeptime
+            logging.info("VM state is " + self.__minipadVM.state)
             time.sleep(sleeptime)
         return
 
@@ -142,14 +151,7 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
     def startConversion(self,image , ip , import_type = 'ImportInstance' , server_port = 80):
         """override proxy. it waits till server is built and only then starts the conversion"""
         self.waitTillVMBuilt(self.__minipadId, timeout = self.__builtTimeOutSec )
-        
-        vm = onAppVM(self.__onapp, self.__minipadId)
-        logging.debug("Trying to run the VM , in case it's stopped")
-        vm.run()
-        logging.info("Awaiting till Cloudscraper target VM is alive (echoing Cloudscraper VM RDP port)")
-        if vm.checkAlive() == False:
-            logging.warn("!Cloudscraper target VM is not repsonding (to RDP port). Misconfiguration is highly possible!")
-        
+                
         logging.info("Waiting till service is on")
         #extra wait for service availability
         time.sleep(self.__serviceStartTimeout)
@@ -171,14 +173,12 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
             else:
                     logging.warning("!Couldn't parse the xml describing the import done")
         except Exception as e:
-            logging.warning("!Cannot get XML manifest file from intermediate storage. Possibly the storage is inaccessible.")
+            logging.warning("!Cannot get XML manifest file from intermediate storage. Possibly the storage is inaccessible. " + str(e))
 
 
     def makeInstanceFromImage(self , imageid, initialconfig, instancename, s3owner = "", s3key = "", temp_local_image_path = "" , image_file_size = 0, volume_size_bytes = 0):
         """makes instance based on image id - link to public image"""
         self.getDiskSize(imageid)
-        gb = 1024*1024*1024
-        self.__diskSizeGB = (self.__diskSize + gb - 1) / gb
         return super(EC2MinipadInstanceGenerator, self).makeInstanceFromImage(imageid, initialconfig, instancename)
 
     def makeVolumeFromImage(self , imageid, initialconfig, instancename):
