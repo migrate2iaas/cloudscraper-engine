@@ -15,6 +15,7 @@ class EC2Volume(object):
     def __init__(self , instanceId):
 
         #TODO: make ec2 connection here
+        #TODO: merge with OpenStack branch
 
         self.__instanceId = instanceId
 

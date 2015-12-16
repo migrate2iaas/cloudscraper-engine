@@ -149,3 +149,6 @@ class onAppMigrateConfig(MigrateConfig.MigrateConfig):
 
     def insertVirtIo(self):
         return True
+
+    def insertXen(self):
+        return False

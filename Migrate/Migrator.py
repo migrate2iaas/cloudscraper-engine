@@ -29,7 +29,7 @@ import VmInstance
 class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT reside"""
 
-    def __init__(self , cloud_options , migrate_options, sys_adjust_overrides , skip_imaging=False, resume_upload=False, skip_upload=False , self_checks=False , limits = None , insert_vitio = False):
+    def __init__(self , cloud_options , migrate_options, sys_adjust_overrides , skip_imaging=False, resume_upload=False, skip_upload=False , self_checks=False , limits = None , insert_vitio = False , insert_xen = False):
         """
         Inits the Migrator mega-class. 
 
@@ -43,6 +43,7 @@ class Migrator(object):
             self_checks: bool - some self-checks on images\registry during the Migrator work (doesn't work for now!)
             limits: ? (currently long) - the limitation of data to be transfered
             insert_vitio : bool - inserts virtio drivers to the running system. Note, this option can be overriden with migrate_options.insertVirtIo()
+            insert_xen : bool - inserts xen drivers to the running system. Note, this option can be overriden with migrate_options.insertXen()
         """
         self.__adjustedSystemBackupSource = None
         self.__systemBackupSource = None
@@ -80,6 +81,7 @@ class Migrator(object):
         
         self.__fileBackup = False
         self.__insertVirtio = insert_vitio or migrate_options.insertVirtIo()
+        self.__insertXen = insert_xen or migrate_options.insertXen()
 
         #TODO: pass this parm somehow. Thru migrate\adjust overrides?
         self.__linuxGC = True
@@ -87,7 +89,7 @@ class Migrator(object):
         #TODO: analyze both host and source systems
         if self.__migrateOptions.getHostOs() == "Windows":
             import Windows
-            self.__windows = Windows.Windows(self.__insertVirtio)
+            self.__windows = Windows.Windows(self.__insertVirtio , self.__insertXen)
             self.__runOnWindows = True
             self.__winSystemAdjustOptions = self.__windows.createSystemAdjustOptions(sys_adjust_overrides)
             self.__systemAdjustOptions = self.__winSystemAdjustOptions
