@@ -52,15 +52,12 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
     def createDisk(self , name):
         """adds disk to the vm where image data is stored to"""
         volume = self.__ec2Connnection.create_volume(self.__diskSize , self.__zone, volume_type = self.__volumeType)
+        time.sleep(self.__operationsDelay) #todo: wait till volume is ready
         return volume.id
 
     def attachDiskToMinipad(self, diskid):
         """we just wait here to ensure vm is ready"""
-        timeout = 180
-        sleeptime = 30*1 # check every 30 sec
-        while timeout > 0:
-            time.sleep(sleeptime)
-            timeout = timeout - sleeptime
+        
         if self.__minipadVM:
             self.__ec2Connnection.attach_volume(diskid , self.__minipadVM.id , '/dev/xvdf')
         return
@@ -89,7 +86,14 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
             instance_type=self.__instanceType , security_group_ids = [self.__securityGroup] , subnet_id = self.__subnet) 
         self.__minipadVM = reservation.instances[0]
 
-        return
+        timeout = 180
+        sleeptime = 30*1 # check every 30 sec
+        while timeout > 0:
+            time.sleep(sleeptime)
+            timeout = timeout - sleeptime
+
+        self.__minipadVM.update()
+        return self.__minipadVM.ip_address
 
     def destroyMinipadServer(self):
         """ to implement in the inherited class """
@@ -102,6 +106,20 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
         return server ip
         """
         self.__ec2Connnection.create_tags( [self.__minipadVM.id], {'Name':name} )
+        self.__minipadVM.stop()
+
+        #TODO: wait here till stopped
+        time.sleep(180)
+        #detach all volumes from instance
+        volumes = [v for v in self.__ec2Connnection.get_all_volumes() if v.attach_data.instance_id == self.__minipadVM.id]
+        for vol in volumes:
+            self.__ec2Connnection.detach_volume(self.__minipadVM.id)
+
+        #TODO: wait here till detached
+        time.sleep(180)
+        self.__ec2Connnection.attach_volume(disk , self.__minipadVM.id , "/dev/sda1")
+
+        #TODO: change disks here
         return EC2Instance.EC2Instance(self.__minipadVM.id, self.__user , self.__password  , self.__region)
 
     def detachDiskFromMinipad(self , disk):
@@ -148,7 +166,8 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
         self.__volumeType = volume_type
         self.__zone = zone
         self.__builtTimeOutSec = 480
-        self.__serviceStartTimeout = 30
+        self.__serviceStartTimeout = 330
+        self.__operationsDelay = 60
 
         super(EC2MinipadInstanceGenerator, self).__init__()
    
