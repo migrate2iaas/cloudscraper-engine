@@ -205,7 +205,7 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
         self.getDiskSize(imageid)
         if s3owner:
 		    self.__user = s3owner
-	    if s3key:
+        if s3key:
             self.__password = s3key
             self.__ec2Connnection = boto.ec2.connect_to_region(region,aws_access_key_id=self.__user,aws_secret_access_key=self.__password)
         return super(EC2MinipadInstanceGenerator, self).makeInstanceFromImage(imageid, initialconfig, instancename)
