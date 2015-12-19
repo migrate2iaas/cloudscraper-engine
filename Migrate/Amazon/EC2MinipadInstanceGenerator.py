@@ -203,10 +203,11 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
     def makeInstanceFromImage(self , imageid, initialconfig, instancename, s3owner = "", s3key = "", temp_local_image_path = "" , image_file_size = 0, volume_size_bytes = 0 , imagetype='RAW'):
         """makes instance based on image id - link to public image"""
         self.getDiskSize(imageid)
-		if s3owner:
-			self.__user = s3owner
-		if s3key:
-        	self.__password = s3key
+        if s3owner:
+		    self.__user = s3owner
+	    if s3key:
+            self.__password = s3key
+            self.__ec2Connnection = boto.ec2.connect_to_region(region,aws_access_key_id=self.__user,aws_secret_access_key=self.__password)
         return super(EC2MinipadInstanceGenerator, self).makeInstanceFromImage(imageid, initialconfig, instancename)
 
     def makeVolumeFromImage(self , imageid, initialconfig, instancename):
