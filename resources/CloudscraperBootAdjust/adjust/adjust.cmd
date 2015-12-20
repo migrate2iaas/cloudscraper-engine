@@ -9,9 +9,17 @@ rem if there is no virtio , go in for xen
 if not exist %VIRTIO% (
 :: installs xen if available
 echo "Searching for xen" >> C:\adjustlog.txt
+ver | find "6.3" >nul && goto win2012r2
 if exist %~dp0\..\xen\Citrix_xensetup.exe (
 %~dp0\..\xen\Citrix_xensetup.exe /S
 echo "Xen installed" >> C:\adjustlog.txt
+goto DISABLE_ME
+)
+:win2012r2
+if exist %~dp0\..\xen\AWSPVDriverSetup.msi (
+echo "Installing AWS drivers for win2012r2" >> C:\adjustlog.txt
+AWSPVDriverSetup.msi /quiet
+echo "AWS Xen installed" >> C:\adjustlog.txt
 goto DISABLE_ME
 )
 )
