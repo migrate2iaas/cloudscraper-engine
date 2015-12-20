@@ -113,7 +113,7 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
         #detach all volumes from instance
         volumes = [v for v in self.__ec2Connnection.get_all_volumes() if v.attach_data.instance_id == self.__minipadVM.id]
         for vol in volumes:
-            self.__ec2Connnection.detach_volume(self.__minipadVM.id)
+            self.__ec2Connnection.detach_volume(disk)
 
         #TODO: wait here till detached
         time.sleep(180)
@@ -204,7 +204,7 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
         """makes instance based on image id - link to public image"""
         self.getDiskSize(imageid)
         if s3owner:
-		    self.__user = s3owner
+            self.__user = s3owner
         if s3key:
             self.__password = s3key
             self.__ec2Connnection = boto.ec2.connect_to_region(self.__region,aws_access_key_id=self.__user,aws_secret_access_key=self.__password)
