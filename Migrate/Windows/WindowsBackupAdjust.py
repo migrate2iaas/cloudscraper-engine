@@ -258,13 +258,18 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
         #---------------- 2g) turniong on hyper-v bus so the machine would start in hyper-v
         turn_hyper_v = self.__adjustConfig.turnOnHyperV()
-    
+        
         if turn_hyper_v:
-            logging.info("Turning on HyperV bus") 
-            #Note: it is good for 6.0+ only... well it worked on win2003r2 too.
-            hypervkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\vmbus" , 0 , win32con.KEY_ALL_ACCESS )
-            win32api.RegSetValueEx(hypervkey, "Start" , 0, win32con.REG_DWORD, 0)
-            hypervkey.close()
+            hypervkey = None
+            try:
+                logging.info("Turning on HyperV bus") 
+                #Note: it is good for 6.0+ only... well it worked on win2003r2 too.
+                hypervkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\ControlSet00"+str(currentcontrolset)+"\\Services\\vmbus" , 0 , win32con.KEY_ALL_ACCESS )
+                win32api.RegSetValueEx(hypervkey, "Start" , 0, win32con.REG_DWORD, 0)
+            except Exception as e:
+                logging.warning("!Failed to find vmbus driver. This may cause problems to boot on Hyper-V based clouds (e.g. Azure)")
+            finally:
+                hypervkey.close()
 
         #---------------- 2h) remove extra paltform-dependent virtualization services
         #TODO: make remove scripts

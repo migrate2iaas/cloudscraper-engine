@@ -113,10 +113,11 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
         #detach all volumes from instance
         volumes = [v for v in self.__ec2Connnection.get_all_volumes() if v.attach_data.instance_id == self.__minipadVM.id]
         for vol in volumes:
-            self.__ec2Connnection.detach_volume(disk)
+            logging.debug("Detaching volume " + vol.id)
+            self.__ec2Connnection.detach_volume(vol.id)
 
         #TODO: wait here till detached
-        time.sleep(180)
+        time.sleep(300)
         self.__ec2Connnection.attach_volume(disk , self.__minipadVM.id , "/dev/sda1")
 
         #TODO: change disks here
