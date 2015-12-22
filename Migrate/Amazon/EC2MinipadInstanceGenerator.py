@@ -209,6 +209,7 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
         if s3key:
             self.__password = s3key
             self.__ec2Connnection = boto.ec2.connect_to_region(self.__region,aws_access_key_id=self.__user,aws_secret_access_key=self.__password)
+        #TODO: delete instance on exception
         return super(EC2MinipadInstanceGenerator, self).makeInstanceFromImage(imageid, initialconfig, instancename)
 
     def makeVolumeFromImage(self , imageid, initialconfig, instancename):
