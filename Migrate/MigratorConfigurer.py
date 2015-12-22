@@ -103,6 +103,7 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
         if config.has_section(section):
             if config.has_option(section, 'imagesize'):
                 self.__imageSize = config.getint(section, 'imagesize')
+                logging.debug("imagesize for volume " + str(self.__volumeName) + " is pre-set to " + str(self.__imageSize))
             else:
                 logging.debug("imagesize was not found in the config for volume " + str(self.__volumeName)) 
 
@@ -162,6 +163,8 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
     # image size here is the size of volume in bytes (not in the image file that could be compressed)
     def setImageSize(self , size):
         self.__imageSize = size
+        logging.debug("imagesize for volume " + str(self.__volumeName) + " is set to " + str(self.__imageSize))
+        logging.debug(str(traceback.format_tb()))
 
     def generateMigrationId(self):
         """generates an id to distinguish migration of the same volumes but for different times"""
@@ -578,10 +581,15 @@ class MigratorConfigurer(object):
             if config.has_option('Volumes', 'system'):
                 addsys = config.getboolean('Volumes', 'system') 
                 if addsys:
+                    logging.debug("system is set in volumes config")
                     sysvol = os.environ['windir'].split(':')[0] #todo: change to cross-platform way. windir is set artificially at the program start for linux
                     if not sysvol in letterslist:
                         letterslist.append(sysvol)
+                        logging.debug("appending system volume " + sysvol + " to the volume list")
+                    else:
+                        logging.debug("skipping  " + sysvol + " - it is already in the list")
 
+            logging.debug("Volume letters to process are: " + str(letterslist))
             for letter in letterslist:
                 letter = str(letter).strip() #remove spaces between commas
                 if not letter:

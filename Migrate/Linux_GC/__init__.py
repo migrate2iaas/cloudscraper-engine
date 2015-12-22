@@ -210,6 +210,7 @@ class Linux(object):
             scratch_dir = None
             raise e
 
+        logging.debug("The system fs size to bundle is " + str(options.fs_size))
 
         #it's object to move the system
         #NOTE: for now it moves the whole system only (if include mountpoints flag is set)
