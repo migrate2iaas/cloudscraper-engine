@@ -165,7 +165,7 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
     def setImageSize(self , size):
         self.__imageSize = size
         logging.debug("imagesize for volume " + str(self.__volumeName) + " is set to " + str(self.__imageSize))
-        logging.debug(str(traceback.format_tb()))
+        #logging.debug(str(traceback.format_tb()))
 
     def generateMigrationId(self):
         """generates an id to distinguish migration of the same volumes but for different times"""
