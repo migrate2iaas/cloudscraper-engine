@@ -27,6 +27,7 @@ import ConfigParser
 import logging
 import codecs
 import time
+import traceback
 from MigrateConfig import VolumeMigrateConfig
 import UnicodeConfigParser
 import GzipChunkMedia
