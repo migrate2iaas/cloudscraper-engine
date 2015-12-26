@@ -212,8 +212,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             retries=3,
             compression=False,
             resume_upload=False,
-            resume_file_path="D:\\resume.txt", #None,
-            chunksize=1024*1024, #*10,
+            resume_file_path=None,
+            chunksize=1024*1024*10,
             upload_threads=10,
             queue_size=8,
             ignore_etag=False):
