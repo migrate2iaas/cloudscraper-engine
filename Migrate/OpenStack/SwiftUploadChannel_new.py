@@ -9,15 +9,18 @@ import traceback
 import logging
 import threading
 import json
+import uuid
+import datetime
 import swiftclient.client
 import UploadChannel
+import UploadManifest
 
 from hashlib import md5
 from swiftclient.exceptions import ClientException
 
-sys.path.append('.\..')
-sys.path.append('.\..\OpenStack')
-sys.path.append('.\OpenStack')
+sys.path.append(".\..")
+sys.path.append(".\..\OpenStack")
+sys.path.append(".\OpenStack")
 
 
 class DefferedUploadFileProxy(object):
@@ -100,26 +103,30 @@ class DefferedUploadFileProxy(object):
 
 class SwiftUploadThread(threading.Thread):
     """thread making all uploading works"""
-    def __init__(self, upload_channel, file_proxy, index, file_lock, ignore_etag=False):
+    def __init__(self, upload_channel, file_proxy, offset, resume, ignore_etag=False):
         self.__uploadChannel = upload_channel
         self.__fileProxy = file_proxy
-        self.__index = index
-        self.__fileLock = file_lock
+        self.__offset = offset
+        self.__resume = resume
         self.__ignoreEtag = ignore_etag
+
         super(SwiftUploadThread, self).__init__()
 
     def run(self):
         if self.__uploadChannel.skipExisting():
             logging.debug("Upload thread started with reuploading turned on")
 
+        timestamp = datetime.date(2015, 12, 26)
         res = {
-            'action': 'empty',
-            'success': False,
-            'index': self.__index,
-            'path': "%s/slo/%08d" % (self.__uploadChannel.getDiskName(), self.__index),
-            'etag': None,
-            'size': self.__fileProxy.getSize(),
+            "uuid": "{}".format(uuid.uuid4()),
+            "path": "{}/slo/{}/{:032x}".format(self.__uploadChannel.getDiskName(), timestamp, self.__offset),
+            "etag": "{}".format(None),
+            "timestamp": "{}".format(timestamp),
+            "offset": "{:032x}".format(self.__offset),
+            "status": "{}".format(None),
+            "size": "{:016}".format(self.__fileProxy.getSize()),
         }
+        s = json.dumps(res)
 
         is_exists = False
         connection = None
@@ -128,28 +135,21 @@ class SwiftUploadThread(threading.Thread):
             # Trying to check etag for existing segment
             try:
                 if self.__uploadChannel.skipExisting():
-                    # Trying to find segment in resume upload list, which was loaded from disk
-                    resume_segments = self.__uploadChannel.getResumeSegmentResults()
-                    for i in resume_segments:
-                        if res['index'] == i['index']:
-                            res.update({'etag': i['etag']})
-                            break
-                        
-                    headers = connection.head_object(self.__uploadChannel.getContainerName(), res['path'])
-                    if headers['etag'] == res['etag'] or self.__ignoreEtag:
+                    headers = connection.head_object(self.__uploadChannel.getContainerName(), res["path"])
+                    if headers["etag"] == self.__resume.select("etag") or self.__ignoreEtag:
                         res.update({
-                            'action': 'skip_segment',
-                            'success': True,
-                            'etag': headers['etag']
+                            "status": "S",
+                            "etag": headers["etag"]
                         })
+                        self.__resume.update(res)
                         is_exists = True
-                        logging.info("Data upload skipped for " + res['path'])
+                        logging.info("Data upload skipped for " + res["path"])
                     else:
-                        logging.warn("! Etag mismatch detected for " + res['path'])
+                        logging.warn("! Etag mismatch detected for " + res["path"])
             except (ClientException, Exception) as err:
-                # Passing exception here, it's means that when we unable to check
-                # uploaded segment (it's missing or etag mismatch) we reuploading that segment
-                logging.error("! Unable to reupload segment " + res['path'] + ", " + str(err))
+                # Passing exception here, it"s means that when we unable to check
+                # uploaded segment (it"s missing or etag mismatch) we reuploading that segment
+                logging.error("! Unable to reupload segment " + res["path"] + ", " + str(err))
                 logging.error(traceback.format_exc())
                 pass
 
@@ -157,44 +157,31 @@ class SwiftUploadThread(threading.Thread):
             if is_exists is False:
                 etag = connection.put_object(
                     self.__uploadChannel.getContainerName(),
-                    res['path'],
+                    res["path"],
                     self.__fileProxy,
                     chunk_size=self.__uploadChannel.getChunkSize(),
                     response_dict=results_dict)
                 segment_md5 = self.__fileProxy.getMD5()
                 if etag != segment_md5:
                     raise ClientException(
-                        'Segment {0}: upload verification failed: '
-                        'md5 mismatch, local {1} != remote {2} '
-                        '(remote segment has not been removed)'
-                        .format(res['path'], segment_md5, etag))
+                        "Segment {0}: upload verification failed: "
+                        "md5 mismatch, local {1} != remote {2} "
+                        "(remote segment has not been removed)"
+                        .format(res["path"], segment_md5, etag))
 
-                res.update({
-                    'success': True,
-                    'action': 'upload_segment',
-                    'etag': etag
-                })
+                res.update({"etag": etag})
+                self.__resume.insert(res)
 
-            self.__uploadChannel.appendSegmentResult(res)
-            # Dumping segment results for resuming upload, if needed
-            with self.__fileLock:
-                try:
-                    with open(self.__uploadChannel.getResumeFilePath(), 'w') as f:
-                        json.dump(self.__uploadChannel.getSegmentResults(), f)
-                except Exception as err:
-                    logging.debug("Unable to dump segments for resuming upload: " + str(err))
-                    pass
-
-        except (ClientException, Exception) as err:
+        except (ClientException, Exception) as e:
             self.__fileProxy.cancel()
-            logging.error("!!!ERROR: unable to upload segment '%08d', reason: %s" % (res['index'], err.message))
+            logging.error("!!!ERROR: unable to upload segment {}. Reason: {}".format(res["offset"], e))
             logging.error(traceback.format_exc())
         finally:
             # We should compete every file proxy to avoid deadlocks
             # Notify that upload complete
             self.__fileProxy.setComplete(is_exists)
 
-            # Each file proxy must be released, because internally it's use Queue
+            # Each file proxy must be released, because internally it"s use Queue
             # synchronization primitive and it must be released, when, for example, exception happens
             self.__fileProxy.release()
 
@@ -205,7 +192,7 @@ class SwiftUploadThread(threading.Thread):
                 connection.close()
             self.__uploadChannel.completeUploadThread()
 
-        logging.debug("Upload thread for '%08d' done" % self.__index)
+        logging.debug("Upload thread for {} done".format(self.__offset))
 
 class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     """
@@ -225,8 +212,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             retries=3,
             compression=False,
             resume_upload=False,
-            resume_file_path=None,
-            chunksize=10*1024*1024,
+            resume_file_path="D:\\resume.txt", #None,
+            chunksize=1024*1024, #*10,
             upload_threads=10,
             queue_size=8,
             ignore_etag=False):
@@ -242,16 +229,14 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__chunkSize = chunksize
         self.__diskSize = resulting_size_bytes
         self.__resumeUpload = resume_upload
-        self.__resumeFilePath = resume_file_path
         self.__uploadThreads = threading.BoundedSemaphore(upload_threads)
         self.__segmentQueueSize = queue_size
         self.__segmentsList = []
         self.__resumeSegmentsList = []
         self.__fileProxies = []
-        self.__fileLock = threading.Lock()
         self.__ignoreEtag = ignore_etag
 
-        # Max segment number is 1000 (it's configurable see http://docs.openstack.org/developer/swift/middleware.html )
+        # Max segment number is 1000 (it"s configurable see http://docs.openstack.org/developer/swift/middleware.html )
         self.__segmentSize = max(int(self.__diskSize / 512), self.__chunkSize)
         if self.__segmentSize % self.__chunkSize:
             # Make segment size an integer of chunks
@@ -260,16 +245,14 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         logging.info("Segment size: " + str(self.__segmentSize) + " chunk size: " + str(self.__chunkSize))
         logging.info("SSL compression is " + str(self.__compression))
 
-        # Loading segment results if resuming upload
-        # Note: resume upload file overrides when segment uploaded
-        logging.info("Resume upload file path: " + str(self.__resumeFilePath) +
-                     ", resume upload is " + str(self.__resumeUpload))
-        if self.__resumeUpload:
-            try:
-                with open(self.__resumeFilePath, 'r') as f:
-                    self.__resumeSegmentsList = json.load(f)
-            except Exception as err:
-                logging.warn("!Warning: cannot open file containing segments" + str(err))
+        # Resume upload
+        logging.info("Resume upload file path: {}, resume upload is {}".format(resume_file_path, self.__resumeUpload))
+        self.__resume = None
+        try:
+            self.__resume = UploadManifest.ImageFileManifest(resume_file_path, threading.Lock())
+        except Exception as e:
+            logging.warn("!!!ERROR: cannot open file containing segments. Reason: {}".format(e))
+            raise
 
         super(SwiftUploadChannel_new, self).__init__()
 
@@ -283,7 +266,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         if offset == 0:
             # Checking if we can create more upload threads, they releases when calls completeUploadThread() routine
             self.__uploadThreads.acquire()
-            logging.debug("Starting new upload thread for '%08d'" % index)
+            logging.debug("Starting new upload thread for \"%08d\"" % index)
 
             # Checking if this is the last segment
             if extent.getStart() + self.__segmentSize > self.__diskSize:
@@ -291,7 +274,12 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             else:
                 segment_size = self.__segmentSize
             self.__fileProxies.insert(index, DefferedUploadFileProxy(self.__segmentQueueSize, segment_size))
-            SwiftUploadThread(self, self.__fileProxies[index], index, self.__fileLock, self.__ignoreEtag).start()
+            SwiftUploadThread(
+                self,
+                self.__fileProxies[index],
+                extent.getStart(),
+                self.__resume,
+                self.__ignoreEtag).start()
 
         self.__fileProxies[index].write(extent)
 
@@ -301,15 +289,6 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         # Releasing semaphore. This call must be for every created upload thread
         # to avoid thread endless waiting.
         self.__uploadThreads.release()
-
-    def getSegmentResults(self):
-        return self.__segmentsList
-
-    def getResumeSegmentResults(self):
-        return self.__resumeSegmentsList
-
-    def appendSegmentResult(self, result):
-         return self.__segmentsList.append(result)
 
     def getContainerName(self):
         return self.__containerName
@@ -329,10 +308,10 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     def createConnection(self):
         return swiftclient.client.Connection(
             self.__serverURL,
-            self.__tennantName + ':' + self.__userName,
+            self.__tennantName + ":" + self.__userName,
             self.__password,
             self.__retries,
-            auth_version='2',
+            auth_version="2",
             snet=False,
             ssl_compression=self.__compression,
             timeout=86400)
@@ -343,30 +322,30 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         Throws in case of unrecoverable errors
         """
         res = {
-            'success': False,
-            'headers': None,
-            'container': self.__containerName,
+            "success": False,
+            "headers": None,
+            "container": self.__containerName,
         }
 
         resp_dict = {}
         connection = None
         try:
             connection = self.createConnection()
-            res['action'] = 'put_container'
-            connection.put_container(res['container'], headers=res['headers'], response_dict=resp_dict)
+            res["action"] = "put_container"
+            connection.put_container(res["container"], headers=res["headers"], response_dict=resp_dict)
 
-            res['action'] = 'post_container'
-            res['headers'] = {'X-Container-Read': '.r:*'}
-            connection.post_container(res['container'], headers=res['headers'], response_dict=resp_dict)
+            res["action"] = "post_container"
+            res["headers"] = {"X-Container-Read": ".r:*"}
+            connection.post_container(res["container"], headers=res["headers"], response_dict=resp_dict)
 
-            res['success'] = True
+            res["success"] = True
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
         finally:
             if connection:
                 connection.close()
 
-        return res['success']
+        return res["success"]
 
 
     def getUploadPath(self):
@@ -401,24 +380,22 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         try:
             # If segments size and disk size mismatch
             total_size = 0
-
-            # If segment dictionary has error:
-            for i in self.__segmentsList:
-                if i['success']:
-                    total_size += i['size']
+            r_list = self.__resume.dump()
+            for rec in r_list:
+                total_size += int(rec["size"])
 
             if total_size != self.__diskSize:
-                raise ClientException("Not all segments uploaded successfully " + str(total_size) +
-                                      " uploaded " + str(self.__diskSize) + " expected")
+                raise ClientException("Not all segments uploaded successfully: {} uploaded, {} expected".format(
+                    total_size, self.__diskSize))
 
             # Segments can upload not in sequential order, so we need to sort them for manifest
-            self.__segmentsList.sort(key=lambda di: di['index'])
+            r_list.sort(key=lambda di: di["offset"])
 
             # Creating manifest
             manifest_data = json.dumps([{
-                    'path': self.__containerName + '/' + d['path'],
-                    'etag': d['etag'],
-                    'size_bytes': d['size']
+                    "path": self.__containerName + "/" + d["path"],
+                    "etag": d["etag"],
+                    "size_bytes": int(d["size"])
             } for d in self.__segmentsList])
 
             mr = {}
@@ -427,11 +404,11 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                 self.__containerName,
                 self.__diskName,
                 manifest_data,
-                headers={'x-static-large-object': 'true'},
-                query_string='multipart-manifest=put',
+                headers={"x-static-large-object": "true"},
+                query_string="multipart-manifest=put",
                 response_dict=mr
             )
-            storage_url = connection.url + '/' + self.__containerName + '/' + self.__diskName
+            storage_url = connection.url + "/" + self.__containerName + "/" + self.__diskName
             connection.close()
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
