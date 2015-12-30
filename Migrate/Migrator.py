@@ -30,7 +30,9 @@ import ProxyTransferTarget
 class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT reside"""
 
-    def __init__(self , cloud_options , migrate_options, sys_adjust_overrides , skip_imaging=False, resume_upload=False, skip_upload=False , self_checks=False , limits = None , insert_vitio = False):
+    def __init__(
+            self, cloud_options, migrate_options, sys_adjust_overrides, skip_imaging=False, resume_upload=False,
+            skip_upload=False, self_checks=False, limits=None, insert_vitio=False):
         """
         Inits the Migrator mega-class. 
 
@@ -594,11 +596,17 @@ class Migrator(object):
                 if self.__runOnWindows:
                     #TODO: need kinda redisign the stuff related to system adjusts!
                     if self.__skipImaging == False:
-                       self.__dataTransferTargetList[volinfo.getVolumePath()] = self.createTransferTarget(media , volinfo.getImageSize(), self.__winSystemAdjustOptions)
+                       self.__dataTransferTargetList[volinfo.getVolumePath()] = self.createTransferTarget(
+                           media, volinfo.getImageSize(), self.__winSystemAdjustOptions)
         
                 if self.__skipUpload == False:
                     description = os.environ['COMPUTERNAME']+"_"+"data"+"_"+str(datetime.date.today())
-                    self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , self.__cloudOptions.getServerName() or description,  volinfo.getUploadPath() , self.__resumeUpload , self.__dataMediaList[volinfo.getVolumePath()].getImageSize() )
+                    self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(
+                        self.__dataMediaList[volinfo.getVolumePath()].getMaxSize(),
+                        self.__cloudOptions.getServerName() or description,
+                        volinfo.getUploadPath(),
+                        self.__resumeUpload,
+                        self.__dataMediaList[volinfo.getVolumePath()].getImageSize())
                     self.__dataChannelList[volinfo.getVolumePath()].initStorage()
 
                     # update the upload path in config in case it was changed or created by the channel

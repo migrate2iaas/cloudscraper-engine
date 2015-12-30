@@ -38,7 +38,7 @@ import logging
 import threading 
 import datetime
 import UploadChannel
-
+import UploadManifest
 
 
 import base64
@@ -292,7 +292,10 @@ class S3UploadChannel(UploadChannel.UploadChannel):
     #TODO: we need kinda open method for the channel
     #TODO: need kinda doc
     #chunk size means one data element to be uploaded. it waits till all the chunk is transfered to the channel than makes an upload (not fully implemented)
-    def __init__(self, bucket, awskey, awssercret , resultDiskSizeBytes , location = '' , keynameBase = None, diskType = 'VHD' , resume_upload = False , chunksize=10*1024*1024 , upload_threads=4 , queue_size=16 , use_ssl = True , walrus = False , walrus_path = "/services/WalrusBackend" , walrus_port = 8773 , make_link_public = False):
+    def __init__(
+            self, bucket, awskey, awssercret, resultDiskSizeBytes, location='', keynameBase=None, diskType='VHD',
+            resume_upload=False, chunksize=10*1024*1024, upload_threads=4, queue_size=16, use_ssl=True, resume_path="",
+            walrus=False, walrus_path="/services/WalrusBackend", walrus_port=8773, make_link_public=False):
         self.__uploadQueue = Queue.Queue(queue_size)
         self.__statLock = threading.Lock()
         self.__prevUploadTime = None 

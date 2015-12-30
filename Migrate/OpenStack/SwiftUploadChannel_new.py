@@ -103,11 +103,11 @@ class DefferedUploadFileProxy(object):
 
 class SwiftUploadThread(threading.Thread):
     """thread making all uploading works"""
-    def __init__(self, upload_channel, file_proxy, offset, resume, ignore_etag=False):
+    def __init__(self, upload_channel, file_proxy, offset, manifest, ignore_etag=False):
         self.__uploadChannel = upload_channel
         self.__fileProxy = file_proxy
         self.__offset = offset
-        self.__resume = resume
+        self.__manifest = manifest
         self.__ignoreEtag = ignore_etag
 
         super(SwiftUploadThread, self).__init__()
@@ -116,40 +116,28 @@ class SwiftUploadThread(threading.Thread):
         if self.__uploadChannel.skipExisting():
             logging.debug("Upload thread started with reuploading turned on")
 
-        timestamp = datetime.date(2015, 12, 26)
-        res = {
-            "uuid": "{}".format(uuid.uuid4()),
-            "path": "{}/slo/{}/{:032x}".format(self.__uploadChannel.getDiskName(), timestamp, self.__offset),
-            "etag": "{}".format(None),
-            "timestamp": "{}".format(timestamp),
-            "offset": "{:032x}".format(self.__offset),
-            "status": "{}".format(None),
-            "size": "{:016}".format(self.__fileProxy.getSize()),
-        }
-        s = json.dumps(res)
-
         is_exists = False
         connection = None
+        path = self.__manifest.get_path(self.__offset)
         try:
             connection = self.__uploadChannel.createConnection()
             # Trying to check etag for existing segment
             try:
                 if self.__uploadChannel.skipExisting():
-                    headers = connection.head_object(self.__uploadChannel.getContainerName(), res["path"])
-                    if headers["etag"] == self.__resume.select("etag") or self.__ignoreEtag:
-                        res.update({
-                            "status": "S",
-                            "etag": headers["etag"]
-                        })
-                        self.__resume.update(res)
+                    headers = connection.head_object(self.__uploadChannel.getContainerName(), path)
+                    if self.__manifest.select(headers["etag"]) or self.__ignoreEtag:
+                        # res.update({
+                        #     "status": "S",
+                        #     "etag": headers["etag"]
+                        # })
+                        # self.__manifest.update(res)
                         is_exists = True
-                        logging.info("Data upload skipped for " + res["path"])
-                    else:
-                        logging.warn("! Etag mismatch detected for " + res["path"])
-            except (ClientException, Exception) as err:
+                        logging.info("Data upload skipped for {}".format(path))
+
+            except (ClientException, Exception) as e:
                 # Passing exception here, it"s means that when we unable to check
                 # uploaded segment (it"s missing or etag mismatch) we reuploading that segment
-                logging.error("! Unable to reupload segment " + res["path"] + ", " + str(err))
+                logging.error("! Unable to reupload segment {}: {}".format(path, str(e)))
                 logging.error(traceback.format_exc())
                 pass
 
@@ -157,7 +145,7 @@ class SwiftUploadThread(threading.Thread):
             if is_exists is False:
                 etag = connection.put_object(
                     self.__uploadChannel.getContainerName(),
-                    res["path"],
+                    path,
                     self.__fileProxy,
                     chunk_size=self.__uploadChannel.getChunkSize(),
                     response_dict=results_dict)
@@ -167,14 +155,13 @@ class SwiftUploadThread(threading.Thread):
                         "Segment {0}: upload verification failed: "
                         "md5 mismatch, local {1} != remote {2} "
                         "(remote segment has not been removed)"
-                        .format(res["path"], segment_md5, etag))
+                        .format(path, segment_md5, etag))
 
-                res.update({"etag": etag})
-                self.__resume.insert(res)
+                self.__manifest.insert(etag, self.__offset, "U", self.__fileProxy.getSize())
 
         except (ClientException, Exception) as e:
             self.__fileProxy.cancel()
-            logging.error("!!!ERROR: unable to upload segment {}. Reason: {}".format(res["offset"], e))
+            logging.error("!!!ERROR: unable to upload segment {}. Reason: {}".format(self.__offset, e))
             logging.error(traceback.format_exc())
         finally:
             # We should compete every file proxy to avoid deadlocks
@@ -211,9 +198,9 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             container_name,
             retries=3,
             compression=False,
-            resume_upload=False,
-            resume_file_path=None,
-            chunksize=1024*1024*10,
+            resume_upload=True,#False,
+            manifest_path="D:\\backup-manifest",#None,
+            chunksize=1024*1024,#*10,
             upload_threads=10,
             queue_size=8,
             ignore_etag=False):
@@ -246,10 +233,14 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         logging.info("SSL compression is " + str(self.__compression))
 
         # Resume upload
-        logging.info("Resume upload file path: {}, resume upload is {}".format(resume_file_path, self.__resumeUpload))
-        self.__resume = None
+        logging.info("Resume upload file path: {}, resume upload is {}".format(manifest_path, self.__resumeUpload))
+        self.__manifest = None
         try:
-            self.__resume = UploadManifest.ImageFileManifest(resume_file_path, threading.Lock())
+            manifest_db = UploadManifest.ImageManifestDatabase(manifest_path, self.__diskName, threading.Lock())
+            if self.__resumeUpload:
+                self.__manifest = manifest_db.getLastManifest()
+            else:
+                self.__manifest = manifest_db.createManifest()
         except Exception as e:
             logging.warn("!!!ERROR: cannot open file containing segments. Reason: {}".format(e))
             raise
@@ -278,7 +269,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                 self,
                 self.__fileProxies[index],
                 extent.getStart(),
-                self.__resume,
+                self.__manifest,
                 self.__ignoreEtag).start()
 
         self.__fileProxies[index].write(extent)
@@ -299,8 +290,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     def skipExisting(self):
         return self.__resumeUpload
 
-    def getResumeFilePath(self):
-        return self.__resumeFilePath
+    def getResumePath(self):
+        return self.__resumePath
 
     def getChunkSize(self):
         return self.__chunkSize
@@ -331,10 +322,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         connection = None
         try:
             connection = self.createConnection()
-            res["action"] = "put_container"
             connection.put_container(res["container"], headers=res["headers"], response_dict=resp_dict)
 
-            res["action"] = "post_container"
             res["headers"] = {"X-Container-Read": ".r:*"}
             connection.post_container(res["container"], headers=res["headers"], response_dict=resp_dict)
 
@@ -380,7 +369,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         try:
             # If segments size and disk size mismatch
             total_size = 0
-            r_list = self.__resume.dump()
+            r_list = self.__manifest.dump()
             for rec in r_list:
                 total_size += int(rec["size"])
 

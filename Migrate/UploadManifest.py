@@ -1,4 +1,7 @@
 import json
+import uuid
+import datetime
+import os
 
 #
 #
@@ -43,8 +46,33 @@ import json
 #         return self.__r_md5
 
 
+class ImageManifestDatabase(object):
+    def __init__(self, manifest_path, disk_name, lock):
+        self.__manifest_path = manifest_path
+        self.__disk_name = disk_name
+        self.__lock = lock
+
+    def createManifest(self):
+        return ImageFileManifest(
+                self.__manifest_path,
+                datetime.datetime.now().strftime("%Y-%m-%d %H-%M"),
+                self.__disk_name,
+                self.__lock)
+
+    def getLastManifest(self):
+        f = []
+        for filename in os.listdir(self.__manifest_path):
+            f.append(filename)
+        f.sort(reverse=True)
+
+        return ImageFileManifest(
+                self.__manifest_path,
+                f[0],
+                self.__disk_name,
+                self.__lock) if f else None
+
 class ImageManifest(object):
-    def __init__(self, source, lock):
+    def __init__(self):
         pass
 
     def insert(self, rec):
@@ -59,29 +87,33 @@ class ImageManifest(object):
     def dump(self):
         raise NotImplementedError
 
+    def get_path(self):
+        raise NotImplementedError
 
 class ImageFileManifest(ImageManifest):
-    def __init__(self, source, lock):
-        self.__source = open(source, "a+")
+    def __init__(self, manifest_path, timestamp, disk_name, lock):
+        self.__source = open("{}/{}".format(manifest_path, timestamp), "a+")
+        self.__timestamp = timestamp
+        self.__disk_name = disk_name
         self.__lock = lock
 
-        super(ImageFileManifest, self).__init__(source, lock)
+        super(ImageFileManifest, self).__init__()
 
-    def insert(self, rec):
+    def insert(self, etag, offset, status, size):
         try:
-            self.select(rec["etag"])
+            self.select(etag)
         except KeyError:
             with self.__lock:
                 self.__source.write(
                     "{{\"uuid\": \"{}\", \"path\": \"{}\", \"etag\": \"{}\", \"timestamp\": \"{}\", "
-                    "\"offset\": \"{}\", \"status\": \"{}\", \"size\": \"{}\"}}\n".format(
-                        rec["uuid"],
-                        rec["path"],
-                        rec["etag"],
-                        rec["timestamp"],
-                        rec["offset"],
-                        rec["status"],
-                        rec["size"],))
+                    "\"offset\": \"{:032x}\", \"status\": \"{}\", \"size\": \"{:016}\"}}\n".format(
+                        uuid.uuid4(),
+                        self.get_path(offset),
+                        etag,
+                        self.__timestamp,
+                        offset,
+                        status,
+                        size))
                 self.__source.flush()
 
     def update(self, rec):
@@ -95,7 +127,7 @@ class ImageFileManifest(ImageManifest):
                 if rec_dict["etag"] == etag:
                     return rec_dict
 
-        raise KeyError
+        return None
 
     def dump(self):
         r_list = []
@@ -105,3 +137,6 @@ class ImageFileManifest(ImageManifest):
                 r_list.append(json.loads(rec))
 
         return r_list
+
+    def get_path(self, offset):
+        return "{}/slo/{}/{:032x}".format(self.__disk_name, self.__timestamp, offset)

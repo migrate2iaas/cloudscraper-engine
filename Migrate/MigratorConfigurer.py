@@ -290,17 +290,18 @@ class MigratorConfigurer(object):
         if config.has_option('OpenStack', 'ignore_etag'):
             ignore_etag = config.get('OpenStack', 'ignore_etag')
             
-        resume_file_path = "C:\\cloudscraper-resume.json"
-        if config.has_option('OpenStack', 'resume_file_path'):
-            resume_file_path = config.get('OpenStack', 'resume_file_path')
+        manifest_path = "C:\\manifest\\"
+        if config.has_option('OpenStack', 'manifest_path'):
+            manifest_path = config.get('OpenStack', 'manifest_path')
 
-        adjust_override = self.getOverrides(config , configfile)
-        image = OpenStackConfigs.OpenStackMigrateConfig(volumes , factory, 'x86_64' , imagetype)
-        cloud = OpenStackConfigs.OpenStackCloudOptions(endpoint , user, tennant, password, network, imagetype, container, flavor = flavor, ip_pool_name = ip_pool,\
-            swift_server_url = swift_server_url , swift_tennant_name = swift_tennant_name , swift_username = swift_username ,
-            swift_password = swift_password , swift_container=swift_container , compression=swift_compression , use_new_channel=use_new_channel,
-            resume_file_path=resume_file_path, ignore_etag=ignore_etag)
-        return (image,adjust_override,cloud)
+        adjust_override = self.getOverrides(config, configfile)
+        image = OpenStackConfigs.OpenStackMigrateConfig(volumes, factory, 'x86_64' , imagetype)
+        cloud = OpenStackConfigs.OpenStackCloudOptions(
+            endpoint, user, tennant, password, network, imagetype, container, flavor=flavor, ip_pool_name=ip_pool,
+            swift_server_url=swift_server_url, swift_tennant_name=swift_tennant_name, swift_username=swift_username,
+            swift_password=swift_password, swift_container=swift_container, compression=swift_compression,
+            use_new_channel=use_new_channel, manifest_path=manifest_path, ignore_etag=ignore_etag)
+        return (image, adjust_override, cloud)
 
     def configOnApp(self, configfile, config, password):
          # generic for other clouds
@@ -518,6 +519,10 @@ class MigratorConfigurer(object):
         chunksize = 10*1024*1024
         if config.has_option('EC2', 'chunksize'):
            chunksize = int(config.get('EC2', 'chunksize'))
+
+        manifest_path = "C:\\manifest\\"
+        if config.has_option('EC2', 'manifest_path'):
+            manifest_path = config.get('EC2', 'manifest_path')
            
         bucket = ''
 
@@ -550,9 +555,11 @@ class MigratorConfigurer(object):
 
         image = AmazonConfigs.AmazonMigrateConfig(volumes , factory, imagearch , imagetype)
         #TODO: add machine name
-        cloud = AmazonConfigs.AmazonCloudOptions(bucket = bucket , user=user , password=password , newsize=newsize , arch=arch , zone= zone \
-                                                , region=region , machinename="" , securityid=security , instancetype=instancetype \
-                                                , chunksize = chunksize, disktype = imagetype , keyname_prefix = s3prefix , vpc=vpcsubnet , custom_host = custom_host , custom_port = custom_port , custom_suffix = custom_suffix , use_ssl = use_ssl )
+        cloud = AmazonConfigs.AmazonCloudOptions(
+            bucket=bucket, user=user, password=password, newsize=newsize, arch=arch, zone=zone, region=region,
+            machinename="", securityid=security, instancetype=instancetype, chunksize=chunksize, disktype=imagetype,
+            keyname_prefix=s3prefix, vpc=vpcsubnet, custom_host=custom_host, custom_port=custom_port,
+            custom_suffix=custom_suffix, use_ssl=use_ssl, resume_path=manifest_path)
         
 
         return (image,adjust_override,cloud)
