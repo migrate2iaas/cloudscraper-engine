@@ -198,9 +198,9 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             container_name,
             retries=3,
             compression=False,
-            resume_upload=True,#False,
-            manifest_path="D:\\backup-manifest",#None,
-            chunksize=1024*1024,#*10,
+            resume_upload=False,
+            manifest_path=None,
+            chunksize=1024*1024*10,
             upload_threads=10,
             queue_size=8,
             ignore_etag=False):
@@ -379,32 +379,37 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
             # Segments can upload not in sequential order, so we need to sort them for manifest
             r_list.sort(key=lambda di: di["offset"])
-
-            # Creating manifest
-            manifest_data = json.dumps([{
-                    "path": self.__containerName + "/" + d["path"],
-                    "etag": d["etag"],
-                    "size_bytes": int(d["size"])
-            } for d in self.__segmentsList])
-
-            mr = {}
-            connection = self.createConnection()
-            connection.put_object(
-                self.__containerName,
-                self.__diskName,
-                manifest_data,
-                headers={"x-static-large-object": "true"},
-                query_string="multipart-manifest=put",
-                response_dict=mr
-            )
-            storage_url = connection.url + "/" + self.__containerName + "/" + self.__diskName
-            connection.close()
+            return self.__uploadCloudManifest(self.__createCloudManifest(r_list))
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
             raise
 
-        return storage_url
+        return None
 
+
+    def __createCloudManifest(self, segment_list):
+        # Creating manifest
+        return json.dumps([{
+                "path": self.__containerName + "/" + d["path"],
+                "etag": d["etag"],
+                "size_bytes": int(d["size"])
+        } for d in segment_list])
+
+    def __uploadCloudManifest(self, manifest_data):
+        mr = {}
+        connection = self.createConnection()
+        connection.put_object(
+            self.__containerName,
+            self.__diskName,
+            manifest_data,
+            headers={"x-static-large-object": "true"},
+            query_string="multipart-manifest=put",
+            response_dict=mr
+        )
+        storage_url = connection.url + "/" + self.__containerName + "/" + self.__diskName
+        connection.close()
+
+        return storage_url
 
     def getTransferChunkSize(self):
        """
