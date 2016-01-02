@@ -75,7 +75,7 @@ class ImageManifest(object):
     def __init__(self):
         pass
 
-    def insert(self, rec):
+    def insert(self, etag, part_name, offset, size, status):
         raise NotImplementedError
 
     def select(self, r_hash):
@@ -99,21 +99,20 @@ class ImageFileManifest(ImageManifest):
 
         super(ImageFileManifest, self).__init__()
 
-    def insert(self, etag, offset, status, size):
-        try:
-            self.select(etag)
-        except KeyError:
+    def insert(self, etag, part_name, offset, size, status):
+        if self.select(etag) is None:
             with self.__lock:
                 self.__source.write(
                     "{{\"uuid\": \"{}\", \"path\": \"{}\", \"etag\": \"{}\", \"timestamp\": \"{}\", "
-                    "\"offset\": \"{:032x}\", \"status\": \"{}\", \"size\": \"{:016}\"}}\n".format(
+                    "\"part_name\": \"{}\", \"offset\": \"{}\", \"size\": \"{:016}\", \"status\": \"{}\"}}\n".format(
                         uuid.uuid4(),
-                        self.get_path(offset),
+                        self.__disk_name,
                         etag,
                         self.__timestamp,
+                        part_name,
                         offset,
-                        status,
-                        size))
+                        size,
+                        status))
                 self.__source.flush()
 
     def update(self, rec):
@@ -137,6 +136,3 @@ class ImageFileManifest(ImageManifest):
                 r_list.append(json.loads(rec))
 
         return r_list
-
-    def get_path(self, offset):
-        return "{}/slo/{}/{:032x}".format(self.__disk_name, self.__timestamp, offset)

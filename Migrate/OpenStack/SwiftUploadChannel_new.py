@@ -1,7 +1,7 @@
 # --------------------------------------------------------
 __author__ = "Alexey Kondratiev"
 __copyright__ = "Copyright (C) 2015 Migrate2Iaas"
-#---------------------------------------------------------
+# ---------------------------------------------------------
 
 import sys
 import Queue
@@ -9,8 +9,6 @@ import traceback
 import logging
 import threading
 import json
-import uuid
-import datetime
 import swiftclient.client
 import UploadChannel
 import UploadManifest
@@ -181,6 +179,7 @@ class SwiftUploadThread(threading.Thread):
 
         logging.debug("Upload thread for {} done".format(self.__offset))
 
+
 class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     """
     Upload channel for Swift implementation
@@ -336,7 +335,6 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         return res["success"]
 
-
     def getUploadPath(self):
         """
         Gets the upload path identifying the upload sufficient to upload the disk in case storage account and
@@ -344,10 +342,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         """
         return self.__diskName
 
-
     def getTransferChunkSize(self):
         return self.__chunkSize
-
 
     def waitTillUploadComplete(self):
         """Waits till upload completes"""
@@ -358,7 +354,6 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         logging.info("Upload threads are completed, closing threads")
         self.close()
         return
-
 
     def confirm(self):
         """
@@ -378,14 +373,13 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                     total_size, self.__diskSize))
 
             # Segments can upload not in sequential order, so we need to sort them for manifest
-            r_list.sort(key=lambda di: di["offset"])
+            r_list.sort(key=lambda di: int(di["offset"]))
             return self.__uploadCloudManifest(self.__createCloudManifest(r_list))
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
             raise
 
         return None
-
 
     def __createCloudManifest(self, segment_list):
         # Creating manifest
@@ -412,20 +406,18 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         return storage_url
 
     def getTransferChunkSize(self):
-       """
-       Gets the size of transfer chunk in bytes.
-       All the data except the last chunk should be aligned and be integral of this size
-       """
-       return self.__chunkSize
-
+        """
+        Gets the size of transfer chunk in bytes.
+        All the data except the last chunk should be aligned and be integral of this size
+        """
+        return self.__chunkSize
 
     def getDataTransferRate(self):
-       """
-       Return:
+        """
+        Return:
             float: approx. number of bytes transfered per second
-       """
-       return 0
-
+        """
+        return 0
 
     def getOverallDataSkipped(self):
         """
@@ -441,7 +433,6 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         return total_size
 
-
     def getOverallDataTransfered(self):
         """
         Gets overall size of data actually uploaded (not skipped) in bytes.
@@ -455,13 +446,11 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         return total_size
 
-
     def getImageSize(self):
         """
         Gets image data size to be uploaded
         """
         return self.__diskSize
-
 
     def getDiskUploadedProperty(self):
         """
@@ -469,7 +458,6 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         This data could be loaded from the disk object on cloud side which channel represents
         """
         return 0
-
 
     def close(self):
         """Closes the channel, sending all upload threads signal to end their operation"""
