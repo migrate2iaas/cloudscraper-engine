@@ -33,7 +33,7 @@ class S3UploadChannel_test(unittest.TestCase):
         self.__key = 'AKIAIY2X62QVIHOPEFEQ'
         self.__secret = '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'
         self.__channel = None
-        self.__backup_db = "D:\\cloudscraper-backups"
+        self.__backup_db = "C:\\backup-manifest"
         logging.basicConfig(format='%(asctime)s %(message)s' , filename='s3channel.log',level=logging.DEBUG)
         handler = logging.StreamHandler(stream=sys.stderr)
         handler.setLevel(logging.DEBUG)

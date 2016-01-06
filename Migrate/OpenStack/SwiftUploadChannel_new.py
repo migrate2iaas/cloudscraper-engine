@@ -209,7 +209,6 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__uploadThreads = threading.BoundedSemaphore(upload_threads)
         self.__segmentQueueSize = queue_size
         self.__segmentsList = []
-        self.__resumeSegmentsList = []
         self.__fileProxies = []
         self.__ignoreEtag = ignore_etag
 

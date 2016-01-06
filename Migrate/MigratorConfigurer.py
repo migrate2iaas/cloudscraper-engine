@@ -290,7 +290,7 @@ class MigratorConfigurer(object):
         if config.has_option('OpenStack', 'ignore_etag'):
             ignore_etag = config.get('OpenStack', 'ignore_etag')
             
-        manifest_path = "C:\\manifest\\"
+        manifest_path = "C:\\backup-manifest"
         if config.has_option('OpenStack', 'manifest_path'):
             manifest_path = config.get('OpenStack', 'manifest_path')
 
@@ -520,7 +520,7 @@ class MigratorConfigurer(object):
         if config.has_option('EC2', 'chunksize'):
            chunksize = int(config.get('EC2', 'chunksize'))
 
-        manifest_path = "C:\\manifest\\"
+        manifest_path = "C:\\backup-manifest"
         if config.has_option('EC2', 'manifest_path'):
             manifest_path = config.get('EC2', 'manifest_path')
            
