@@ -114,48 +114,39 @@ class SwiftUploadThread(threading.Thread):
         if self.__uploadChannel.skipExisting():
             logging.debug("Upload thread started with reuploading turned on")
 
-        is_exists = False
+        upload = True
         connection = None
-        path = self.__manifest.get_path(self.__offset)
+        segment_md5 = self.__fileProxy.getMD5()
         try:
             connection = self.__uploadChannel.createConnection()
             # Trying to check etag for existing segment
             try:
-                if self.__uploadChannel.skipExisting():
-                    headers = connection.head_object(self.__uploadChannel.getContainerName(), path)
-                    if self.__manifest.select(headers["etag"]) or self.__ignoreEtag:
-                        # res.update({
-                        #     "status": "S",
-                        #     "etag": headers["etag"]
-                        # })
-                        # self.__manifest.update(res)
-                        is_exists = True
-                        logging.info("Data upload skipped for {}".format(path))
+                if self.__uploadChannel.skipExisting() or self.__ignoreEtag:
+                    res = self.__manifest.select(segment_md5)
+                    # Check, if segment with same local part_name exsists in storage
+                    if res and connection.head_object(self.__uploadChannel.getContainerName(), res["part_name"]):
+                        upload = False
+                        logging.info("Data upload skipped for {}".format(res["part_name"]))
 
             except (ClientException, Exception) as e:
                 # Passing exception here, it"s means that when we unable to check
                 # uploaded segment (it"s missing or etag mismatch) we reuploading that segment
-                logging.error("! Unable to reupload segment {}: {}".format(path, str(e)))
+                logging.error("! Unable to reupload segment {}: {}".format(self.__offset, str(e)))
                 logging.error(traceback.format_exc())
                 pass
 
             results_dict = {}
-            if is_exists is False:
+            # Part name example: "medium.file/slo/2016-01-06 14-54/0"
+            part_name = "{}/slo/{}/{}".format(
+                self.__uploadChannel.getDiskName(), self.__manifest.get_timestamp(), self.__offset)
+            if upload:
                 etag = connection.put_object(
                     self.__uploadChannel.getContainerName(),
-                    path,
+                    part_name,
                     self.__fileProxy,
                     chunk_size=self.__uploadChannel.getChunkSize(),
                     response_dict=results_dict)
-                segment_md5 = self.__fileProxy.getMD5()
-                if etag != segment_md5:
-                    raise ClientException(
-                        "Segment {0}: upload verification failed: "
-                        "md5 mismatch, local {1} != remote {2} "
-                        "(remote segment has not been removed)"
-                        .format(path, segment_md5, etag))
-
-                self.__manifest.insert(etag, self.__offset, "U", self.__fileProxy.getSize())
+                self.__manifest.insert(etag, part_name, self.__offset, self.__fileProxy.getSize(), "U")
 
         except (ClientException, Exception) as e:
             self.__fileProxy.cancel()
@@ -164,7 +155,7 @@ class SwiftUploadThread(threading.Thread):
         finally:
             # We should compete every file proxy to avoid deadlocks
             # Notify that upload complete
-            self.__fileProxy.setComplete(is_exists)
+            self.__fileProxy.setComplete(upload)
 
             # Each file proxy must be released, because internally it"s use Queue
             # synchronization primitive and it must be released, when, for example, exception happens
@@ -374,17 +365,17 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
             # Segments can upload not in sequential order, so we need to sort them for manifest
             r_list.sort(key=lambda di: int(di["offset"]))
-            return self.__uploadCloudManifest(self.__createCloudManifest(r_list))
+            storage_url = self.__uploadCloudManifest(self.__createCloudManifest(r_list))
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
-            raise
+            logging.error(traceback.format_exc())
 
-        return None
+        return storage_url
 
     def __createCloudManifest(self, segment_list):
         # Creating manifest
         return json.dumps([{
-                "path": self.__containerName + "/" + d["path"],
+                "path": self.__containerName + "/" + d["part_name"],
                 "etag": d["etag"],
                 "size_bytes": int(d["size"])
         } for d in segment_list])

@@ -48,9 +48,14 @@ import os
 
 class ImageManifestDatabase(object):
     def __init__(self, manifest_path, disk_name, lock):
-        self.__manifest_path = manifest_path
         self.__disk_name = disk_name
         self.__lock = lock
+
+        # Creating if path doesn't exsists
+        self.__manifest_path = manifest_path
+        if not os.path.isdir(self.__manifest_path):
+            os.makedirs(self.__manifest_path)
+
 
     def createManifest(self):
         return ImageFileManifest(
@@ -136,3 +141,6 @@ class ImageFileManifest(ImageManifest):
                 r_list.append(json.loads(rec))
 
         return r_list
+
+    def get_timestamp(self):
+        return self.__timestamp
