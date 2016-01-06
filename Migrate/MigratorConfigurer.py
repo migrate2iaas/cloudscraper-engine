@@ -559,7 +559,7 @@ class MigratorConfigurer(object):
             bucket=bucket, user=user, password=password, newsize=newsize, arch=arch, zone=zone, region=region,
             machinename="", securityid=security, instancetype=instancetype, chunksize=chunksize, disktype=imagetype,
             keyname_prefix=s3prefix, vpc=vpcsubnet, custom_host=custom_host, custom_port=custom_port,
-            custom_suffix=custom_suffix, use_ssl=use_ssl, resume_path=manifest_path)
+            custom_suffix=custom_suffix, use_ssl=use_ssl, manifest_path=manifest_path)
         
 
         return (image,adjust_override,cloud)
