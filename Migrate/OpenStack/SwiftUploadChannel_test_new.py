@@ -76,7 +76,9 @@ class SwiftUploadChannel_test(unittest.TestCase):
             tennant_name="2344",
             password="icafLFsmAOswwISn",\
             disk_name="medium.file",
-            container_name="testcontainer2")
+            container_name="testcontainer2",
+            manifest_path="D:\\backup-manifest",
+            chunksize=1024*1024)
         channel.initStorage()
 
         file = open(filename, "rb")

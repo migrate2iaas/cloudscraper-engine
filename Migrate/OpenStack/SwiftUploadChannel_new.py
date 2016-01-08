@@ -116,7 +116,7 @@ class SwiftUploadThread(threading.Thread):
 
         upload = True
         connection = None
-        segment_md5 = self.__fileProxy.getMD5()
+        segment_md5 = None
         try:
             connection = self.__uploadChannel.createConnection()
             # Trying to check segment_md5 for existing segment
@@ -149,6 +149,8 @@ class SwiftUploadThread(threading.Thread):
                     self.__fileProxy,
                     chunk_size=self.__uploadChannel.getChunkSize(),
                     response_dict=results_dict)
+                # getMD5() updates only when data in file proxy (used by put_object()) readed.
+                segment_md5 = self.__fileProxy.getMD5()
                 self.__manifest.insert(
                     etag, segment_md5, part_name, self.__offset, self.__fileProxy.getSize(), "updated")
 
