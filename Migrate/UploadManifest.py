@@ -27,8 +27,24 @@ class ImageManifest(object):
 
 class ImageFileManifest(ImageManifest):
     def __init__(self, manifest_path, timestamp, disk_name, lock):
-        self.__db = TinyDB("{}/{}".format(manifest_path, timestamp))
-        self.__table = self.__db.table(str(timestamp))
+        table = str(timestamp)
+        path = "{}/{}".format(manifest_path, table)
+
+        logging.info(">>>>> Creating or opening image manifest database {}. It's uses tinydb project "
+                     "(https://pypi.python.org/pypi/tinydb) and has json format. Just copy-past content of this file "
+                     "to online web service, that can represent it in more user-friendly format, for example, "
+                     "http://jsonviewer.stack.hu/ http://www.jsoneditoronline.org/ http://codebeautify.org/jsonviewer"
+                     .format(path))
+
+        self.__db = None
+        self.__table = None
+        try:
+            self.__db = TinyDB(path)
+            self.__table = self.__db.table(table)
+        except Exception as e:
+            logging.error("!!!ERROR: Failed to create or open image manifest database: {}".format(e))
+            raise
+
         self.__timestamp = timestamp
         self.__disk_name = disk_name
         self.__lock = lock

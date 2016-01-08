@@ -151,6 +151,7 @@ class SwiftUploadThread(threading.Thread):
                     response_dict=results_dict)
                 # getMD5() updates only when data in file proxy (used by put_object()) readed.
                 segment_md5 = self.__fileProxy.getMD5()
+                # TODO: make status as enumeration
                 self.__manifest.insert(
                     etag, segment_md5, part_name, self.__offset, self.__fileProxy.getSize(), "updated")
 
