@@ -1,70 +1,120 @@
-import json
 import uuid
 import datetime
 import os
-
-#
-#
-# class ManifestRecord:
-#     def __init__(self, r_uuid=None, name=None, r_md5=None, timestamp=None, offset=None, flags=None, size=None):
-#         """
-#         """
-#         self.__r_uuid = r_uuid
-#         self.__name = name
-#         self.__r_md5 = r_md5
-#         self.__timestamp = timestamp
-#         self.__offset = offset
-#         self.__flags = flags
-#         self.__size = size
-#
-#     def to_json(self):
-#         return "{{\"uuid\": \"{}\", {{\"name\": \"{}\", {{\"md5\": \"{}\", \"timestamp\": \"{}\"," \
-#                " \"offset\": \"{}\", \"flags\": \"{}\", \"size\": \"{}\"}}".format(
-#                 str(self.__r_uuid),
-#                 str(self.__name),
-#                 str(self.__r_md5),
-#                 str(self.__timestamp),
-#                 str("{:032x}").format(self.__offset),
-#                 str("{:02x}").format(self.__flags),
-#                 str("{:016x}").format(self.__size))
-#
-#     def from_json(self, r_json):
-#         try:
-#             rec = json.loads(r_json)
-#
-#             self.__r_uuid = rec["uuid"]
-#             self.__name = rec["name"]
-#             self.__r_md5 = rec["md5"]
-#             self.__timestamp = rec["flags"]
-#             self.__offset = rec["timestamp"]
-#             self.__flags = rec["offset"]
-#             self.__size = rec["size"]
-#         except Exception:
-#             raise
-#
-#     def get_md5(self):
-#         return self.__r_md5
+import logging
+from tinydb import TinyDB, where
 
 
-class ImageManifestDatabase(object):
-    def __init__(self, manifest_path, disk_name, lock):
+class ImageManifest(object):
+    def __init__(self):
+        pass
+
+    def insert(self, etag, local_hash, part_name, offset, size, status):
+        raise NotImplementedError
+
+    def select(self, local_hash):
+        raise NotImplementedError
+
+    def update(self, local_hash, rec):
+        raise NotImplementedError
+
+    def all(self):
+        raise NotImplementedError
+
+    def get_timestamp(self):
+        raise NotImplementedError
+
+
+class ImageFileManifest(ImageManifest):
+    def __init__(self, manifest_path, timestamp, disk_name, lock):
+        self.__db = TinyDB("{}/{}".format(manifest_path, timestamp))
+        self.__table = self.__db.table(str(timestamp))
+        self.__timestamp = timestamp
         self.__disk_name = disk_name
         self.__lock = lock
 
-        # Creating if path doesn't exsists
+        super(ImageFileManifest, self).__init__()
+
+    def insert(self, etag, local_hash, part_name, offset, size, status):
+        res = {
+            "uuid": str(uuid.uuid4()),
+            "path": str(self.__disk_name),
+            "etag": str(etag),
+            "local_hash": str(local_hash),
+            "part_name": str(part_name),
+            "offset": str(offset),
+            "size": str(size),
+            "status": str(status)
+        }
+
+        with self.__lock:
+            self.__table.insert(res)
+
+    def update(self, local_hash, rec):
+        with self.__lock:
+            return self.__table.update(rec, where("local_hash") == str(local_hash))
+
+    def select(self, local_hash):
+        # get() returns None if no records in db match condition
+        with self.__lock:
+            return self.__table.get(where("local_hash") == str(local_hash))
+
+    def all(self):
+        with self.__lock:
+            return self.__table.all()
+
+    def get_timestamp(self):
+        return self.__timestamp
+
+
+class ImageManifestDatabase(object):
+    """
+    A class wrapper for tinydb https://pypi.python.org/pypi/tinydb
+    for creating and managing image manifest files which allows resuming upload
+    """
+
+    def __init__(self, manifest_path, disk_name, lock, resume=False):
+        """
+        Creates or opens existing manifest file
+
+        :param manifest_path: path to manifest files
+        :type manifest_path: string
+
+        :param disk_name: image name
+        :type disk_name: string
+
+        :param lock: synchronization for write (read) to database
+        :type lock: threading.Lock()
+        """
+
+        self.__disk_name = disk_name
+        self.__lock = lock
+
+        # Creating directory if it doesn't exsists
         self.__manifest_path = manifest_path
         if not os.path.isdir(self.__manifest_path):
             os.makedirs(self.__manifest_path)
 
+        # If resuming upload, getting last manifest file (by timestamp), creating new otherwise
+        self.__db = None
+        try:
+            if resume:
+                self.__db = self.__get_last_manifet()
+            else:
+                self.__db = self.__create_manifet()
+        except Exception as e:
+            logging.error("!!!ERROR: unable to create (or open) image file manifest for {}: {}".format(
+                manifest_path, e))
+            raise
 
-    def createManifest(self):
+    def __create_manifet(self):
         return ImageFileManifest(
                 self.__manifest_path,
                 datetime.datetime.now().strftime("%Y-%m-%d %H-%M"),
                 self.__disk_name,
                 self.__lock)
 
-    def getLastManifest(self):
+    def __get_last_manifet(self):
         f = []
         for filename in os.listdir(self.__manifest_path):
             f.append(filename)
@@ -76,71 +126,20 @@ class ImageManifestDatabase(object):
                 self.__disk_name,
                 self.__lock) if f else None
 
-class ImageManifest(object):
-    def __init__(self):
-        pass
+    def insert(self, etag, local_hash, part_name, offset, size, status):
+        return self.__db.insert(etag, local_hash, part_name, offset, size, status)
 
-    def insert(self, etag, part_name, offset, size, status):
-        raise NotImplementedError
+    def select(self, local_hash):
+        return self.__db.select(local_hash)
 
-    def select(self, r_hash):
-        raise NotImplementedError
+    def update(self, local_hash, rec):
+        return self.__db.update(local_hash, rec)
 
-    def update(self, rec):
-        raise NotImplementedError
-
-    def dump(self):
-        raise NotImplementedError
-
-    def get_path(self):
-        raise NotImplementedError
-
-class ImageFileManifest(ImageManifest):
-    def __init__(self, manifest_path, timestamp, disk_name, lock):
-        self.__source = open("{}/{}".format(manifest_path, timestamp), "a+")
-        self.__timestamp = timestamp
-        self.__disk_name = disk_name
-        self.__lock = lock
-
-        super(ImageFileManifest, self).__init__()
-
-    def insert(self, etag, part_name, offset, size, status):
-        if self.select(etag) is None:
-            with self.__lock:
-                self.__source.write(
-                    "{{\"uuid\": \"{}\", \"path\": \"{}\", \"etag\": \"{}\", \"timestamp\": \"{}\", "
-                    "\"part_name\": \"{}\", \"offset\": \"{}\", \"size\": \"{:016}\", \"status\": \"{}\"}}\n".format(
-                        uuid.uuid4(),
-                        self.__disk_name,
-                        etag,
-                        self.__timestamp,
-                        part_name,
-                        offset,
-                        size,
-                        status))
-                self.__source.flush()
-
-    def update(self, rec):
-        pass
-
-    def select(self, etag):
-        with self.__lock:
-            self.__source.seek(0)
-            for rec in self.__source:
-                rec_dict = json.loads(rec)
-                if rec_dict["etag"] == etag:
-                    return rec_dict
-
-        return None
-
-    def dump(self):
-        r_list = []
-        with self.__lock:
-            self.__source.seek(0)
-            for rec in self.__source:
-                r_list.append(json.loads(rec))
-
-        return r_list
+    def all(self):
+        return self.__db.all()
 
     def get_timestamp(self):
-        return self.__timestamp
+        return self.__db.get_timestamp()
+
+
+

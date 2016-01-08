@@ -119,13 +119,16 @@ class SwiftUploadThread(threading.Thread):
         segment_md5 = self.__fileProxy.getMD5()
         try:
             connection = self.__uploadChannel.createConnection()
-            # Trying to check etag for existing segment
+            # Trying to check segment_md5 for existing segment
             try:
                 if self.__uploadChannel.skipExisting() or self.__ignoreEtag:
                     res = self.__manifest.select(segment_md5)
-                    # Check, if segment with same local part_name exsists in storage
-                    if res and connection.head_object(self.__uploadChannel.getContainerName(), res["part_name"]):
+                    # Check, if segment with same local part_name exsists in storage, and
+                    # etag in manifest and storage are the same
+                    head = connection.head_object(self.__uploadChannel.getContainerName(), res["part_name"])
+                    if res and res["etag"] == head["etag"]:
                         upload = False
+                        self.__manifest.update(segment_md5, {"status": "skipped"})
                         logging.info("Data upload skipped for {}".format(res["part_name"]))
 
             except (ClientException, Exception) as e:
@@ -146,7 +149,8 @@ class SwiftUploadThread(threading.Thread):
                     self.__fileProxy,
                     chunk_size=self.__uploadChannel.getChunkSize(),
                     response_dict=results_dict)
-                self.__manifest.insert(etag, part_name, self.__offset, self.__fileProxy.getSize(), "U")
+                self.__manifest.insert(
+                    etag, segment_md5, part_name, self.__offset, self.__fileProxy.getSize(), "updated")
 
         except (ClientException, Exception) as e:
             self.__fileProxy.cancel()
@@ -225,13 +229,10 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         logging.info("Resume upload file path: {}, resume upload is {}".format(manifest_path, self.__resumeUpload))
         self.__manifest = None
         try:
-            manifest_db = UploadManifest.ImageManifestDatabase(manifest_path, self.__diskName, threading.Lock())
-            if self.__resumeUpload:
-                self.__manifest = manifest_db.getLastManifest()
-            else:
-                self.__manifest = manifest_db.createManifest()
+            self.__manifest = UploadManifest.ImageManifestDatabase(
+                manifest_path, self.__diskName, threading.Lock(), self.__resumeUpload)
         except Exception as e:
-            logging.warn("!!!ERROR: cannot open file containing segments. Reason: {}".format(e))
+            logging.error("!!!ERROR: cannot open file containing segments. Reason: {}".format(e))
             raise
 
         super(SwiftUploadChannel_new, self).__init__()
@@ -354,7 +355,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         try:
             # If segments size and disk size mismatch
             total_size = 0
-            r_list = self.__manifest.dump()
+            r_list = self.__manifest.all()
             for rec in r_list:
                 total_size += int(rec["size"])
 

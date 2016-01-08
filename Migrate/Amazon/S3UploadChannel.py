@@ -237,21 +237,23 @@ class S3UploadThread(threading.Thread):
 
                     if s3key is None:
                         if self.__skipExisting:
+                            # TODO: make more strongly check for existing data chunk
                             res = self.__manifest.select(md5_hexdigest)
                             if res:
                                 if int(res["offset"]) == offset:
                                     logging.debug("key with same md5 and offset already exisits, skip uploading")
                                     s3key = bucket.get_key(res["part_name"])
+                                    self.__manifest.update(md5_hexdigest, {"status": "skipped"})
                                     upload = False
                         else:
                             s3key = Key(bucket, keyname)
 
                     if upload:
-                        md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest) 
+                        md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest)
                         s3key.set_contents_from_string(
                             str(data), replace=True, policy=None, md5=(md5digest, base64md5), reduced_redundancy=False,
                             encrypt_key=False)
-                        self.__manifest.insert(md5_hexdigest, keyname, offset, size, "U")
+                        self.__manifest.insert(base64md5, md5_hexdigest, keyname, offset, size, "uploaded")
                         uploadtask.notifyDataTransfered()
                     else:
                         logging.debug("Skipped the data upload: %s/%s ", str(bucket), keyname)
@@ -388,13 +390,10 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         logging.info("Resume upload file path: {}, resume upload is {}".format(manifest_path, self.__resumeUpload))
         self.__manifest = None
         try:
-            manifest_db = UploadManifest.ImageManifestDatabase(manifest_path, self.__keyBase, threading.Lock())
-            if self.__resumeUpload:
-                self.__manifest = manifest_db.getLastManifest()
-            else:
-                self.__manifest = manifest_db.createManifest()
+            self.__manifest = UploadManifest.ImageManifestDatabase(
+                manifest_path, self.__keyBase, threading.Lock(), self.__resumeUpload)
         except Exception as e:
-            logging.warn("!!!ERROR: cannot open file containing segments. Reason: {}".format(e))
+            logging.error("!!!ERROR: cannot open file containing segments. Reason: {}".format(e))
             raise
 
         # Initializing a number of threads, they are stopping when see None in queue job
@@ -538,7 +537,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         linktimeexp_seconds = 1361188806
 
         #TODO: profile
-        res_list = self.__manifest.dump()
+        res_list = self.__manifest.all()
         res_list.sort(key=lambda di: int(di["offset"]))
         fragment_index = 0
         fragment_count = len(res_list)
