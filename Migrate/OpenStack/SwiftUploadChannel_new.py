@@ -13,6 +13,7 @@ import swiftclient.client
 import UploadChannel
 import UploadManifest
 
+from tinydb import where
 from hashlib import md5
 from swiftclient.exceptions import ClientException
 
@@ -116,19 +117,26 @@ class SwiftUploadThread(threading.Thread):
 
         upload = True
         connection = None
-        segment_md5 = None
         try:
             connection = self.__uploadChannel.createConnection()
-            # Trying to check segment_md5 for existing segment
+
+            # Part name example: "medium.file/slo/0"
+            part_name = "{}/slo/{}".format(self.__uploadChannel.getDiskName(), self.__offset)
+
+            # Trying to check existing segment
             try:
-                if self.__uploadChannel.skipExisting() or self.__ignoreEtag:
-                    res = self.__manifest.select(segment_md5)
+                res = self.__manifest.select(part_name=part_name)
+                if res and not self.__ignoreEtag:
                     # Check, if segment with same local part_name exsists in storage, and
                     # etag in manifest and storage are the same
                     head = connection.head_object(self.__uploadChannel.getContainerName(), res["part_name"])
-                    if res and res["etag"] == head["etag"]:
+                    if res["etag"] == head["etag"]:
+                        # We should insert new record if this part found in another manifest
+                        # Insert skipped (it done in database engine), if record with same etag exists
+                        self.__manifest.insert(
+                            res["etag"], res["local_hash"], res["part_name"], res["offset"], res["size"], "skipped")
+                        self.__manifest.update(res["etag"], {"status": "skipped"})
                         upload = False
-                        self.__manifest.update(segment_md5, {"status": "skipped"})
                         logging.info("Data upload skipped for {}".format(res["part_name"]))
 
             except (ClientException, Exception) as e:
@@ -139,9 +147,6 @@ class SwiftUploadThread(threading.Thread):
                 pass
 
             results_dict = {}
-            # Part name example: "medium.file/slo/2016-01-06 14-54/0"
-            part_name = "{}/slo/{}/{}".format(
-                self.__uploadChannel.getDiskName(), self.__manifest.get_timestamp(), self.__offset)
             if upload:
                 etag = connection.put_object(
                     self.__uploadChannel.getContainerName(),
@@ -151,9 +156,9 @@ class SwiftUploadThread(threading.Thread):
                     response_dict=results_dict)
                 # getMD5() updates only when data in file proxy (used by put_object()) readed.
                 segment_md5 = self.__fileProxy.getMD5()
-                # TODO: make status as enumeration
+                # TODO: make status ("uploaded") as enumeration
                 self.__manifest.insert(
-                    etag, segment_md5, part_name, self.__offset, self.__fileProxy.getSize(), "updated")
+                    etag, segment_md5, part_name, self.__offset, self.__fileProxy.getSize(), "uploaded")
 
         except (ClientException, Exception) as e:
             self.__fileProxy.cancel()
@@ -234,7 +239,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__manifest = None
         try:
             self.__manifest = UploadManifest.ImageManifestDatabase(
-                manifest_path, self.__diskName, threading.Lock(), self.__resumeUpload, increment_depth)
+                manifest_path, self.__containerName, threading.Lock(), self.__resumeUpload, increment_depth)
         except Exception as e:
             logging.error("!!!ERROR: cannot open file containing segments. Reason: {}".format(e))
             raise
@@ -370,6 +375,9 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             # Segments can upload not in sequential order, so we need to sort them for manifest
             r_list.sort(key=lambda di: int(di["offset"]))
             storage_url = self.__uploadCloudManifest(self.__createCloudManifest(r_list))
+
+            # Notify manifest database that backup completed
+            self.__manifest.complete_manifest()
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
             logging.error(traceback.format_exc())

@@ -225,35 +225,36 @@ class S3UploadThread(threading.Thread):
                 retries += 1
 
                 try:
-                # s3 key is kinda file in the bucket (directory)
+                    # s3 key is kinda file in the bucket (directory)
+                    # Note: it seems there should be a better (more generic and extendable way) to implement strategies
+                    # to reduce the overall upload size
+
+                    # TODO: make more strongly check for existing data chunk
+                    s3key = None
                     upload = True
-                    try:
-                        s3key = bucket.get_key(keyname)
-                    except Exception as e:
-                        logging.debug("Failed to get key. Got exception from the source server. Sometimes it means errors from not fully s3 compatible sources " + repr(e))
-                        s3key = None
-                
-                    # Note: it seems there should be a better (more generic and extendable way) to implement strategies to reduce the overall upload size
+                    res = self.__manifest.select(md5_hexdigest)
+                    if res:
+                        logging.debug("key with same md5 already exisits, skip uploading")
+                        try:
+                            s3key = bucket.get_key(res["part_name"])
+                            self.__manifest.insert(
+                                res["etag"], res["local_hash"], res["part_name"], res["offset"], res["size"], "skipped")
+                            self.__manifest.update(md5_hexdigest, {"status": "skipped"})
+                            upload = False
+                        except Exception as e:
+                            logging.debug(
+                                "Failed to get key. Got exception from the source server. Sometimes it means errors "
+                                "from not fully s3 compatible sources " + repr(e))
 
                     if s3key is None:
-                        if self.__skipExisting:
-                            # TODO: make more strongly check for existing data chunk
-                            res = self.__manifest.select(md5_hexdigest)
-                            if res:
-                                if int(res["offset"]) == offset:
-                                    logging.debug("key with same md5 and offset already exisits, skip uploading")
-                                    s3key = bucket.get_key(res["part_name"])
-                                    self.__manifest.update(md5_hexdigest, {"status": "skipped"})
-                                    upload = False
-                        else:
-                            s3key = Key(bucket, keyname)
+                        s3key = Key(bucket, keyname)
 
                     if upload:
                         md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest)
                         s3key.set_contents_from_string(
                             str(data), replace=True, policy=None, md5=(md5digest, base64md5), reduced_redundancy=False,
                             encrypt_key=False)
-                        self.__manifest.insert(base64md5, md5_hexdigest, keyname, offset, size, "uploaded")
+                        self.__manifest.insert(md5digest, md5_hexdigest, keyname, offset, size, "uploaded")
                         uploadtask.notifyDataTransfered()
                     else:
                         logging.debug("Skipped the data upload: %s/%s ", str(bucket), keyname)
@@ -578,6 +579,9 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             linktimeexp_seconds = 60*60*100     # 100 hours
             self.__xmlKey = s3key.generate_url(linktimeexp_seconds, method='GET', force_http=False)
         s3key.close()
+
+        # Notify manifest database that backup completed
+        self.__manifest.complete_manifest()
 
         return self.__xmlKey
 
