@@ -531,7 +531,7 @@ class MigratorConfigurer(object):
 
         increment_depth = 1
         if config.has_option('EC2', 'increment_depth'):
-            manifest_path = config.get('EC2', 'increment_depth')
+            increment_depth = config.get('EC2', 'increment_depth')
            
         bucket = ''
 
