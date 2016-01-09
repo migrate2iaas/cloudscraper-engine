@@ -89,7 +89,7 @@ class ImageManifestDatabase(object):
     for creating and managing image manifest files which allows resuming upload
     """
 
-    def __init__(self, manifest_path, disk_name, lock, resume=False):
+    def __init__(self, manifest_path, disk_name, lock, resume=False, increment_depth=1):
         """
         Creates or opens existing manifest file
 
@@ -101,6 +101,12 @@ class ImageManifestDatabase(object):
 
         :param lock: synchronization for write (read) to database
         :type lock: threading.Lock()
+
+        :param resume: resuming upload if True
+        :type resume: bool
+
+        :param increment_depth: how many backup manifests we should use for incremental backup
+        :type increment_depth: int
         """
 
         self.__disk_name = disk_name
@@ -111,51 +117,71 @@ class ImageManifestDatabase(object):
         if not os.path.isdir(self.__manifest_path):
             os.makedirs(self.__manifest_path)
 
-        # If resuming upload, getting last manifest file (by timestamp), creating new otherwise
-        self.__db = None
+        self.__db = []
         try:
-            if resume:
-                self.__db = self.__get_last_manifet()
-            else:
-                self.__db = self.__create_manifet()
+            # increment_depth = 0 meaning that we use all available manifests
+            # increment_depth = N meaning that we use last N (by timestamp) available manifests
+
+            # First, creating manifest if no resume required, than getting list (new manifest just created)
+            if resume is False:
+                self.__create_manifest()
+
+            m_list = self.__get_sorted_manifest_list(increment_depth)
+            for i in m_list:
+                self.__db.append(self.__open_manifest(i))
         except Exception as e:
             logging.error("!!!ERROR: unable to create (or open) image file manifest for {}: {}".format(
                 manifest_path, e))
             raise
 
-    def __create_manifet(self):
+    def __create_manifest(self):
         return ImageFileManifest(
                 self.__manifest_path,
                 datetime.datetime.now().strftime("%Y-%m-%d %H-%M"),
                 self.__disk_name,
                 self.__lock)
 
-    def __get_last_manifet(self):
+    def __open_manifest(self, timestamp):
+        return ImageFileManifest(
+                self.__manifest_path,
+                timestamp,
+                self.__disk_name,
+                self.__lock)
+
+    def __get_sorted_manifest_list(self, number):
+        # Getting list all available manifests (backups) in manifest path, after sorting:
+        # f[0] last (by timestamp) manifest
+        # f[1...N] previous manifests ordered by timestamp too.
         f = []
         for filename in os.listdir(self.__manifest_path):
             f.append(filename)
         f.sort(reverse=True)
 
-        return ImageFileManifest(
-                self.__manifest_path,
-                f[0],
-                self.__disk_name,
-                self.__lock) if f else None
+        # len(f) > number > 0 means that if number is less than available manifests in path or 0, we should
+        # return whole available list
+        return f[0:number] if len(f) > number > 0 else f
 
     def insert(self, etag, local_hash, part_name, offset, size, status):
-        return self.__db.insert(etag, local_hash, part_name, offset, size, status)
+        # Inserting in first (meaning last) manifest in list
+        return self.__db[0].insert(etag, local_hash, part_name, offset, size, status)
 
     def select(self, local_hash):
-        return self.__db.select(local_hash)
+        # TODO: make expression more python-like
+        for i in self.__db:
+            rec = i.select(local_hash)
+            if rec:
+                return rec
+
+        return None
 
     def update(self, local_hash, rec):
-        return self.__db.update(local_hash, rec)
+        return self.__db[0].update(local_hash, rec)
 
     def all(self):
-        return self.__db.all()
+        return self.__db[0].all()
 
     def get_timestamp(self):
-        return self.__db.get_timestamp()
+        return self.__db[0].get_timestamp()
 
 
 

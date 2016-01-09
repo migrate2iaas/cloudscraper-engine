@@ -294,13 +294,18 @@ class MigratorConfigurer(object):
         if config.has_option('OpenStack', 'manifest_path'):
             manifest_path = config.get('OpenStack', 'manifest_path')
 
+        increment_depth = 1
+        if config.has_option('OpenStack', 'increment_depth'):
+            manifest_path = config.get('OpenStack', 'increment_depth')
+
         adjust_override = self.getOverrides(config, configfile)
-        image = OpenStackConfigs.OpenStackMigrateConfig(volumes, factory, 'x86_64' , imagetype)
+        image = OpenStackConfigs.OpenStackMigrateConfig(volumes, factory, 'x86_64', imagetype)
         cloud = OpenStackConfigs.OpenStackCloudOptions(
             endpoint, user, tennant, password, network, imagetype, container, flavor=flavor, ip_pool_name=ip_pool,
             swift_server_url=swift_server_url, swift_tennant_name=swift_tennant_name, swift_username=swift_username,
             swift_password=swift_password, swift_container=swift_container, compression=swift_compression,
-            use_new_channel=use_new_channel, manifest_path=manifest_path, ignore_etag=ignore_etag)
+            use_new_channel=use_new_channel, manifest_path=manifest_path, increment_depth=increment_depth,
+            ignore_etag=ignore_etag)
         return (image, adjust_override, cloud)
 
     def configOnApp(self, configfile, config, password):
@@ -523,6 +528,10 @@ class MigratorConfigurer(object):
         manifest_path = "C:\\backup-manifest"
         if config.has_option('EC2', 'manifest_path'):
             manifest_path = config.get('EC2', 'manifest_path')
+
+        increment_depth = 1
+        if config.has_option('EC2', 'increment_depth'):
+            manifest_path = config.get('EC2', 'increment_depth')
            
         bucket = ''
 
@@ -551,21 +560,21 @@ class MigratorConfigurer(object):
         newsize = imagesize
         installservice = None;
 
-        adjust_override = self.getOverrides(config , configfile)
+        adjust_override = self.getOverrides(config, configfile)
 
-        image = AmazonConfigs.AmazonMigrateConfig(volumes , factory, imagearch , imagetype)
+        image = AmazonConfigs.AmazonMigrateConfig(volumes, factory, imagearch, imagetype)
         #TODO: add machine name
         cloud = AmazonConfigs.AmazonCloudOptions(
             bucket=bucket, user=user, password=password, newsize=newsize, arch=arch, zone=zone, region=region,
             machinename="", securityid=security, instancetype=instancetype, chunksize=chunksize, disktype=imagetype,
             keyname_prefix=s3prefix, vpc=vpcsubnet, custom_host=custom_host, custom_port=custom_port,
-            custom_suffix=custom_suffix, use_ssl=use_ssl, manifest_path=manifest_path)
+            custom_suffix=custom_suffix, use_ssl=use_ssl, manifest_path=manifest_path, increment_depth=increment_depth)
         
 
         return (image,adjust_override,cloud)
 
     #TODO: move the common code to one function
-    def configElasticHosts(self , configfile , user = '' , password = '' , region = '', imagepath = ''):
+    def configElasticHosts(self, configfile, user='', password='', region='', imagepath=''):
         try:
             config = UnicodeConfigParser.UnicodeConfigParser()
             config.readfp(codecs.open(configfile, "r", "utf16"))

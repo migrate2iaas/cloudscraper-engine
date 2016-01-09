@@ -292,8 +292,8 @@ class S3UploadChannel(UploadChannel.UploadChannel):
     def __init__(
             self, bucket, awskey, awssercret, resultDiskSizeBytes, location='', keynameBase=None, diskType='VHD',
             resume_upload=False, chunksize=10*1024*1024, upload_threads=4, queue_size=16, use_ssl=True,
-            manifest_path=None, walrus=False, walrus_path="/services/WalrusBackend", walrus_port=8773,
-            make_link_public=False):
+            manifest_path=None, increment_depth=1, walrus=False, walrus_path="/services/WalrusBackend",
+            walrus_port=8773, make_link_public=False):
         self.__uploadQueue = Queue.Queue(queue_size)
         self.__statLock = threading.Lock()
         self.__prevUploadTime = None 
@@ -386,12 +386,12 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             logging.error(traceback.format_exc()) 
             raise ex
 
-        # Resume upload
+        # Resume and increment database creation
         logging.info("Resume upload file path: {}, resume upload is {}".format(manifest_path, self.__resumeUpload))
         self.__manifest = None
         try:
             self.__manifest = UploadManifest.ImageManifestDatabase(
-                manifest_path, self.__keyBase, threading.Lock(), self.__resumeUpload)
+                manifest_path, self.__keyBase, threading.Lock(), self.__resumeUpload, increment_depth=increment_depth)
         except Exception as e:
             logging.error("!!!ERROR: cannot open file containing segments. Reason: {}".format(e))
             raise

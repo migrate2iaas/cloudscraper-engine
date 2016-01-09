@@ -197,6 +197,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             compression=False,
             resume_upload=False,
             manifest_path=None,
+            increment_depth=1,
             chunksize=1024*1024*10,
             upload_threads=10,
             queue_size=8,
@@ -233,7 +234,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__manifest = None
         try:
             self.__manifest = UploadManifest.ImageManifestDatabase(
-                manifest_path, self.__diskName, threading.Lock(), self.__resumeUpload)
+                manifest_path, self.__diskName, threading.Lock(), self.__resumeUpload, increment_depth)
         except Exception as e:
             logging.error("!!!ERROR: cannot open file containing segments. Reason: {}".format(e))
             raise
