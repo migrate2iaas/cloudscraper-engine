@@ -233,16 +233,17 @@ class S3UploadThread(threading.Thread):
                     s3key = None
                     upload = True
                     res = self.__manifest.select(md5_hexdigest)
-                    if res:
+                    for i in res:
                         logging.debug("key with same md5 already exisits, skip uploading")
                         try:
-                            s3key = bucket.get_key(res["part_name"])
+                            s3key = bucket.get_key(i["part_name"])
                             if s3key:
                                 self.__manifest.insert(
-                                    res["etag"], res["local_hash"], res["part_name"], res["offset"], res["size"],
-                                    "skipped")
-                                self.__manifest.update(md5_hexdigest, {"status": "skipped"})
+                                    i["etag"], i["local_hash"], i["part_name"], offset, size, "skipped")
+                                # self.__manifest.update(md5_hexdigest, i["part_name"], {"status": "skipped"})
                                 upload = False
+
+                                break
                         except Exception as e:
                             logging.debug(
                                 "Failed to get key. Got exception from the source server. Sometimes it means errors "
@@ -447,10 +448,10 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             return False
 
         uploadtask = UploadQueueTask(self.__bucket, keyname, start, size, extent.getData(), self)
-        if uploadtask.getDataMd5() == self.__nullMd5:
-            if uploadtask.getData() == self.__nullData:
-                if self.__nullKey:
-                    uploadtask.setAlternativeUploadPath(self.__bucket, self.__nullKey)
+        # if uploadtask.getDataMd5() == self.__nullMd5:
+        #     if uploadtask.getData() == self.__nullData:
+        #         if self.__nullKey:
+        #             uploadtask.setAlternativeUploadPath(self.__bucket, self.__nullKey)
 
 
         #TODO: check threads are working ok

@@ -44,7 +44,7 @@ class S3UploadChannel_test(unittest.TestCase):
     def test_file_useast(self):
         size = 1024*1024*1024
         bucket = 'feoffuseastfiletest12'
-        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size, manifest_path=self.__backup_db)
+        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size, manifest_path=self.__backup_db, increment_depth=3)
         self.__channel = channel
 
         file = open('D:\\log.txt' , "rb")

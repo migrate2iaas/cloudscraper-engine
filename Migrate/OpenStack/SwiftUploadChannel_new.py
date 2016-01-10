@@ -125,19 +125,21 @@ class SwiftUploadThread(threading.Thread):
 
             # Trying to check existing segment
             try:
+                # Select returns list of records matches part_name from manifest database
                 res = self.__manifest.select(part_name=part_name)
                 if res and not self.__ignoreEtag:
                     # Check, if segment with same local part_name exsists in storage, and
                     # etag in manifest and storage are the same
-                    head = connection.head_object(self.__uploadChannel.getContainerName(), res["part_name"])
-                    if res["etag"] == head["etag"]:
-                        # We should insert new record if this part found in another manifest
-                        # Insert skipped (it done in database engine), if record with same etag exists
-                        self.__manifest.insert(
-                            res["etag"], res["local_hash"], res["part_name"], res["offset"], res["size"], "skipped")
-                        self.__manifest.update(res["etag"], {"status": "skipped"})
-                        upload = False
-                        logging.info("Data upload skipped for {}".format(res["part_name"]))
+                    head = connection.head_object(self.__uploadChannel.getContainerName(), part_name)
+                    for i in res:
+                        if i["etag"] == head["etag"]:
+                            # We should insert new record if this part found in another manifest
+                            self.__manifest.insert(
+                                i["etag"], i["local_hash"], part_name, self.__offset, self.__fileProxy.getSize(),
+                                "skipped")
+                            # self.__manifest.update(i["etag"], i["part_name"], {"status": "skipped"})
+                            upload = False
+                            logging.info("Data upload skipped for {}".format(i["part_name"]))
 
             except (ClientException, Exception) as e:
                 # Passing exception here, it"s means that when we unable to check

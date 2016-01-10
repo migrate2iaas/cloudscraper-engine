@@ -3,7 +3,7 @@ import datetime
 import os
 import logging
 
-from tinydb import TinyDB, where
+from tinydb import TinyDB, Query
 from tinydb.storages import JSONStorage
 from tinydb.middlewares import CachingMiddleware
 
@@ -18,7 +18,7 @@ class ImageManifest(object):
     def select(self, etag, part_name):
         raise NotImplementedError
 
-    def update(self, local_hash, rec):
+    def update(self, local_hash, part_name, rec):
         raise NotImplementedError
 
     def all(self):
@@ -46,7 +46,7 @@ class ImageFileManifest(ImageManifest):
             # CachingMiddleware: Improves speed by reducing disk I/O. It caches all read operations and writes data
             # to disk every CachingMiddleware.WRITE_CACHE_SIZE write operations.
             cache = CachingMiddleware
-            cache.WRITE_CACHE_SIZE = db_write_cache_size
+            cache.WRITE_CACHE_SIZE = 1 #db_write_cache_size
 
             self.__db = TinyDB(path, storage=cache(JSONStorage))
             # Creating new table for chunks
@@ -64,16 +64,48 @@ class ImageFileManifest(ImageManifest):
         with self.__lock:
             self.__db.insert(res)
 
-    def update(self, local_hash, rec):
+    def update(self, local_hash, offset, rec):
+        """
+        Update record in database. Pair (local_hash, offset) have table unique key semantics,
+        so in given table there are no records with same hash and part name.
+
+        :param local_hash: etag to search
+        :type local_hash: string
+
+        :param offset: data chunk offset
+        :type offset: int
+
+        :param rec: dictionary with new values for given record
+        :type rec: dict
+        """
+
         with self.__lock:
-            return self.__table.update(rec, where("local_hash") == str(local_hash))
+            key = Query()
+
+            return self.__table.update(rec, key.etag == str(local_hash) and key.offset == str(offset))
 
     def select(self, etag=None, part_name=None):
-        # get() returns None if no records in db match condition
-        if etag:
-            return self.__table.get(where("etag") == str(etag))
-        if part_name:
-            return self.__table.get(where("part_name") == str(part_name))
+        """
+        Search records
+
+        :param etag: etag to search
+        :type etag: string
+
+        :param part_name: part name to search
+        :type part_name: string
+
+        :return: list of records
+        """
+        key = Query()
+
+        if etag and part_name:
+            key = (key.etag == str(etag)) & (key.part_name == str(part_name))
+        elif etag:
+            key = key.etag == str(etag)
+        elif part_name:
+            key = key.part_name == str(part_name)
+
+        return self.__table.search(key)
 
     def insert(self, etag, local_hash, part_name, offset, size, status):
         res = {
@@ -86,13 +118,10 @@ class ImageFileManifest(ImageManifest):
             "status": str(status)
         }
 
-        # We can't insert record with same etag (has unique key semantic)
-        rec = self.select(res["etag"])
-        if rec:
-            return rec
-        else:
-            with self.__lock:
-                self.__table.insert(res)
+        # # We can't insert record with same etag (has unique key semantic)
+        # if not self.select(res["etag"], res["part_name"]):
+        with self.__lock:
+            self.__table.insert(res)
 
     def all(self):
         with self.__lock:
@@ -126,6 +155,9 @@ class ImageManifestDatabase(object):
 
         :param increment_depth: how many backup manifests we should use for incremental backup
         :type increment_depth: int
+
+        :param db_write_cache_size: how many records awaits till they would be written to database
+        :type db_write_cache_size: int
         """
 
         self.__lock = lock
@@ -199,10 +231,10 @@ class ImageManifestDatabase(object):
             if rec:
                 return rec
 
-        return None
+        return []
 
-    def update(self, local_hash, rec):
-        return self.__db[0].update(local_hash, rec)
+    def update(self, local_hash, part_name, rec):
+        return self.__db[0].update(local_hash, part_name, rec)
 
     def all(self):
         return self.__db[0].all()
