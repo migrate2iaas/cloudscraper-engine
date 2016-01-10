@@ -2,7 +2,10 @@ import uuid
 import datetime
 import os
 import logging
+
 from tinydb import TinyDB, where
+from tinydb.storages import JSONStorage
+from tinydb.middlewares import CachingMiddleware
 
 
 class ImageManifest(object):
@@ -26,7 +29,7 @@ class ImageManifest(object):
 
 
 class ImageFileManifest(ImageManifest):
-    def __init__(self, manifest_path, timestamp, lock):
+    def __init__(self, manifest_path, timestamp, lock, db_write_cache_size=1):
         table = str(timestamp)
         path = "{}/{}".format(manifest_path, table)
 
@@ -40,7 +43,12 @@ class ImageFileManifest(ImageManifest):
         self.__db = None
         self.__table = None
         try:
-            self.__db = TinyDB(path)
+            # CachingMiddleware: Improves speed by reducing disk I/O. It caches all read operations and writes data
+            # to disk every CachingMiddleware.WRITE_CACHE_SIZE write operations.
+            cache = CachingMiddleware
+            cache.WRITE_CACHE_SIZE = db_write_cache_size
+
+            self.__db = TinyDB(path, storage=cache(JSONStorage))
             # Creating new table for chunks
             self.__table = self.__db.table(table)
         except Exception as e:
@@ -62,13 +70,10 @@ class ImageFileManifest(ImageManifest):
 
     def select(self, etag=None, part_name=None):
         # get() returns None if no records in db match condition
-        with self.__lock:
-            if etag:
-                return self.__table.get(where("etag") == str(etag))
-            if part_name:
-                return self.__table.get(where("part_name") == str(part_name))
-
-        return None
+        if etag:
+            return self.__table.get(where("etag") == str(etag))
+        if part_name:
+            return self.__table.get(where("part_name") == str(part_name))
 
     def insert(self, etag, local_hash, part_name, offset, size, status):
         res = {
@@ -87,7 +92,7 @@ class ImageFileManifest(ImageManifest):
             return rec
         else:
             with self.__lock:
-                return self.__table.insert(res)
+                self.__table.insert(res)
 
     def all(self):
         with self.__lock:
@@ -103,7 +108,7 @@ class ImageManifestDatabase(object):
     for creating and managing image manifest files which allows resuming upload
     """
 
-    def __init__(self, manifest_path, container_name, lock, resume=False, increment_depth=1):
+    def __init__(self, manifest_path, container_name, lock, resume=False, increment_depth=1, db_write_cache_size=1):
         """
         Creates or opens existing manifest file
 
@@ -138,11 +143,11 @@ class ImageManifestDatabase(object):
 
             # First, creating manifest if no resume required, than getting list (new manifest just created)
             if resume is False:
-                self.__create_manifest()
+                self.__create_manifest(db_write_cache_size)
 
             m_list = self.__get_sorted_manifest_list(increment_depth)
             for i in m_list:
-                self.__db.append(self.__open_manifest(i))
+                self.__db.append(self.__open_manifest(i, db_write_cache_size))
 
             # Inserting metadata to default table for opened (last) manifest
             self.__db[0].insert_db_meta({
@@ -156,17 +161,19 @@ class ImageManifestDatabase(object):
                 manifest_path, e))
             raise
 
-    def __create_manifest(self):
+    def __create_manifest(self, db_write_cache_size=1):
         return ImageFileManifest(
                 self.__manifest_path,
                 datetime.datetime.now().strftime("%Y-%m-%d %H-%M"),
-                self.__lock)
+                self.__lock,
+                db_write_cache_size)
 
-    def __open_manifest(self, timestamp):
+    def __open_manifest(self, timestamp, db_write_cache_size=1):
         return ImageFileManifest(
                 self.__manifest_path,
                 timestamp,
-                self.__lock)
+                self.__lock,
+                db_write_cache_size)
 
     def __get_sorted_manifest_list(self, number):
         # Getting list all available manifests (backups) in manifest path, after sorting:

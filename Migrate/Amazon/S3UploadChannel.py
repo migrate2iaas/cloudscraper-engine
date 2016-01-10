@@ -237,10 +237,12 @@ class S3UploadThread(threading.Thread):
                         logging.debug("key with same md5 already exisits, skip uploading")
                         try:
                             s3key = bucket.get_key(res["part_name"])
-                            self.__manifest.insert(
-                                res["etag"], res["local_hash"], res["part_name"], res["offset"], res["size"], "skipped")
-                            self.__manifest.update(md5_hexdigest, {"status": "skipped"})
-                            upload = False
+                            if s3key:
+                                self.__manifest.insert(
+                                    res["etag"], res["local_hash"], res["part_name"], res["offset"], res["size"],
+                                    "skipped")
+                                self.__manifest.update(md5_hexdigest, {"status": "skipped"})
+                                upload = False
                         except Exception as e:
                             logging.debug(
                                 "Failed to get key. Got exception from the source server. Sometimes it means errors "
@@ -391,8 +393,12 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         logging.info("Resume upload file path: {}, resume upload is {}".format(manifest_path, self.__resumeUpload))
         self.__manifest = None
         try:
+            # Number of cached records is equals 512 mb of data, so if something happens only 512 mb (in chunks)
+            # wouldn't be saved to manifest database
+            write_cache_size = int(512 * 1024 * 1024 / self.__chunkSize)
             self.__manifest = UploadManifest.ImageManifestDatabase(
-                manifest_path, self.__keyBase, threading.Lock(), self.__resumeUpload, increment_depth=increment_depth)
+                manifest_path, self.__keyBase, threading.Lock(), self.__resumeUpload, increment_depth=increment_depth,
+                db_write_cache_size=write_cache_size)
         except Exception as e:
             logging.error("!!!ERROR: cannot open file containing segments. Reason: {}".format(e))
             raise
