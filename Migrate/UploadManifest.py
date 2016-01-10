@@ -29,6 +29,11 @@ class ImageManifest(object):
 
 
 class ImageFileManifest(ImageManifest):
+    """
+    Implementation for ImageManifest interface, it's implements database behavior with select, update, insert,...
+    for file storage, based on JSON format.
+    """
+
     def __init__(self, manifest_path, timestamp, lock, db_write_cache_size=1):
         table = str(timestamp)
         path = "{}/{}".format(manifest_path, table)
@@ -46,7 +51,7 @@ class ImageFileManifest(ImageManifest):
             # CachingMiddleware: Improves speed by reducing disk I/O. It caches all read operations and writes data
             # to disk every CachingMiddleware.WRITE_CACHE_SIZE write operations.
             cache = CachingMiddleware
-            cache.WRITE_CACHE_SIZE = 1 #db_write_cache_size
+            cache.WRITE_CACHE_SIZE = db_write_cache_size
 
             self.__db = TinyDB(path, storage=cache(JSONStorage))
             # Creating new table for chunks
@@ -61,16 +66,24 @@ class ImageFileManifest(ImageManifest):
         super(ImageFileManifest, self).__init__()
 
     def insert_db_meta(self, res):
+        """
+        Writes database meta data with given res (dictionary) value. Default meta data table name is "_default"
+        and can be found in manifest file.
+
+        :param res: dictionary with meta data
+        :type res: dict
+        """
+
         with self.__lock:
             self.__db.insert(res)
 
-    def update(self, local_hash, offset, rec):
+    def update(self, etag, offset, rec):
         """
-        Update record in database. Pair (local_hash, offset) have table unique key semantics,
-        so in given table there are no records with same hash and part name.
+        Update record in database. Pair (etag, offset) has table unique key semantics,
+        so in given table there are no records with same hash and offset.
 
-        :param local_hash: etag to search
-        :type local_hash: string
+        :param etag: etag to search
+        :type etag: string
 
         :param offset: data chunk offset
         :type offset: int
@@ -82,11 +95,11 @@ class ImageFileManifest(ImageManifest):
         with self.__lock:
             key = Query()
 
-            return self.__table.update(rec, key.etag == str(local_hash) and key.offset == str(offset))
+            return self.__table.update(rec, key.etag == str(etag) and key.offset == str(offset))
 
     def select(self, etag=None, part_name=None):
         """
-        Search records
+        Search records by given etag or (and) part name
 
         :param etag: etag to search
         :type etag: string
@@ -94,8 +107,9 @@ class ImageFileManifest(ImageManifest):
         :param part_name: part name to search
         :type part_name: string
 
-        :return: list of records
+        :return: list of records or empty []
         """
+
         key = Query()
 
         if etag and part_name:
@@ -108,6 +122,29 @@ class ImageFileManifest(ImageManifest):
         return self.__table.search(key)
 
     def insert(self, etag, local_hash, part_name, offset, size, status):
+        """
+        Insert record in database. Pair (etag, offset) has table unique key semantics,
+        so in given table there are no records with same hash and offset
+
+        :param etag: etag (hash of remote storage data chunk)
+        :type etag: string
+
+        :param local_hash: (hash of local storage data chunk)
+        :type local_hash: string
+
+        :param part_name: name for uploaded part
+        :type part_name: string
+
+        :param offset: offset of data chunk in whole file
+        :type offset: int
+
+        :param size: size of data chunk
+        :type size: int
+
+        :param status: dictionary with new values for given record
+        :type status: string
+        """
+
         res = {
             "uuid": str(uuid.uuid4()),
             "etag": str(etag),
@@ -125,10 +162,20 @@ class ImageFileManifest(ImageManifest):
                 self.__table.insert(res)
 
     def all(self):
+        """
+        Returns all records from current (latest by timestamp)
+
+        :return: list of all records
+        """
         with self.__lock:
             return self.__table.all()
 
     def get_timestamp(self):
+        """
+        Returns timestamp of buckup, in this case it's means manifest file name.
+
+        :return: timestamp (manifest file name)
+        """
         return self.__timestamp
 
 
