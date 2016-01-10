@@ -12,6 +12,17 @@ class ImageManifest(object):
     def __init__(self):
         pass
 
+    @staticmethod
+    def create(manifest_path, lock, db_write_cache_size):
+        raise NotImplementedError
+
+    @staticmethod
+    def open(manifest_path, table_name, lock, db_write_cache_size):
+        raise NotImplementedError
+
+    def flush(self):
+        raise NotImplementedError
+
     def insert(self, etag, local_hash, part_name, offset, size, status):
         raise NotImplementedError
 
@@ -24,7 +35,7 @@ class ImageManifest(object):
     def all(self):
         raise NotImplementedError
 
-    def get_timestamp(self):
+    def get_table_name(self):
         raise NotImplementedError
 
 
@@ -35,8 +46,8 @@ class ImageFileManifest(ImageManifest):
     """
 
     def __init__(self, manifest_path, timestamp, lock, db_write_cache_size=1):
-        table = str(timestamp)
-        path = "{}/{}".format(manifest_path, table)
+        self.__table_name = str(timestamp)
+        path = "{}/{}".format(manifest_path, self.__table_name)
 
         logging.debug(
             "Creating or opening image manifest database {}. It's uses tinydb project "
@@ -47,23 +58,44 @@ class ImageFileManifest(ImageManifest):
 
         self.__db = None
         self.__table = None
+        self.__storage = None
         try:
             # CachingMiddleware: Improves speed by reducing disk I/O. It caches all read operations and writes data
             # to disk every CachingMiddleware.WRITE_CACHE_SIZE write operations.
-            cache = CachingMiddleware
-            cache.WRITE_CACHE_SIZE = db_write_cache_size
+            CachingMiddleware.WRITE_CACHE_SIZE = db_write_cache_size
 
-            self.__db = TinyDB(path, storage=cache(JSONStorage))
+            self.__storage = CachingMiddleware(JSONStorage)
+            self.__db = TinyDB(path, storage=self.__storage)
             # Creating new table for chunks
-            self.__table = self.__db.table(table)
+            self.__table = self.__db.table(self.__table_name)
         except Exception as e:
             logging.error("!!!ERROR: Failed to create or open image manifest database: {}".format(e))
             raise
 
-        self.__timestamp = timestamp
+        self.__manifest_path = manifest_path
+        self.__db_write_cache_size = db_write_cache_size
         self.__lock = lock
 
         super(ImageFileManifest, self).__init__()
+
+    @staticmethod
+    def create(manifest_path, lock, db_write_cache_size):
+        return ImageFileManifest(
+            manifest_path,
+            datetime.datetime.now().strftime("%Y-%m-%d %H-%M"),
+            lock,
+            db_write_cache_size)
+
+    @staticmethod
+    def open(manifest_path, table_name, lock, db_write_cache_size):
+        return ImageFileManifest(
+            manifest_path,
+            table_name,
+            lock,
+            db_write_cache_size)
+
+    def flush(self):
+        self.__storage.flush()
 
     def insert_db_meta(self, res):
         """
@@ -170,13 +202,13 @@ class ImageFileManifest(ImageManifest):
         with self.__lock:
             return self.__table.all()
 
-    def get_timestamp(self):
+    def get_table_name(self):
         """
-        Returns timestamp of buckup, in this case it's means manifest file name.
+        Returns name of backup, in this case it's means manifest file name.
 
-        :return: timestamp (manifest file name)
+        :return: table (file) name
         """
-        return self.__timestamp
+        return self.__table_name
 
 
 class ImageManifestDatabase(object):
@@ -208,7 +240,6 @@ class ImageManifestDatabase(object):
         :type db_write_cache_size: int
         """
 
-        self.__lock = lock
         self.__increment_depth = increment_depth
 
         # Creating directory if it doesn't exsists
@@ -223,11 +254,11 @@ class ImageManifestDatabase(object):
 
             # First, creating manifest if no resume required, than getting list (new manifest just created)
             if resume is False:
-                self.__create_manifest(db_write_cache_size)
+                ImageFileManifest.create(manifest_path, lock, db_write_cache_size)
 
             m_list = self.__get_sorted_manifest_list(increment_depth)
-            for i in m_list:
-                self.__db.append(self.__open_manifest(i, db_write_cache_size))
+            for table_name in m_list:
+                self.__db.append(ImageFileManifest.open(manifest_path, table_name, lock, db_write_cache_size))
 
             # Inserting metadata to default table for opened (last) manifest
             self.__db[0].insert_db_meta({
@@ -240,20 +271,6 @@ class ImageManifestDatabase(object):
             logging.error("!!!ERROR: unable to create (or open) image file manifest for {}: {}".format(
                 manifest_path, e))
             raise
-
-    def __create_manifest(self, db_write_cache_size=1):
-        return ImageFileManifest(
-                self.__manifest_path,
-                datetime.datetime.now().strftime("%Y-%m-%d %H-%M"),
-                self.__lock,
-                db_write_cache_size)
-
-    def __open_manifest(self, timestamp, db_write_cache_size=1):
-        return ImageFileManifest(
-                self.__manifest_path,
-                timestamp,
-                self.__lock,
-                db_write_cache_size)
 
     def __get_sorted_manifest_list(self, number):
         # Getting list all available manifests (backups) in manifest path, after sorting:
@@ -287,15 +304,29 @@ class ImageManifestDatabase(object):
     def all(self):
         return self.__db[0].all()
 
-    def get_timestamp(self):
-        return self.__db[0].get_timestamp()
+    def get_table_name(self):
+        return self.__db[0].get_table_name()
 
     def get_increment_depth(self):
         return self.__increment_depth
 
-    def complete_manifest(self):
+    def complete_manifest(self, excpected_image_size):
         try:
-            self.__db[0].insert_db_meta({"end": str(datetime.datetime.now()), "status": "finished"})
+            # Calculating sum of all chunk size in current database
+            actual_image_size = 0
+            for record in self.all():
+                actual_image_size += int(record["size"])
+
+            self.__db[0].insert_db_meta({
+                "end": str(datetime.datetime.now()),
+                "status": "finished",
+                "excpected_image_size": str(excpected_image_size),
+                "actual_image_size": actual_image_size})
+
+            # Clear hash
+            self.__db[0].flush()
+
         except Exception as e:
             logging.debug("Failed to finalize image manifest file: {}".format(e))
+            raise
 

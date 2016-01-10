@@ -234,13 +234,13 @@ class S3UploadThread(threading.Thread):
                     upload = True
                     res = self.__manifest.select(md5_hexdigest)
                     for i in res:
-                        logging.debug("key with same md5 already exisits, skip uploading")
                         try:
                             s3key = bucket.get_key(i["part_name"])
                             if s3key:
                                 self.__manifest.insert(
                                     i["etag"], i["local_hash"], i["part_name"], offset, size, "skipped")
                                 # self.__manifest.update(md5_hexdigest, i["part_name"], {"status": "skipped"})
+                                logging.debug("key with same md5 already exisits, skip uploading")
                                 upload = False
 
                                 break
@@ -352,6 +352,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
                     raise ex
     
         self.__chunkSize = chunksize
+        self.__diskSize = resultDiskSizeBytes
         self.__region = awsregion
 
         self.__diskType = diskType.upper()
@@ -544,9 +545,19 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         # the default value. means lots of time
         linktimeexp_seconds = 1361188806
 
-        #TODO: profile
         res_list = self.__manifest.all()
+        # Notify manifest database that backup complete
+        self.__manifest.complete_manifest(self.__diskSize)
+
+        # Making additional checks (offset order)
+        offset = 0
         res_list.sort(key=lambda di: int(di["offset"]))
+        for rec in res_list:
+            if rec["offset"] != str(offset):
+                raise Exception("Offset {} missing in manifest database".format(offset))
+            offset += self.__chunkSize
+
+        #TODO: profile
         fragment_index = 0
         fragment_count = len(res_list)
 
@@ -586,9 +597,6 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             linktimeexp_seconds = 60*60*100     # 100 hours
             self.__xmlKey = s3key.generate_url(linktimeexp_seconds, method='GET', force_http=False)
         s3key.close()
-
-        # Notify manifest database that backup completed
-        self.__manifest.complete_manifest()
 
         return self.__xmlKey
 
