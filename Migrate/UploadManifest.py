@@ -118,10 +118,11 @@ class ImageFileManifest(ImageManifest):
             "status": str(status)
         }
 
-        # # We can't insert record with same etag (has unique key semantic)
-        # if not self.select(res["etag"], res["part_name"]):
-        with self.__lock:
-            self.__table.insert(res)
+        # # We can't insert record with same etag and offset (has unique key semantic)
+        rec_list = self.select(res["etag"])
+        if any(d['offset'] == str(offset) for d in rec_list) is False:
+            with self.__lock:
+                self.__table.insert(res)
 
     def all(self):
         with self.__lock:
