@@ -302,6 +302,8 @@ class ImageManifestDatabase(object):
         return self.__db[0].update(local_hash, part_name, rec)
 
     def all(self):
+        self.__db[0].flush()
+
         return self.__db[0].all()
 
     def get_table_name(self):
@@ -321,9 +323,8 @@ class ImageManifestDatabase(object):
                 "end": str(datetime.datetime.now()),
                 "status": "finished",
                 "excpected_image_size": str(excpected_image_size),
-                "actual_image_size": actual_image_size})
+                "actual_image_size": str(actual_image_size)})
 
-            # Clear hash
             self.__db[0].flush()
 
         except Exception as e:
