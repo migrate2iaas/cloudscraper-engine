@@ -290,15 +290,8 @@ class MigratorConfigurer(object):
         if config.has_option('OpenStack', 'ignore_etag'):
             ignore_etag = config.get('OpenStack', 'ignore_etag')
             
-        manifest_path = "C:\\backup-manifest"
-        if config.has_option('OpenStack', 'manifest_path'):
-            manifest_path = config.get('OpenStack', 'manifest_path')
-
-        increment_depth = 1
-        if config.has_option('OpenStack', 'increment_depth'):
-            manifest_path = config.get('OpenStack', 'increment_depth')
-
         adjust_override = self.getOverrides(config, configfile)
+        manifest_path, increment_depth = self.loadDRconfig(config)
         image = OpenStackConfigs.OpenStackMigrateConfig(volumes, factory, 'x86_64', imagetype)
         cloud = OpenStackConfigs.OpenStackCloudOptions(
             endpoint, user, tennant, password, network, imagetype, container, flavor=flavor, ip_pool_name=ip_pool,
@@ -525,14 +518,6 @@ class MigratorConfigurer(object):
         if config.has_option('EC2', 'chunksize'):
            chunksize = int(config.get('EC2', 'chunksize'))
 
-        manifest_path = "C:\\backup-manifest"
-        if config.has_option('EC2', 'manifest_path'):
-            manifest_path = config.get('EC2', 'manifest_path')
-
-        increment_depth = 1
-        if config.has_option('EC2', 'increment_depth'):
-            increment_depth = config.get('EC2', 'increment_depth')
-           
         bucket = ''
 
         try:
@@ -554,8 +539,9 @@ class MigratorConfigurer(object):
             logging.info("No security group was speicified, using default one. Note it couldn't be changed afterwards.")
         
         (imagedir, image_placement, imagetype) = self.getImageOptions(config)
-        volumes = self.createVolumesList(config , configfile, imagedir, imagetype , s3prefix)        
-        factory = self.createImageFactory(config , image_placement , imagetype)
+        volumes = self.createVolumesList(config, configfile, imagedir, imagetype, s3prefix)
+        factory = self.createImageFactory(config, image_placement, imagetype)
+        manifest_path, increment_depth = self.loadDRconfig(config)
 
         newsize = imagesize
         installservice = None;
@@ -765,6 +751,17 @@ class MigratorConfigurer(object):
            image_placement = "local"
 
         return (imagedir, image_placement, imagetype)
+
+    def loadDRconfig(self, config):
+        manifest_path = 'C:\\backup-manifest'
+        if config.has_option('DR', 'manifest_path'):
+            manifest_path = config.get('DR', 'manifest_path')
+
+        increment_depth = 1
+        if config.has_option('DR', 'increment_depth'):
+            increment_depth = config.get('DR', 'increment_depth')
+
+        return manifest_path, increment_depth
 
     def getServiceOverrides(self, config, configfile, installpath , test=False):
         #here the service config is being generated
