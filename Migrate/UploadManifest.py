@@ -65,7 +65,7 @@ class ImageFileManifest(ImageManifest):
             CachingMiddleware.WRITE_CACHE_SIZE = db_write_cache_size
 
             self.__storage = CachingMiddleware(JSONStorage)
-            self.__db = TinyDB("{}.cloudscraper-manifest-data".format(path), storage=self.__storage)
+            self.__db = TinyDB(path, storage=self.__storage)
             # Creating new table for chunks
             self.__table = self.__db.table(self.__table_name)
         except Exception as e:
@@ -82,7 +82,7 @@ class ImageFileManifest(ImageManifest):
     def create(manifest_path, lock, db_write_cache_size):
         return ImageFileManifest(
             manifest_path,
-            datetime.datetime.now().strftime("%Y-%m-%d %H-%M"),
+            "{}.cloudscraper-manifest-data".format(datetime.datetime.now().strftime("%Y-%m-%d %H-%M")),
             lock,
             db_write_cache_size)
 
