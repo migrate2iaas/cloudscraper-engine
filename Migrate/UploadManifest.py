@@ -334,14 +334,16 @@ class ImageManifestDatabase(object):
 
 class ImageWellKnownBlockDatabase(object):
 
-    def __init__(self):
+    def __init__(self, lock):
+        self.__lock = lock
         self.__db = TinyDB(storage=MemoryStorage)
 
     def insert(self, etag, part_name, data):
-        return self.__db.insert({
-            "etag": str(etag),
-            "part_name": str(part_name),
-            "data": str(data)})
+        with self.__lock:
+            return self.__db.insert({
+                "etag": str(etag),
+                "part_name": str(part_name),
+                "data": str(data)})
 
     def select(self, etag, data):
         key = Query()

@@ -402,7 +402,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
                 db_write_cache_size=write_cache_size)
 
             # Creating database for well known blocks to skipp them when uploading
-            self.__well_known_blocks = UploadManifest.ImageWellKnownBlockDatabase()
+            self.__well_known_blocks = UploadManifest.ImageWellKnownBlockDatabase(threading.Lock())
 
             # Inserting well known null block, another blocks can be added here
             null_data = bytearray(self.__chunkSize)
