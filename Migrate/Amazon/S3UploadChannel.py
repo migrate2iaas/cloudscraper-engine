@@ -246,6 +246,7 @@ class S3UploadThread(threading.Thread):
                                 res = i
                                 break
 
+                    # Trying to find block in cloud
                     try:
                         s3key = bucket.get_key(res["part_name"])
                         if s3key:
@@ -258,7 +259,7 @@ class S3UploadThread(threading.Thread):
                             "Failed to get key. Got exception from the source server. Sometimes it means errors "
                             "from not fully s3 compatible sources " + repr(e))
 
-                    # If key is not found, creating it
+                    # If key is not found, creating
                     if s3key is None:
                         s3key = Key(bucket, res["part_name"])
 
@@ -287,7 +288,7 @@ class S3UploadThread(threading.Thread):
 
             #TODO: stop the thread, notify the channel somehow
             if failed:
-                logging.error("!!! ERROR failed to upload data: %s/%s!", str(bucket), keyname)
+                logging.error("!!! ERROR failed to upload data: %s/%s!", str(bucket), res["part_name"])
                 self.__uploadQueue.task_done()
                 uploadtask.notifyDataTransferError()
             
@@ -407,10 +408,6 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             null_data = bytearray(self.__chunkSize)
             null_md5 = md5()
             null_md5.update(str(null_data))
-
-            with open("D:\\medium.file", "w+") as f:
-                for i in range(0, 10):
-                    f.write(null_data)
 
             self.__well_known_blocks.insert(null_md5.hexdigest(), self.__keyBase + "NullBlock", null_data)
         except Exception as e:
