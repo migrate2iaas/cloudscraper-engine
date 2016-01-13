@@ -4,7 +4,7 @@ import os
 import logging
 
 from tinydb import TinyDB, Query
-from tinydb.storages import JSONStorage
+from tinydb.storages import JSONStorage, MemoryStorage
 from tinydb.middlewares import CachingMiddleware
 
 
@@ -13,23 +13,23 @@ class ImageManifest(object):
         pass
 
     @staticmethod
-    def create(manifest_path, lock, db_write_cache_size):
+    def create():
         raise NotImplementedError
 
     @staticmethod
-    def open(manifest_path, table_name, lock, db_write_cache_size):
+    def open():
         raise NotImplementedError
 
     def flush(self):
         raise NotImplementedError
 
-    def insert(self, etag, local_hash, part_name, offset, size, status):
+    def insert(self):
         raise NotImplementedError
 
-    def select(self, etag, part_name):
+    def select(self):
         raise NotImplementedError
 
-    def update(self, local_hash, part_name, rec):
+    def update(self):
         raise NotImplementedError
 
     def all(self):
@@ -331,3 +331,31 @@ class ImageManifestDatabase(object):
             logging.debug("Failed to finalize image manifest file: {}".format(e))
             raise
 
+
+class ImageWellKnownBlockDatabase(object):
+
+    def __init__(self):
+        self.__db = TinyDB(storage=MemoryStorage)
+
+    def insert(self, etag, part_name, data):
+        return self.__db.insert({
+            "etag": str(etag),
+            "part_name": str(part_name),
+            "data": str(data)})
+
+    def select(self, etag, data):
+        key = Query()
+        key = (key.etag == str(etag)) & (key.data == str(data))
+
+        return self.__db.get(key)
+
+    def update(self):
+        # Not implemented
+        pass
+
+    def all(self):
+        return self.__db.all()
+
+    def get_table_name(self):
+        # Not implemented
+        pass

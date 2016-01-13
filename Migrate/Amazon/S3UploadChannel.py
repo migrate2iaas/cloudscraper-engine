@@ -184,6 +184,7 @@ class S3UploadThread(threading.Thread):
         self.__uploadQueue = queue
         self.__threadId = threadid  # thread id, for troubleshooting purposes
         self.__manifest = channel.getManifest()
+        self.__well_known_blocks = channel.getWellKnownManifest()
         self.__skipExisting = skipexisting
         self.__maxRetries = retries
         self.__copySimilar = copysimilar
@@ -207,65 +208,74 @@ class S3UploadThread(threading.Thread):
                 return
 
             bucket = uploadtask.getTargetBucket()
-            keyname = uploadtask.getTargetKey()
             offset = uploadtask.getOffset()
             size = uploadtask.getSize()
             data = uploadtask.getData()
+            res = {}
             md5_hexdigest = uploadtask.getDataMd5()
 
             # means it's time to exit
             if bucket is None:
                 return
             
-            #NOTE: kinda dedup could be added here!
- 
             failed = True
             retries = 0
             while retries < self.__maxRetries:
                 retries += 1
-
                 try:
                     # s3 key is kinda file in the bucket (directory)
                     # Note: it seems there should be a better (more generic and extendable way) to implement strategies
                     # to reduce the overall upload size
 
-                    # TODO: make more strongly check for existing data chunk
                     s3key = None
                     upload = True
-                    res = self.__manifest.select(md5_hexdigest)
-                    for i in res:
-                        try:
-                            s3key = bucket.get_key(i["part_name"])
-                            if s3key:
-                                self.__manifest.insert(
-                                    i["etag"], i["local_hash"], i["part_name"], offset, size, "skipped")
-                                # self.__manifest.update(md5_hexdigest, i["part_name"], {"status": "skipped"})
-                                logging.debug("key with same md5 already exisits, skip uploading")
-                                upload = False
+                    res["part_name"] = uploadtask.getTargetKey()
 
+                    # First, if well known blocks database exists, checkout data chunk there
+                    res_well_known = None
+                    if self.__well_known_blocks:
+                        res_well_known = self.__well_known_blocks.select(md5_hexdigest, data)
+                        if res_well_known:
+                            res = res_well_known
+
+                    # If data chunk IS NOT well known, trying to find in manifest database
+                    if res_well_known is None:
+                        res_temp = self.__manifest.select(md5_hexdigest)
+                        for i in res_temp:
+                            if int(i["offset"]) == offset:
+                                res = i
                                 break
-                        except Exception as e:
-                            logging.debug(
-                                "Failed to get key. Got exception from the source server. Sometimes it means errors "
-                                "from not fully s3 compatible sources " + repr(e))
 
+                    try:
+                        s3key = bucket.get_key(res["part_name"])
+                        if s3key:
+                            self.__manifest.insert(
+                                res["etag"], md5_hexdigest, res["part_name"], offset, size, "skipped")
+                            logging.debug("key with same md5 found, skip uploading")
+                            upload = False
+                    except Exception as e:
+                        logging.debug(
+                            "Failed to get key. Got exception from the source server. Sometimes it means errors "
+                            "from not fully s3 compatible sources " + repr(e))
+
+                    # If key is not found, creating it
                     if s3key is None:
-                        s3key = Key(bucket, keyname)
+                        s3key = Key(bucket, res["part_name"])
 
                     if upload:
                         md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest)
                         s3key.set_contents_from_string(
                             str(data), replace=True, policy=None, md5=(md5digest, base64md5), reduced_redundancy=False,
                             encrypt_key=False)
-                        self.__manifest.insert(md5digest, md5_hexdigest, keyname, offset, size, "uploaded")
+                        self.__manifest.insert(md5digest, md5_hexdigest, res["part_name"], offset, size, "uploaded")
                         uploadtask.notifyDataTransfered()
                     else:
-                        logging.debug("Skipped the data upload: %s/%s ", str(bucket), keyname)
+                        logging.debug("Skipped the data upload: %s/%s ", str(bucket), res["part_name"])
                         uploadtask.notifyDataSkipped()
                     s3key.close()
                 except Exception as e:
                     # reput the task into the queue
-                    logging.warning("!Failed to upload data: %s/%s , making a retry...", str(bucket), keyname)
+                    logging.warning("!Failed to upload data: %s/%s , making a retry...", str(bucket), res["part_name"])
                     logging.warning("Exception = " + str(e)) 
                     logging.error(traceback.format_exc()) 
                     continue
@@ -295,7 +305,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
     #chunk size means one data element to be uploaded. it waits till all the chunk is transfered to the channel than makes an upload (not fully implemented)
     def __init__(
             self, bucket, awskey, awssercret, resultDiskSizeBytes, location='', keynameBase=None, diskType='VHD',
-            resume_upload=False, chunksize=10*1024*1024, upload_threads=4, queue_size=6, use_ssl=True,
+            resume_upload=False, chunksize=10*1024*1024, upload_threads=2, queue_size=16, use_ssl=True,
             manifest_path=None, increment_depth=1, walrus=False, walrus_path="/services/WalrusBackend",
             walrus_port=8773, make_link_public=False):
         self.__uploadQueue = Queue.Queue(queue_size)
@@ -375,25 +385,13 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             # migrate + number of seconds since 1980
             self.__keyBase = "Migrate" + str(long(time.mktime(now))) + "/image"
 
-        logging.info("\n>>>>>>>>>>>>>>>>> Initializing cloud storage\n") 
-        # creating null block to optimize downloads
-        self.__nullData = bytearray(self.__chunkSize)
-        md5encoder = md5()
-        md5encoder.update(str(self.__nullData))
-        self.__nullMd5 = md5encoder.hexdigest()
-        self.__nullKey = self.__keyBase + "NullBlock"
-        try:
-            nullkey = Key(self.__bucket, self.__nullKey)
-            nullkey.set_contents_from_string(str(self.__nullData), replace=False, policy=None)
-        except Exception as ex:
-            logging.error("!!!ERROR: Failed to make a test upload to bucket " + self.__bucketName)
-            logging.error("Exception = " + str(ex)) 
-            logging.error(traceback.format_exc()) 
-            raise ex
+        logging.info("\n>>>>>>>>>>>>>>>>> Initializing cloud storage\n")
 
         # Resume and increment database creation
         logging.info("Resume upload file path: {}, resume upload is {}".format(manifest_path, self.__resumeUpload))
         self.__manifest = None
+        self.__well_known_blocks = None
+
         try:
             # Number of cached records is equals 512 mb of data, so if something happens only 512 mb (in chunks)
             # wouldn't be saved to manifest database
@@ -401,6 +399,20 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             self.__manifest = UploadManifest.ImageManifestDatabase(
                 manifest_path, self.__keyBase, threading.Lock(), self.__resumeUpload, increment_depth=increment_depth,
                 db_write_cache_size=write_cache_size)
+
+            # Creating database for well known blocks to skipp them when uploading
+            self.__well_known_blocks = UploadManifest.ImageWellKnownBlockDatabase()
+
+            # Inserting well known null block, another blocks can be added here
+            null_data = bytearray(self.__chunkSize)
+            null_md5 = md5()
+            null_md5.update(str(null_data))
+
+            with open("D:\\medium.file", "w+") as f:
+                for i in range(0, 10):
+                    f.write(null_data)
+
+            self.__well_known_blocks.insert(null_md5.hexdigest(), self.__keyBase + "NullBlock", null_data)
         except Exception as e:
             logging.error("!!!ERROR: cannot open file containing segments. Reason: {}".format(e))
             raise
@@ -413,6 +425,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             thread.start()
             self.__workThreads.append(thread)
             i += 1
+
         return
 
         # Unreachable code
@@ -490,6 +503,9 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
     def getManifest(self):
         return self.__manifest
+
+    def getWellKnownManifest(self):
+        return self.__well_known_blocks
 
     #  overall data skipped from uploading if resume upload is set
     def notifyDataSkipped(self, skipped_size):
