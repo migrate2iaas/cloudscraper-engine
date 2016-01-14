@@ -329,7 +329,11 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             except Exception as ex:
                 logging.info(">>>>> Creating a new S3 bucket: " + self.__bucketName) 
                 try:
-                    self.__bucket = self.__S3.create_bucket(self.__bucketName , location=awsregion)
+                    if not walrus:
+                        location = awsregion
+                    else:
+                        location = None
+                    self.__bucket = self.__S3.create_bucket(self.__bucketName , location=location)
                 except BotoServerError as botoex:
                     logging.error("!!!ERROR: Wasn't able to find or create bucket " + self.__bucketName + " in region " + location + " .")
                     if botoex.error_message:
