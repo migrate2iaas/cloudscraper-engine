@@ -278,12 +278,16 @@ class MigratorConfigurer(object):
         s3secret = config.get('onApp', 's3secret')
         s3region = config.get('onApp', 's3region')
 
+        s3customhost = False
+        if config.has_option('onApp', 's3custom'):
+            s3customhost = config.getboolean('onApp', 's3custom')
+
         adjust_override = self.getOverrides(config , configfile)
 
         image = onAppConfigs.onAppMigrateConfig(volumes , factory, 'x86_64' , imagetype)
         cloud = onAppConfigs.onAppCloudOptions(s3bucket , s3user , s3secret , s3region , onapp_endpoint , onapp_login , \
             password , onapp_datastore_id, onapp_target_account , onapp_port = onapp_port, preset_ip = minipad_ip, \
-            minipad_image_name = minipad_template , minipad_vm_id = minipad_vm_id , vmbuild_timeout_sec = int(vm_build_timeout) , wintemplate_size = wintemplate_size)
+            minipad_image_name = minipad_template , minipad_vm_id = minipad_vm_id , vmbuild_timeout_sec = int(vm_build_timeout) , wintemplate_size = wintemplate_size , s3custom=s3customhost)
 
         return (image,adjust_override,cloud)
 

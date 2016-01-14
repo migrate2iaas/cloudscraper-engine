@@ -28,7 +28,7 @@ import os
 
 class onAppCloudOptions(CloudConfig.CloudConfig):
     
-    def __init__(self, s3bucket , s3user , s3password , s3region , onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_name = "" , minipad_vm_id = None , vmbuild_timeout_sec = 120*60 , wintemplate_size = 20):
+    def __init__(self, s3bucket , s3user , s3password , s3region , onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_name = "" , minipad_vm_id = None , vmbuild_timeout_sec = 120*60 , wintemplate_size = 20 , s3custom = False):
         """
         Constructor
         """
@@ -45,7 +45,7 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
         self.__preset_ip = preset_ip
         self.__minipad_image_name = minipad_image_name
         self.__minipad_vm_id = minipad_vm_id
-        self.__custom_host = False
+        self.__custom_host = s3custom
         self.__keynamePrefix = ""
         self.__diskType = "RAW"
         self.__chunkSize = 10*1024*1024
@@ -76,8 +76,8 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
         if self.__custom_host:
             custom = True
 
-        return S3UploadChannel.S3UploadChannel(self.__s3bucket , self.__s3user , self.__s3password , targetsize, self.__custom_host or self.__s3region , targetid or self.__keynamePrefix , self.__diskType , \
-            resume_upload = resume , chunksize = self.__chunkSize, walrus = custom , make_link_public=True )
+        return S3UploadChannel.S3UploadChannel(self.__s3bucket , self.__s3user , self.__s3password , targetsize, self.__s3region , targetid or self.__keynamePrefix , self.__diskType , \
+            resume_upload = resume , chunksize = self.__chunkSize, walrus = custom , walrus_path = "" , walrus_port = 443 , make_link_public=True )
 
     def generateInstanceFactory(self):
         return self.__instanceFactory
