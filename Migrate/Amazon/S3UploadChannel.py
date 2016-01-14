@@ -327,13 +327,15 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             try:
                 self.__bucket = self.__S3.get_bucket(self.__bucketName)
             except Exception as ex:
+                logging.debug("Cannot get bucket. Reason: " + str(ex))
                 logging.info(">>>>> Creating a new S3 bucket: " + self.__bucketName) 
                 try:
                     if not walrus:
                         constraint = awsregion
+                        self.__bucket = self.__S3.create_bucket(self.__bucketName , location=constraint)
                     else:
-                        constraint = None
-                    self.__bucket = self.__S3.create_bucket(self.__bucketName , location=constraint)
+                        self.__bucket = self.__S3.create_bucket(self.__bucketName)
+                    
                 except BotoServerError as botoex:
                     logging.error("!!!ERROR: Wasn't able to find or create bucket " + self.__bucketName + " in region " + location + " .")
                     if botoex.error_message:
