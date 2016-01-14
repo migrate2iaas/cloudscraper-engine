@@ -362,6 +362,10 @@ class ImageDictionaryManifest(ImageManifest):
                 self.__table[self.__table_count] = res
                 self.__table_count += 1
 
+                # If write count matches db_write_cache_size flush database
+                if self.__table_count % self.__db_write_cache_size == 0:
+                    self.flush()
+
     def all(self):
         """
         Returns all records from current (latest by timestamp)
