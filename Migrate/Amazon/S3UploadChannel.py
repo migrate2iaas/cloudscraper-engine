@@ -398,8 +398,8 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             # wouldn't be saved to manifest database
             write_cache_size = int(512 * 1024 * 1024 / self.__chunkSize)
             self.__manifest = UploadManifest.ImageManifestDatabase(
-                manifest_path, self.__keyBase, threading.Lock(), self.__resumeUpload, increment_depth=increment_depth,
-                db_write_cache_size=write_cache_size)
+                UploadManifest.ImageDictionaryManifest, manifest_path, self.__keyBase, threading.Lock(),
+                self.__resumeUpload, increment_depth=increment_depth, db_write_cache_size=write_cache_size)
 
             # Creating database for well known blocks to skipp them when uploading
             self.__well_known_blocks = UploadManifest.ImageWellKnownBlockDatabase(threading.Lock())

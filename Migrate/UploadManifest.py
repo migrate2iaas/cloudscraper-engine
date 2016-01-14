@@ -1,4 +1,5 @@
 import uuid
+import json
 import datetime
 import os
 import logging
@@ -13,23 +14,23 @@ class ImageManifest(object):
         pass
 
     @staticmethod
-    def create():
+    def create(manifest_path, lock, db_write_cache_size):
         raise NotImplementedError
 
     @staticmethod
-    def open():
+    def open(manifest_path, table_name, lock, db_write_cache_size):
         raise NotImplementedError
 
     def flush(self):
         raise NotImplementedError
 
-    def insert(self):
+    def insert(self, etag, local_hash, part_name, offset, size, status):
         raise NotImplementedError
 
-    def select(self):
+    def select(self, etag=None, part_name=None):
         raise NotImplementedError
 
-    def update(self):
+    def update(self, etag, offset, rec):
         raise NotImplementedError
 
     def all(self):
@@ -211,13 +212,187 @@ class ImageFileManifest(ImageManifest):
         return self.__table_name
 
 
+class ImageDictionaryManifest(ImageManifest):
+    """
+    Implementation for ImageManifest interface, it's implements database behavior with select, update, insert,...
+    for file storage, based on JSON format.
+    """
+
+    def __init__(self, manifest_path, table_name, lock, db_write_cache_size=1):
+        self.__table_name = str(table_name)
+        path = "{}/{}".format(manifest_path, self.__table_name)
+
+        logging.debug(
+            "Creating or opening image manifest database {}. It's uses dictionaty to store data."
+            .format(path))
+
+        self.__db = None
+        self.__table = None
+        self.__storage = None
+        self.__db_count = 0
+        self.__table_count = 0
+        try:
+            with (open("{}/{}".format(manifest_path, table_name))) as f:
+                self.__storage = json.load(f)
+                self.__db = self.__storage["_default"]
+                self.__table = self.__storage[table_name]
+
+        except Exception as e:
+            logging.error("!!!ERROR: Failed to create or open image manifest database: {}".format(e))
+            raise
+
+        self.__manifest_path = manifest_path
+        self.__db_write_cache_size = db_write_cache_size
+        self.__lock = lock
+
+        super(ImageDictionaryManifest, self).__init__()
+
+    @staticmethod
+    def create(manifest_path, lock, db_write_cache_size):
+        storage = {}
+        file_name = "{}.cloudscraper-manifest-data".format(datetime.datetime.now().strftime("%Y-%m-%d %H-%M"))
+        storage["_default"] = {}
+        storage[file_name] = {}
+
+        with open("{}/{}".format(manifest_path, file_name), "w") as f:
+            json.dump(storage, f)
+
+        return ImageDictionaryManifest(
+            manifest_path,
+            file_name,
+            lock,
+            db_write_cache_size)
+
+    @staticmethod
+    def open(manifest_path, table_name, lock, db_write_cache_size):
+        return ImageDictionaryManifest(
+            manifest_path,
+            table_name,
+            lock,
+            db_write_cache_size)
+
+    def flush(self):
+        with open("{}/{}".format(self.__manifest_path, self.__table_name), "w") as f:
+            json.dump(self.__storage, f)
+
+    def insert_db_meta(self, res):
+        """
+        Writes database meta data with given res (dictionary) value. Default meta data table name is "_default"
+        and can be found in manifest file.
+
+        :param res: dictionary with meta data
+        :type res: dict
+        """
+
+        with self.__lock:
+            self.__db[self.__db_count] = res
+            self.__db_count += 1
+
+    def update(self, etag, offset, rec):
+        """
+        """
+        pass
+
+    def select(self, etag=None, part_name=None):
+        """
+        Search records by given etag or (and) part name
+
+        :param etag: etag to search
+        :type etag: string
+
+        :param part_name: part name to search
+        :type part_name: string
+
+        :return: list of records or empty []
+        """
+
+        res = []
+        for item in self.all():
+            if etag:
+                if item["etag"] == str(etag):
+                    if part_name:
+                        if item["part_name"] == str(part_name):
+                            res.append(item)
+                    else:
+                        res.append(item)
+            elif part_name:
+                if item["part_name"] == str(part_name):
+                    res.append(item)
+
+        return res
+
+    def insert(self, etag, local_hash, part_name, offset, size, status):
+        """
+        Insert record in database. Pair (etag, offset) has table unique key semantics,
+        so in given table there are no records with same hash and offset
+
+        :param etag: etag (hash of remote storage data chunk)
+        :type etag: string
+
+        :param local_hash: (hash of local storage data chunk)
+        :type local_hash: string
+
+        :param part_name: name for uploaded part
+        :type part_name: string
+
+        :param offset: offset of data chunk in whole file
+        :type offset: int
+
+        :param size: size of data chunk
+        :type size: int
+
+        :param status: dictionary with new values for given record
+        :type status: string
+        """
+
+        res = {
+            "uuid": str(uuid.uuid4()),
+            "etag": str(etag),
+            "local_hash": str(local_hash),
+            "part_name": str(part_name),
+            "offset": str(offset),
+            "size": str(size),
+            "status": str(status)
+        }
+
+        # We can't insert record with same etag and offset (has unique key semantic)
+        rec_list = self.select(res["etag"])
+        if any(d['offset'] == str(offset) for d in rec_list) is False:
+            with self.__lock:
+                self.__table[self.__table_count] = res
+                self.__table_count += 1
+
+    def all(self):
+        """
+        Returns all records from current (latest by timestamp)
+
+        :return: list of all records
+        """
+        with self.__lock:
+            # TODO: make more python-like, we need return dictionary without record number (1, 2, ...)
+            res = []
+            for i in range(0, self.__table_count):
+                res.append(self.__table[i])
+            return res
+
+    def get_table_name(self):
+        """
+        Returns name of backup, in this case it's means manifest file name.
+
+        :return: table (file) name
+        """
+        return self.__table_name
+
+
 class ImageManifestDatabase(object):
     """
     A class wrapper for tinydb https://pypi.python.org/pypi/tinydb
     for creating and managing image manifest files which allows resuming upload
     """
 
-    def __init__(self, manifest_path, container_name, lock, resume=False, increment_depth=1, db_write_cache_size=1):
+    def __init__(
+            self, image_manifest, manifest_path, container_name, lock, resume=False, increment_depth=1,
+            db_write_cache_size=1):
         """
         Creates or opens existing manifest file
 
@@ -254,11 +429,11 @@ class ImageManifestDatabase(object):
 
             # First, creating manifest if no resume required, than getting list (new manifest just created)
             if resume is False:
-                ImageFileManifest.create(manifest_path, lock, db_write_cache_size)
+                image_manifest.create(manifest_path, lock, db_write_cache_size)
 
             m_list = self.__get_sorted_manifest_list(increment_depth)
             for table_name in m_list:
-                self.__db.append(ImageFileManifest.open(manifest_path, table_name, lock, db_write_cache_size))
+                self.__db.append(image_manifest.open(manifest_path, table_name, lock, db_write_cache_size))
 
             # Inserting metadata to default table for opened (last) manifest
             self.__db[0].insert_db_meta({
@@ -361,3 +536,6 @@ class ImageWellKnownBlockDatabase(object):
     def get_table_name(self):
         # Not implemented
         pass
+
+
+
