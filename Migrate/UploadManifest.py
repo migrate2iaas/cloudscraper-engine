@@ -257,7 +257,7 @@ class ImageDictionaryManifest(ImageManifest):
         with open("{}/{}".format(manifest_path, file_name), "w") as f:
             json.dump(storage, f)
 
-        return ImageDictionaryManifest(
+        return ImageDictionaryManifest.open(
             manifest_path,
             file_name,
             lock,
@@ -375,7 +375,7 @@ class ImageDictionaryManifest(ImageManifest):
         with self.__lock:
             # TODO: make more python-like, we need return dictionary without record number (1, 2, ...)
             res = []
-            for i in range(0, self.__table_count):
+            for i in self.__table:
                 res.append(self.__table[i])
             return res
 
