@@ -389,7 +389,9 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         logging.info("\n>>>>>>>>>>>>>>>>> Initializing cloud storage\n")
 
         # Resume and increment database creation
-        logging.info("Resume upload file path: {}, resume upload is {}".format(manifest_path, self.__resumeUpload))
+        logging.info(
+            "Resume upload file path: {}, resume upload is {}, use DR is {}".
+            format(manifest_path, self.__resumeUpload, use_dr))
         self.__manifest = None
         self.__well_known_blocks = None
 
