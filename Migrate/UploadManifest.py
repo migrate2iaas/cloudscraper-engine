@@ -14,11 +14,11 @@ class ImageManifest(object):
         pass
 
     @staticmethod
-    def create(manifest_path, lock, db_write_cache_size):
+    def create(manifest_path, lock, db_write_cache_size, use_dr):
         raise NotImplementedError
 
     @staticmethod
-    def open(manifest_path, table_name, lock, db_write_cache_size):
+    def open(manifest_path, table_name, lock, db_write_cache_size, use_dr):
         raise NotImplementedError
 
     def flush(self):
@@ -218,7 +218,7 @@ class ImageDictionaryManifest(ImageManifest):
     for file storage, based on JSON format.
     """
 
-    def __init__(self, manifest_path, table_name, lock, db_write_cache_size=1):
+    def __init__(self, manifest_path, table_name, lock, db_write_cache_size=1, use_dr=True):
         self.__table_name = str(table_name)
         path = "{}/{}".format(manifest_path, self.__table_name)
 
@@ -226,17 +226,21 @@ class ImageDictionaryManifest(ImageManifest):
             "Creating or opening image manifest database {}. It's uses dictionaty to store data."
             .format(path))
 
-        self.__db = None
-        self.__table = None
-        self.__storage = None
+        self.__db = {}
+        self.__table = {}
+        self.__storage = {}
         self.__db_count = 0
         self.__table_count = 0
+        self.__use_dr = use_dr
         try:
-            with (open("{}/{}".format(manifest_path, table_name))) as f:
-                self.__storage = json.load(f)
+            if self.__use_dr:
+                with (open("{}/{}".format(manifest_path, table_name))) as f:
+                    self.__storage = json.load(f)
                 self.__db = self.__storage["_default"]
                 self.__table = self.__storage[table_name]
-
+            else:
+                self.__storage["_default"] = {}
+                self.__storage[table_name] = {}
         except Exception as e:
             logging.error("!!!ERROR: Failed to create or open image manifest database: {}".format(e))
             raise
@@ -248,32 +252,36 @@ class ImageDictionaryManifest(ImageManifest):
         super(ImageDictionaryManifest, self).__init__()
 
     @staticmethod
-    def create(manifest_path, lock, db_write_cache_size):
+    def create(manifest_path, lock, db_write_cache_size, use_dr):
         storage = {}
         file_name = "{}.cloudscraper-manifest-data".format(datetime.datetime.now().strftime("%Y-%m-%d %H-%M"))
         storage["_default"] = {}
         storage[file_name] = {}
 
-        with open("{}/{}".format(manifest_path, file_name), "w") as f:
-            json.dump(storage, f)
+        if use_dr:
+            with open("{}/{}".format(manifest_path, file_name), "w") as f:
+                json.dump(storage, f)
 
         return ImageDictionaryManifest.open(
             manifest_path,
             file_name,
             lock,
-            db_write_cache_size)
+            db_write_cache_size,
+            use_dr)
 
     @staticmethod
-    def open(manifest_path, table_name, lock, db_write_cache_size):
+    def open(manifest_path, table_name, lock, db_write_cache_size, use_dr):
         return ImageDictionaryManifest(
             manifest_path,
             table_name,
             lock,
-            db_write_cache_size)
+            db_write_cache_size,
+            use_dr)
 
     def flush(self):
-        with open("{}/{}".format(self.__manifest_path, self.__table_name), "w") as f:
-            json.dump(self.__storage, f)
+        if self.__use_dr:
+            with open("{}/{}".format(self.__manifest_path, self.__table_name), "w") as f:
+                json.dump(self.__storage, f)
 
     def insert_db_meta(self, res):
         """
@@ -388,7 +396,8 @@ class ImageDictionaryManifest(ImageManifest):
         return self.__table_name
 
     def get_database_file_path(self):
-        return "{}/{}".format(self.__manifest_path, self.__table_name)
+        if self.__use_dr:
+            return "{}/{}".format(self.__manifest_path, self.__table_name)
 
 
 class ImageManifestDatabase(object):
@@ -399,7 +408,7 @@ class ImageManifestDatabase(object):
 
     def __init__(
             self, image_manifest, manifest_path, container_name, lock, resume=False, increment_depth=1,
-            db_write_cache_size=1):
+            db_write_cache_size=1, use_dr=True):
         """
         Creates or opens existing manifest file
 
@@ -431,24 +440,28 @@ class ImageManifestDatabase(object):
 
         self.__db = []
         try:
-            # increment_depth = 0 meaning that we use all available manifests
-            # increment_depth = N meaning that we use last N (by timestamp) available manifests
+            if use_dr:
+                # increment_depth = 0 meaning that we use all available manifests
+                # increment_depth = N meaning that we use last N (by timestamp) available manifests
 
-            # First, creating manifest if no resume required, than getting list (new manifest just created)
-            if resume is False:
-                image_manifest.create(manifest_path, lock, db_write_cache_size)
+                # First, creating manifest if no resume required, than getting list (new manifest just created)
+                if resume is False:
+                    image_manifest.create(manifest_path, lock, db_write_cache_size)
 
-            m_list = self.__get_sorted_manifest_list(increment_depth)
-            for table_name in m_list:
-                self.__db.append(image_manifest.open(manifest_path, table_name, lock, db_write_cache_size))
+                m_list = self.__get_sorted_manifest_list(increment_depth)
+                for table_name in m_list:
+                    self.__db.append(image_manifest.open(manifest_path, table_name, lock, db_write_cache_size))
+            else:
+                self.__db.append(
+                    image_manifest.open(manifest_path, "in_memory_table", lock, db_write_cache_size, use_dr))
 
-            # Inserting metadata to default table for opened (last) manifest
-            self.__db[0].insert_db_meta({
-                "start": str(datetime.datetime.now()),
-                "container_name": container_name,
-                "status": "progress",
-                "resume": str(resume),
-                "increment_depth": str(increment_depth)})
+                # Inserting metadata to default table for opened (last) manifest
+                self.__db[0].insert_db_meta({
+                    "start": str(datetime.datetime.now()),
+                    "container_name": container_name,
+                    "status": "progress",
+                    "resume": str(resume),
+                    "increment_depth": str(increment_depth)})
         except Exception as e:
             logging.error("!!!ERROR: unable to create (or open) image file manifest for {}: {}".format(
                 manifest_path, e))
