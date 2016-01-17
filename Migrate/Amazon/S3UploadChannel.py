@@ -238,8 +238,8 @@ class S3UploadThread(threading.Thread):
                         if res_well_known:
                             res = res_well_known
 
-                    # If data chunk IS NOT well known, trying to find in manifest database
-                    if res_well_known is None:
+                    # If data chunk IS NOT well known, trying to find in manifest database if it's exists
+                    if res_well_known is None and self.__manifest:
                         res_temp = self.__manifest.select(md5_hexdigest)
                         for i in res_temp:
                             if int(i["offset"]) == offset:
@@ -250,9 +250,10 @@ class S3UploadThread(threading.Thread):
                     try:
                         s3key = bucket.get_key(res["part_name"])
                         if s3key:
-                            self.__manifest.insert(
-                                res["etag"], md5_hexdigest, res["part_name"], offset, size, "skipped")
-                            logging.debug("key with same md5 found, skip uploading")
+                            if self.__manifest:
+                                self.__manifest.insert(
+                                    res["etag"], md5_hexdigest, res["part_name"], offset, size, "skipped")
+                                logging.debug("key with same md5 found, skip uploading")
                             upload = False
                     except Exception as e:
                         logging.debug(
@@ -268,7 +269,8 @@ class S3UploadThread(threading.Thread):
                         s3key.set_contents_from_string(
                             str(data), replace=True, policy=None, md5=(md5digest, base64md5), reduced_redundancy=False,
                             encrypt_key=False)
-                        self.__manifest.insert(md5digest, md5_hexdigest, res["part_name"], offset, size, "uploaded")
+                        if self.__manifest:
+                            self.__manifest.insert(md5digest, md5_hexdigest, res["part_name"], offset, size, "uploaded")
                         uploadtask.notifyDataTransfered()
                     else:
                         logging.debug("Skipped the data upload: %s/%s ", str(bucket), res["part_name"])
@@ -307,7 +309,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
     def __init__(
             self, bucket, awskey, awssercret, resultDiskSizeBytes, location='', keynameBase=None, diskType='VHD',
             resume_upload=False, chunksize=10*1024*1024, upload_threads=4, queue_size=16, use_ssl=True,
-            manifest_path=None, increment_depth=1, walrus=False, walrus_path="/services/WalrusBackend",
+            manifest_path=None, increment_depth=1, use_dr=True, walrus=False, walrus_path="/services/WalrusBackend",
             walrus_port=8773, make_link_public=False):
         self.__uploadQueue = Queue.Queue(queue_size)
         self.__statLock = threading.Lock()
@@ -394,12 +396,14 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         self.__well_known_blocks = None
 
         try:
-            # Number of cached records is equals 512 mb of data, so if something happens only 512 mb (in chunks)
-            # wouldn't be saved to manifest database
-            write_cache_size = int(512 * 1024 * 1024 / self.__chunkSize)
-            self.__manifest = UploadManifest.ImageManifestDatabase(
-                UploadManifest.ImageDictionaryManifest, manifest_path, self.__keyBase, threading.Lock(),
-                self.__resumeUpload, increment_depth=increment_depth, db_write_cache_size=write_cache_size)
+            # Check if incremental backup needed
+            if use_dr:
+                # Number of cached records is equals 512 mb of data, so if something happens only 512 mb (in chunks)
+                # wouldn't be saved to manifest database
+                write_cache_size = int(512 * 1024 * 1024 / self.__chunkSize)
+                self.__manifest = UploadManifest.ImageManifestDatabase(
+                    UploadManifest.ImageDictionaryManifest, manifest_path, self.__keyBase, threading.Lock(),
+                    self.__resumeUpload, increment_depth=increment_depth, db_write_cache_size=write_cache_size)
 
             # Creating database for well known blocks to skipp them when uploading
             self.__well_known_blocks = UploadManifest.ImageWellKnownBlockDatabase(threading.Lock())

@@ -387,6 +387,9 @@ class ImageDictionaryManifest(ImageManifest):
         """
         return self.__table_name
 
+    def get_database_file_path(self):
+        return "{}/{}".format(self.__manifest_path, self.__table_name)
+
 
 class ImageManifestDatabase(object):
     """

@@ -541,10 +541,15 @@ class MigratorConfigurer(object):
         (imagedir, image_placement, imagetype) = self.getImageOptions(config)
         volumes = self.createVolumesList(config, configfile, imagedir, imagetype, s3prefix)
         factory = self.createImageFactory(config, image_placement, imagetype)
-        manifest_path, increment_depth = self.loadDRconfig(config)
+
+        use_dr = False
+        manifest_path = increment_depth = None
+        if config.has_section('DR'):
+            use_dr = True
+            manifest_path, increment_depth = self.loadDRconfig(config)
 
         newsize = imagesize
-        installservice = None;
+        installservice = None
 
         adjust_override = self.getOverrides(config, configfile)
 
@@ -554,7 +559,8 @@ class MigratorConfigurer(object):
             bucket=bucket, user=user, password=password, newsize=newsize, arch=arch, zone=zone, region=region,
             machinename="", securityid=security, instancetype=instancetype, chunksize=chunksize, disktype=imagetype,
             keyname_prefix=s3prefix, vpc=vpcsubnet, custom_host=custom_host, custom_port=custom_port,
-            custom_suffix=custom_suffix, use_ssl=use_ssl, manifest_path=manifest_path, increment_depth=increment_depth)
+            custom_suffix=custom_suffix, use_ssl=use_ssl, manifest_path=manifest_path, increment_depth=increment_depth,
+            use_dr=use_dr)
         
 
         return (image,adjust_override,cloud)
