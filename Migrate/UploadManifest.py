@@ -431,12 +431,15 @@ class ImageManifestDatabase(object):
         :type db_write_cache_size: int
         """
 
-        self.__increment_depth = increment_depth
+        self.__increment_depth = None
+        self.__manifest_path = None
+        if use_dr:
+            self.__increment_depth = increment_depth
 
-        # Creating directory if it doesn't exsists
-        self.__manifest_path = manifest_path
-        if not os.path.isdir(self.__manifest_path):
-            os.makedirs(self.__manifest_path)
+            # Creating directory if it doesn't exsists
+            self.__manifest_path = manifest_path
+            if not os.path.isdir(self.__manifest_path):
+                os.makedirs(self.__manifest_path)
 
         self.__db = []
         try:
