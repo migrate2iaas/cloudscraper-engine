@@ -75,7 +75,7 @@ class S3ManfiestBuilder:
          
        return
 
-    def addUploadedPart(self , index , rangeStart , rangeEnd , keyName):
+    def addUploadedPart(self , index , rangeStart , rangeEnd , keyName , version = None):
         
         linktimeexp_seconds = 60*60*24*15   # 15 days
 
@@ -85,15 +85,15 @@ class S3ManfiestBuilder:
         keystr = '\n\t\t\t\t <key>'+str(keyName)+'</key>'
         self.__file.write(keystr)
           
-        urlhead = self.__S3.generate_url( linktimeexp_seconds, method='HEAD', bucket=self.__bucket, key=keyName, force_http=False)
+        urlhead = self.__S3.generate_url( linktimeexp_seconds, method='HEAD', bucket=self.__bucket, key=keyName, force_http=False , version_id = version)
         gethead = '\n\t\t\t\t <head-url>'+urlhead.replace('&' ,'&amp;')+'</head-url>'
         self.__file.write(gethead)
 
-        urlget = self.__S3.generate_url( linktimeexp_seconds, method='GET', bucket=self.__bucket, key=keyName, force_http=False)
+        urlget = self.__S3.generate_url( linktimeexp_seconds, method='GET', bucket=self.__bucket, key=keyName, force_http=False, version_id = version)
         getstr = '\n\t\t\t\t <get-url>'+urlget.replace('&' ,'&amp;')+'</get-url>'
         self.__file.write(getstr)
 
-        urldelete = self.__S3.generate_url( linktimeexp_seconds, method='DELETE', bucket=self.__bucket, key=keyName, force_http=False)
+        urldelete = self.__S3.generate_url( linktimeexp_seconds, method='DELETE', bucket=self.__bucket, key=keyName, force_http=False, version_id = version)
         getdelete = '\n\t\t\t\t <delete-url>'+urldelete.replace('&' ,'&amp;')+'</delete-url>'
         self.__file.write(getdelete)
 
@@ -112,24 +112,28 @@ class S3ManfiestBuilder:
 class UploadQueueTask(object):
     # NOTE: make kinda abstraction for alternative sources. Still more design effort is needed to get what these source\buckets should really be
     def __init__(
-            self, bucket, keyname, offset, size, data_getter, channel, alternative_source_bucket=None,
+            self, bucket, keyname, offset, size, data_getter, channel, alternative_source_bucket=None,\
             alternative_source_keyname=None):
         self.__channel = channel
         self.__targetBucket = bucket
         self.__targetKeyname = keyname
         self.__targetOffset = offset
         self.__targetSize = size
+        self.__targetStart = start
         self.__dataGetter = data_getter 
         self.__alternativeKey = alternative_source_keyname
         self.__alternativeBucket = alternative_source_bucket
+        self.__version = None
 
     def notifyDataTransfered(self):
         if self.__channel:
             self.__channel.notifyDataTransfered(self.__targetSize)
+            self.__channel.setChunkComplete(self.__targetKeyname, self.__targetStart, self.__targetSize, self.__version)
 
     def notifyDataSkipped(self):
         if self.__channel:
            self.__channel.notifyDataSkipped(self.__targetSize)
+           self.__channel.setChunkComplete(self.__targetKeyname, self.__targetStart, self.__targetSize, self.__version)
 
     def notifyDataTransferError(self):
         if self.__channel:
@@ -155,6 +159,9 @@ class UploadQueueTask(object):
         data = self.getData()
         md5encoder.update(data)
         return md5encoder.hexdigest()
+
+    def setVersion(self , version):
+        self.__version = version
 
     # specifies the alternitive availble path. 
     # alternative source seem to be interesting concept. get something from another place. maybe deferred
@@ -188,7 +195,6 @@ class S3UploadThread(threading.Thread):
         self.__skipExisting = skipexisting
         self.__maxRetries = retries
         self.__copySimilar = copysimilar
-
         super(S3UploadThread, self).__init__()
 
     def run(self):
@@ -247,13 +253,7 @@ class S3UploadThread(threading.Thread):
                                 break
 
                     # Trying to find block in cloud
-                    try:
-                        s3key = bucket.get_key(res["part_name"])
-                        if s3key:
-                            self.__manifest.insert(
-                                res["etag"], md5_hexdigest, res["part_name"], offset, size, "skipped")
-                            logging.debug("key with same md5 found, skip uploading")
-                            upload = False
+
                     except Exception as e:
                         logging.debug(
                             "Failed to get key. Got exception from the source server. Sometimes it means errors "
@@ -273,6 +273,7 @@ class S3UploadThread(threading.Thread):
                     else:
                         logging.debug("Skipped the data upload: %s/%s ", str(bucket), res["part_name"])
                         uploadtask.notifyDataSkipped()
+
                     s3key.close()
                 except Exception as e:
                     # reput the task into the queue
@@ -304,16 +305,19 @@ class S3UploadChannel(UploadChannel.UploadChannel):
     #TODO: we need kinda open method for the channel
     #TODO: need kinda doc
     #chunk size means one data element to be uploaded. it waits till all the chunk is transfered to the channel than makes an upload (not fully implemented)
+
     def __init__(
             self, bucket, awskey, awssercret, resultDiskSizeBytes, location='', keynameBase=None, diskType='VHD',
             resume_upload=False, chunksize=10*1024*1024, upload_threads=4, queue_size=16, use_ssl=True,
             manifest_path=None, increment_depth=1, use_dr=True, walrus=False, walrus_path="/services/WalrusBackend",
             walrus_port=8773, make_link_public=False):
+
         self.__uploadQueue = Queue.Queue(queue_size)
         self.__statLock = threading.Lock()
         self.__prevUploadTime = None 
         self.__transferRate = 0
         self.__makeLinkPublic = make_link_public
+        self.__enableVersioning = enable_versioning
 
         #TODO:need to save it in common log directory
         boto.set_file_logger("boto", "boto.log", level=logging.DEBUG)
@@ -361,6 +365,15 @@ class S3UploadChannel(UploadChannel.UploadChannel):
                     logging.error("!!!ERROR: It's possible the bucket with the same name exists but in another region. Try to specify another bucket name for the upload")
                     logging.error(traceback.format_exc()) 
                     raise ex
+
+            # turn versioning on
+            # by turning versioning we achieve an ability to have several restoration\redeployment points
+            if self.__enableVersioning:
+                try:
+                    self.__bucket.configure_versioning(True)
+                except Exception as ex:
+                    logging.warn("! Cannot enable versioning in the bucket. Only last version of image will be kept")
+                    logging.error(traceback.format_exc()) 
     
         self.__chunkSize = chunksize
         self.__diskSize = resultDiskSizeBytes
@@ -422,6 +435,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         i = 0
         while i < upload_threads:
             thread = S3UploadThread(self.__uploadQueue, i, self.__resumeUpload, self)
+
             thread.start()
             self.__workThreads.append(thread)
             i += 1
@@ -478,7 +492,15 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         if self.__overallSize < start + size:
             self.__overallSize = start + size
 
+
         return
+
+    def setChunkComplete(self, keyname, start, size, version=None):
+        """
+        Internal routine to communicate with the upload thread.
+        It marks chunk complete and sets adds it to the fragment dictionary
+        """
+        self.__fragmentDictionary[start] = (keyname , size, version)
 
     def getTransferChunkSize(self):
         """ 
@@ -592,13 +614,11 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         
         #TODO: faster the solution by re-sorting the dictionary or have an another container
         for res in res_list:
-
             # here we rename the parts to reflect their sequence numbers
             # NOTE: it takes to much time. 
             # newkeyname = self.__keyBase+"/"+keyprefix+".part"+str(fragment_index);
             # self.__bucket.copy_key(newkeyname, self.__bucketName, keyname)
             # self.__bucket.delete_key(keyname)
-
             manifest.addUploadedPart(
                 fragment_index, int(res["offset"]), int(res["offset"]) + int(res["size"]), res["part_name"])
             fragment_index += 1

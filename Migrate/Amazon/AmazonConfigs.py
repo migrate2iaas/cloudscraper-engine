@@ -59,6 +59,7 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
             targetid: str - a cloud-defined path describing the upload (path to key in the bucket)
             resume: Boolean - to recreate disk representation or to reupload
             imagesize: long - image file size in bytes
+            preserve_existing_data: bool - if preserve (make versioned copy) of existing data (only if resume is true)
         """
         # check if we use custom (non AWS) S3 
         custom = False
@@ -70,6 +71,7 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
             targetid or self.__keynamePrefix, self.__diskType, resume_upload=resume, chunksize=self.__chunkSize,
             walrus=custom, walrus_path=self.__custom_suffix, walrus_port=self.__custom_port, use_ssl=self.__use_ssl,
             manifest_path=self.__manifest_path, increment_depth=self.__increment_depth, use_dr=self.__use_dr)
+
          
     def generateInstanceFactory(self):
         """returns object of InstanceFactory type to create servers from uploaded images"""

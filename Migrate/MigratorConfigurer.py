@@ -522,14 +522,15 @@ class MigratorConfigurer(object):
 
         try:
             bucket = config.get('EC2', 'bucket')
+            bucket = str(bucket).lower()
         except ConfigParser.NoOptionError as exception:
             logging.info("No bucket name found, generating a new one")
 
         if bucket == '':
             #TODO: make another time mark: minutes-seconds-machine-name?
             bucket = "cloudscraper-" + str(int(time.mktime(time.localtime())))+"-"+region 
-            #NOTE: it'll be saved on the next ocassion
-            config.set('EC2', 'bucket' , bucket)
+        
+        config.set('EC2', 'bucket' , bucket)
 
         
         security = "default"

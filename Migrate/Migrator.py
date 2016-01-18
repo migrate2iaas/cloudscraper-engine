@@ -30,9 +30,9 @@ import ProxyTransferTarget
 class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT reside"""
 
-    def __init__(
-            self, cloud_options, migrate_options, sys_adjust_overrides, skip_imaging=False, resume_upload=False,
-            skip_upload=False, self_checks=False, limits=None, insert_vitio=False):
+
+    def __init__(self , cloud_options , migrate_options, sys_adjust_overrides , skip_imaging=False, resume_upload=False, skip_upload=False ,\
+        self_checks=False , limits = None , insert_vitio = False , backup_mode = False):
         """
         Inits the Migrator mega-class. 
 
@@ -46,6 +46,7 @@ class Migrator(object):
             self_checks: bool - some self-checks on images\registry during the Migrator work (doesn't work for now!)
             limits: ? (currently long) - the limitation of data to be transfered
             insert_vitio : bool - inserts virtio drivers to the running system. Note, this option can be overriden with migrate_options.insertVirtIo()
+            backup_mode : bool - doesn't create a VM inside the cloud. Just stores image there
         """
         self.__adjustedSystemBackupSource = None
         self.__systemBackupSource = None
@@ -72,6 +73,7 @@ class Migrator(object):
         self.__skipImaging = skip_imaging
         self.__skipUpload = skip_upload
         self.__resumeUpload = resume_upload
+        self.__backupMode = backup_mode
        
         self.__resultingInstance = None
 
@@ -363,7 +365,9 @@ class Migrator(object):
                 self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__systemAdjustOptions , random_disk_id=False)
             
             description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
-            self.__systemTransferChannel = self.__cloudOptions.generateUploadChannel(self.__systemMedia.getMaxSize() , self.__cloudOptions.getServerName() or description, self.__migrateOptions.getSystemVolumeConfig().getUploadPath(), self.__resumeUpload , self.__systemMedia.getImageSize() )
+            #TODO: how to enable backup mode?
+            self.__systemTransferChannel = self.__cloudOptions.generateUploadChannel(self.__systemMedia.getMaxSize() , self.__cloudOptions.getServerName() or description, \
+                self.__migrateOptions.getSystemVolumeConfig().getUploadPath(), self.__resumeUpload or self.__backupMode , self.__systemMedia.getImageSize() , self.__backupMode )
             self.__systemTransferChannel.initStorage()
 
                 
@@ -431,7 +435,12 @@ class Migrator(object):
                 logging.error("!!!Error: Upload error. Please make a reupload via resume upload")
                 return False
   
-        #TODO: add redeploy!
+        
+        if self.__backupMode == True:
+            #skip imaging
+            logging.info(">>>>>>>>>>>>> The image has been succesfully uploaded to: " + self.__migrateOptions.getSystemVolumeConfig().getUploadId())
+            logging.info(">>>>>>>>>>>>> Backup mode is enabled: server instance is not created. Enable redeploy mode to DR from the uploaded image.")
+            return True
 
         #creating instance from the uploaded image
         # imagesize here is the size of image file. but getImageSize() is the size of initial volume
@@ -601,12 +610,14 @@ class Migrator(object):
         
                 if self.__skipUpload == False:
                     description = os.environ['COMPUTERNAME']+"_"+"data"+"_"+str(datetime.date.today())
+
                     self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(
                         self.__dataMediaList[volinfo.getVolumePath()].getMaxSize(),
                         self.__cloudOptions.getServerName() or description,
                         volinfo.getUploadPath(),
                         self.__resumeUpload,
                         self.__dataMediaList[volinfo.getVolumePath()].getImageSize())
+
                     self.__dataChannelList[volinfo.getVolumePath()].initStorage()
 
                     # update the upload path in config in case it was changed or created by the channel

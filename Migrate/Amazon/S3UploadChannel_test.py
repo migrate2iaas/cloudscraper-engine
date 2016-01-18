@@ -105,7 +105,7 @@ class S3UploadChannel_test(unittest.TestCase):
 
     def test_fullvhd(self):
         
-        filename = 'E:\\vhdtest4.vhd'
+        filename = 'E:\\vhdtest1.vhd'
         size = 20*1024*1024*1024
         bucket = 'feoffuseastfiletestvhd2'
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size, manifest_path=self.__backup_db)
@@ -169,7 +169,7 @@ class S3UploadChannel_test(unittest.TestCase):
         
 
     def test_resumeupload_useast(self):
-        filename = 'E:\\vhdtest4.vhd'
+        filename = 'E:\\vhdtest1.vhd'
         size = 20*1024*1024*1024
         bucket = 'feoffuseastfiletestvhd'
         region = ''
