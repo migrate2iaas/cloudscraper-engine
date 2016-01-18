@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # --------------------------------------------------------
 __author__ = "Alexey Kondratiev"
 __copyright__ = "Copyright (C) 2015 Migrate2Iaas"
@@ -21,6 +22,39 @@ sys.path.append(".\..")
 sys.path.append(".\..\OpenStack")
 sys.path.append(".\OpenStack")
 
+=======
+﻿# --------------------------------------------------------
+__author__ = "Alexey Kondratiev"
+__copyright__ = "Copyright (C) 2015 Migrate2Iaas"
+#---------------------------------------------------------
+
+import sys
+
+sys.path.append('.\..')
+sys.path.append('.\..\OpenStack')
+sys.path.append('.\OpenStack')
+
+import os 
+import hashlib
+import Queue
+import time
+import io
+
+import MigrateExceptions
+import traceback
+
+import StringIO
+import logging
+import threading 
+import UploadChannel
+import DataExtent
+
+import json
+from md5 import md5
+
+import swiftclient.client
+from swiftclient.exceptions import ClientException
+>>>>>>> master
 
 class DefferedUploadFileProxy(object):
     def __init__(self, queue_size, size):
@@ -29,6 +63,7 @@ class DefferedUploadFileProxy(object):
         self.__size = size
         self.__readed_size = 0
         self.__skipped_size = 0
+
         self.__md5encoder = md5()
         self.__completed = threading.Event()
 
@@ -73,6 +108,9 @@ class DefferedUploadFileProxy(object):
         # just get one element to avoid deadlocks (works if there is only one writer thread)
         # self.__inner_queue.get_nowait()
 
+    def setComplete(self):
+        self.__completed.set()
+
     def waitTillComplete(self):
         if not self.cancelled():
             self.__completed.wait()
@@ -82,7 +120,10 @@ class DefferedUploadFileProxy(object):
 
     def cancel(self):
         if not self.__cancel:
-            self.__cancel = True
+            with self.__inner_queue.mutex:
+                self.__cancel = True
+                self.__inner_queue.queue.clear()
+                self.setComplete()
 
     def cancelled(self):
         return self.__cancel
@@ -185,6 +226,7 @@ class SwiftUploadThread(threading.Thread):
         logging.debug("Upload thread for {} done".format(self.__offset))
 
 
+
 class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     """
     Upload channel for Swift implementation
@@ -224,6 +266,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__uploadThreads = threading.BoundedSemaphore(upload_threads)
         self.__segmentQueueSize = queue_size
         self.__segmentsList = []
+
         self.__fileProxies = []
         self.__ignoreEtag = ignore_etag
 
@@ -258,6 +301,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         if offset == 0:
             # Checking if we can create more upload threads, they releases when calls completeUploadThread() routine
             self.__uploadThreads.acquire()
+
             logging.debug("Starting new upload thread for \"%08d\"" % index)
 
             # Checking if this is the last segment
@@ -266,12 +310,14 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             else:
                 segment_size = self.__segmentSize
             self.__fileProxies.insert(index, DefferedUploadFileProxy(self.__segmentQueueSize, segment_size))
+
             SwiftUploadThread(
                 self,
                 self.__fileProxies[index],
                 extent.getStart(),
                 self.__manifest,
                 self.__ignoreEtag).start()
+
 
         self.__fileProxies[index].write(extent)
 
@@ -282,6 +328,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         # to avoid thread endless waiting.
         self.__uploadThreads.release()
 
+
     def getContainerName(self):
         return self.__containerName
 
@@ -290,6 +337,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
     def skipExisting(self):
         return self.__resumeUpload
+
 
     def getResumePath(self):
         return self.__resumePath
@@ -344,6 +392,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         """
         return self.__diskName
 
+
     def getTransferChunkSize(self):
         return self.__chunkSize
 
@@ -356,6 +405,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         logging.info("Upload threads are completed, closing threads")
         self.close()
         return
+
 
     def confirm(self):
         """
@@ -429,6 +479,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         Gets overall size of data skipped in bytes.
         Data is skipped by the channel when the block with same checksum is already present in the cloud
         """
+
         total_size = 0
         try:
             for f in self.__fileProxies:
@@ -437,6 +488,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             logging.debug("Unable to calculete skipped data size: " + str(err))
 
         return total_size
+
 
     def getOverallDataTransfered(self):
         """
@@ -451,11 +503,13 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         return total_size
 
+
     def getImageSize(self):
         """
         Gets image data size to be uploaded
         """
         return self.__diskSize
+
 
     def getDiskUploadedProperty(self):
         """
@@ -464,6 +518,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         """
         return 0
 
+
     def close(self):
         """Closes the channel, sending all upload threads signal to end their operation"""
         logging.debug("Closing the upload threads, End signal message was sent")
+

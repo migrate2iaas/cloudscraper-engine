@@ -48,7 +48,6 @@ class ThrowingArgumentParser(argparse.ArgumentParser):
     def error(self, message):
         raise ArgumentParserError(message)
 
-
 def encode(key, clear):
     enc = []
     for i in range(len(clear)):
@@ -129,12 +128,7 @@ def chk_limits():
 
 if __name__ == '__main__':
     try:
-        #Turning on the logging
-        logging.basicConfig(format='%(asctime)s %(message)s' , filename='../../logs/migrate.log',level=logging.DEBUG)    
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.INFO)
-        logging.getLogger().addHandler(handler)
-
+        
         # little hacks to pre-configure env and args
         if os.name == 'nt':
             import Windows
@@ -164,6 +158,16 @@ if __name__ == '__main__':
         parser.add_argument('-v', '--virtio', help="Injects virtio drivers in the running server driver store", action="store_true")
         parser.add_argument('-j', '--reboottimeout', help="Time to wait in seconds for VM to reboot while doing test run", type=int, default=200)
         parser.add_argument('-p', '--backup', help="Backup mode. Skips deploying machine in the cloud - just takes an image and uploads it to cloud", action="store_true")
+        parser.add_argument('-l', '--logfile', help="Specifies the place to store full log")
+
+        logfile = "../../logs/migrate.log"
+        if parser.parse_args().logfile:
+            logfile = parser.parse_args().logfile
+        #Turning on the logging
+        logging.basicConfig(format='%(asctime)s %(message)s' , filename=logfile,level=logging.DEBUG)    
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.INFO)
+        logging.getLogger().addHandler(handler)
     
         #new random seed
         random.seed()
@@ -269,7 +273,7 @@ if __name__ == '__main__':
         try:
             if testrun:
                 logging.info("\n>>>>>>>>>>>>>>>>> Making test run for an instance to check it alive\n")
-                instance.stop()
+                #instance.stop() should be stopped\finalized already
                 logging.info("Waiting a bit for server restart")
                 time.sleep(reboottimeout)
                 instance.run()

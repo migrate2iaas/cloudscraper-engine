@@ -15,8 +15,10 @@ import EHConfigs
 import AzureConfigs
 import CloudSigmaConfigs
 import onAppConfigs
+
 import OpenStack
 from OpenStack import OpenStackConfigs
+
 
 import platform
 import shutil
@@ -301,6 +303,7 @@ class MigratorConfigurer(object):
             ignore_etag=ignore_etag)
         return (image, adjust_override, cloud)
 
+
     def configOnApp(self, configfile, config, password):
          # generic for other clouds
         (imagedir, image_placement, imagetype) = self.getImageOptions(config)
@@ -334,6 +337,9 @@ class MigratorConfigurer(object):
         if config.has_option('onApp', 'wintemplate_size'):
             wintemplate_size = int(config.get('onApp', 'wintemplate_size') )
 
+        vm_boot_timeout = 120
+        if config.has_option('onApp', 'vm_boot_timeout'):
+            vm_boot_timeout = int(config.get('onApp', 'vm_boot_timeout') )
 
         onapp_target_account = None
 
@@ -347,7 +353,7 @@ class MigratorConfigurer(object):
         image = onAppConfigs.onAppMigrateConfig(volumes , factory, 'x86_64' , imagetype)
         cloud = onAppConfigs.onAppCloudOptions(s3bucket , s3user , s3secret , s3region , onapp_endpoint , onapp_login , \
             password , onapp_datastore_id, onapp_target_account , onapp_port = onapp_port, preset_ip = minipad_ip, \
-            minipad_image_name = minipad_template , minipad_vm_id = minipad_vm_id , vmbuild_timeout_sec = int(vm_build_timeout) , wintemplate_size = wintemplate_size)
+            minipad_image_name = minipad_template , minipad_vm_id = minipad_vm_id , vmbuild_timeout_sec = int(vm_build_timeout) , wintemplate_size = wintemplate_size , vm_boot_timeout=vm_boot_timeout)
 
         return (image,adjust_override,cloud)
 
@@ -661,6 +667,7 @@ class MigratorConfigurer(object):
             for letter in letterslist:
                 if not letter:
                     continue
+                letter = str(letter).strip()
                 if os.name == 'nt':
                     devicepath = '\\\\.\\'+letter+':'
                     sys.path.append('./Windows')

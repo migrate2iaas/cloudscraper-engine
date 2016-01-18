@@ -26,6 +26,7 @@ import SystemAdjustOptions
 import GzipChunkMedia
 import SimpleTransferTarget
 import ProxyTransferTarget
+import VmInstance
 
 class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT reside"""
@@ -196,7 +197,7 @@ class Migrator(object):
 
             # 13) TODO: attach volumes here!
             logging.info("Finalizing the instance making it ready for the user")
-            if self.__resultingInstance:
+            if self.__resultingInstance and isinstance(self.__resultingInstance, VmInstance.VmInstance):
                 self.__resultingInstance.finalize()
         
 
@@ -575,7 +576,7 @@ class Migrator(object):
         else:
             generator = self.__cloudOptions.generateInstanceFactory()
         
-        if generator:
+        if generator and not vol:
             vol = generator.makeVolumeFromImage(imageid , self.__cloudOptions , volname)
 
         if not generator:

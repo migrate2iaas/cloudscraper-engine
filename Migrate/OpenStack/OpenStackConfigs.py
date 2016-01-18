@@ -33,6 +33,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             container_format="bare", flavor=None, ip_pool_name=None, swift_server_url=None, swift_tennant_name=None,
             swift_username=None, swift_password=None, swift_container="cloudscraper-upload", compression=0,
             chunksize=10*1024*1024, use_new_channel=False, manifest_path=None, increment_depth=1, ignore_etag=False):
+
         """
         Constructor
         """
@@ -49,7 +50,6 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         self.__useNewChannel = use_new_channel
         self.__manifestPath = manifest_path
         self.__increment_depth = increment_depth
-
         self.__swiftUrl = swift_server_url
         self.__swiftTennant = swift_tennant_name 
         self.__swiftUsername = swift_username
@@ -72,7 +72,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
 
         Args:
             targetsize: long - target cloud disk size in bytes
-            targetname: str - arbitrary description to mark the disk after migration
+            targetname: str - arbitrary description to mark the disk after migration (ignored)
             targetid: str - a cloud-defined path describing the upload 
             resume: Boolean - to recreate disk representation (False) or to reupload (True)
             imagesize: long - image file size in bytes
@@ -104,6 +104,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
     def generateInstanceFactory(self):
         return OpenStackInstanceGenerator.OpenStackInstanceGenerator(
             self.__server, self.__tennant, self.__username, self.__password)
+
 
     def getCloudStorage(self):
         return ""
