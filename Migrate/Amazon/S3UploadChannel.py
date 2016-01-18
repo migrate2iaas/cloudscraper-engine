@@ -123,17 +123,17 @@ class UploadQueueTask(object):
         self.__dataGetter = data_getter 
         self.__alternativeKey = alternative_source_keyname
         self.__alternativeBucket = alternative_source_bucket
-        self.__version = None
+        
 
     def notifyDataTransfered(self):
         if self.__channel:
             self.__channel.notifyDataTransfered(self.__targetSize)
-            self.__channel.setChunkComplete(self.__targetKeyname, self.__targetStart, self.__targetSize, self.__version)
+            
 
     def notifyDataSkipped(self):
         if self.__channel:
            self.__channel.notifyDataSkipped(self.__targetSize)
-           self.__channel.setChunkComplete(self.__targetKeyname, self.__targetStart, self.__targetSize, self.__version)
+
 
     def notifyDataTransferError(self):
         if self.__channel:
@@ -160,8 +160,6 @@ class UploadQueueTask(object):
         md5encoder.update(data)
         return md5encoder.hexdigest()
 
-    def setVersion(self , version):
-        self.__version = version
 
     # specifies the alternitive availble path. 
     # alternative source seem to be interesting concept. get something from another place. maybe deferred
@@ -491,12 +489,6 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
         return
 
-    def setChunkComplete(self, keyname, start, size, version=None):
-        """
-        Internal routine to communicate with the upload thread.
-        It marks chunk complete and sets adds it to the fragment dictionary
-        """
-        self.__fragmentDictionary[start] = (keyname , size, version)
 
     def getTransferChunkSize(self):
         """ 
