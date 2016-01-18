@@ -164,7 +164,6 @@ if __name__ == '__main__':
         parser.add_argument('-v', '--virtio', help="Injects virtio drivers in the running server driver store", action="store_true")
         parser.add_argument('-j', '--reboottimeout', help="Time to wait in seconds for VM to reboot while doing test run", type=int, default=200)
         parser.add_argument('-p', '--backup', help="Backup mode. Skips deploying machine in the cloud - just takes an image and uploads it to cloud", action="store_true")
-        parser.add_argument('-l', '--uploadconfig', help="Saves ini config to the same storage where machine is saved thus it can be restored", action="store_true")
     
         #new random seed
         random.seed()

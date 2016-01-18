@@ -365,9 +365,8 @@ class Migrator(object):
                 self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__systemAdjustOptions , random_disk_id=False)
             
             description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
-            #TODO: how to enable backup mode?
             self.__systemTransferChannel = self.__cloudOptions.generateUploadChannel(self.__systemMedia.getMaxSize() , self.__cloudOptions.getServerName() or description, \
-                self.__migrateOptions.getSystemVolumeConfig().getUploadPath(), self.__resumeUpload or self.__backupMode , self.__systemMedia.getImageSize() , self.__backupMode )
+                self.__migrateOptions.getSystemVolumeConfig().getUploadPath(), self.__resumeUpload , self.__systemMedia.getImageSize() )
             self.__systemTransferChannel.initStorage()
 
                 
