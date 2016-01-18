@@ -42,7 +42,6 @@ import SparseRawMediaFactory
 import QemuImgMediaFactory
 import VhdQcow2MediaFactory
 import SparseRawMedia
-import WindowsVhdMedia
 
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
