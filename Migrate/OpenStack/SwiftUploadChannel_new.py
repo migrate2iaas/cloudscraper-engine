@@ -1,32 +1,10 @@
-<<<<<<< HEAD
+
 # --------------------------------------------------------
 __author__ = "Alexey Kondratiev"
 __copyright__ = "Copyright (C) 2015 Migrate2Iaas"
 # ---------------------------------------------------------
 
-import sys
-import Queue
-import traceback
-import logging
-import threading
-import json
-import swiftclient.client
-import UploadChannel
-import UploadManifest
 
-from tinydb import where
-from hashlib import md5
-from swiftclient.exceptions import ClientException
-
-sys.path.append(".\..")
-sys.path.append(".\..\OpenStack")
-sys.path.append(".\OpenStack")
-
-=======
-﻿# --------------------------------------------------------
-__author__ = "Alexey Kondratiev"
-__copyright__ = "Copyright (C) 2015 Migrate2Iaas"
-#---------------------------------------------------------
 
 import sys
 
@@ -48,13 +26,27 @@ import logging
 import threading 
 import UploadChannel
 import DataExtent
+import sys
+import Queue
+import traceback
+import logging
+import threading
+import json
+import swiftclient.client
+import UploadChannel
+import UploadManifest
+
+from tinydb import where
+from hashlib import md5
+from swiftclient.exceptions import ClientException
+
 
 import json
 from md5 import md5
 
 import swiftclient.client
 from swiftclient.exceptions import ClientException
->>>>>>> master
+
 
 class DefferedUploadFileProxy(object):
     def __init__(self, queue_size, size):
