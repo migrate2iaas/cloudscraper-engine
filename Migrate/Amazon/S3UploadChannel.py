@@ -118,6 +118,7 @@ class UploadQueueTask(object):
         self.__targetBucket = bucket
         self.__targetKeyname = keyname
         self.__targetOffset = offset
+        self.__targetStart = offset
         self.__targetSize = size
         self.__dataGetter = data_getter 
         self.__alternativeKey = alternative_source_keyname
