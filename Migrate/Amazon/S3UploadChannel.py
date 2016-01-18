@@ -75,7 +75,7 @@ class S3ManfiestBuilder:
          
        return
 
-    def addUploadedPart(self , index , rangeStart , rangeEnd , keyName , version = None):
+    def addUploadedPart(self , index , rangeStart , rangeEnd , keyName):
         
         linktimeexp_seconds = 60*60*24*15   # 15 days
 
@@ -85,15 +85,15 @@ class S3ManfiestBuilder:
         keystr = '\n\t\t\t\t <key>'+str(keyName)+'</key>'
         self.__file.write(keystr)
           
-        urlhead = self.__S3.generate_url( linktimeexp_seconds, method='HEAD', bucket=self.__bucket, key=keyName, force_http=False , version_id = version)
+        urlhead = self.__S3.generate_url( linktimeexp_seconds, method='HEAD', bucket=self.__bucket, key=keyName, force_http=False)
         gethead = '\n\t\t\t\t <head-url>'+urlhead.replace('&' ,'&amp;')+'</head-url>'
         self.__file.write(gethead)
 
-        urlget = self.__S3.generate_url( linktimeexp_seconds, method='GET', bucket=self.__bucket, key=keyName, force_http=False, version_id = version)
+        urlget = self.__S3.generate_url( linktimeexp_seconds, method='GET', bucket=self.__bucket, key=keyName, force_http=False)
         getstr = '\n\t\t\t\t <get-url>'+urlget.replace('&' ,'&amp;')+'</get-url>'
         self.__file.write(getstr)
 
-        urldelete = self.__S3.generate_url( linktimeexp_seconds, method='DELETE', bucket=self.__bucket, key=keyName, force_http=False, version_id = version)
+        urldelete = self.__S3.generate_url( linktimeexp_seconds, method='DELETE', bucket=self.__bucket, key=keyName, force_http=False)
         getdelete = '\n\t\t\t\t <delete-url>'+urldelete.replace('&' ,'&amp;')+'</delete-url>'
         self.__file.write(getdelete)
 
@@ -253,7 +253,13 @@ class S3UploadThread(threading.Thread):
                                 break
 
                     # Trying to find block in cloud
-
+                    try:
+                        s3key = bucket.get_key(res["part_name"])
+                        if s3key:
+                            self.__manifest.insert(
+                                res["etag"], md5_hexdigest, res["part_name"], offset, size, "skipped")
+                            logging.debug("key with same md5 found, skip uploading")
+                            upload = False
                     except Exception as e:
                         logging.debug(
                             "Failed to get key. Got exception from the source server. Sometimes it means errors "
@@ -317,7 +323,6 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         self.__prevUploadTime = None 
         self.__transferRate = 0
         self.__makeLinkPublic = make_link_public
-        self.__enableVersioning = enable_versioning
 
         #TODO:need to save it in common log directory
         boto.set_file_logger("boto", "boto.log", level=logging.DEBUG)
@@ -365,15 +370,6 @@ class S3UploadChannel(UploadChannel.UploadChannel):
                     logging.error("!!!ERROR: It's possible the bucket with the same name exists but in another region. Try to specify another bucket name for the upload")
                     logging.error(traceback.format_exc()) 
                     raise ex
-
-            # turn versioning on
-            # by turning versioning we achieve an ability to have several restoration\redeployment points
-            if self.__enableVersioning:
-                try:
-                    self.__bucket.configure_versioning(True)
-                except Exception as ex:
-                    logging.warn("! Cannot enable versioning in the bucket. Only last version of image will be kept")
-                    logging.error(traceback.format_exc()) 
     
         self.__chunkSize = chunksize
         self.__diskSize = resultDiskSizeBytes

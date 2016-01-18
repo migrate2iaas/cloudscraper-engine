@@ -96,11 +96,8 @@ class SwiftUploadChannel_test(unittest.TestCase):
             dataplace = dataplace + len(data)
             dataext.setData(data)
             channel.uploadData(dataext)
-<<<<<<< HEAD
             channel.getOverallDataSkipped()
             channel.getOverallDataTransfered()
-=======
->>>>>>> master
 
         channel.waitTillUploadComplete()
         channel.confirm()
