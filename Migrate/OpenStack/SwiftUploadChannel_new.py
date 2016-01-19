@@ -38,7 +38,6 @@ from tinydb import where
 from hashlib import md5
 from swiftclient.exceptions import ClientException
 
->>>>>>> 812_inc_backup_and_DR
 
 import json
 from md5 import md5
