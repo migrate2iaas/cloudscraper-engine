@@ -54,16 +54,16 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
         self.__vmBuildTimeout = vmbuild_timeout_sec 
         self.__winTemplateDiskSize = wintemplate_size
         self.__vmBootTimeout = vm_boot_timeout
-
         #generate instance factory to test the connection
         self.__instanceFactory = onAppInstanceGenerator.onAppInstanceGenerator(self.__onapp_endpoint , self.__onapp_login , self.__onapp_password , self.__onapp_datastore_id, self.__onapp_target_account, \
             self.__onapp_port, self.__preset_ip , self.__minipad_image_name , self.__minipad_vm_id , vmbuild_timeout = self.__vmBuildTimeout , win_template_disk_size = self.__winTemplateDiskSize )
+
 
         super(onAppCloudOptions, self).__init__()
 
         
         
-    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):
+    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0 , preserve_existing_data = False):
         """
         Generates new upload channel
 
@@ -73,6 +73,7 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
             targetid: str - a cloud-defined path describing the upload (blob-name for Azure)
             resume: Boolean - to recreate disk representation (False) or to reupload (True)
             imagesize: long - image file size in bytes
+            preserve_existing_data - if to version existing data
         """
         custom = False
         if self.__custom_host:
@@ -154,3 +155,4 @@ class onAppMigrateConfig(MigrateConfig.MigrateConfig):
 
     def insertXen(self):
         return False
+

@@ -18,6 +18,10 @@ import onAppConfigs
 #import OpenStack
 #from OpenStack import OpenStackConfigs
 
+import OpenStack
+from OpenStack import OpenStackConfigs
+
+
 import platform
 import shutil
 
@@ -42,6 +46,7 @@ import SparseRawMediaFactory
 import QemuImgMediaFactory
 import VhdQcow2MediaFactory
 import SparseRawMedia
+
 
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
@@ -290,12 +295,20 @@ class MigratorConfigurer(object):
         if config.has_option('OpenStack', 'use_new_channel'):
             use_new_channel = config.get('OpenStack', 'use_new_channel')
 
-        adjust_override = self.getOverrides(config , configfile)
-        image = OpenStackConfigs.OpenStackMigrateConfig(volumes , factory, 'x86_64' , imagetype)
-        cloud = OpenStackConfigs.OpenStackCloudOptions(endpoint , user, tennant, password, network, imagetype, container, flavor = flavor, ip_pool_name = ip_pool,\
-            swift_server_url = swift_server_url , swift_tennant_name = swift_tennant_name , swift_username = swift_username ,
-            swift_password = swift_password , swift_container=swift_container , compression=swift_compression , use_new_channel=use_new_channel)
-        return (image,adjust_override,cloud)
+        ignore_etag = False
+        if config.has_option('OpenStack', 'ignore_etag'):
+            ignore_etag = config.get('OpenStack', 'ignore_etag')
+            
+        adjust_override = self.getOverrides(config, configfile)
+        manifest_path, increment_depth = self.loadDRconfig(config)
+        image = OpenStackConfigs.OpenStackMigrateConfig(volumes, factory, 'x86_64', imagetype)
+        cloud = OpenStackConfigs.OpenStackCloudOptions(
+            endpoint, user, tennant, password, network, imagetype, container, flavor=flavor, ip_pool_name=ip_pool,
+            swift_server_url=swift_server_url, swift_tennant_name=swift_tennant_name, swift_username=swift_username,
+            swift_password=swift_password, swift_container=swift_container, compression=swift_compression,
+            use_new_channel=use_new_channel, manifest_path=manifest_path, increment_depth=increment_depth,
+            ignore_etag=ignore_etag)
+        return (image, adjust_override, cloud)
 
     def configOnApp(self, configfile, config, password):
          # generic for other clouds
@@ -530,20 +543,21 @@ class MigratorConfigurer(object):
            
         chunksize = 10*1024*1024
         if config.has_option('EC2', 'chunksize'):
-           chunksize = int(config.get('EC2', 'chunksize'))   
+           chunksize = int(config.get('EC2', 'chunksize'))
 
         bucket = ''
 
         try:
             bucket = config.get('EC2', 'bucket')
+            bucket = str(bucket).lower()
         except ConfigParser.NoOptionError as exception:
             logging.info("No bucket name found, generating a new one")
 
         if bucket == '':
             #TODO: make another time mark: minutes-seconds-machine-name?
             bucket = "cloudscraper-" + str(int(time.mktime(time.localtime())))+"-"+region 
-            #NOTE: it'll be saved on the next ocassion
-            config.set('EC2', 'bucket' , bucket)
+        
+        config.set('EC2', 'bucket' , bucket)
 
         
         security = "default"
@@ -560,27 +574,35 @@ class MigratorConfigurer(object):
             minipad_ami = config.get('EC2', 'minipad_ami')
         
         (imagedir, image_placement, imagetype) = self.getImageOptions(config)
-        volumes = self.createVolumesList(config , configfile, imagedir, imagetype , s3prefix)        
-        factory = self.createImageFactory(config , image_placement , imagetype)
+        volumes = self.createVolumesList(config, configfile, imagedir, imagetype, s3prefix)
+        factory = self.createImageFactory(config, image_placement, imagetype)
+
+        use_dr = False
+        manifest_path = increment_depth = None
+        if config.has_section('DR'):
+            use_dr = True
+            manifest_path, increment_depth = self.loadDRconfig(config)
 
         newsize = imagesize
-        installservice = None;
+        installservice = None
 
-        adjust_override = self.getOverrides(config , configfile)
+        adjust_override = self.getOverrides(config, configfile)
 
-        image = AmazonConfigs.AmazonMigrateConfig(volumes , factory, imagearch , imagetype, insert_xen = bool(minipad))
+
+        image = AmazonConfigs.AmazonMigrateConfig(volumes, factory, imagearch, imagetype)
         #TODO: add machine name
-        cloud = AmazonConfigs.AmazonCloudOptions(bucket = bucket , user=user , password=password , newsize=newsize , arch=arch , zone= zone \
-                                                , region=region , machinename="" , securityid=security , instancetype=instancetype \
-                                                , chunksize = chunksize, disktype = imagetype , keyname_prefix = s3prefix , vpc=vpcsubnet \
-                                                , custom_host = custom_host , custom_port = custom_port , custom_suffix = custom_suffix , use_ssl = use_ssl\
-                                                , minipad = minipad , minipad_ami = minipad_ami)
+        cloud = AmazonConfigs.AmazonCloudOptions(
+            bucket=bucket, user=user, password=password, newsize=newsize, arch=arch, zone=zone, region=region,
+            machinename="", securityid=security, instancetype=instancetype, chunksize=chunksize, disktype=imagetype,
+            keyname_prefix=s3prefix, vpc=vpcsubnet, custom_host=custom_host, custom_port=custom_port,
+            custom_suffix=custom_suffix, use_ssl=use_ssl, manifest_path=manifest_path , minipad = minipad , minipad_ami = minipad_ami, increment_depth=increment_depth,
+            use_dr=use_dr)
         
 
         return (image,adjust_override,cloud)
 
     #TODO: move the common code to one function
-    def configElasticHosts(self , configfile , user = '' , password = '' , region = '', imagepath = ''):
+    def configElasticHosts(self, configfile, user='', password='', region='', imagepath=''):
         try:
             config = UnicodeConfigParser.UnicodeConfigParser()
             config.readfp(codecs.open(configfile, "r", "utf16"))
@@ -727,7 +749,6 @@ class MigratorConfigurer(object):
         if (str(imagetype).lower() == "sparsed" or imagetype.lower() == "sparsed.raw"):
             factory = SparseRawMediaFactory.SparseRawMediaFactory()
 
-
         #Here we can do some additional conversation using qemu utilities
         if (config.has_option('Qemu', 'path') and config.has_option('Qemu', 'dest_imagetype')):
             qemu_path = config.get('Qemu', 'path')
@@ -777,6 +798,17 @@ class MigratorConfigurer(object):
            image_placement = "local"
 
         return (imagedir, image_placement, imagetype)
+
+    def loadDRconfig(self, config):
+        manifest_path = 'C:\\backup-manifest'
+        if config.has_option('DR', 'manifest_path'):
+            manifest_path = config.get('DR', 'manifest_path')
+
+        increment_depth = 1
+        if config.has_option('DR', 'increment_depth'):
+            increment_depth = config.get('DR', 'increment_depth')
+
+        return manifest_path, increment_depth
 
     def getServiceOverrides(self, config, configfile, installpath , test=False):
         #here the service config is being generated

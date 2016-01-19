@@ -119,6 +119,24 @@ class DataExtent(object):
         return (pieces[0], pieces[1])
         
 
+class CachedDataExtent(DataExtent):
+    """the extent that caches data that is read so re-read of same extent comes in no cost"""
+    
+    def __init__(self, start , size):
+        """constructor"""
+        super(CachedDataExtent, self).__init__(start, size)
+        self.__cachedData = None
+
+    def getData(self):
+        """override that checks if data was already read"""
+        if self.__cachedData:
+            return self.__cachedData
+        data = super(CachedDataExtent, self).getData()
+        if data:
+            self.__cachedData = data
+        return data
+
+
 class SplittedDataExtent(DataExtent):
     """the part of one original extent"""
 

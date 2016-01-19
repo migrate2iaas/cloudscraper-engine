@@ -1,4 +1,4 @@
-# --------------------------------------------------------
+﻿# --------------------------------------------------------
 __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
@@ -13,6 +13,8 @@ import DataExtent
 import datetime
 import time
 import random
+import VmInstance
+import VmVolume
 
 import RawGzipMedia
 import SimpleDiskParser
@@ -29,7 +31,9 @@ import VmInstance
 class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT reside"""
 
-    def __init__(self , cloud_options , migrate_options, sys_adjust_overrides , skip_imaging=False, resume_upload=False, skip_upload=False , self_checks=False , limits = None , insert_vitio = False , insert_xen = False):
+
+    def __init__(self , cloud_options , migrate_options, sys_adjust_overrides , skip_imaging=False, resume_upload=False, skip_upload=False ,\
+        self_checks=False , limits = None , insert_vitio = False , insert_xen = False, backup_mode = False):
         """
         Inits the Migrator mega-class. 
 
@@ -44,6 +48,8 @@ class Migrator(object):
             limits: ? (currently long) - the limitation of data to be transfered
             insert_vitio : bool - inserts virtio drivers to the running system. Note, this option can be overriden with migrate_options.insertVirtIo()
             insert_xen : bool - inserts xen drivers to the running system. Note, this option can be overriden with migrate_options.insertXen()
+            backup_mode : bool - doesn't create a VM inside the cloud. Just stores image there
+>>>>>>> 812_inc_backup_and_DR
         """
         self.__adjustedSystemBackupSource = None
         self.__systemBackupSource = None
@@ -70,6 +76,7 @@ class Migrator(object):
         self.__skipImaging = skip_imaging
         self.__skipUpload = skip_upload
         self.__resumeUpload = resume_upload
+        self.__backupMode = backup_mode
        
         self.__resultingInstance = None
 
@@ -82,6 +89,7 @@ class Migrator(object):
         self.__fileBackup = False
         self.__insertVirtio = insert_vitio or migrate_options.insertVirtIo()
         self.__insertXen = insert_xen or migrate_options.insertXen()
+
 
         #TODO: pass this parm somehow. Thru migrate\adjust overrides?
         self.__linuxGC = True
@@ -199,8 +207,7 @@ class Migrator(object):
 
         except Exception as ex:
             traceback.print_exception(sys.exc_info()[0] , sys.exc_info()[1] , sys.exc_info()[2]) 
-            logging.error("!!!ERROR: Unexpected error occured")
-            logging.error("!!!ERROR: " + str(ex))
+            logging.error("!!!ERROR: Unexpected error occured " + str(ex))
             logging.error(traceback.format_exc())
             return None
             #TODO: set error state
@@ -363,7 +370,8 @@ class Migrator(object):
                 self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__systemAdjustOptions , random_disk_id=False)
             
             description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
-            self.__systemTransferChannel = self.__cloudOptions.generateUploadChannel(self.__systemMedia.getMaxSize() , self.__cloudOptions.getServerName() or description, self.__migrateOptions.getSystemVolumeConfig().getUploadPath(), self.__resumeUpload , self.__systemMedia.getImageSize() )
+            self.__systemTransferChannel = self.__cloudOptions.generateUploadChannel(self.__systemMedia.getMaxSize() , self.__cloudOptions.getServerName() or description, \
+                self.__migrateOptions.getSystemVolumeConfig().getUploadPath(), self.__resumeUpload , self.__systemMedia.getImageSize() )
             self.__systemTransferChannel.initStorage()
 
                 
@@ -432,7 +440,12 @@ class Migrator(object):
                 logging.error("!!!Error: Upload error. Please make a reupload via resume upload")
                 return False
   
-        #TODO: add redeploy!
+        
+        if self.__backupMode == True:
+            #skip imaging
+            logging.info(">>>>>>>>>>>>> The image has been succesfully uploaded to: " + self.__migrateOptions.getSystemVolumeConfig().getUploadId())
+            logging.info(">>>>>>>>>>>>> Backup mode is enabled: server instance is not created. Enable redeploy mode to DR from the uploaded image.")
+            return True
 
         #creating instance from the uploaded image
         # imagesize here is the size of image file. but getImageSize() is the size of initial volume
@@ -464,7 +477,7 @@ class Migrator(object):
 
                 if self.__limitUpload and channel.getOverallDataTransfered() > self.__limitUpload:
                     logging.error("!!!ERROR: Upload limit reached. Please upgrade contact sales@migrate2iaas.com to obtain the license.")
-                    return False
+                    return None
 
                 #NOTE: this is a very rough estimate
                 timenow = datetime.datetime.now()
@@ -487,18 +500,20 @@ class Migrator(object):
 
                 logging.info( "% "+ logmsg )
 
-            data = media.readImageData(dataplace, datasize)
-            if len(data) == 0:
-                logging.warning("!Warning: the source archive has ended unexpectedly while uploading...");
-                break
-            dataext = DataExtent.DataExtent(dataplace , len(data))
-            dataplace = dataplace + len(data)
+            if dataplace + datasize > imagesize:
+                datasize = imagesize - dataplace
+            data = media.defferedReadImageData(dataplace, datasize) 
+            
+            dataext = DataExtent.CachedDataExtent(dataplace , datasize)
+            dataplace = dataplace + datasize
             dataext.setData(data)
             if channel.uploadData(dataext) == False:
                 return None
             datasent = datasent + 1
             
         channel.waitTillUploadComplete()
+
+ 
 
         logmsg = "% The image data has been fully processed. "
         #if channel.getOverallDataSkipped():
@@ -595,11 +610,19 @@ class Migrator(object):
                 if self.__runOnWindows:
                     #TODO: need kinda redisign the stuff related to system adjusts!
                     if self.__skipImaging == False:
-                       self.__dataTransferTargetList[volinfo.getVolumePath()] = self.createTransferTarget(media , volinfo.getImageSize(), self.__winSystemAdjustOptions)
+                       self.__dataTransferTargetList[volinfo.getVolumePath()] = self.createTransferTarget(
+                           media, volinfo.getImageSize(), self.__winSystemAdjustOptions)
         
                 if self.__skipUpload == False:
                     description = os.environ['COMPUTERNAME']+"_"+"data"+"_"+str(datetime.date.today())
-                    self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(self.__dataMediaList[volinfo.getVolumePath()].getMaxSize() , self.__cloudOptions.getServerName() or description,  volinfo.getUploadPath() , self.__resumeUpload , self.__dataMediaList[volinfo.getVolumePath()].getImageSize() )
+
+                    self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(
+                        self.__dataMediaList[volinfo.getVolumePath()].getMaxSize(),
+                        self.__cloudOptions.getServerName() or description,
+                        volinfo.getUploadPath(),
+                        self.__resumeUpload,
+                        self.__dataMediaList[volinfo.getVolumePath()].getImageSize())
+
                     self.__dataChannelList[volinfo.getVolumePath()].initStorage()
 
                     # update the upload path in config in case it was changed or created by the channel
@@ -679,9 +702,14 @@ class Migrator(object):
             
             # image size is really size of data, imagesize here is size of image file
             # dammit, needs clarifications
-            if not self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath() , mediaimagesize , disksize , volinfo.generateMigrationId() ):
-                logging.error("!!!ERROR: Cannot transfer a data volume!")
-                return False
+            volume = self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath() , mediaimagesize , disksize , volinfo.generateMigrationId() )
+            if self.__resultingInstance and volume and isinstance(volume,VmVolume.VmVolume):
+                logging.info(">>> Attaching volume " + str(volume) + " to instance " + str(self.__resultingInstance))
+                try:
+                    volume.attach(str(self.__resultingInstance))
+                except Exception as e:
+                    logging.warning("!Cannot attach volume " + str(volume) + " to the instance. Please attach the volume manually via cloud management console")
+                    logging.warning(traceback.format_exc())
 
        
         return True

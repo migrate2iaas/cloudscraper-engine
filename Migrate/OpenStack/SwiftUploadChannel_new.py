@@ -1,4 +1,4 @@
-﻿# --------------------------------------------------------
+# --------------------------------------------------------
 __author__ = "Alexey Kondratiev"
 __copyright__ = "Copyright (C) 2015 Migrate2Iaas"
 #---------------------------------------------------------
@@ -24,11 +24,28 @@ import threading
 import UploadChannel
 import DataExtent
 
+import sys
+import Queue
+import traceback
+import logging
+import threading
+import json
+import swiftclient.client
+import UploadChannel
+import UploadManifest
+
+from tinydb import where
+from hashlib import md5
+from swiftclient.exceptions import ClientException
+
+>>>>>>> 812_inc_backup_and_DR
+
 import json
 from md5 import md5
 
 import swiftclient.client
 from swiftclient.exceptions import ClientException
+
 
 class DefferedUploadFileProxy(object):
     def __init__(self, queue_size, size):
@@ -36,6 +53,7 @@ class DefferedUploadFileProxy(object):
         self.__cancel = False
         self.__size = size
         self.__readed_size = 0
+        self.__skipped_size = 0
         self.__md5encoder = md5()
         self.__completed = threading.Event()
 
@@ -54,7 +72,7 @@ class DefferedUploadFileProxy(object):
         return data
 
     def write(self, extent):
-        if not self.__cancel:
+        if not self.__cancel and not self.__completed.is_set():
             self.__inner_queue.put(extent)
 
     def getSize(self):
@@ -62,6 +80,24 @@ class DefferedUploadFileProxy(object):
 
     def getCompletedSize(self):
         return self.__readed_size
+
+    def getSkippedSize(self):
+        return self.__skipped_size
+
+    def setComplete(self, skipped=False):
+        """sets the data is uploaded.
+        Args:
+            skipped (Boolean): set to true then data marked as skipped, not read
+        """
+        if skipped:
+            # When we skipping segment its means that we skipping all data,
+            # so skipped size equals segment size
+            self.__skipped_size = self.__size
+        self.__completed.set()
+
+        # just get one element to avoid deadlocks (works if there is only one writer thread)
+        # self.__inner_queue.get_nowait()
+
 
     def setComplete(self):
         self.__completed.set()
@@ -83,99 +119,107 @@ class DefferedUploadFileProxy(object):
     def cancelled(self):
         return self.__cancel
 
+
+    def release(self):
+        """
+            Releasing all resources here.
+        """
+        # The way to clear all tasks in queue
+        while not self.__inner_queue.empty():
+            try:
+                self.__inner_queue.get(False)
+            except Queue.Empty:
+                continue
+            self.__inner_queue.task_done()
+
+
 class SwiftUploadThread(threading.Thread):
     """thread making all uploading works"""
-    def __init__(self, upload_channel, file_proxy, index, file_lock):
+    def __init__(self, upload_channel, file_proxy, offset, manifest, ignore_etag=False):
         self.__uploadChannel = upload_channel
         self.__fileProxy = file_proxy
-        self.__index = index
-        self.__fileLock = file_lock
+        self.__offset = offset
+        self.__manifest = manifest
+        self.__ignoreEtag = ignore_etag
+
+
         super(SwiftUploadThread, self).__init__()
 
     def run(self):
         if self.__uploadChannel.skipExisting():
             logging.debug("Upload thread started with reuploading turned on")
 
-        # Trying to connect to swift
+
+        upload = True
         connection = None
         try:
             connection = self.__uploadChannel.createConnection()
-        except Exception:
-            raise
 
-        res = {
-            'action': 'empty',
-            'success': False,
-            'index': self.__index,
-            'path': "%s/slo/%08d" % (self.__uploadChannel.getDiskName(), self.__index),
-            'etag': None,
-            'size': self.__fileProxy.getSize(),
-        }
+            # Part name example: "medium.file/slo/0"
+            part_name = "{}/slo/{}".format(self.__uploadChannel.getDiskName(), self.__offset)
 
-        try:
-            is_exists = False
-            # Trying to check etag for existing segment
+            # Trying to check existing segment
             try:
-                if self.__uploadChannel.skipExisting():
-                    # Trying to find segment in resume upload list, which was loaded from disk
-                    resume_segments = self.__uploadChannel.getResumeSegmentResults()
-                    for i in resume_segments:
-                        if res['index'] == i['index']:
-                            res.update({'etag': i['etag']})
-                            break
+                # Select returns list of records matches part_name from manifest database
+                res = self.__manifest.select(part_name=part_name)
+                if res and not self.__ignoreEtag:
+                    # Check, if segment with same local part_name exsists in storage, and
+                    # etag in manifest and storage are the same
+                    head = connection.head_object(self.__uploadChannel.getContainerName(), part_name)
+                    for i in res:
+                        if i["etag"] == head["etag"]:
+                            # We should insert new record if this part found in another manifest
+                            self.__manifest.insert(
+                                i["etag"], i["local_hash"], part_name, self.__offset, self.__fileProxy.getSize(),
+                                "skipped")
+                            # self.__manifest.update(i["etag"], i["part_name"], {"status": "skipped"})
+                            upload = False
+                            logging.info("Data upload skipped for {}".format(i["part_name"]))
 
-                    headers = connection.head_object(self.__uploadChannel.getContainerName(), res['path'])
-                    if headers['etag'] == res['etag']:
-                        res.update({
-                            'action': 'skip_segment',
-                            'success': True
-                        })
-                        is_exists = True
-            except ClientException:
-                # Passing exception here, it's means that when we unable to check
-                # uploaded segment (it's missing or etag mismatch) we reuploading that segment
+            except (ClientException, Exception) as e:
+                # Passing exception here, it"s means that when we unable to check
+                # uploaded segment (it"s missing or etag mismatch) we reuploading that segment
+                logging.error("! Unable to reupload segment {}: {}".format(self.__offset, str(e)))
+                logging.error(traceback.format_exc())
                 pass
 
             results_dict = {}
-            if is_exists is False:
+            if upload:
                 etag = connection.put_object(
                     self.__uploadChannel.getContainerName(),
-                    res['path'],
+                    part_name,
                     self.__fileProxy,
                     chunk_size=self.__uploadChannel.getChunkSize(),
                     response_dict=results_dict)
+                # getMD5() updates only when data in file proxy (used by put_object()) readed.
                 segment_md5 = self.__fileProxy.getMD5()
-                if etag != segment_md5:
-                    raise ClientException(
-                        'Segment {0}: upload verification failed: '
-                        'md5 mismatch, local {1} != remote {2} '
-                        '(remote segment has not been removed)'
-                        .format(segment['path'], segment_md5, etag))
+                # TODO: make status ("uploaded") as enumeration
+                self.__manifest.insert(
+                    etag, segment_md5, part_name, self.__offset, self.__fileProxy.getSize(), "uploaded")
 
-                res.update({
-                    'success': True,
-                    'action': 'upload_segment',
-                    'etag': etag
-                })
-
-            self.__uploadChannel.appendSegmentResult(res)
-            # Dumping segment results for resuming upload, if needed
-            with self.__fileLock:
-                with open(self.__uploadChannel.getContainerName() + '.' + self.__uploadChannel.getDiskName() + '.txt', 'w') as file:
-                    json.dump(self.__uploadChannel.getSegmentResults(), file)
-
-            # Notify that upload complete
-            self.__fileProxy.setComplete()
-
-        except (ClientException, Exception) as err:
+        except (ClientException, Exception) as e:
             self.__fileProxy.cancel()
+            logging.error("!!!ERROR: unable to upload segment {}. Reason: {}".format(self.__offset, e))
             logging.error(traceback.format_exc())
-            logging.debug("Exception in upload thread for '%08d'" % self.__index)
+        finally:
+            # We should compete every file proxy to avoid deadlocks
+            # Notify that upload complete
+            self.__fileProxy.setComplete(upload)
 
-        self.__uploadChannel.completeUploadThread()
-        connection.close()
+            # Each file proxy must be released, because internally it"s use Queue
+            # synchronization primitive and it must be released, when, for example, exception happens
+            self.__fileProxy.release()
 
-        logging.debug("Upload thread for '%08d' done" % self.__index)
+            # Closing swift connection and completing upload thread.
+            # Every thread creation must call completeUploadThread() function to avoid
+            # uploadThreads semaphore overflowing.
+            if connection:
+                connection.close()
+            self.__uploadChannel.completeUploadThread()
+
+        logging.debug("Upload thread for {} done".format(self.__offset))
+
+
 
 
 class SwiftUploadChannel_new(UploadChannel.UploadChannel):
@@ -196,16 +240,19 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             retries=3,
             compression=False,
             resume_upload=False,
-            chunksize=10*1024*1024,
+            manifest_path=None,
+            increment_depth=1,
+            chunksize=1024*1024*10,
             upload_threads=10,
-            queue_size=8):
+            queue_size=8,
+            ignore_etag=False):
         """constructor"""
-        self.__serverURL = server_url;
-        self.__userName = username;
-        self.__tennantName = tennant_name;
-        self.__password = password;
-        self.__retries = retries;
-        self.__compression = compression;
+        self.__serverURL = server_url
+        self.__userName = username
+        self.__tennantName = tennant_name
+        self.__password = password
+        self.__retries = retries
+        self.__compression = compression
         self.__containerName = container_name
         self.__diskName = disk_name
         self.__chunkSize = chunksize
@@ -214,27 +261,28 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__uploadThreads = threading.BoundedSemaphore(upload_threads)
         self.__segmentQueueSize = queue_size
         self.__segmentsList = []
-        self.__resumeSegmentsList = []
-        self.__fileProxies = []
-        self.__fileLock = threading.Lock()
 
-        # Max segment number is 1000 (it's configurable see http://docs.openstack.org/developer/swift/middleware.html )
+        self.__fileProxies = []
+        self.__ignoreEtag = ignore_etag
+
+        # Max segment number is 1000 (it"s configurable see http://docs.openstack.org/developer/swift/middleware.html )
         self.__segmentSize = max(int(self.__diskSize / 512), self.__chunkSize)
         if self.__segmentSize % self.__chunkSize:
             # Make segment size an integer of chunks
-            self.__segmentSize = self.__segmentSize - (self.__segmentSize % self.__chunkSize)
+            self.__segmentSize -= self.__segmentSize % self.__chunkSize
 
         logging.info("Segment size: " + str(self.__segmentSize) + " chunk size: " + str(self.__chunkSize))
+        logging.info("SSL compression is " + str(self.__compression))
 
-        # Loading segment results if resuming upload, clearing file otherwise
-        open_opt = 'w'
-        if self.__resumeUpload:
-            open_opt = 'r'
+        # Resume upload
+        logging.info("Resume upload file path: {}, resume upload is {}".format(manifest_path, self.__resumeUpload))
+        self.__manifest = None
         try:
-            with open(self.__containerName + '.' + self.__diskName + '.txt', open_opt) as file:
-                self.__resumeSegmentsList = json.load(file)
-        except Exception:
-            pass
+            self.__manifest = UploadManifest.ImageManifestDatabase(
+                manifest_path, self.__containerName, threading.Lock(), self.__resumeUpload, increment_depth)
+        except Exception as e:
+            logging.error("!!!ERROR: cannot open file containing segments. Reason: {}".format(e))
+            raise
 
         super(SwiftUploadChannel_new, self).__init__()
 
@@ -248,32 +296,29 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         if offset == 0:
             # Checking if we can create more upload threads, they releases when calls completeUploadThread() routine
             self.__uploadThreads.acquire()
-            logging.debug("Starting new upload thread for '%08d'" % index)
-
+            logging.debug("Starting new upload thread for \"%08d\"" % index)
             # Checking if this is the last segment
-            segment_size = 0;
             if extent.getStart() + self.__segmentSize > self.__diskSize:
                 segment_size = self.__diskSize - extent.getStart()
             else:
                 segment_size = self.__segmentSize
             self.__fileProxies.insert(index, DefferedUploadFileProxy(self.__segmentQueueSize, segment_size))
-            SwiftUploadThread(self, self.__fileProxies[index], index, self.__fileLock).start()
+
+            SwiftUploadThread(
+                self,
+                self.__fileProxies[index],
+                extent.getStart(),
+                self.__manifest,
+                self.__ignoreEtag).start()
 
         self.__fileProxies[index].write(extent)
 
         return True
 
     def completeUploadThread(self):
+        # Releasing semaphore. This call must be for every created upload thread
+        # to avoid thread endless waiting.
         self.__uploadThreads.release()
-
-    def getSegmentResults(self):
-        return self.__segmentsList
-
-    def getResumeSegmentResults(self):
-        return self.__resumeSegmentsList
-
-    def appendSegmentResult(self, result):
-         return self.__segmentsList.append(result)
 
     def getContainerName(self):
         return self.__containerName
@@ -284,16 +329,20 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     def skipExisting(self):
         return self.__resumeUpload
 
+
+    def getResumePath(self):
+        return self.__resumePath
+
     def getChunkSize(self):
         return self.__chunkSize
 
     def createConnection(self):
         return swiftclient.client.Connection(
             self.__serverURL,
-            self.__tennantName + ':' + self.__userName,
+            self.__tennantName + ":" + self.__userName,
             self.__password,
             self.__retries,
-            auth_version='2',
+            auth_version="2",
             snet=False,
             ssl_compression=self.__compression,
             timeout=86400)
@@ -304,29 +353,28 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         Throws in case of unrecoverable errors
         """
         res = {
-            'success': False,
-            'headers': None,
-            'container': self.__containerName,
+            "success": False,
+            "headers": None,
+            "container": self.__containerName,
         }
 
         resp_dict = {}
+        connection = None
         try:
             connection = self.createConnection()
-            res['action'] = 'put_container'
-            connection.put_container(res['container'], headers=res['headers'], response_dict=resp_dict)
+            connection.put_container(res["container"], headers=res["headers"], response_dict=resp_dict)
 
-            res['action'] = 'post_container'
-            res['headers'] = {'X-Container-Read': '.r:*'}
-            connection.post_container(res['container'], headers=res['headers'], response_dict=resp_dict)
+            res["headers"] = {"X-Container-Read": ".r:*"}
+            connection.post_container(res["container"], headers=res["headers"], response_dict=resp_dict)
 
-            res['success'] = True
+            res["success"] = True
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
         finally:
-            connection.close()
+            if connection:
+                connection.close()
 
-        return res['success']
-
+        return res["success"]
 
     def getUploadPath(self):
         """
@@ -339,10 +387,9 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     def getTransferChunkSize(self):
         return self.__chunkSize
 
-
     def waitTillUploadComplete(self):
         """Waits till upload completes"""
-        logging.debug("Upload complete, waiting for threads to complete");
+        logging.debug("Upload complete, waiting for threads to complete")
         # Waiting till upload queues in all proxy files becomes empty
         for item in self.__fileProxies:
             item.waitTillComplete()
@@ -359,83 +406,92 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         storage_url = None
         try:
             # If segments size and disk size mismatch
-            total_size = 0;
-
-            # If segment dictionary has error:
-            for i in self.__segmentsList:
-                if i['success'] == False:
-                    raise ClientException("Failure due uploading segment(s)")
-                else:
-                    total_size += i['size']
+            total_size = 0
+            r_list = self.__manifest.all()
+            for rec in r_list:
+                total_size += int(rec["size"])
 
             if total_size != self.__diskSize:
-                raise ClientException("Failure due uploading segments: disk size mismatch")
+                raise ClientException("Not all segments uploaded successfully: {} uploaded, {} expected".format(
+                    total_size, self.__diskSize))
 
             # Segments can upload not in sequential order, so we need to sort them for manifest
-            self.__segmentsList.sort(key=lambda di: di['index'])
+            r_list.sort(key=lambda di: int(di["offset"]))
+            storage_url = self.__uploadCloudManifest(self.__createCloudManifest(r_list))
 
-            # Creating manifest
-            manifest_data = json.dumps([{
-                    'path': self.__containerName + '/' + d['path'],
-                    'etag': d['etag'],
-                    'size_bytes': d['size']
-            } for d in self.__segmentsList])
-
-            mr = {}
-            connection = self.createConnection()
-            connection.put_object(
-                self.__containerName,
-                self.__diskName,
-                manifest_data,
-                headers={'x-static-large-object': 'true'},
-                query_string='multipart-manifest=put',
-                response_dict=mr
-            )
-            storage_url = connection.url + '/' + self.__containerName + '/' + self.__diskName
-            connection.close()
+            # Notify manifest database that backup completed
+            self.__manifest.complete_manifest()
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
-            raise
+            logging.error(traceback.format_exc())
 
         return storage_url
 
+    def __createCloudManifest(self, segment_list):
+        # Creating manifest
+        return json.dumps([{
+                "path": self.__containerName + "/" + d["part_name"],
+                "etag": d["etag"],
+                "size_bytes": int(d["size"])
+        } for d in segment_list])
+
+    def __uploadCloudManifest(self, manifest_data):
+        mr = {}
+        connection = self.createConnection()
+        connection.put_object(
+            self.__containerName,
+            self.__diskName,
+            manifest_data,
+            headers={"x-static-large-object": "true"},
+            query_string="multipart-manifest=put",
+            response_dict=mr
+        )
+        storage_url = connection.url + "/" + self.__containerName + "/" + self.__diskName
+        connection.close()
+
+        return storage_url
 
     def getTransferChunkSize(self):
-       """
-       Gets the size of transfer chunk in bytes.
-       All the data except the last chunk should be aligned and be integral of this size
-       """
-       return self.__chunkSize
-
+        """
+        Gets the size of transfer chunk in bytes.
+        All the data except the last chunk should be aligned and be integral of this size
+        """
+        return self.__chunkSize
 
     def getDataTransferRate(self):
-       """
-       Return:
+        """
+        Return:
             float: approx. number of bytes transfered per second
-       """
-       return 0
-
+        """
+        return 0
 
     def getOverallDataSkipped(self):
         """
         Gets overall size of data skipped in bytes.
         Data is skipped by the channel when the block with same checksum is already present in the cloud
         """
-        return 0
+        total_size = 0
+        try:
+            for f in self.__fileProxies:
+                total_size += f.getSkippedSize()
+        except Exception as err:
+            logging.debug("Unable to calculete skipped data size: " + str(err))
+
+        return total_size
 
 
     def getOverallDataTransfered(self):
         """
         Gets overall size of data actually uploaded (not skipped) in bytes.
         """
-        completed_size = 0;
+        total_size = 0
         try:
-            for file in self.__fileProxies:
-                completed_size += file.getCompletedSize()
+            for f in self.__fileProxies:
+                total_size += f.getCompletedSize()
         except Exception as err:
-            logging.debug("Unable to calculete completed data size: " + err.message())
+            logging.debug("Unable to calculete completed data size: " + str(err))
 
-        return completed_size
+        return total_size
 
 
     def getImageSize(self):

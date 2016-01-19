@@ -1,4 +1,4 @@
-# --------------------------------------------------------
+﻿# --------------------------------------------------------
 __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
@@ -225,7 +225,9 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
             raise FileException(filename , ex)
         return output
        
-        
+    
+    def getFilePath(self):
+        return self.__fileName
 
     #gets the overall image size available for writing. Note: it is subject to grow when new data is written
     def getImageSize(self):

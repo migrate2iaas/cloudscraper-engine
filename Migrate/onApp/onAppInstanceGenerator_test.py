@@ -48,6 +48,7 @@ class onAppInstanceGenerator_test(unittest.TestCase):
     def test_create(self):
         """creates new VM"""
         #oadev 8493452ecd20400c81d7869854665ba750a2c1c1
+
         generator = onAppInstanceGenerator.onAppInstanceGenerator("activegrid-lax.xfernet.net" , "support@migrate2iaas.com", "8e4d09e0922cf6b7dff79a9c8d9b46f6e252bdc0" , 8 , minipad_image_id=30 , vmbuild_timeout = 60*180 , onapp_port = 443)
         #generator = onAppInstanceGenerator.onAppInstanceGenerator("cloud.netcetera.co.uk" , "feoff@migrate2iaas.com", "866339f0fc021670ca6ac1803e5c1b73dbc3a21c" , 1 , minipad_image_id=84, vmbuild_timeout = 60*180)
 

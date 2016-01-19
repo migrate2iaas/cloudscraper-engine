@@ -168,7 +168,7 @@ class EC2VolumeGenerator(object):
                     logging.info(">>> It could be attached to your instance via AWS EC2 management console") 
                     logging.info("==========================================================================") 
 
-                    return EC2Volume.EC2Volume(volumeid)
+                    return EC2Volume.EC2Volume(volumeid, s3owner , s3key , self.__region)
                 if importstatus == "cancelled":
                     logging.error("!!!ERROR: The import task was cancelled by AWS, the reason is: " + import_task.get_message()) 
                     return None

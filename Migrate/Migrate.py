@@ -65,6 +65,12 @@ def decode(key, enc):
         dec.append(dec_c)
     return "".join(dec)
 
+jan1 = str(int(time.mktime((2016,1,1,1,1,1,1,1,1))))
+encoded = encode("0xEDAEDA", jan1)
+print (encoded)
+decoded = decode("0xEDAEDA", encoded)
+print (decoded)
+print (time.ctime(int(decoded)))
 
 if os.name == 'nt':
     sys.path.append('./Windows')
@@ -122,7 +128,6 @@ def chk_limits():
 
 if __name__ == '__main__':
     try:
-  
         #parsing extra option
         parser = ThrowingArgumentParser(description="This script performs creation of virtualized images from the local server, uploading them to S3, converting them to EC2 instances. See http://www.migrate2iaas.com for more details.")
         parser.add_argument('-k', '--amazonkey', help="Your AWS secret key. ")
@@ -130,7 +135,7 @@ if __name__ == '__main__':
         parser.add_argument('-i', '--cloudsigmapass', help="Your CloudSigma password.")
         parser.add_argument('-a', '--azurekey', help="Your Azure storage account primary key.")
         parser.add_argument('-w', '--apikey', help="Your generic API key: the cloud will be choosen according to the config file.")
-        parser.add_argument('-c', '--config', help="Path to copy config file")
+        parser.add_argument('-c', '--config', help="Path to copy config file. May be a local path or http link")
         parser.add_argument('-o', '--output', help="Path to extra file for non-detalized output")                   
         parser.add_argument('-u', '--resumeupload', help="Resumes the upload of image already created", action="store_true")                   
         parser.add_argument('-s', '--skipupload', help="Skips both imaging and upload. Just start the machine in cloud from the image given", action="store_true")                   
@@ -139,16 +144,19 @@ if __name__ == '__main__':
         parser.add_argument('-b', '--heartbeat', help="Specifies interval in seconds to write hearbeat messages to stdout. No heartbeat if this flag is ommited", type=int)                   
         parser.add_argument('-q', '--statusfile', help="Specifies status file to write current output") 
         parser.add_argument('-v', '--virtio', help="Injects virtio drivers in the running server driver store", action="store_true")
-        parser.add_argument('-j', '--reboottimeout', help="Time to wait in seconds for VM to reboot while doing test run", type=int, default=600)
-        parser.add_argument('-l', '--logfile', help="Specifies the place to store full log" , default="../../logs/migrate.log")
+        parser.add_argument('-j', '--reboottimeout', help="Time to wait in seconds for VM to reboot while doing test run", type=int, default=200)
+        parser.add_argument('-p', '--backup', help="Backup mode. Skips deploying machine in the cloud - just takes an image and uploads it to cloud", action="store_true")
+        parser.add_argument('-l', '--logfile', help="Specifies the place to store full log")
 
-        
+        logfile = "../../logs/migrate.log"
+        if parser.parse_args().logfile:
+            logfile = parser.parse_args().logfile
         #Turning on the logging
-        logging.basicConfig(format='%(asctime)s %(message)s' , filename=parser.parse_args().logfile ,level=logging.DEBUG)    
+        logging.basicConfig(format='%(asctime)s %(message)s' , filename=logfile,level=logging.DEBUG)    
         handler = logging.StreamHandler()
         handler.setLevel(logging.INFO)
         logging.getLogger().addHandler(handler)
-
+    
         #new random seed
         random.seed()
     
@@ -214,6 +222,10 @@ if __name__ == '__main__':
             timeout = parser.parse_args().timeout
             reboottimeout = parser.parse_args().resumeupload
 
+        backupmode = False
+        if parser.parse_args().backup:
+            backupmode = True
+
         resumeupload = False
         if parser.parse_args().resumeupload:
             resumeupload = True
@@ -221,8 +233,6 @@ if __name__ == '__main__':
         skipupload = False
         if parser.parse_args().skipupload:
             skipupload = True
-            #NOTE: skip upload is not yet good enough! 
-            # it needs saving of 1) image-id (xml-key) for each volume imported previously 2) instance-id
 
         password = s3key or ehkey or azurekey or cloudsigmapass or apikey
         limits = None
@@ -238,7 +248,7 @@ if __name__ == '__main__':
             os._exit(errno.EFAULT)
     
         logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Transfer Process:\n")
-        __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload , limits = limits)
+        __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload , limits = limits , insert_vitio=parser.parse_args().virtio, backup_mode = backupmode)
         logging.info("Migrator test started")
         # Doing the task
         instance = None
@@ -258,11 +268,9 @@ if __name__ == '__main__':
                os._exit(errno.EFAULT)
 
         # check if server responds in the test scenario
-        if testrun:
-            try:
-            
-                #import AzureServiceBusResponder
-                #respond = AzureServiceBusResponder.AzureServiceBusResponder("cloudscraper-euwest" , 'Pdw8d/kMGqU0d1m99n3sSrepJu1Q61MwjeLmg0o3lJA=', 'owner' , 'server-up')
+        # TODO: move the code to spearate file\class, looks ugly
+        try:
+            if testrun:
 
                 logging.info("\n>>>>>>>>>>>>>>>>> Making test run for an instance to check it alive\n")
                 #instance.stop() should be stopped\finalized already
@@ -278,19 +286,20 @@ if __name__ == '__main__':
                     logging.info("\n>>>>>>>>>>>>>>>>> Transfer post-check ended successfully\n")
                 else:
                     logging.error("!!!ERROR: Transfer process post-check ended unsuccessfully for " + str(instance) + " at " + str(cloud.getTargetCloud()) + " , " + str(cloud.getRegion()));
-            except Exception as e:
-                logging.error("\n!!!ERROR: failed tomake a test check! ")
-                logging.error("\n!!!ERROR: " + str(e) )
-                logging.error(traceback.format_exc())
-                logging.info("\n!!!ERROR: Transfer process post-check ended unsuccessfully\n")
-                os._exit(errno.ERANGE)
-                #sys.exit(errno.ERANGE)
-            finally:
-                try:
+        except Exception as e:
+            logging.error("\n!!!ERROR: failed tomake a test check! ")
+            logging.error("\n!!!ERROR: " + str(e) )
+            logging.error(traceback.format_exc())
+            logging.info("\n!!!ERROR: Transfer process post-check ended unsuccessfully\n")
+            os._exit(errno.ERANGE)
+            #sys.exit(errno.ERANGE)
+        finally:
+            try:
+                if testrun:
                     instance.stop()
-                except Exception as e:
-                    logging.warning("!Cannot stop the instance: " + e.str())
-                    os._exit(0)
+            except Exception as e:
+                logging.warning("!Cannot stop the instance: " + str(e))
+
 
     except Exception as e:
            logging.error("\n!!!ERROR: Unexpected error during init")

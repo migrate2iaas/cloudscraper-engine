@@ -192,11 +192,7 @@ class onAppVM(VmInstance.VmInstance):
             return True
         logging.info("Shutting down the onApp VM " + self.__vmid)
         self.__onapp.shutdownVM(self.__vmid)
-
-    def attachDataVolume(self):
-        """attach data volume"""
-        raise NotImplementedError
-
+        
     def getIp(self):
         """returns public ip string"""
         vm = self.__onapp.getVM(self.__vmid)
@@ -209,6 +205,9 @@ class onAppVM(VmInstance.VmInstance):
             subresources: Boolean - if True, deallocates all associated resources (disks, ips). Deallocates only the vm itself otherwise
         """
         self.__onapp.deleteVM(self.__vmid, destroy_all_backups = int(subresources))
+    
+    def getId(self):
+        return str(self.__vmid)
 
 class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
     """on app generator"""
