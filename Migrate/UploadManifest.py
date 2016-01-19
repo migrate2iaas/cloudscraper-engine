@@ -449,7 +449,7 @@ class ImageManifestDatabase(object):
 
                 # First, creating manifest if no resume required, than getting list (new manifest just created)
                 if resume is False:
-                    image_manifest.create(manifest_path, lock, db_write_cache_size)
+                    image_manifest.create(manifest_path, lock, db_write_cache_size, use_dr)
 
                 m_list = self.__get_sorted_manifest_list(increment_depth)
                 for table_name in m_list:
