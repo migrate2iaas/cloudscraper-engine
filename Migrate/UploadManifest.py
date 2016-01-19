@@ -4,9 +4,6 @@ import datetime
 import os
 import logging
 
-from tinydb import TinyDB, Query
-from tinydb.storages import JSONStorage, MemoryStorage
-from tinydb.middlewares import CachingMiddleware
 
 
 class ImageManifest(object):
@@ -40,13 +37,18 @@ class ImageManifest(object):
         raise NotImplementedError
 
 
-class ImageFileManifest(ImageManifest):
+class TinyDBImageFileManifest(ImageManifest):
     """
     Implementation for ImageManifest interface, it's implements database behavior with select, update, insert,...
     for file storage, based on JSON format.
     """
 
     def __init__(self, manifest_path, timestamp, lock, db_write_cache_size=1):
+
+        from tinydb import TinyDB, Query
+        from tinydb.storages import JSONStorage, MemoryStorage
+        from tinydb.middlewares import CachingMiddleware
+
         self.__table_name = str(timestamp)
         path = "{}/{}".format(manifest_path, self.__table_name)
 
