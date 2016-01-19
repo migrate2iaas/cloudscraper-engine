@@ -220,7 +220,7 @@ class ImageDictionaryManifest(ImageManifest):
     for file storage, based on JSON format.
     """
 
-    def __init__(self, manifest_path, table_name, lock, db_write_cache_size=1, use_dr=True):
+    def __init__(self, manifest_path, table_name, lock, db_write_cache_size=1, use_dr=False):
         self.__table_name = str(table_name)
         path = "{}/{}".format(manifest_path, self.__table_name)
 
@@ -410,7 +410,7 @@ class ImageManifestDatabase(object):
 
     def __init__(
             self, image_manifest, manifest_path, container_name, lock, resume=False, increment_depth=1,
-            db_write_cache_size=1, use_dr=True):
+            db_write_cache_size=1, use_dr=False):
         """
         Creates or opens existing manifest file
 

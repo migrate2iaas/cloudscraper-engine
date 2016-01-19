@@ -313,7 +313,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
     def __init__(
             self, bucket, awskey, awssercret, resultDiskSizeBytes, location='', keynameBase=None, diskType='VHD',
             resume_upload=False, chunksize=10*1024*1024, upload_threads=4, queue_size=16, use_ssl=True,
-            manifest_path=None, increment_depth=1, use_dr=True, walrus=False, walrus_path="/services/WalrusBackend",
+            manifest_path=None, increment_depth=1, use_dr=False, walrus=False, walrus_path="/services/WalrusBackend",
             walrus_port=8773, make_link_public=False):
 
         self.__uploadQueue = Queue.Queue(queue_size)

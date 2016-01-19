@@ -22,7 +22,7 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
             instancetype='m1.small', chunksize=10*1024*1024, disktype='VHD', keyname_prefix='', vpc="",
             custom_host="", custom_port=80, custom_suffix="", use_ssl=True,\
             minipad = False , minipad_ami = "",\
-            manifest_path="", increment_depth=1, use_dr=True):
+            manifest_path="", increment_depth=1, use_dr=False):
 
         """inits with options"""
         super(AmazonCloudOptions, self).__init__()

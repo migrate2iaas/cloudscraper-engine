@@ -577,11 +577,7 @@ class MigratorConfigurer(object):
         volumes = self.createVolumesList(config, configfile, imagedir, imagetype, s3prefix)
         factory = self.createImageFactory(config, image_placement, imagetype)
 
-        use_dr = False
-        manifest_path = increment_depth = None
-        if config.has_section('DR'):
-            use_dr = True
-            manifest_path, increment_depth = self.loadDRconfig(config)
+        use_dr, manifest_path, increment_depth = self.loadDRconfig(config)
 
         newsize = imagesize
         installservice = None
@@ -800,15 +796,20 @@ class MigratorConfigurer(object):
         return (imagedir, image_placement, imagetype)
 
     def loadDRconfig(self, config):
-        manifest_path = 'C:\\backup-manifest'
-        if config.has_option('DR', 'manifest_path'):
-            manifest_path = config.get('DR', 'manifest_path')
+        use_dr = False
+        manifest_path = increment_depth = None
 
-        increment_depth = 1
-        if config.has_option('DR', 'increment_depth'):
-            increment_depth = config.get('DR', 'increment_depth')
+        if config.has_section('DR'):
+            use_dr = True
+            manifest_path = 'C:\\backup-manifest'
+            if config.has_option('DR', 'manifest_path'):
+                manifest_path = config.get('DR', 'manifest_path')
 
-        return manifest_path, increment_depth
+            increment_depth = 1
+            if config.has_option('DR', 'increment_depth'):
+                increment_depth = config.get('DR', 'increment_depth')
+
+        return use_dr, manifest_path, increment_depth
 
     def getServiceOverrides(self, config, configfile, installpath , test=False):
         #here the service config is being generated
