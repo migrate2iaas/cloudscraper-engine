@@ -453,7 +453,7 @@ class ImageManifestDatabase(object):
 
                 m_list = self.__get_sorted_manifest_list(increment_depth)
                 for table_name in m_list:
-                    self.__db.append(image_manifest.open(manifest_path, table_name, lock, db_write_cache_size))
+                    self.__db.append(image_manifest.open(manifest_path, table_name, lock, db_write_cache_size, use_dr))
             else:
                 self.__db.append(
                     image_manifest.open(manifest_path, "in_memory_table", lock, db_write_cache_size, use_dr))
