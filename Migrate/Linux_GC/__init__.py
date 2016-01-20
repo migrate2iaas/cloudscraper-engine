@@ -40,7 +40,6 @@ import LinuxBlockDevice
 import LinuxBackupAdjust
 
 import TransferTarget
-import FsBundler
 
 
 import re
@@ -50,8 +49,6 @@ from subprocess import *
 def RenameFile(src_files , dest):
     """a small hack function"""
     for file in src_files:
-        if file == dest:
-            continue
         logging.info("Renaming output" + file + " to the image file " + dest);
         os.rename(file , dest)
         #touch() -like command. just create an empty file so google code could delete it afterwards
@@ -164,26 +161,18 @@ class Linux(object):
     """
 
 
-    def createBundleTransferTarget(self , media, size, gce_original_impl = False):
-        """a specific GCE method to create file-based transfer target 
-        Args:
-            media - virtual disk media
-            size - the size of resulting image
-            gce_original_impl - if to use original gce implementation whithout nbd hacks
-        """
+    def createBundleTransferTarget(self , media, size):
+        """a specific GCE method"""
 
         #TODO: make assert media size equals file size
         options = AttrDict()
-        #TODO: should pass the size suitable to hold all data for a resulting FS
         options['fs_size']  = size
         options['skip_disk_space_check'] = True;
         #TODO: Should pass somehow
         options['file_system'] = "ext3"
         options['root_directory'] = "/"
         options['key'] = "nebula"
-        #TODO: pass it, either we copy all disks or system one only
-        include_mounts = True
-
+        
         try:
             guest_platform = platform_factory.PlatformFactory(
                 options.root_directory).GetPlatform()
@@ -195,7 +184,9 @@ class Linux(object):
         # if options.file_system is not set - sets it to prefered guest
         file_system = imagebundle.GetTargetFilesystem(options, guest_platform)
 
-        
+        #it's the transfer target
+        bundle_object = block_disk.RootFsRaw(options.fs_size, file_system, options.skip_disk_space_check)
+
         scratch_dir = None
         target_filename = None
         try:
@@ -204,21 +195,14 @@ class Linux(object):
                 scratch_dir = os.path.dirname(target_filename) + "/"
             logging.info("Preparing bundle file " + target_filename + " and temp dir" + scratch_dir)
         except NotImplementedError as e:
-            logging.warning("!Cannot get file path for the image");
+            logging.warning("!Cannot get file path for the image, generating new one , media class " + repr(media));
             logging.warning("! Error: " + str(e) )
             logging.warning(traceback.format_exc())
             scratch_dir = None
-            raise e
 
-        logging.debug("The system fs size to bundle is " + str(options.fs_size))
-
-        #it's object to move the system
-        #NOTE: for now it moves the whole system only (if include mountpoints flag is set)
-        if not gce_original_impl and guest_platform.GetLinuxFamily() == guest_platform.DebianFamily:
-            bundle_object = FsBundler.FsBundler(options.fs_size, file_system, options.skip_disk_space_check , disk_file_name = target_filename.replace(scratch_dir, "") )
-        else:
-            bundle_object = block_disk.RootFsRaw(options.fs_size, file_system, options.skip_disk_space_check , disk_file_name = target_filename.replace(scratch_dir, "") )
-
+        if not scratch_dir:
+            scratch_dir = tempfile.mkdtemp()
+            target_filename = scratch_dir + "/disk.raw.tar"
         # TODO: should tie up with dir
         bundle_object.SetScratchDirectory(scratch_dir)
         bundle_object.SetTarfile(target_filename)
@@ -226,7 +210,7 @@ class Linux(object):
         logging.info("excluding dir " + scratch_dir + " from data copy");
         bundle_object.AppendExcludes([exclude_spec.ExcludeSpec(scratch_dir, preserve_dir=False)])
 
-        return BundleTransferTarget(bundle_object , media , self , guest_platform , include_mounts)
+        return BundleTransferTarget(bundle_object , media , self , guest_platform)
 
     
     def createSystemAdjustOptions(self):
@@ -268,8 +252,6 @@ class Linux(object):
         output = p1.communicate()[0]
         lastline = output.split("\n")[1]
         voldev = lastline[:lastline.find(" ")]
-        if os.path.islink(voldev):
-            voldev = os.path.realpath(voldev) #resolve symlinks
         return voldev
 
     def __findLvmDev(self , volgroup):

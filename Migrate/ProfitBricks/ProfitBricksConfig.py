@@ -38,7 +38,7 @@ class ProfitBricksCloudOptions(CloudConfig.CloudConfig):
         
         super(ProfitBricksCloudOptions, self).__init__()
 
-    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0 , preserve_existing_data = False):  
+    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):  
         """
         Generates new upload channel
 
@@ -126,4 +126,3 @@ class ProfitBricksMigrateConfig(MigrateConfig.MigrateConfig):
 
     def insertVirtIo(self):
         return True
-

@@ -21,7 +21,6 @@ class EC2Instance(VmInstance.VmInstance):
 
     def __init__(self , instance_id , user , password , region):
         """ec2 instance constructor"""
-        super(EC2Instance,self).__init__(instance_id)
         self.__user = user
         self.__password = password
         self.__instanceId = instance_id

@@ -14,7 +14,7 @@ class CloudConfig(object):
         """
         return
 
-    def generateUploadChannel(self , targetsize , targetname = None, targetid = None, resume_upload = False , imagesize = 0 , preserve_existing_data = False):
+    def generateUploadChannel(self , targetsize , targetname = None, targetid = None, resume_upload = False , imagesize = 0):
         """
         Generates new upload channel
 
@@ -24,7 +24,6 @@ class CloudConfig(object):
             targetid - cloud id of already uploaded target. 
             resume_upload - whether to resume previous upload
             imagesize - size of the image file (not resulting disk size) to upload. Could be 0. 
-            preserve_existing_data: bool - if preserve (make versioned copy) of existing data (only if resume is true)
         """
         raise NotImplementedError
         

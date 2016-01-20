@@ -13,14 +13,10 @@ sys.path.append('./Helper')
 import AmazonConfigs
 import EHConfigs
 import AzureConfigs
-#import CloudSigmaConfigs
+import CloudSigmaConfigs
 import onAppConfigs
 #import OpenStack
 #from OpenStack import OpenStackConfigs
-
-import OpenStack
-from OpenStack import OpenStackConfigs
-
 
 import platform
 import shutil
@@ -33,7 +29,6 @@ import ConfigParser
 import logging
 import codecs
 import time
-import traceback
 from MigrateConfig import VolumeMigrateConfig
 import UnicodeConfigParser
 import GzipChunkMedia
@@ -43,10 +38,9 @@ import datetime
 import StreamVmdkMediaFactory
 import ProfitBricksConfig
 import SparseRawMediaFactory
-import QemuImgMediaFactory
 import VhdQcow2MediaFactory
 import SparseRawMedia
-
+import WindowsVhdMedia
 
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
@@ -113,7 +107,6 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
         if config.has_section(section):
             if config.has_option(section, 'imagesize'):
                 self.__imageSize = config.getint(section, 'imagesize')
-                logging.debug("imagesize for volume " + str(self.__volumeName) + " is pre-set to " + str(self.__imageSize))
             else:
                 logging.debug("imagesize was not found in the config for volume " + str(self.__volumeName)) 
 
@@ -173,8 +166,6 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
     # image size here is the size of volume in bytes (not in the image file that could be compressed)
     def setImageSize(self , size):
         self.__imageSize = size
-        logging.debug("imagesize for volume " + str(self.__volumeName) + " is set to " + str(self.__imageSize))
-        #logging.debug(str(traceback.format_tb()))
 
     def generateMigrationId(self):
         """generates an id to distinguish migration of the same volumes but for different times"""
@@ -295,20 +286,12 @@ class MigratorConfigurer(object):
         if config.has_option('OpenStack', 'use_new_channel'):
             use_new_channel = config.get('OpenStack', 'use_new_channel')
 
-        ignore_etag = False
-        if config.has_option('OpenStack', 'ignore_etag'):
-            ignore_etag = config.get('OpenStack', 'ignore_etag')
-            
-        adjust_override = self.getOverrides(config, configfile)
-        manifest_path, increment_depth = self.loadDRconfig(config)
-        image = OpenStackConfigs.OpenStackMigrateConfig(volumes, factory, 'x86_64', imagetype)
-        cloud = OpenStackConfigs.OpenStackCloudOptions(
-            endpoint, user, tennant, password, network, imagetype, container, flavor=flavor, ip_pool_name=ip_pool,
-            swift_server_url=swift_server_url, swift_tennant_name=swift_tennant_name, swift_username=swift_username,
-            swift_password=swift_password, swift_container=swift_container, compression=swift_compression,
-            use_new_channel=use_new_channel, manifest_path=manifest_path, increment_depth=increment_depth,
-            ignore_etag=ignore_etag)
-        return (image, adjust_override, cloud)
+        adjust_override = self.getOverrides(config , configfile)
+        image = OpenStackConfigs.OpenStackMigrateConfig(volumes , factory, 'x86_64' , imagetype)
+        cloud = OpenStackConfigs.OpenStackCloudOptions(endpoint , user, tennant, password, network, imagetype, container, flavor = flavor, ip_pool_name = ip_pool,\
+            swift_server_url = swift_server_url , swift_tennant_name = swift_tennant_name , swift_username = swift_username ,
+            swift_password = swift_password , swift_container=swift_container , compression=swift_compression , use_new_channel=use_new_channel)
+        return (image,adjust_override,cloud)
 
     def configOnApp(self, configfile, config, password):
          # generic for other clouds
@@ -331,10 +314,6 @@ class MigratorConfigurer(object):
         if config.has_option('onApp', 'minipad_template'):
             minipad_template = config.get('onApp', 'minipad_template') 
 
-        #different template for linux. TODO: should be parametrized
-        if config.has_option('onApp', 'minipad_linux_template') and not ('nt' in os.name):
-            minipad_template = config.get('onApp', 'minipad_linux_template') 
-
         minipad_vm_id = "" 
         if config.has_option('onApp', 'minipad_vm_id'):
             minipad_vm_id = config.get('onApp', 'minipad_vm_id') 
@@ -343,13 +322,9 @@ class MigratorConfigurer(object):
         if config.has_option('onApp', 'vm_build_timeout'):
             vm_build_timeout = config.get('onApp', 'vm_build_timeout') 
 
-        #TODO: rename the parm to be cross-system
         wintemplate_size = 20
         if config.has_option('onApp', 'wintemplate_size'):
             wintemplate_size = int(config.get('onApp', 'wintemplate_size') )
-
-        if config.has_option('onApp', 'template_size_linux') and not ('nt' in os.name):
-            wintemplate_size = int(config.get('onApp', 'template_size_linux') )
 
         vm_boot_timeout = 120
         if config.has_option('onApp', 'vm_boot_timeout'):
@@ -362,23 +337,14 @@ class MigratorConfigurer(object):
         s3secret = config.get('onApp', 's3secret')
         s3region = config.get('onApp', 's3region')
 
-        s3customhost = False
-        if config.has_option('onApp', 's3custom'):
-            s3customhost = config.getboolean('onApp', 's3custom')
+        adjust_override = self.getOverrides(config , configfile)
 
-        adjust_override = self.getOverrides(config, configfile)
+        image = onAppConfigs.onAppMigrateConfig(volumes , factory, 'x86_64' , imagetype)
+        cloud = onAppConfigs.onAppCloudOptions(s3bucket , s3user , s3secret , s3region , onapp_endpoint , onapp_login , \
+            password , onapp_datastore_id, onapp_target_account , onapp_port = onapp_port, preset_ip = minipad_ip, \
+            minipad_image_name = minipad_template , minipad_vm_id = minipad_vm_id , vmbuild_timeout_sec = int(vm_build_timeout) , wintemplate_size = wintemplate_size , vm_boot_timeout=vm_boot_timeout)
 
-        use_dr, manifest_path, increment_depth = self.loadDRconfig(config)
-
-        image = onAppConfigs.onAppMigrateConfig(volumes, factory, 'x86_64', imagetype)
-        cloud = onAppConfigs.onAppCloudOptions(
-            s3bucket, s3user, s3secret, s3region, onapp_endpoint, onapp_login,
-            password, onapp_datastore_id, onapp_target_account, onapp_port=onapp_port, preset_ip=minipad_ip,
-            minipad_image_name=minipad_template, minipad_vm_id=minipad_vm_id, vmbuild_timeout_sec=int(vm_build_timeout),
-            wintemplate_size=wintemplate_size, s3custom=s3customhost, vm_boot_timeout=vm_boot_timeout,
-            use_dr=use_dr, manifest_path=manifest_path, increment_depth=increment_depth)
-
-        return (image, adjust_override, cloud)
+        return (image,adjust_override,cloud)
 
 
     def configProfitBricks(self, configfile, config, password):
@@ -403,8 +369,6 @@ class MigratorConfigurer(object):
 
     def configCloudSigma(self, configfile, config, password):
         """gets generic parameters for all clouds"""
-        logging.error("!!!ERROR: Cloudsigma support is depricated")
-        
         # generic for other clouds
         (imagedir, image_placement, imagetype) = self.getImageOptions(config)
         volumes = self.createVolumesList(config , configfile, imagedir, imagetype)        
@@ -547,21 +511,20 @@ class MigratorConfigurer(object):
            
         chunksize = 10*1024*1024
         if config.has_option('EC2', 'chunksize'):
-           chunksize = int(config.get('EC2', 'chunksize'))
+           chunksize = int(config.get('EC2', 'chunksize'))   
 
         bucket = ''
 
         try:
             bucket = config.get('EC2', 'bucket')
-            bucket = str(bucket).lower()
         except ConfigParser.NoOptionError as exception:
             logging.info("No bucket name found, generating a new one")
 
         if bucket == '':
             #TODO: make another time mark: minutes-seconds-machine-name?
             bucket = "cloudscraper-" + str(int(time.mktime(time.localtime())))+"-"+region 
-        
-        config.set('EC2', 'bucket' , bucket)
+            #NOTE: it'll be saved on the next ocassion
+            config.set('EC2', 'bucket' , bucket)
 
         
         security = "default"
@@ -578,31 +541,27 @@ class MigratorConfigurer(object):
             minipad_ami = config.get('EC2', 'minipad_ami')
         
         (imagedir, image_placement, imagetype) = self.getImageOptions(config)
-        volumes = self.createVolumesList(config, configfile, imagedir, imagetype, s3prefix)
-        factory = self.createImageFactory(config, image_placement, imagetype)
-
-        use_dr, manifest_path, increment_depth = self.loadDRconfig(config)
+        volumes = self.createVolumesList(config , configfile, imagedir, imagetype , s3prefix)        
+        factory = self.createImageFactory(config , image_placement , imagetype)
 
         newsize = imagesize
-        installservice = None
+        installservice = None;
 
-        adjust_override = self.getOverrides(config, configfile)
+        adjust_override = self.getOverrides(config , configfile)
 
-
-        image = AmazonConfigs.AmazonMigrateConfig(volumes, factory, imagearch, imagetype)
+        image = AmazonConfigs.AmazonMigrateConfig(volumes , factory, imagearch , imagetype, insert_xen = bool(minipad))
         #TODO: add machine name
-        cloud = AmazonConfigs.AmazonCloudOptions(
-            bucket=bucket, user=user, password=password, newsize=newsize, arch=arch, zone=zone, region=region,
-            machinename="", securityid=security, instancetype=instancetype, chunksize=chunksize, disktype=imagetype,
-            keyname_prefix=s3prefix, vpc=vpcsubnet, custom_host=custom_host, custom_port=custom_port,
-            custom_suffix=custom_suffix, use_ssl=use_ssl, manifest_path=manifest_path , minipad = minipad , minipad_ami = minipad_ami, increment_depth=increment_depth,
-            use_dr=use_dr)
+        cloud = AmazonConfigs.AmazonCloudOptions(bucket = bucket , user=user , password=password , newsize=newsize , arch=arch , zone= zone \
+                                                , region=region , machinename="" , securityid=security , instancetype=instancetype \
+                                                , chunksize = chunksize, disktype = imagetype , keyname_prefix = s3prefix , vpc=vpcsubnet \
+                                                , custom_host = custom_host , custom_port = custom_port , custom_suffix = custom_suffix , use_ssl = use_ssl\
+                                                , minipad = minipad , minipad_ami = minipad_ami)
         
 
         return (image,adjust_override,cloud)
 
     #TODO: move the common code to one function
-    def configElasticHosts(self, configfile, user='', password='', region='', imagepath=''):
+    def configElasticHosts(self , configfile , user = '' , password = '' , region = '', imagepath = ''):
         try:
             config = UnicodeConfigParser.UnicodeConfigParser()
             config.readfp(codecs.open(configfile, "r", "utf16"))
@@ -689,17 +648,11 @@ class MigratorConfigurer(object):
             if config.has_option('Volumes', 'system'):
                 addsys = config.getboolean('Volumes', 'system') 
                 if addsys:
-                    logging.debug("system is set in volumes config")
-                    sysvol = os.environ['windir'].split(':')[0] #todo: change to cross-platform way. windir is set artificially at the program start for linux
+                    sysvol = os.environ['windir'].split(':')[0] #todo: change to cross-platform way
                     if not sysvol in letterslist:
                         letterslist.append(sysvol)
-                        logging.debug("appending system volume " + sysvol + " to the volume list")
-                    else:
-                        logging.debug("skipping  " + sysvol + " - it is already in the list")
 
-            logging.debug("Volume letters to process are: " + str(letterslist))
             for letter in letterslist:
-                letter = str(letter).strip() #remove spaces between commas
                 if not letter:
                     continue
                 letter = str(letter).strip()
@@ -732,15 +685,17 @@ class MigratorConfigurer(object):
         if config.has_option('Image', 'compression'):
             compression =  config.getint('Image', 'compression')
         
+        # check run on windows flag
         factory = None
         if (imagetype == "VHD" or imagetype == "fixed.VHD") and image_placement == "local":
-            # check run on windows flag
             if os.name == 'nt':
                 import WindowsVhdMediaFactory
                 factory = WindowsVhdMediaFactory.WindowsVhdMediaFactory(fixed = (imagetype == "fixed.VHD"))
             else:
-                factory = QemuImgMediaFactory.QemuImgMediaFactory()    
-        
+                logging.error("!!!ERROR: Linux doesn't support VHD format");
+            
+        #if imagetype == "raw.gz" and image_placement == "local":
+        # factory =  RawGzipMediaFactory.RawGzipMediaFactory(imagepath , imagesize)
         if (imagetype == "raw.tar" or imagetype.lower() == "raw") and image_placement == "local":
             chunk = 4096*1024
             factory = GzipChunkMediaFactory.GzipChunkMediaFactory(chunk , compression)
@@ -798,22 +753,6 @@ class MigratorConfigurer(object):
            image_placement = "local"
 
         return (imagedir, image_placement, imagetype)
-
-    def loadDRconfig(self, config):
-        use_dr = False
-        manifest_path = increment_depth = None
-
-        if config.has_section('DR'):
-            use_dr = True
-            manifest_path = 'C:\\backup-manifest'
-            if config.has_option('DR', 'manifest_path'):
-                manifest_path = config.get('DR', 'manifest_path')
-
-            increment_depth = 1
-            if config.has_option('DR', 'increment_depth'):
-                increment_depth = config.get('DR', 'increment_depth')
-
-        return use_dr, manifest_path, increment_depth
 
     def getServiceOverrides(self, config, configfile, installpath , test=False):
         #here the service config is being generated

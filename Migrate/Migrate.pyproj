@@ -1,19 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Migrate.py</StartupFile>
+    <StartupFile>Amazon\EC2MinipadInstanceGenerator_test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>Migrate</Name>
     <RootNamespace>Migrate</RootNamespace>
-    <InterpreterId>{2af0f10d-7135-4994-9156-5d01c9c11b7e}</InterpreterId>
-    <InterpreterVersion>2.7</InterpreterVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,10 +20,6 @@
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugSymbols>true</DebugSymbols>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
-  </PropertyGroup>
-  <PropertyGroup>
-    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
-    <PtvsTargetsFile>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets</PtvsTargetsFile>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AaaTheFirst_test.py" />
@@ -36,6 +30,8 @@
     <Compile Include="Amazon\EC2Instance.py" />
     <Compile Include="Amazon\EC2InstanceGenerator.py" />
     <Compile Include="Amazon\EC2Instance_test.py" />
+    <Compile Include="Amazon\EC2MinipadInstanceGenerator.py" />
+    <Compile Include="Amazon\EC2MinipadInstanceGenerator_test.py" />
     <Compile Include="Amazon\EC2Volume.py" />
     <Compile Include="Amazon\EC2VolumeGenerator.py" />
     <Compile Include="Amazon\S3UploadChannel.py" />
@@ -49,14 +45,12 @@
     <Compile Include="Azure\__init__.py" />
     <Compile Include="BackupAdjust.py" />
     <Compile Include="BackupSource.py" />
-    <Compile Include="ChainUploadChannel.py" />
     <Compile Include="CloudConfig.py" />
     <Compile Include="CloudSigma\CloudSigmaConfigs.py" />
     <Compile Include="CloudSigma\CloudSigmaUploadChannel.py" />
     <Compile Include="CloudSigma\CloudSigmaUploadChannel_test.py" />
     <Compile Include="DataExtent.py" />
     <Compile Include="DataTransferProto.py" />
-    <Compile Include="DefferedUploadFile.py" />
     <Compile Include="ElasticHosts\EHConfigs.py" />
     <Compile Include="ElasticHosts\EHInstance.py" />
     <Compile Include="ElasticHosts\EHInstanceGenerator.py" />
@@ -77,8 +71,6 @@
     <Compile Include="Images\RawGzipMedia.py" />
     <Compile Include="Images\RawGzipMediaFactory.py" />
     <Compile Include="Images\RawGzipMedia_test.py" />
-    <Compile Include="Images\VhdQcow2Media.py" />
-    <Compile Include="Images\VhdQcow2MediaFactory.py" />
     <Compile Include="InstanceGenerator.py" />
     <Compile Include="Linux\LinuxAdjustOptions.py" />
     <Compile Include="Linux\LinuxBackupAdjust.py" />
@@ -109,18 +101,6 @@
     <Compile Include="onApp\onAppInstanceGenerator.py" />
     <Compile Include="onApp\onAppInstanceGenerator_test.py" />
     <Compile Include="onApp\__init__.py" />
-    <Compile Include="OpenStack\GlanceUploadChannel.py" />
-    <Compile Include="OpenStack\GlanceUploadChannel_test.py" />
-    <Compile Include="OpenStack\OpenStackConfigs.py" />
-    <Compile Include="OpenStack\OpenStackUploadChannel.py" />
-    <Compile Include="OpenStack\OpenStackInstanceGenerator.py" />
-    <Compile Include="OpenStack\OpenStackInstanceGenerator_test.py" />
-    <Compile Include="OpenStack\OpenStackUploadChannel_test.py" />
-    <Compile Include="OpenStack\SwiftUploadChannel.py" />
-    <Compile Include="OpenStack\SwiftUploadChannel_new.py" />
-    <Compile Include="OpenStack\SwiftUploadChannel_test.py" />
-    <Compile Include="OpenStack\SwiftUploadChannel_test_new.py" />
-    <Compile Include="OpenStack\__init__.py" />
     <Compile Include="ProfitBricks\FtpUploadChannel.py" />
     <Compile Include="ProfitBricks\FtpUploadChannel_test.py" />
     <Compile Include="ProfitBricks\ProfitBricksConfig.py" />
@@ -133,10 +113,8 @@
     <Compile Include="SystemInfo.py" />
     <Compile Include="TransferTarget.py" />
     <Compile Include="UploadChannel.py" />
-    <Compile Include="UploadManifest.py" />
     <Compile Include="Version.py" />
     <Compile Include="VmInstance.py" />
-    <Compile Include="VmVolume.py" />
     <Compile Include="VolumeInfo.py" />
     <Compile Include="Windows\cabinet.py" />
     <Compile Include="Windows\VSS.py" />
@@ -173,7 +151,6 @@
     <Folder Include="Linux\" />
     <Folder Include="Linux_GC" />
     <Folder Include="MiniPad\" />
-    <Folder Include="OpenStack\" />
     <Folder Include="onApp\" />
     <Folder Include="ProfitBricks\" />
     <Folder Include="SelfTest\" />
@@ -186,9 +163,5 @@
     <Content Include="Amazon\set_amazon_env.bat" />
     <Content Include="MODULES.txt" />
   </ItemGroup>
-  <ItemGroup>
-    <InterpreterReference Include="{2af0f10d-7135-4994-9156-5d01c9c11b7e}\2.7" />
-  </ItemGroup>
-  <Import Project="$(PtvsTargetsFile)" Condition="Exists($(PtvsTargetsFile))" />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="!Exists($(PtvsTargetsFile))" />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
 </Project>

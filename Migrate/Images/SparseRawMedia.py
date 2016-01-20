@@ -3,15 +3,11 @@ __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
-from ImageMedia import ImageMedia
+import ImageMedia
 import os
 
-import inspect
-
-
-print("Imported sparse raw media")
-
-class SparseRawMedia(ImageMedia):
+# the base class for all the media (VHD,raw files etc) to contain a system or data image
+class SparseRawMedia(ImageMedia.ImageMedia):
     """Media representing one big but sparsed raw file"""
 
     def __init__(self, filename, size):
@@ -19,8 +15,6 @@ class SparseRawMedia(ImageMedia):
         super(SparseRawMedia,self).__init__() 
         self.__filename = filename
         self.__size = size
-        
-        
 
     def open(self):
         """
@@ -35,8 +29,7 @@ class SparseRawMedia(ImageMedia):
         """
             Returns the size (in bytes) of virtual disk represented by the image.
         """
-        # NOTE: it may be truncated outside so we should update the max size too
-        return max(self.__size, self.getImageSize())
+        return self.__size
 
     def getImageSize(self):
         """
@@ -44,6 +37,14 @@ class SparseRawMedia(ImageMedia):
             Note: it is subject to change cause the image file is used by other modules
         """
         return os.stat(self.__filename).st_size
+
+    def reopen(self):
+        """
+            Reopens image files
+            retuns None, throws and error if any  
+        """
+        self.close()
+        self.open()
 
     def close(self):
         """
@@ -63,12 +64,6 @@ class SparseRawMedia(ImageMedia):
             No special handing for now. Just call close()
         """
         self.close()
-
-    def allowDirectFileAccess(self):
-        """
-            Returns if the image file can be accessed as raw image from elsewhere
-        """
-        return True
 
 
     #reads data from image, returns data buffer
@@ -103,9 +98,9 @@ class SparseRawMedia(ImageMedia):
 
         Returns None, throws an error if any
         """
-        file = open(self.__filename , "r+b")
+        file = open(self.__filename , "w+b")
         file.seek(offset)
-        file.write(data)
+        file.write(size)
         file.close()
 
 
@@ -128,4 +123,6 @@ class SparseRawMedia(ImageMedia):
         """
         return self.readImageData(offset, size)
 
-    
+    #sets the channel so the data may be sent simultaniously. Not implemented for now
+    def setChannel(self):
+        raise NotImplementedError

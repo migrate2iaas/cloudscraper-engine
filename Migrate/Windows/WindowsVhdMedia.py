@@ -1,4 +1,4 @@
-﻿# --------------------------------------------------------
+# --------------------------------------------------------
 __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
@@ -119,7 +119,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         #TODO: check its size
         self.__hVirtDisk = self.__vdiskDll.OpenVhd(c_wchar_p(unicode(self.__fileName)))
         if (self.__hVirtDisk == 0 or self.__hVirtDisk == -1):
-           logging.error("!!!ERROR: Failed to create virtual disk to store data, error = " + hex(self.__vdiskDll.GetLastVhdError(None) & 0xffffffff))
+           logging.error("!!!ERROR: Failed to create virtual disk to store data, error = " + hex(self.__vdiskDll.GetLastVhdError(None)))
            raise WindowsError
         return
 
@@ -128,7 +128,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
         self.__vdiskDll.CreateExpandingVhd.restype = c_void_p
         success = self.__vdiskDll.AttachVhd(c_void_p(self.__hVirtDisk))
         if success == 0:
-           logging.error("!!!ERROR: Failed to attach virtual disk, error = " + hex(self.__vdiskDll.GetLastVhdError(None) & 0xffffffff))
+           logging.error("!!!ERROR: Failed to attach virtual disk, error = " + hex(self.__vdiskDll.GetLastVhdError(None)))
            raise WindowsError
 
         diskno = self.__vdiskDll.GetAttachedVhdDiskNumber(c_void_p(self.__hVirtDisk))
@@ -142,13 +142,13 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
     def __detachDisk(self):
         success = self.__vdiskDll.DetachVhd(c_void_p(self.__hVirtDisk))
         if success == 0:
-           logging.error("!!!ERROR: Failed to detach virtual disk, error = " + hex(self.__vdiskDll.GetLastVhdError(None) & 0xffffffff))
+           logging.error("!!!ERROR: Failed to detach virtual disk, error = " + hex(self.__vdiskDll.GetLastVhdError(None)))
            raise WindowsError
         
     def __closeDisk(self):
         success = self.__vdiskDll.CloseVhd(c_void_p(self.__hVirtDisk))
         if success == 0:
-           logging.error("!!!ERROR: Failed to close virtual disk, error = " + hex(self.__vdiskDll.GetLastVhdError(None) & 0xffffffff))
+           logging.error("!!!ERROR: Failed to close virtual disk, error = " + hex(self.__vdiskDll.GetLastVhdError(None)))
            raise WindowsError
         logging.debug("VHD closed, file size = " + str(self.getImageSize()))
         if self.__alignDisk:
@@ -225,9 +225,7 @@ class WindowsVhdMedia(ImageMedia.ImageMedia):
             raise FileException(filename , ex)
         return output
        
-    
-    def getFilePath(self):
-        return self.__fileName
+        
 
     #gets the overall image size available for writing. Note: it is subject to grow when new data is written
     def getImageSize(self):

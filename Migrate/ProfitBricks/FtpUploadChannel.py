@@ -22,10 +22,65 @@ import UploadChannel
 import Queue
 import DataExtent
 import socket
-from DefferedUploadFile import DefferedUploadFile
 
 
+class DefferedFTPFile(file):
 
+    def __init__(self,  *args):
+        self.__lock = threading.Lock()
+        self.__queue = Queue.Queue(4)
+        self.__cancelled = False
+        self.__readPosition = 0
+        #return super(DefferedFTPFile, self).__init__(*args)
+        
+
+    def read(self, size):
+        """emulate read"""
+        #logging.info("Requested " + str(size) + " bytes to transfer via FTP")
+        data = self.__queue.get()
+        if data == None:
+            return None
+        #logging.info("Transfering " + str(len(data)) + " bytes via FTP")
+        self.__readPosition = self.__readPosition  + len(data)
+        return data
+
+    def complete(self):
+        logging.info("completing the ftp transfer")
+        self.__queue.put(None)
+
+    def close(self):
+        logging.debug("completing the transfer")
+        self.__queue.put(None)
+
+    def write(self, str):
+        self.__queue.put(str)
+
+    def cancel(self):
+        self.__cancelled = True
+
+    def cancelled(self):
+        return self.__cancelled
+
+    def readinto(self):
+        return super(DefferedFTPFile, self).readinto()
+    def flush(self):
+        return super(DefferedFTPFile, self).flush()
+    def isatty(self):
+        return super(DefferedFTPFile, self).isatty()
+    
+    def writelines(self, sequence_of_strings):
+        return super(DefferedFTPFile, self).writelines(sequence_of_strings)
+    def seek(self, offset, whence):
+        logging.debug("!!! seek called by ftp")
+        return super(DefferedFTPFile, self).seek(offset, whence)
+    def readline(self, size):
+        return super(DefferedFTPFile, self).readline(size)
+    def tell(self):
+        logging.debug("tell called by ftp")
+        return self.__readPosition 
+    
+    def readlines(self, size):
+        return super(DefferedFTPFile, self).readlines(size)
 
 def readThreadRoutine(ftp , filepath , fileobj , chunksize):
     try:
@@ -70,7 +125,7 @@ class FtpUploadChannel(UploadChannel.UploadChannel):
        if self.__proxyFileObj == None:
            #reconnect
            self.__ftp = ftplib.FTP(self.__hostname , self.__user, self.__password) 
-           self.__proxyFileObj = DefferedUploadFile()
+           self.__proxyFileObj = DefferedFTPFile()
            self.__thread = threading.Thread(target = readThreadRoutine, args=(self.__ftp,self.__filepath,self.__proxyFileObj,self.__chunkSize,) )
            self.__thread.start()
        
