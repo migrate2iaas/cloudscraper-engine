@@ -40,7 +40,6 @@ import ProfitBricksConfig
 import SparseRawMediaFactory
 import VhdQcow2MediaFactory
 import SparseRawMedia
-import WindowsVhdMedia
 
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
