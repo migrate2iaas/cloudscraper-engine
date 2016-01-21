@@ -56,7 +56,7 @@ class AzureCloudOptions(CloudConfig.CloudConfig):
         self.__subnet = subnet
         #self.__machinename = machinename
         
-    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0 , preserve_existing_data = False):
+    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):
         """
         Generates new upload channel
 
@@ -66,7 +66,6 @@ class AzureCloudOptions(CloudConfig.CloudConfig):
             targetid: str - a cloud-defined path describing the upload (blob-name for Azure)
             resume: Boolean - to recreate disk representation (False) or to reupload (True)
             imagesize: long - image file size in bytes
-            preserve_existing_data - not used
         """
         if targetid:
             if targetid.endswith(".vhd") == False:

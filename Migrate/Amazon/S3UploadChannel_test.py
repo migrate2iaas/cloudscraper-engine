@@ -19,7 +19,7 @@ import AdjustedBackupSource
 import BackupAdjust
 import WindowsVolumeTransferTarget
 import WindowsDiskParser
-#import WindowsVhdMedia
+import WindowsVhdMedia
 import WindowsDeviceDataTransferProto
 import S3UploadChannel
 import time
@@ -33,7 +33,6 @@ class S3UploadChannel_test(unittest.TestCase):
         self.__key = 'AKIAIY2X62QVIHOPEFEQ'
         self.__secret = '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'
         self.__channel = None
-        self.__backup_db = "C:\\backup-manifest"
         logging.basicConfig(format='%(asctime)s %(message)s' , filename='s3channel.log',level=logging.DEBUG)
         handler = logging.StreamHandler(stream=sys.stderr)
         handler.setLevel(logging.DEBUG)
@@ -44,7 +43,7 @@ class S3UploadChannel_test(unittest.TestCase):
     def test_file_useast(self):
         size = 1024*1024*1024
         bucket = 'feoffuseastfiletest12'
-        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size, manifest_path=self.__backup_db, increment_depth=3)
+        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size)
         self.__channel = channel
 
         file = open('D:\\log.txt' , "rb")
@@ -62,7 +61,7 @@ class S3UploadChannel_test(unittest.TestCase):
         size = 1024*1024*1024
         
         bucket = '!~feoffuseastfiletest2.s3-eu-west-1ab'
-        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size , 'eu-west-1', manifest_path=self.__backup_db)
+        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size , 'eu-west-1')
         self.__channel = channel
         file = open('D:\\log.txt' , "rb")
         data = file.read()
@@ -76,7 +75,7 @@ class S3UploadChannel_test(unittest.TestCase):
     def notused_test_bad_bucketname1(self):
         size = 1024*1024*1024
         bucket = 'test'
-        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size , 'eu-west-1', manifest_path=self.__backup_db)
+        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size , 'eu-west-1')
         self.__channel = channel
         file = open('D:\\log.txt' , "rb")
         data = file.read()
@@ -91,7 +90,7 @@ class S3UploadChannel_test(unittest.TestCase):
     def test_file_euro(self):
         size = 1024*1024*1024
         bucket = 'feoffuseastfiletest2.s3-eu-west-1ab'
-        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size , 'eu-west-1', manifest_path=self.__backup_db)
+        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size , 'eu-west-1')
         self.__channel = channel
         file = open('D:\\log.txt' , "rb")
         data = file.read()
@@ -105,10 +104,10 @@ class S3UploadChannel_test(unittest.TestCase):
 
     def test_fullvhd(self):
         
-        filename = 'E:\\vhdtest1.vhd'
+        filename = 'E:\\vhdtest4.vhd'
         size = 20*1024*1024*1024
         bucket = 'feoffuseastfiletestvhd2'
-        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size, manifest_path=self.__backup_db)
+        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size)
         self.__channel = channel
         #TODO: make more different sizes
         file = open(filename , "rb")
@@ -130,7 +129,7 @@ class S3UploadChannel_test(unittest.TestCase):
         channel.confirm()
 
     def resumeUpload(self , region , bucket, filename , size):
-        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size, region, None , 'VHD', True, manifest_path=self.__backup_db)
+        channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size, region, None , 'VHD', True)
         self.__channel = channel
         #TODO: make more different sizes
         #TODO: test on file changes 
@@ -169,7 +168,7 @@ class S3UploadChannel_test(unittest.TestCase):
         
 
     def test_resumeupload_useast(self):
-        filename = 'E:\\vhdtest1.vhd'
+        filename = 'E:\\vhdtest4.vhd'
         size = 20*1024*1024*1024
         bucket = 'feoffuseastfiletestvhd'
         region = ''

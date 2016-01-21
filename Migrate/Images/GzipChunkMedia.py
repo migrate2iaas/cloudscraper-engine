@@ -190,9 +190,8 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
     def getImageSize(self):
         self.flush()
         # self.__overallSize could be null in case of image created by previous transfer
-        #if self.__overallSize > 0:
-        #    return self.__overallSize
-        # overallSize is buggy for now
+        if self.__overallSize > 0:
+            return self.__overallSize
         return self.__diskSize
 
     #sets the channel so the data may be sent simultaniously. Not implemented for now

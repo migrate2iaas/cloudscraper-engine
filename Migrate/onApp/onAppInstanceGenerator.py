@@ -13,7 +13,6 @@ __copyright__ = "Copyright (C) 2015 Migrate2Iaas"
 import logging
 import traceback
 
-import sys
 import MiniPadInstanceGenerator
 import onApp
 import time
@@ -21,7 +20,6 @@ import VmInstance
 import socket
 
 import base64, httplib, urllib, urllib2, json, random, string, time, uuid, logging, os, sys;
-import ssl
 
 class OnAppBase:
         conn = False;
@@ -33,7 +31,7 @@ class OnAppBase:
                 else:
                     self.conn = httplib.HTTPConnection(hostname, port);
                 try:
-                        logging.info("Connecting to HTTPConnection " + hostname);
+                        logging.info("Connecting to HTTPConnection");
                         self.conn.connect();
                 except:
                         logging.error('!!!ERROR: Unable to connect to ' + hostname  + '  HTTPConnection Connect, unable to continue!');
@@ -49,14 +47,10 @@ class OnAppBase:
                     errortext = "HTTP request " + str(type) + " " + str(page) + " to onApp cloud failed!"
                     try:
                         response_data = str(response.read())
-                        logging.error("!!!ERROR: OnApp API call failed " +  str(response.status)+":"+ response_data)
+                        logging.error(str(response.status)+":"+ response_data)
                         data = json.loads(response_data);
-                        if "errors" in data:
-                            if data["errors"]:
-                                errortext = errortext + " onApp cloud error: " + repr(data["errors"])
-                        if "error" in data:
-                            if data["error"]:
-                                errortext = errortext + " onApp cloud error: " + str(data["error"])
+                        errortext = errortext + " onApp cloud error: " + str(data["errors"]["base"])
+                        logging.error("!!!ERROR: onApp cloud error: " + str(data["errors"]["base"]))
                     except Exception as e:
                         logging.error("!!!ERROR: cannot decode onApp error, please see logs")
                     logging.error("!!!ERROR: " + errortext )
@@ -66,12 +60,7 @@ class OnAppBase:
 
         def getVersion(self):
             #Make Request to OnApp with Basic Auth
-            try:
-                response = self.sendRequest("GET", "/version.json");
-            except ssl.SSLError as sslerror:
-                logging.error("!!!ERROR: failed to have SSL connection. Please check your openssl version is >= 1.0.1. Update your openssl by downloading and compiling openssl 1.0.1+ latest source.")
-                raise sslerror
-
+            response = self.sendRequest("GET", "/version.json");
             array = json.loads(response.read());
             if 'version' in array:
                     return array['version'];
@@ -180,9 +169,7 @@ class onAppVM(VmInstance.VmInstance):
         """starts instance"""
         vm = self.__onapp.getVM(self.__vmid)
         if vm['booted'] == True:
-            logging.info("The VM is already started , skipping " + self.__vmid)
             return True
-        logging.info("Starting the onApp VM " + self.__vmid)
         self.__onapp.startVM(self.__vmid)
 
     def stop(self):
@@ -192,7 +179,11 @@ class onAppVM(VmInstance.VmInstance):
             return True
         logging.info("Shutting down the onApp VM " + self.__vmid)
         self.__onapp.shutdownVM(self.__vmid)
-        
+
+    def attachDataVolume(self):
+        """attach data volume"""
+        raise NotImplementedError
+
     def getIp(self):
         """returns public ip string"""
         vm = self.__onapp.getVM(self.__vmid)
@@ -205,9 +196,6 @@ class onAppVM(VmInstance.VmInstance):
             subresources: Boolean - if True, deallocates all associated resources (disks, ips). Deallocates only the vm itself otherwise
         """
         self.__onapp.deleteVM(self.__vmid, destroy_all_backups = int(subresources))
-    
-    def getId(self):
-        return str(self.__vmid)
 
 class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
     """on app generator"""
@@ -233,7 +221,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
                         return 
             time.sleep(sleeptime)
             timeout = timeout - sleeptime
-        logging.warn("The disk is not ready!")
+        logging.warn("!The disk is not ready!")
         return
 
     def initCreate(self , initialconfig):
@@ -249,7 +237,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         #here we should start minipad from template
         win_template_disk_size = self.__winTemplateDiskSize
         #TODO: licensing should be configurable
-        win_licensing_type = self.__winLicense 
+        win_licensing_type = "mak"
 
 
         if not self.__minipadId and not self.__minipadTemplate:
@@ -281,11 +269,13 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         """
         #TODO: customize VM size
         # Here we should customize cloudscraper minipad image
+
         try:
             vmParams = { "label" : name }
             self.__onapp.editVM(self.__minipadId, vmParams)
         except Exception as e:
             logging.warn("!Failed to rename the VM " + self.__minipadId + " :" + str(e) + " please see logs for info")
+
 
         vm = onAppVM(self.__onapp , self.__minipadId , self)
 
@@ -316,11 +306,10 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
                 return
             timeout = timeout - sleeptime
             time.sleep(sleeptime)
-        logging.error("!!!ERROR: Timeout, Cloudscraper target VM does not respond to RDP probe. Please contact the cloud provider.")
+        logging.error("!!!ERROR: Timeout, Cloudscraper target VM is not ready. Please contact the cloud provider.")
         return
 
-
-    def __init__(self, onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_id = "" , minipad_vm_id = None , vmbuild_timeout=100*60 , win_template_disk_size=20 , win_license="mak" , vm_boot_timeout=120):
+    def __init__(self, onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_id = "" , minipad_vm_id = None , vmbuild_timeout=100*60 , win_template_disk_size=20 , vm_boot_timeout=120):
         """
         Args:
             onapp_endpoint - cloud endpoint address (ip or dns)
@@ -334,7 +323,6 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
             minipad_vm_id - id if minipad is already created
             vmbuild_timeout: int - timeout in seconds to wait till target minipad VM is built
             win_template_disk_size: int - the size of minipad VM primary disk in GBs
-            win_license: str - can be 'kms','mak', or 'own' see onApp API docs for more info
             vm_boot_timeout: int - timeout in seconds to wait till target minipad VM services are ready 
         """
         self.__onapp = OnAppBase();
@@ -352,8 +340,6 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         self.__minipadId = minipad_vm_id
         self.__datastore = onapp_datastore_id
         self.__winTemplateDiskSize = win_template_disk_size
-        self.__targetOsName = "Windows"
-        self.__winLicense = win_license
         super(onAppInstanceGenerator, self).__init__(preset_ip)
         #TODO: should find datastore id via the label
         
@@ -365,12 +351,8 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         logging.debug("Trying to run the VM , in case it's stopped")
         vm.run()
         logging.info("Awaiting till Cloudscraper target VM is alive (echoing Cloudscraper VM RDP port)")
-        probe_port = 22
-        if  "Windows" in str(self.__targetOsName):
-            probe_port = 3389
-        #TODO: try port 22 and different timeout
-        if vm.checkAlive(port = probe_port) == False:
-            logging.warn("!Cloudscraper target VM is not repsonding (to RDP/SSH port). Misconfiguration is highly possible!")
+        if vm.checkAlive() == False:
+            logging.warn("!Cloudscraper target VM is not repsonding (to RDP port). Misconfiguration is highly possible!")
         
         logging.info("Waiting till service is on")
         #extra wait for service availability
@@ -398,10 +380,6 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
 
     def makeInstanceFromImage(self , imageid, initialconfig, instancename):
         """makes instance based on image id - link to public image"""
-        if os.name == 'nt':
-            self.__targetOsName = 'Windows'
-        else:
-            self.__targetOsName = 'Linux'
         self.getDiskSize(imageid)
         return super(onAppInstanceGenerator, self).makeInstanceFromImage(imageid, initialconfig, instancename)
 

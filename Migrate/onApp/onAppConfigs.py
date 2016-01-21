@@ -28,11 +28,7 @@ import os
 
 class onAppCloudOptions(CloudConfig.CloudConfig):
     
-
-    def __init__(self, s3bucket, s3user, s3password, s3region, onapp_endpoint, onapp_login, onapp_password,
-                 onapp_datastore_id, onapp_target_account=None, onapp_port=80, preset_ip=None,
-                 minipad_image_name="", minipad_vm_id=None, vmbuild_timeout_sec=120*60, wintemplate_size=20,
-                 s3custom=False, vm_boot_timeout=120, manifest_path=None, increment_depth=1, use_dr=False):
+    def __init__(self, s3bucket , s3user , s3password , s3region , onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_name = "" , minipad_vm_id = None , vmbuild_timeout_sec = 120*60 , wintemplate_size = 20 , vm_boot_timeout = 120):
         """
         Constructor
         """
@@ -49,7 +45,7 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
         self.__preset_ip = preset_ip
         self.__minipad_image_name = minipad_image_name
         self.__minipad_vm_id = minipad_vm_id
-        self.__custom_host = s3custom
+        self.__custom_host = False
         self.__keynamePrefix = ""
         self.__diskType = "RAW"
         self.__chunkSize = 10*1024*1024
@@ -57,21 +53,12 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
         self.__vmBuildTimeout = vmbuild_timeout_sec 
         self.__winTemplateDiskSize = wintemplate_size
         self.__vmBootTimeout = vm_boot_timeout
-        # DR params
-        self.__manifest_path = manifest_path
-        self.__increment_depth = increment_depth
-        self.__use_dr = use_dr
-
-        #generate instance factory to test the connection
-        self.__instanceFactory = onAppInstanceGenerator.onAppInstanceGenerator(self.__onapp_endpoint , self.__onapp_login , self.__onapp_password , self.__onapp_datastore_id, self.__onapp_target_account, \
-            self.__onapp_port, self.__preset_ip , self.__minipad_image_name , self.__minipad_vm_id , vmbuild_timeout = self.__vmBuildTimeout , win_template_disk_size = self.__winTemplateDiskSize )
-
 
         super(onAppCloudOptions, self).__init__()
 
         
         
-    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0 , preserve_existing_data = False):
+    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):
         """
         Generates new upload channel
 
@@ -81,20 +68,19 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
             targetid: str - a cloud-defined path describing the upload (blob-name for Azure)
             resume: Boolean - to recreate disk representation (False) or to reupload (True)
             imagesize: long - image file size in bytes
-            preserve_existing_data - if to version existing data
         """
         custom = False
         if self.__custom_host:
             custom = True
 
-        return S3UploadChannel.S3UploadChannel(
-            self.__s3bucket, self.__s3user, self.__s3password, targetsize, self.__s3region,
-            targetid or self.__keynamePrefix, self.__diskType, resume_upload=resume, chunksize=self.__chunkSize,
-            walrus=custom, walrus_path="", walrus_port=443, make_link_public=True,
-            manifest_path=self.__manifest_path, increment_depth=self.__increment_depth, use_dr=self.__use_dr)
+        return S3UploadChannel.S3UploadChannel(self.__s3bucket , self.__s3user , self.__s3password , targetsize, self.__custom_host or self.__s3region , targetid or self.__keynamePrefix , self.__diskType , \
+            resume_upload = resume , chunksize = self.__chunkSize, walrus = custom , make_link_public=True )
 
     def generateInstanceFactory(self):
         #generate signleton
+        if not self.__instanceFactory:
+            self.__instanceFactory = onAppInstanceGenerator.onAppInstanceGenerator(self.__onapp_endpoint , self.__onapp_login , self.__onapp_password , self.__onapp_datastore_id, self.__onapp_target_account, \
+            self.__onapp_port, self.__preset_ip , self.__minipad_image_name , self.__minipad_vm_id , vmbuild_timeout = self.__vmBuildTimeout , win_template_disk_size = self.__winTemplateDiskSize, vm_boot_timeout = self.__vmBootTimeout )
         return self.__instanceFactory
 
     def getCloudStorage(self):
@@ -166,4 +152,3 @@ class onAppMigrateConfig(MigrateConfig.MigrateConfig):
 
     def insertXen(self):
         return False
-
