@@ -76,10 +76,7 @@ class SwiftUploadChannel_test(unittest.TestCase):
             tennant_name="2344",
             password="icafLFsmAOswwISn",\
             disk_name="medium.file",
-            container_name="testcontainer2",
-            manifest_path="D:\\backup-manifest",
-            chunksize=1024*1024,
-            increment_depth=3)
+            container_name="testcontainer2")
         channel.initStorage()
 
         file = open(filename, "rb")
@@ -96,8 +93,6 @@ class SwiftUploadChannel_test(unittest.TestCase):
             dataplace = dataplace + len(data)
             dataext.setData(data)
             channel.uploadData(dataext)
-            channel.getOverallDataSkipped()
-            channel.getOverallDataTransfered()
 
         channel.waitTillUploadComplete()
         channel.confirm()

@@ -11,14 +11,4 @@ if defined ProgramFiles(x86) (
   set difxcmd=difxcmd_32
 )
 
-:: Get windows Version numbers
-For /f "tokens=2 delims=[]" %%G in ('ver') Do (set _version=%%G) 
-
-For /f "tokens=2,3,4 delims=. " %%G in ('echo %_version%') Do (set _major=%%G& set _minor=%%H& set _build=%%I) 
-
-Echo Major version: %_major%  Minor Version: %_minor%.%_build%
-
-:: win2003 or XP
-if "%_major%"=="5" goto :EOF
-
 pnputil /a "%~dp0\virtio\viostor.inf"

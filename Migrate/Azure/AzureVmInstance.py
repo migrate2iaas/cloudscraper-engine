@@ -23,7 +23,6 @@ class AzureVmInstance(VmInstance.VmInstance):
 
     def __init__(self , instance_id , virtualmachine_connection):
         """azure vm instance constructor"""
-        super(AzureVmInstance , self).__init__(instance_id)
         self.__instanceId = instance_id
         self.__vmConnection = virtualmachine_connection
         

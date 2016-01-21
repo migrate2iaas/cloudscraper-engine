@@ -33,7 +33,7 @@ class CloudSigmaCloudOptions(CloudConfig.CloudConfig):
         self.__pass = password
         self.__machinename = machinename
         
-    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False, imagesize = 0, preserve_existing_data = False):   
+    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False, imagesize = 0):   
         return CloudSigmaUploadChannel.CloudSigmaUploadChannel(targetsize , self.__region , self.__user , self.__pass , self.__region , targetname, targetid , resume , self.__chunkSize)
 
     def getCloudStorage(self):

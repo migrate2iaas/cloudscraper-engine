@@ -192,7 +192,7 @@ class MultithreadUpoadChannel(UploadChannel.UploadChannel):
     ############ ------- TO OVERRIDE -------- ###########
 
 
-    def initStorage(self, init_data_link=""):
+    def initStorage(self):
         """
         Inits storage to run upload
         Throws in case of unrecoverable errors

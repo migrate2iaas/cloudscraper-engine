@@ -19,9 +19,6 @@ import time
 class VmInstance(object):
     """abstract class for Virtual machine instance in the cloud"""
 
-    def __init__(self , vm_id = None):
-        self.__vmId = vm_id
-
     def run(self):
         """starts instance"""
         raise NotImplementedError
@@ -30,16 +27,11 @@ class VmInstance(object):
         """stops instance"""
         raise NotImplementedError
 
-
-    def getId(self):
-        """returns cloud id of the instance"""
-        return self.__vmId
-
     def finalize(self):
         """finalizes the VM setting it to stopped state ready to be boot whenever user starts it"""
         self.stop()
 
-    def checkAlive(self, timeout = 1500 , port = 3389):
+    def checkAlive(self, timeout = 500 , port = 3389):
         """
         Performs RDP\ssh probe for an instance
         Args:
@@ -72,6 +64,10 @@ class VmInstance(object):
 
         return False
 
+    def attachDataVolume(self):
+        """attach data volume"""
+        raise NotImplementedError
+
     def getIp(self):
         """returns public ip string"""
         raise NotImplementedError
@@ -83,5 +79,3 @@ class VmInstance(object):
         """
         raise NotImplementedError
 
-    def __str__(self):
-        return str(self.getId())

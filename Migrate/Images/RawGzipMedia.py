@@ -31,7 +31,6 @@ class RawGzipMedia(ImageMedia.ImageMedia):
 
     # zipLevel could be from 0 to 9. If 0 then no zip occursm if zipLevel is more than 1 the writes should be sequental
     def __init__(self , filename , imagesizeBytes, zipLevel = 0):
-        super(RawGzipMedia,self).__init__() 
         self.__filename = filename
         self.__fileObj = None
         self.__gzipFile = None

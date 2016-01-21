@@ -17,7 +17,6 @@ import traceback
 import LinuxVolumeInfo
 import SystemInfo
 import Linux
-import platform
 
 #TODO; inherit from the common system info class
 class LinuxSystemInfo(SystemInfo.SystemInfo):
@@ -29,30 +28,22 @@ class LinuxSystemInfo(SystemInfo.SystemInfo):
 
         super(LinuxSystemInfo, self).__init__()
 
-        (system, node, release, version, machine, processor) = platform.uname()
-
         #NOTE: here we should get distro info
     
         return
 
     # gets arbitary-way formatted string describing the current system
     def getSystemVersionString(self):
-        return platform.platform()
+        #TODO: get distro
+        return "Linux"
 
 
     def getKernelVersion(self):
-        """
-        Note: returns string on linux but int on Windows
-        """
-        (system, node, release, version, machine, processor) = platform.uname()
-        return release
+        #TODO: get kernel
+        return "kernel"
 
     def getSystemArcheticture(self):
-        (system, node, release, version, machine, processor) = platform.uname()
-        if processor == 'x86_64':
-            return self.Archx8664
-        else:
-            return self.Archi386
+        return self.Archx8664
 
     #gets system volume info, one where kernel/drivers is situated
     def getSystemVolumeInfo(self):

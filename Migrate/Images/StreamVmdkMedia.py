@@ -71,7 +71,6 @@ class VMDKStreamException(Exception):
 
 class ParsedStreamOptimizedHeader(object):
     def __init__(self, rawHeader = ""):
-        super(ParsedStreamOptimizedHeader,self).__init__() 
         if rawHeader != "":
             temp = struct.unpack("=IIIQQQQIQQQBccccH",rawHeader[:79])
             self.magicNumber = temp[0]

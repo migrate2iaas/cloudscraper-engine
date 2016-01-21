@@ -6,8 +6,6 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 
 import DataExtent
 
-
-
 class UploadChannel(object):
     """Interface class of disk image data upload channel"""
 
@@ -82,11 +80,9 @@ class UploadChannel(object):
         raise NotImplementedError
    
 
-    def initStorage(self, init_data_link=""):
+    def initStorage(self):
         """
         Inits storage to run upload
-        Args:
-            init_data_link - init from existing data (if storage supports that)
         Throws in case of unrecoverable errors
         """
         return

@@ -12,6 +12,7 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 
 import logging
 import traceback
+import virtualmachine
 import InstanceGenerator
 import requests
 
