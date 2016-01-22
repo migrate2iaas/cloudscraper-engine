@@ -36,7 +36,10 @@ class ImageManifest(object):
     def all(self):
         raise NotImplementedError
 
-    def get_table_name(self):
+    def get_name(self):
+        raise NotImplementedError
+
+    def get_path(self):
         raise NotImplementedError
 
 
@@ -46,8 +49,7 @@ class TinyDBImageFileManifest(ImageManifest):
     for file storage, based on JSON format.
     """
 
-    def __init__(self, manifest_path, timestamp, lock, db_write_cache_size=1):
-
+    def __init__(self, manifest_path, timestamp, lock, db_write_cache_size=1, use_dr=False):
 
         self.__table_name = str(timestamp)
         path = "{}/{}".format(manifest_path, self.__table_name)
@@ -62,6 +64,7 @@ class TinyDBImageFileManifest(ImageManifest):
         self.__db = None
         self.__table = None
         self.__storage = None
+        self.__use_dr = use_dr
         try:
             # CachingMiddleware: Improves speed by reducing disk I/O. It caches all read operations and writes data
             # to disk every CachingMiddleware.WRITE_CACHE_SIZE write operations.
@@ -79,23 +82,25 @@ class TinyDBImageFileManifest(ImageManifest):
         self.__db_write_cache_size = db_write_cache_size
         self.__lock = lock
 
-        super(ImageFileManifest, self).__init__()
+        super(TinyDBImageFileManifest, self).__init__()
 
     @staticmethod
-    def create(manifest_path, lock, db_write_cache_size):
-        return ImageFileManifest(
+    def create(manifest_path, lock, db_write_cache_size, use_dr):
+        return TinyDBImageFileManifest(
             manifest_path,
             "{}.cloudscraper-manifest-data".format(datetime.datetime.now().strftime("%Y-%m-%d %H-%M")),
             lock,
-            db_write_cache_size)
+            db_write_cache_size,
+            use_dr)
 
     @staticmethod
-    def open(manifest_path, table_name, lock, db_write_cache_size):
-        return ImageFileManifest(
+    def open(manifest_path, table_name, lock, db_write_cache_size, use_dr):
+        return TinyDBImageFileManifest(
             manifest_path,
             table_name,
             lock,
-            db_write_cache_size)
+            db_write_cache_size,
+            use_dr)
 
     def flush(self):
         self.__storage.flush()
@@ -205,7 +210,7 @@ class TinyDBImageFileManifest(ImageManifest):
         with self.__lock:
             return self.__table.all()
 
-    def get_table_name(self):
+    def get_name(self):
         """
         Returns name of backup, in this case it's means manifest file name.
 
@@ -213,12 +218,18 @@ class TinyDBImageFileManifest(ImageManifest):
         """
         return self.__table_name
 
+    def get_path(self):
+        if self.__use_dr:
+            return "{}/{}".format(self.__manifest_path, self.__table_name)
+
 
 class ImageDictionaryManifest(ImageManifest):
     """
     Implementation for ImageManifest interface, it's implements database behavior with select, update, insert,...
     for file storage, based on JSON format.
     """
+
+    DB_TABLES_EXTENSION = "cloudscraper-manifest-tables"
 
     def __init__(self, manifest_path, table_name, lock, db_write_cache_size=1, use_dr=False):
         self.__table_name = str(table_name)
@@ -256,7 +267,8 @@ class ImageDictionaryManifest(ImageManifest):
     @staticmethod
     def create(manifest_path, lock, db_write_cache_size, use_dr):
         storage = {}
-        file_name = "{}.cloudscraper-manifest-data".format(datetime.datetime.now().strftime("%Y-%m-%d %H-%M"))
+        file_name = "{}.{}".format(
+            datetime.datetime.now().strftime("%Y-%m-%d %H-%M"), ImageDictionaryManifest.DB_TABLES_EXTENSION)
         storage["_default"] = {}
         storage[file_name] = {}
 
@@ -389,7 +401,7 @@ class ImageDictionaryManifest(ImageManifest):
                 res.append(self.__table[i])
             return res
 
-    def get_table_name(self):
+    def get_name(self):
         """
         Returns name of backup, in this case it's means manifest file name.
 
@@ -397,15 +409,14 @@ class ImageDictionaryManifest(ImageManifest):
         """
         return self.__table_name
 
-    def get_database_file_path(self):
+    def get_path(self):
         if self.__use_dr:
             return "{}/{}".format(self.__manifest_path, self.__table_name)
 
 
 class ImageManifestDatabase(object):
     """
-    A class wrapper for tinydb https://pypi.python.org/pypi/tinydb
-    for creating and managing image manifest files which allows resuming upload
+    A class for creating and managing image manifest files which allows resuming and incrementing upload
     """
 
     def __init__(
@@ -435,6 +446,7 @@ class ImageManifestDatabase(object):
 
         self.__increment_depth = None
         self.__manifest_path = None
+        self.__image_manifest = image_manifest
         if use_dr:
             self.__increment_depth = increment_depth
 
@@ -453,12 +465,13 @@ class ImageManifestDatabase(object):
                 if resume is False:
                     image_manifest.create(manifest_path, lock, db_write_cache_size, use_dr)
 
-                m_list = self.__get_sorted_manifest_list(increment_depth)
+                m_list = self.get_db_tables_source(increment_depth)
                 for table_name in m_list:
-                    self.__db.append(image_manifest.open(manifest_path, table_name, lock, db_write_cache_size, use_dr))
+                    self.__db.append(
+                        self.__image_manifest.open(manifest_path, table_name, lock, db_write_cache_size, use_dr))
             else:
                 self.__db.append(
-                    image_manifest.open(manifest_path, "in_memory_table", lock, db_write_cache_size, use_dr))
+                    self.__image_manifest.open(manifest_path, "in_memory_table", lock, db_write_cache_size, use_dr))
 
                 # Inserting metadata to default table for opened (last) manifest
                 self.__db[0].insert_db_meta({
@@ -472,18 +485,22 @@ class ImageManifestDatabase(object):
                 manifest_path, e))
             raise
 
-    def __get_sorted_manifest_list(self, number):
+    def get_db_tables_source(self, number):
         # Getting list all available manifests (backups) in manifest path, after sorting:
         # f[0] last (by timestamp) manifest
         # f[1...N] previous manifests ordered by timestamp too.
         f = []
         for filename in os.listdir(self.__manifest_path):
-            f.append(filename)
+            if filename.endswith(".{}".format(self.__image_manifest.DB_TABLES_EXTENSION)):
+                f.append(filename)
         f.sort(reverse=True)
 
         # len(f) > number > 0 means that if number is less than available manifests in path or 0, we should
         # return whole available list
         return f[0:number] if len(f) > number > 0 else f
+
+    def get_db_tables(self):
+        return self.__db
 
     def insert(self, etag, local_hash, part_name, offset, size, status):
         # Inserting in first (meaning last) manifest in list
@@ -505,9 +522,6 @@ class ImageManifestDatabase(object):
         self.__db[0].flush()
 
         return self.__db[0].all()
-
-    def get_table_name(self):
-        return self.__db[0].get_table_name()
 
     def get_increment_depth(self):
         return self.__increment_depth

@@ -402,9 +402,10 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         logging.info("\n>>>>>>>>>>>>>>>>> Initializing cloud storage\n")
 
         # Resume and increment database creation
+        self.__use_dr = use_dr
         logging.info(
             "Resume upload file path: {}, resume upload is {}, use DR is {}".
-            format(manifest_path, self.__resumeUpload, use_dr))
+            format(manifest_path, self.__resumeUpload, self.__use_dr))
         self.__manifest = None
         self.__well_known_blocks = None
 
@@ -415,7 +416,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             self.__manifest = UploadManifest.ImageManifestDatabase(
                 UploadManifest.ImageDictionaryManifest, manifest_path, self.__keyBase, threading.Lock(),
                 self.__resumeUpload, increment_depth=increment_depth, db_write_cache_size=write_cache_size,
-                use_dr=use_dr)
+                use_dr=self.__use_dr)
 
             # Creating database for well known blocks to skipp them when uploading
             self.__well_known_blocks = UploadManifest.ImageWellKnownBlockDatabase(threading.Lock())
@@ -561,6 +562,15 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         self.__uploadQueue.join()
         return
 
+    def uploadDB(self):
+        if self.__use_dr:
+            for table in self.__manifest.get_db_tables():
+                key_name = "DR/{}/{}".format(os.environ['COMPUTERNAME'], table.get_name())
+                if self.__bucket.get_key(key_name) is None:
+                    s3key = Key(self.__bucket, key_name)
+                    s3key.set_contents_from_filename(table.get_path())
+                    logging.debug("Saving manifest: {}".format(key_name))
+
     def confirm(self):
         """
         Confirms good upload. uploads resulting xml describing VM container import to S3 
@@ -627,6 +637,14 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             linktimeexp_seconds = 60*60*100     # 100 hours
             self.__xmlKey = s3key.generate_url(linktimeexp_seconds, method='GET', force_http=False)
         s3key.close()
+
+        # Uploading manifest database
+        if self.__use_dr:
+            try:
+                self.uploadDB()
+            except Exception as e:
+                logging.error("!!!ERROR: unable to upload DR database, reason: {}".format(e))
+                return None
 
         return self.__xmlKey
 
