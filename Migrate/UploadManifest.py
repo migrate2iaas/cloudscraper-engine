@@ -555,7 +555,6 @@ class ImageManifestDatabase(object):
                 "actual_image_size": str(actual_image_size)})
 
             self.__db[0].flush()
-            self.__db_scheme.close()
 
         except Exception as e:
             logging.debug("Failed to finalize image manifest file: {}".format(e))
