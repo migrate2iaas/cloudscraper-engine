@@ -293,7 +293,8 @@ class S3UploadThread(threading.Thread):
                     s3key.close()
                 except Exception as e:
                     # reput the task into the queue
-                    logging.warning("!Failed to upload data: %s/%s , making a retry...", str(bucket), res["part_name"])
+                    logging.warning(
+                        "!Failed to upload data: %s/%s , making a retry...", str(bucket), uploadtask.getTargetKey())
                     logging.warning("Exception = " + str(e)) 
                     logging.error(traceback.format_exc()) 
                     continue

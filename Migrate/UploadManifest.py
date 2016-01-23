@@ -14,11 +14,11 @@ class ImageManifest(object):
         pass
 
     @staticmethod
-    def create(manifest_path, container_name, lock, db_write_cache_size, use_dr):
+    def create(manifest_path, lock, db_write_cache_size, use_dr):
         raise NotImplementedError
 
     @staticmethod
-    def open(manifest_path, container_name, table_name, lock, db_write_cache_size, use_dr):
+    def open(manifest_path, table_name, lock, db_write_cache_size, use_dr):
         raise NotImplementedError
 
     def flush(self):
@@ -234,7 +234,7 @@ class ImageDictionaryManifest(ImageManifest):
 
     DB_TABLES_EXTENSION = ".cloudscraper-manifest-tables"
 
-    def __init__(self, manifest_path, container_name, table_name, lock, db_write_cache_size=1, use_dr=False):
+    def __init__(self, manifest_path, table_name, lock, db_write_cache_size=1, use_dr=False):
         self.__table_name = str(table_name)
         path = "{}/{}".format(manifest_path, self.__table_name)
 
@@ -248,7 +248,7 @@ class ImageDictionaryManifest(ImageManifest):
         self.__db_count = 0
         self.__table_count = 0
         self.__use_dr = use_dr
-        self.__container_name = container_name
+
         try:
             if self.__use_dr:
                 with open(path) as f:
@@ -269,7 +269,7 @@ class ImageDictionaryManifest(ImageManifest):
         super(ImageDictionaryManifest, self).__init__()
 
     @staticmethod
-    def create(manifest_path, container_name, lock, db_write_cache_size, use_dr):
+    def create(manifest_path, lock, db_write_cache_size, use_dr):
         file_name = "{}{}".format(
             datetime.datetime.now().strftime("%Y-%m-%d %H-%M"), ImageDictionaryManifest.DB_TABLES_EXTENSION)
 
@@ -284,17 +284,15 @@ class ImageDictionaryManifest(ImageManifest):
 
         return ImageDictionaryManifest.open(
             manifest_path,
-            container_name,
             file_name,
             lock,
             db_write_cache_size,
             use_dr)
 
     @staticmethod
-    def open(manifest_path, container_name, table_name, lock, db_write_cache_size, use_dr):
+    def open(manifest_path, table_name, lock, db_write_cache_size, use_dr):
         return ImageDictionaryManifest(
             manifest_path,
-            container_name,
             table_name,
             lock,
             db_write_cache_size,
@@ -422,7 +420,9 @@ class ImageDictionaryManifest(ImageManifest):
             return "{}/{}".format(self.__manifest_path, self.__table_name)
 
     def get_container_name(self):
-        return self.__container_name
+        for item in self.__db:
+            if "container_name" in self.__db[item]:
+                return self.__db[item]["container_name"]
 
 
 class ImageManifestDatabase(object):
@@ -480,7 +480,7 @@ class ImageManifestDatabase(object):
 
                 # First, creating manifest if no resume required, than getting list (new manifest just created)
                 if resume is False:
-                    image_manifest.create(self.__manifest_path, container_name, lock, db_write_cache_size, use_dr)
+                    image_manifest.create(self.__manifest_path, lock, db_write_cache_size, use_dr)
 
                 m_list = self.get_db_tables_source(increment_depth)
                 if not m_list and resume:
@@ -489,14 +489,14 @@ class ImageManifestDatabase(object):
                 for table_name in m_list:
                     self.__db.append(
                         self.__image_manifest.open(
-                            self.__manifest_path, container_name, table_name, lock, db_write_cache_size, use_dr))
+                            self.__manifest_path, table_name, lock, db_write_cache_size, use_dr))
                     # Inserting new table name if it's doesn't exists
                     if not self.__db_scheme.search(where("table_name") == str(table_name)):
                         self.__db_scheme.insert({"table_name": str(table_name)})
             else:
                 self.__db.append(
                     self.__image_manifest.open(
-                        self.__manifest_path, container_name, "in_memory_table", lock, db_write_cache_size, use_dr))
+                        self.__manifest_path, "in_memory_table", lock, db_write_cache_size, use_dr))
 
             # Inserting metadata to default table for opened (last) manifest
             self.__db[0].insert_db_meta({
