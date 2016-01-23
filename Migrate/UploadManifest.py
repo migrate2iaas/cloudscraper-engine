@@ -496,7 +496,7 @@ class ImageManifestDatabase(object):
             else:
                 self.__db.append(
                     self.__image_manifest.open(
-                        self.__manifest_path, "in_memory_table", lock, db_write_cache_size, use_dr))
+                        self.__manifest_path, container_name, "in_memory_table", lock, db_write_cache_size, use_dr))
 
             # Inserting metadata to default table for opened (last) manifest
             self.__db[0].insert_db_meta({
