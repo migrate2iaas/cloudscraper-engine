@@ -474,6 +474,9 @@ class ImageManifestDatabase(object):
                     image_manifest.create(self.__manifest_path, lock, db_write_cache_size, use_dr)
 
                 m_list = self.get_db_tables_source(increment_depth)
+                if not m_list and resume:
+                    raise Exception("Unable to resuming upload. Previous upload (manifest) not found")
+
                 for table_name in m_list:
                     self.__db.append(
                         self.__image_manifest.open(self.__manifest_path, table_name, lock, db_write_cache_size, use_dr))
@@ -498,6 +501,7 @@ class ImageManifestDatabase(object):
             raise
 
     def get_db_tables_source(self, number):
+        number = 0
         # Getting list all available manifests (backups) in manifest path, after sorting:
         # f[0] last (by timestamp) manifest
         # f[1...N] previous manifests ordered by timestamp too.
