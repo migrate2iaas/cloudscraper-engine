@@ -4,7 +4,7 @@ import datetime
 import os
 import logging
 
-from tinydb import TinyDB, Query
+from tinydb import TinyDB, Query, where
 from tinydb.storages import JSONStorage, MemoryStorage
 from tinydb.middlewares import CachingMiddleware
 
@@ -229,7 +229,7 @@ class ImageDictionaryManifest(ImageManifest):
     for file storage, based on JSON format.
     """
 
-    DB_TABLES_EXTENSION = "cloudscraper-manifest-tables"
+    DB_TABLES_EXTENSION = ".cloudscraper-manifest-tables"
 
     def __init__(self, manifest_path, table_name, lock, db_write_cache_size=1, use_dr=False):
         self.__table_name = str(table_name)
@@ -247,13 +247,13 @@ class ImageDictionaryManifest(ImageManifest):
         self.__use_dr = use_dr
         try:
             if self.__use_dr:
-                with (open("{}/{}".format(manifest_path, table_name))) as f:
+                with open(path) as f:
                     self.__storage = json.load(f)
                 self.__db = self.__storage["_default"]
-                self.__table = self.__storage[table_name]
+                self.__table = self.__storage[self.__table_name]
             else:
                 self.__storage["_default"] = {}
-                self.__storage[table_name] = {}
+                self.__storage[self.__table_name] = {}
         except Exception as e:
             logging.error("!!!ERROR: Failed to create or open image manifest database: {}".format(e))
             raise
@@ -266,11 +266,13 @@ class ImageDictionaryManifest(ImageManifest):
 
     @staticmethod
     def create(manifest_path, lock, db_write_cache_size, use_dr):
-        storage = {}
-        file_name = "{}.{}".format(
+        file_name = "{}{}".format(
             datetime.datetime.now().strftime("%Y-%m-%d %H-%M"), ImageDictionaryManifest.DB_TABLES_EXTENSION)
-        storage["_default"] = {}
-        storage[file_name] = {}
+
+        storage = {
+            "_default": {},
+            file_name: {},
+        }
 
         if use_dr:
             with open("{}/{}".format(manifest_path, file_name), "w") as f:
@@ -419,6 +421,8 @@ class ImageManifestDatabase(object):
     A class for creating and managing image manifest files which allows resuming and incrementing upload
     """
 
+    DB_SCHEME_EXTENSION = ".cloudscraper-manifest-database"
+
     def __init__(
             self, image_manifest, manifest_path, container_name, lock, resume=False, increment_depth=1,
             db_write_cache_size=1, use_dr=False):
@@ -456,22 +460,30 @@ class ImageManifestDatabase(object):
                 os.makedirs(self.__manifest_path)
 
         self.__db = []
+        self.__db_scheme = None
         try:
             if use_dr:
+                # Creating or opening database scheme
+                self.__db_scheme = TinyDB(self.get_db_scheme_path())
+
                 # increment_depth = 0 meaning that we use all available manifests
                 # increment_depth = N meaning that we use last N (by timestamp) available manifests
 
                 # First, creating manifest if no resume required, than getting list (new manifest just created)
                 if resume is False:
-                    image_manifest.create(manifest_path, lock, db_write_cache_size, use_dr)
+                    image_manifest.create(self.__manifest_path, lock, db_write_cache_size, use_dr)
 
                 m_list = self.get_db_tables_source(increment_depth)
                 for table_name in m_list:
                     self.__db.append(
-                        self.__image_manifest.open(manifest_path, table_name, lock, db_write_cache_size, use_dr))
+                        self.__image_manifest.open(self.__manifest_path, table_name, lock, db_write_cache_size, use_dr))
+                    # Inserting new table name if it's doesn't exists
+                    if not self.__db_scheme.search(where("table_name") == str(table_name)):
+                        self.__db_scheme.insert({"table_name": str(table_name)})
             else:
                 self.__db.append(
-                    self.__image_manifest.open(manifest_path, "in_memory_table", lock, db_write_cache_size, use_dr))
+                    self.__image_manifest.open(
+                        self.__manifest_path, "in_memory_table", lock, db_write_cache_size, use_dr))
 
                 # Inserting metadata to default table for opened (last) manifest
                 self.__db[0].insert_db_meta({
@@ -491,7 +503,7 @@ class ImageManifestDatabase(object):
         # f[1...N] previous manifests ordered by timestamp too.
         f = []
         for filename in os.listdir(self.__manifest_path):
-            if filename.endswith(".{}".format(self.__image_manifest.DB_TABLES_EXTENSION)):
+            if filename.endswith(self.__image_manifest.DB_TABLES_EXTENSION):
                 f.append(filename)
         f.sort(reverse=True)
 
@@ -501,6 +513,9 @@ class ImageManifestDatabase(object):
 
     def get_db_tables(self):
         return self.__db
+
+    def get_db_scheme_path(self):
+        return "{}/{}".format(self.__manifest_path, self.DB_SCHEME_EXTENSION)
 
     def insert(self, etag, local_hash, part_name, offset, size, status):
         # Inserting in first (meaning last) manifest in list
@@ -540,6 +555,7 @@ class ImageManifestDatabase(object):
                 "actual_image_size": str(actual_image_size)})
 
             self.__db[0].flush()
+            self.__db_scheme.close()
 
         except Exception as e:
             logging.debug("Failed to finalize image manifest file: {}".format(e))
@@ -575,6 +591,4 @@ class ImageWellKnownBlockDatabase(object):
     def get_table_name(self):
         # Not implemented
         pass
-
-
 

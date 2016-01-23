@@ -564,12 +564,17 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
     def uploadDB(self):
         if self.__use_dr:
+            # Uploading tables
             for table in self.__manifest.get_db_tables():
                 key_name = "DR/{}/{}".format(os.environ['COMPUTERNAME'], table.get_name())
                 if self.__bucket.get_key(key_name) is None:
                     s3key = Key(self.__bucket, key_name)
                     s3key.set_contents_from_filename(table.get_path())
                     logging.debug("Saving manifest: {}".format(key_name))
+            # Uploading database scheme
+            key_name = "DR/{}/{}".format(os.environ['COMPUTERNAME'], self.__manifest.DB_SCHEME_EXTENSION)
+            s3key = Key(self.__bucket, key_name)
+            s3key.set_contents_from_filename(self.__manifest.get_db_scheme_path())
 
     def confirm(self):
         """
