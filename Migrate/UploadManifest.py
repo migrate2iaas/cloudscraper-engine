@@ -14,17 +14,17 @@ class ImageManifest(object):
         pass
 
     @staticmethod
-    def create(manifest_path, lock, db_write_cache_size, use_dr):
+    def create(manifest_path, container_name, lock, db_write_cache_size, use_dr):
         raise NotImplementedError
 
     @staticmethod
-    def open(manifest_path, table_name, lock, db_write_cache_size, use_dr):
+    def open(manifest_path, container_name, table_name, lock, db_write_cache_size, use_dr):
         raise NotImplementedError
 
     def flush(self):
         raise NotImplementedError
 
-    def insert(self, etag, local_hash, part_path, part_name, offset, size, status):
+    def insert(self, etag, local_hash, part_name, offset, size, status):
         raise NotImplementedError
 
     def select(self, etag=None, part_name=None):
@@ -40,6 +40,9 @@ class ImageManifest(object):
         raise NotImplementedError
 
     def get_path(self):
+        raise NotImplementedError
+
+    def get_container_name(self):
         raise NotImplementedError
 
 
@@ -161,7 +164,7 @@ class TinyDBImageFileManifest(ImageManifest):
 
         return self.__table.search(key)
 
-    def insert(self, etag, local_hash, part_path, part_name, offset, size, status):
+    def insert(self, etag, local_hash, part_name, offset, size, status):
         """
         Insert record in database. Pair (etag, offset) has table unique key semantics,
         so in given table there are no records with same hash and offset
@@ -189,7 +192,6 @@ class TinyDBImageFileManifest(ImageManifest):
             "uuid": str(uuid.uuid4()),
             "etag": str(etag),
             "local_hash": str(local_hash),
-            "part_path": str(part_path),
             "part_name": str(part_name),
             "offset": str(offset),
             "size": str(size),
@@ -232,7 +234,7 @@ class ImageDictionaryManifest(ImageManifest):
 
     DB_TABLES_EXTENSION = ".cloudscraper-manifest-tables"
 
-    def __init__(self, manifest_path, table_name, lock, db_write_cache_size=1, use_dr=False):
+    def __init__(self, manifest_path, container_name, table_name, lock, db_write_cache_size=1, use_dr=False):
         self.__table_name = str(table_name)
         path = "{}/{}".format(manifest_path, self.__table_name)
 
@@ -246,6 +248,7 @@ class ImageDictionaryManifest(ImageManifest):
         self.__db_count = 0
         self.__table_count = 0
         self.__use_dr = use_dr
+        self.__container_name = container_name
         try:
             if self.__use_dr:
                 with open(path) as f:
@@ -266,7 +269,7 @@ class ImageDictionaryManifest(ImageManifest):
         super(ImageDictionaryManifest, self).__init__()
 
     @staticmethod
-    def create(manifest_path, lock, db_write_cache_size, use_dr):
+    def create(manifest_path, container_name, lock, db_write_cache_size, use_dr):
         file_name = "{}{}".format(
             datetime.datetime.now().strftime("%Y-%m-%d %H-%M"), ImageDictionaryManifest.DB_TABLES_EXTENSION)
 
@@ -281,15 +284,17 @@ class ImageDictionaryManifest(ImageManifest):
 
         return ImageDictionaryManifest.open(
             manifest_path,
+            container_name,
             file_name,
             lock,
             db_write_cache_size,
             use_dr)
 
     @staticmethod
-    def open(manifest_path, table_name, lock, db_write_cache_size, use_dr):
+    def open(manifest_path, container_name, table_name, lock, db_write_cache_size, use_dr):
         return ImageDictionaryManifest(
             manifest_path,
+            container_name,
             table_name,
             lock,
             db_write_cache_size,
@@ -346,7 +351,7 @@ class ImageDictionaryManifest(ImageManifest):
 
         return res
 
-    def insert(self, etag, local_hash, part_path, part_name, offset, size, status):
+    def insert(self, etag, local_hash, part_name, offset, size, status):
         """
         Insert record in database. Pair (etag, offset) has table unique key semantics,
         so in given table there are no records with same hash and offset
@@ -374,7 +379,6 @@ class ImageDictionaryManifest(ImageManifest):
             "uuid": str(uuid.uuid4()),
             "etag": str(etag),
             "local_hash": str(local_hash),
-            "part_path": str(part_path),
             "part_name": str(part_name),
             "offset": str(offset),
             "size": str(size),
@@ -416,6 +420,9 @@ class ImageDictionaryManifest(ImageManifest):
     def get_path(self):
         if self.__use_dr:
             return "{}/{}".format(self.__manifest_path, self.__table_name)
+
+    def get_container_name(self):
+        return self.__container_name
 
 
 class ImageManifestDatabase(object):
@@ -473,7 +480,7 @@ class ImageManifestDatabase(object):
 
                 # First, creating manifest if no resume required, than getting list (new manifest just created)
                 if resume is False:
-                    image_manifest.create(self.__manifest_path, lock, db_write_cache_size, use_dr)
+                    image_manifest.create(self.__manifest_path, container_name, lock, db_write_cache_size, use_dr)
 
                 m_list = self.get_db_tables_source(increment_depth)
                 if not m_list and resume:
@@ -481,7 +488,8 @@ class ImageManifestDatabase(object):
 
                 for table_name in m_list:
                     self.__db.append(
-                        self.__image_manifest.open(self.__manifest_path, table_name, lock, db_write_cache_size, use_dr))
+                        self.__image_manifest.open(
+                            self.__manifest_path, container_name, table_name, lock, db_write_cache_size, use_dr))
                     # Inserting new table name if it's doesn't exists
                     if not self.__db_scheme.search(where("table_name") == str(table_name)):
                         self.__db_scheme.insert({"table_name": str(table_name)})
@@ -490,13 +498,13 @@ class ImageManifestDatabase(object):
                     self.__image_manifest.open(
                         self.__manifest_path, "in_memory_table", lock, db_write_cache_size, use_dr))
 
-                # Inserting metadata to default table for opened (last) manifest
-                self.__db[0].insert_db_meta({
-                    "start": str(datetime.datetime.now()),
-                    "container_name": container_name,
-                    "status": "progress",
-                    "resume": str(resume),
-                    "increment_depth": str(increment_depth)})
+            # Inserting metadata to default table for opened (last) manifest
+            self.__db[0].insert_db_meta({
+                "start": str(datetime.datetime.now()),
+                "container_name": container_name,
+                "status": "progress",
+                "resume": str(resume),
+                "increment_depth": str(increment_depth)})
         except Exception as e:
             logging.error("!!!ERROR: unable to create (or open) image file manifest for {}: {}".format(
                 manifest_path, e))
@@ -523,15 +531,16 @@ class ImageManifestDatabase(object):
     def get_db_scheme_path(self):
         return "{}/{}".format(self.__manifest_path, self.DB_SCHEME_EXTENSION)
 
-    def insert(self, etag, local_hash, part_path, part_name, offset, size, status):
+    def insert(self, etag, local_hash, part_name, offset, size, status):
         # Inserting in first (meaning last) manifest in list
-        return self.__db[0].insert(etag, local_hash, part_path, part_name, offset, size, status)
+        return self.__db[0].insert(etag, local_hash, part_name, offset, size, status)
 
     def select(self, etag=None, part_name=None):
         # TODO: make expression more python-like
-        for i in self.__db:
-            rec = i.select(etag, part_name)
-            if rec:
+        for table in self.__db:
+            rec = table.select(etag, part_name)
+            for item in rec:
+                item["container_name"] = table.get_container_name()
                 return rec
 
         return []

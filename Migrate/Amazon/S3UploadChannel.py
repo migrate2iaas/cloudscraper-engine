@@ -189,7 +189,6 @@ class S3UploadThread(threading.Thread):
         self.__uploadQueue = queue
         self.__threadId = threadid  # thread id, for troubleshooting purposes
         self.__manifest = channel.getManifest()
-        self.__bucketName = channel.getBucketName()
         self.__conn = channel.getConnection()
         self.__well_known_blocks = channel.getWellKnownManifest()
         self.__skipExisting = skipexisting
@@ -234,10 +233,9 @@ class S3UploadThread(threading.Thread):
                     # Note: it seems there should be a better (more generic and extendable way) to implement strategies
                     # to reduce the overall upload size
 
+                    res = {}
                     s3key = None
                     upload = True
-                    res["part_name"] = uploadtask.getTargetKey()
-                    res["part_path"] = self.__bucketName
 
                     # First, if well known blocks database exists, checkout data chunk there
                     res_well_known = None
@@ -255,25 +253,27 @@ class S3UploadThread(threading.Thread):
                                 break
 
                     # Trying to find block in cloud
-                    try:
-                        tmp_bucket = None
+                    if res:
                         try:
-                            tmp_bucket = self.__conn.get_bucket(res["part_path"])
-                        except Exception as e:
-                            logging.debug("Unable to get bucket {}, reason: {}".format(res["part_path"], e))
+                            tmp_bucket = None
+                            try:
+                                tmp_bucket = self.__conn.get_bucket(res["container_name"])
+                            except Exception as e:
+                                logging.debug("Unable to get bucket {}, reason: {}".format(res["container_name"], e))
 
-                        if tmp_bucket:
-                            s3key = tmp_bucket.get_key(res["part_name"])
-                            if s3key:
-                                self.__manifest.insert(
-                                    res["etag"], md5_hexdigest, res["part_path"], res["part_name"], offset, size,
-                                    "skipped")
-                                logging.debug("key with same md5 found, skip uploading")
-                                upload = False
-                    except Exception as e:
-                        logging.debug(
-                            "Failed to get key. Got exception from the source server. Sometimes it means errors "
-                            "from not fully s3 compatible sources " + repr(e))
+                            if tmp_bucket:
+                                s3key = tmp_bucket.get_key(res["part_name"])
+                                if s3key:
+                                    self.__manifest.insert(
+                                        res["etag"], md5_hexdigest, res["part_name"], offset, size, "skipped")
+                                    logging.debug("key with same md5 found, skip uploading")
+                                    upload = False
+                        except Exception as e:
+                            logging.debug(
+                                "Failed to get key. Got exception from the source server. Sometimes it means errors "
+                                "from not fully s3 compatible sources " + repr(e))
+                    else:
+                        res["part_name"] = uploadtask.getTargetKey()
 
                     # If key is not found, creating
                     if s3key is None:
@@ -284,8 +284,7 @@ class S3UploadThread(threading.Thread):
                         s3key.set_contents_from_string(
                             str(data), replace=True, policy=None, md5=(md5digest, base64md5), reduced_redundancy=False,
                             encrypt_key=False)
-                        self.__manifest.insert(
-                            md5digest, md5_hexdigest, res["part_path"], res["part_name"], offset, size, "uploaded")
+                        self.__manifest.insert(md5digest, md5_hexdigest, res["part_name"], offset, size, "uploaded")
                         uploadtask.notifyDataTransfered()
                     else:
                         logging.debug("Skipped the data upload: %s/%s ", str(bucket), res["part_name"])
@@ -417,8 +416,8 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         # Resume and increment database creation
         self.__use_dr = use_dr
         logging.info(
-            "Resume upload file path: {}, resume upload is {}, use DR is {}".
-            format(manifest_path, self.__resumeUpload, self.__use_dr))
+            "Resume upload file path: {}, resume upload is {}, use DR is {}, key name base: {}".
+            format(manifest_path, self.__resumeUpload, self.__use_dr, self.__keyBase))
         self.__manifest = None
         self.__well_known_blocks = None
 
@@ -427,7 +426,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             # wouldn't be saved to manifest database
             write_cache_size = int(512 * 1024 * 1024 / self.__chunkSize)
             self.__manifest = UploadManifest.ImageManifestDatabase(
-                UploadManifest.ImageDictionaryManifest, manifest_path, self.__keyBase, threading.Lock(),
+                UploadManifest.ImageDictionaryManifest, manifest_path, self.__bucketName, threading.Lock(),
                 self.__resumeUpload, increment_depth=increment_depth, db_write_cache_size=write_cache_size,
                 use_dr=self.__use_dr)
 
@@ -536,9 +535,6 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
     def getConnection(self):
         return self.__S3
-
-    def getBucketName(self):
-        return self.__bucketName
 
     def getWellKnownManifest(self):
         return self.__well_known_blocks
