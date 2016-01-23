@@ -112,7 +112,7 @@ class S3ManfiestBuilder:
 class UploadQueueTask(object):
     # NOTE: make kinda abstraction for alternative sources. Still more design effort is needed to get what these source\buckets should really be
     def __init__(
-            self, bucket, keyname, offset, size, data_getter, channel, alternative_source_bucket=None,\
+            self, bucket, keyname, offset, size, data_getter, channel, alternative_source_bucket=None,
             alternative_source_keyname=None):
         self.__channel = channel
         self.__targetBucket = bucket
@@ -189,10 +189,13 @@ class S3UploadThread(threading.Thread):
         self.__uploadQueue = queue
         self.__threadId = threadid  # thread id, for troubleshooting purposes
         self.__manifest = channel.getManifest()
+        self.__bucketName = channel.getBucketName()
+        self.__conn = channel.getConnection()
         self.__well_known_blocks = channel.getWellKnownManifest()
         self.__skipExisting = skipexisting
         self.__maxRetries = retries
         self.__copySimilar = copysimilar
+
         super(S3UploadThread, self).__init__()
 
     def run(self):
@@ -234,6 +237,7 @@ class S3UploadThread(threading.Thread):
                     s3key = None
                     upload = True
                     res["part_name"] = uploadtask.getTargetKey()
+                    res["part_path"] = self.__bucketName
 
                     # First, if well known blocks database exists, checkout data chunk there
                     res_well_known = None
@@ -252,12 +256,20 @@ class S3UploadThread(threading.Thread):
 
                     # Trying to find block in cloud
                     try:
-                        s3key = bucket.get_key(res["part_name"])
-                        if s3key:
-                            self.__manifest.insert(
-                                res["etag"], md5_hexdigest, res["part_name"], offset, size, "skipped")
-                            logging.debug("key with same md5 found, skip uploading")
-                            upload = False
+                        tmp_bucket = None
+                        try:
+                            tmp_bucket = self.__conn.get_bucket(res["part_path"])
+                        except Exception as e:
+                            logging.debug("Unable to get bucket {}, reason: {}".format(res["part_path"], e))
+
+                        if tmp_bucket:
+                            s3key = tmp_bucket.get_key(res["part_name"])
+                            if s3key:
+                                self.__manifest.insert(
+                                    res["etag"], md5_hexdigest, res["part_path"], res["part_name"], offset, size,
+                                    "skipped")
+                                logging.debug("key with same md5 found, skip uploading")
+                                upload = False
                     except Exception as e:
                         logging.debug(
                             "Failed to get key. Got exception from the source server. Sometimes it means errors "
@@ -272,7 +284,8 @@ class S3UploadThread(threading.Thread):
                         s3key.set_contents_from_string(
                             str(data), replace=True, policy=None, md5=(md5digest, base64md5), reduced_redundancy=False,
                             encrypt_key=False)
-                        self.__manifest.insert(md5digest, md5_hexdigest, res["part_name"], offset, size, "uploaded")
+                        self.__manifest.insert(
+                            md5digest, md5_hexdigest, res["part_path"], res["part_name"], offset, size, "uploaded")
                         uploadtask.notifyDataTransfered()
                     else:
                         logging.debug("Skipped the data upload: %s/%s ", str(bucket), res["part_name"])
@@ -520,6 +533,12 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
     def getManifest(self):
         return self.__manifest
+
+    def getConnection(self):
+        return self.__S3
+
+    def getBucketName(self):
+        return self.__bucketName
 
     def getWellKnownManifest(self):
         return self.__well_known_blocks

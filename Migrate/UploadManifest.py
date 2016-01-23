@@ -24,7 +24,7 @@ class ImageManifest(object):
     def flush(self):
         raise NotImplementedError
 
-    def insert(self, etag, local_hash, part_name, offset, size, status):
+    def insert(self, etag, local_hash, part_path, part_name, offset, size, status):
         raise NotImplementedError
 
     def select(self, etag=None, part_name=None):
@@ -161,7 +161,7 @@ class TinyDBImageFileManifest(ImageManifest):
 
         return self.__table.search(key)
 
-    def insert(self, etag, local_hash, part_name, offset, size, status):
+    def insert(self, etag, local_hash, part_path, part_name, offset, size, status):
         """
         Insert record in database. Pair (etag, offset) has table unique key semantics,
         so in given table there are no records with same hash and offset
@@ -189,6 +189,7 @@ class TinyDBImageFileManifest(ImageManifest):
             "uuid": str(uuid.uuid4()),
             "etag": str(etag),
             "local_hash": str(local_hash),
+            "part_path": str(part_path),
             "part_name": str(part_name),
             "offset": str(offset),
             "size": str(size),
@@ -345,7 +346,7 @@ class ImageDictionaryManifest(ImageManifest):
 
         return res
 
-    def insert(self, etag, local_hash, part_name, offset, size, status):
+    def insert(self, etag, local_hash, part_path, part_name, offset, size, status):
         """
         Insert record in database. Pair (etag, offset) has table unique key semantics,
         so in given table there are no records with same hash and offset
@@ -373,6 +374,7 @@ class ImageDictionaryManifest(ImageManifest):
             "uuid": str(uuid.uuid4()),
             "etag": str(etag),
             "local_hash": str(local_hash),
+            "part_path": str(part_path),
             "part_name": str(part_name),
             "offset": str(offset),
             "size": str(size),
@@ -521,9 +523,9 @@ class ImageManifestDatabase(object):
     def get_db_scheme_path(self):
         return "{}/{}".format(self.__manifest_path, self.DB_SCHEME_EXTENSION)
 
-    def insert(self, etag, local_hash, part_name, offset, size, status):
+    def insert(self, etag, local_hash, part_path, part_name, offset, size, status):
         # Inserting in first (meaning last) manifest in list
-        return self.__db[0].insert(etag, local_hash, part_name, offset, size, status)
+        return self.__db[0].insert(etag, local_hash, part_path, part_name, offset, size, status)
 
     def select(self, etag=None, part_name=None):
         # TODO: make expression more python-like
