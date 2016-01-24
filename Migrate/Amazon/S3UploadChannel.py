@@ -391,9 +391,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         gigabyte = 1024*1024*1024
         self.__volumeToAllocateGb = int((resultDiskSizeBytes+gigabyte-1)/gigabyte)
 
-        now = time.localtime()
-
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H-%M")
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
         if keynameBase:
             self.__keyBase = "{}/{}".format(timestamp, keynameBase)
         else:
