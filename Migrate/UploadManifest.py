@@ -14,7 +14,7 @@ class ImageManifest(object):
         pass
 
     @staticmethod
-    def create(manifest_path, lock, db_write_cache_size, use_dr):
+    def create(manifest_path, table_name, lock, db_write_cache_size, use_dr):
         raise NotImplementedError
 
     @staticmethod
@@ -40,9 +40,6 @@ class ImageManifest(object):
         raise NotImplementedError
 
     def get_path(self):
-        raise NotImplementedError
-
-    def get_container_name(self):
         raise NotImplementedError
 
 
@@ -88,10 +85,10 @@ class TinyDBImageFileManifest(ImageManifest):
         super(TinyDBImageFileManifest, self).__init__()
 
     @staticmethod
-    def create(manifest_path, lock, db_write_cache_size, use_dr):
+    def create(manifest_path, table_name, lock, db_write_cache_size, use_dr):
         return TinyDBImageFileManifest(
             manifest_path,
-            "{}.cloudscraper-manifest-data".format(datetime.datetime.now().strftime("%Y-%m-%d %H-%M")),
+            "{}.cloudscraper-manifest-tables".format(table_name),
             lock,
             db_write_cache_size,
             use_dr)
@@ -269,9 +266,8 @@ class ImageDictionaryManifest(ImageManifest):
         super(ImageDictionaryManifest, self).__init__()
 
     @staticmethod
-    def create(manifest_path, lock, db_write_cache_size, use_dr):
-        file_name = "{}{}".format(
-            datetime.datetime.now().strftime("%Y-%m-%d %H-%M"), ImageDictionaryManifest.DB_TABLES_EXTENSION)
+    def create(manifest_path, table_name, lock, db_write_cache_size, use_dr):
+        file_name = "{}{}".format(table_name, ImageDictionaryManifest.DB_TABLES_EXTENSION)
 
         storage = {
             "_default": {},
@@ -419,11 +415,6 @@ class ImageDictionaryManifest(ImageManifest):
         if self.__use_dr:
             return "{}/{}".format(self.__manifest_path, self.__table_name)
 
-    def get_container_name(self):
-        for item in self.__db:
-            if "container_name" in self.__db[item]:
-                return self.__db[item]["container_name"]
-
 
 class ImageManifestDatabase(object):
     """
@@ -480,7 +471,7 @@ class ImageManifestDatabase(object):
 
                 # First, creating manifest if no resume required, than getting list (new manifest just created)
                 if resume is False:
-                    image_manifest.create(self.__manifest_path, lock, db_write_cache_size, use_dr)
+                    image_manifest.create(self.__manifest_path, container_name, lock, db_write_cache_size, use_dr)
 
                 m_list = self.get_db_tables_source(increment_depth)
                 if not m_list and resume:
@@ -539,8 +530,7 @@ class ImageManifestDatabase(object):
         # TODO: make expression more python-like
         for table in self.__db:
             rec = table.select(etag, part_name)
-            for item in rec:
-                item["container_name"] = table.get_container_name()
+            if rec:
                 return rec
 
         return []
@@ -602,7 +592,11 @@ class ImageWellKnownBlockDatabase(object):
     def all(self):
         return self.__db.all()
 
-    def get_table_name(self):
+    def get_name(self):
+        # Not implemented
+        pass
+
+    def get_path(self):
         # Not implemented
         pass
 
