@@ -97,10 +97,6 @@ class DefferedUploadFileProxy(object):
         # just get one element to avoid deadlocks (works if there is only one writer thread)
         # self.__inner_queue.get_nowait()
 
-
-    def setComplete(self):
-        self.__completed.set()
-
     def waitTillComplete(self):
         if not self.cancelled():
             self.__completed.wait()
@@ -278,7 +274,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__manifest = None
         try:
             self.__manifest = UploadManifest.ImageManifestDatabase(
-                manifest_path, self.__containerName, threading.Lock(), self.__resumeUpload, increment_depth)
+                UploadManifest.ImageDictionaryManifest, manifest_path, self.__containerName, threading.Lock(),
+                self.__resumeUpload, increment_depth)
         except Exception as e:
             logging.error("!!!ERROR: cannot open file containing segments. Reason: {}".format(e))
             raise
@@ -419,7 +416,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             storage_url = self.__uploadCloudManifest(self.__createCloudManifest(r_list))
 
             # Notify manifest database that backup completed
-            self.__manifest.complete_manifest()
+            self.__manifest.complete_manifest(total_size)
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
             logging.error(traceback.format_exc())
