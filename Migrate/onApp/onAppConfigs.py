@@ -12,6 +12,7 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 
 import logging
 import traceback
+import datetime
 
 import SystemAdjustOptions
 import CloudConfig
@@ -50,7 +51,7 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
         self.__minipad_image_name = minipad_image_name
         self.__minipad_vm_id = minipad_vm_id
         self.__custom_host = s3custom
-        self.__keynamePrefix = ""
+        self.__keynamePrefix = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
         self.__diskType = "RAW"
         self.__chunkSize = 10*1024*1024
         self.__instanceFactory = None

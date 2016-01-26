@@ -392,7 +392,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
         if keynameBase:
-            self.__keyBase = "{}/{}".format(timestamp, keynameBase)
+            self.__keyBase = keynameBase
         else:
             self.__keyBase = "Migrate{}/image".format(timestamp)
 
