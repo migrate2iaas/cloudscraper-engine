@@ -287,14 +287,13 @@ class S3UploadThread(threading.Thread):
                     continue
 
                 logging.debug("Upload thread "+str(self.__threadId) + " set queue task done")
-                self.__uploadQueue.task_done()
                 failed = False
                 break
 
+            self.__uploadQueue.task_done()
             #TODO: stop the thread, notify the channel somehow
             if failed:
                 logging.error("!!! ERROR failed to upload data: %s/%s!", str(bucket), res["part_name"])
-                self.__uploadQueue.task_done()
                 uploadtask.notifyDataTransferError()
 
 
