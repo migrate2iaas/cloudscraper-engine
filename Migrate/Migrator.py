@@ -1,4 +1,4 @@
-﻿# --------------------------------------------------------
+# --------------------------------------------------------
 __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
@@ -89,6 +89,8 @@ class Migrator(object):
         self.__fileBackup = False
         self.__insertVirtio = insert_vitio or migrate_options.insertVirtIo()
         self.__insertXen = insert_xen or migrate_options.insertXen()
+
+        self.__error = False
 
 
         #TODO: pass this parm somehow. Thru migrate\adjust overrides?
@@ -209,6 +211,7 @@ class Migrator(object):
             traceback.print_exception(sys.exc_info()[0] , sys.exc_info()[1] , sys.exc_info()[2]) 
             logging.error("!!!ERROR: Unexpected error occured " + str(ex))
             logging.error(traceback.format_exc())
+            self.__error = True
             return None
             #TODO: set error state
             # do cleanups? Should write something to the console
@@ -228,6 +231,10 @@ class Migrator(object):
         # TODO: catch and free resources here! registry, files, vhds, snapshots.
         # use context manager for that
         return self.__resultingInstance
+
+    def getError(self):
+        """returns true if any errors occur during the migration"""
+        return self.__error
             
 
     def checkSystemCompatibility(self):

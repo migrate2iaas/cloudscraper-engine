@@ -31,5 +31,6 @@ class EC2Volume(object):
         # move from xvdp to xvdf
         EC2Volume.device_letter = chr(ord(EC2Volume.device_letter) - 1)
 
+
     def __str__(self):
         return str(self.getId())

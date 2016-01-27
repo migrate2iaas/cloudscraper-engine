@@ -60,6 +60,7 @@ class EC2MinipadInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenera
         
         if self.__minipadVM:
             self.__ec2Connnection.attach_volume(diskid , self.__minipadVM.id , '/dev/xvdf')
+            #TODO: generic code to wait till volume is attached
         return
 
     def initCreate(self , initialconfig):

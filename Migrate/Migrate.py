@@ -252,17 +252,22 @@ if __name__ == '__main__':
         logging.info("Migrator test started")
         # Doing the task
         instance = None
+        error = False
         try:
             instance = __migrator.runFullScenario()
+            error = __migrator.getError()
             if instance:
                 logging.info("\n>>>>>>>>>>>>>>>>> The server is in the stopped state, run it via " + str(cloud.getTargetCloud()) + " management console\n")
-                logging.info("\n>>>>>>>>>>>>>>>>> Transfer process ended successfully\n")
+            elif backup_mode and not error:  
+                logging.info("\n>>>>>>>>>>>>>>>>> Backup done\n")
+            logging.info("\n>>>>>>>>>>>>>>>>> Transfer process ended successfully\n")
         except Exception as e:
+            error = True
             logging.error("\n!!!ERROR: Severe error while making the migration")
             logging.error("\n!!!ERROR: " + str(e) )
             logging.error(traceback.format_exc())
 
-        if not instance:
+        if error:
                logging.info("\n>>>>>>>>>>>>>>>>>> Transfer process ended unsuccessfully\n")
                #sys.exit(errno.EFAULT)
                os._exit(errno.EFAULT)
