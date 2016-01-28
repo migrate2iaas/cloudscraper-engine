@@ -369,7 +369,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         
         # Resume and increment database creation
         self.__use_dr = use_dr
-        self.__manifestPath=manifest_path, 
+        self.__manifestPath=manifest_path 
         self.__incrementDepth = increment_depth
         self.__manifest = None
         self.__well_known_blocks = None
@@ -380,8 +380,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         else:
             self.__keyBase = "Migrate{}/image".format(self.__startTimestamp)
 
-        # Unreachable code
-        # logging.info("Succesfully created an upload channel to S3 bucket " + self.__bucketName + " at " + location)
+        self.__workThreads = list()
 
     def initStorage(self, init_data_link = ''):
         """initializes the storage by connecting to existing s3 bucket or creating new one"""
@@ -442,7 +441,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             raise
 
         # Initializing a number of threads, they are stopping when see None in queue job
-        self.__workThreads = list()
+        
         i = 0
         while i < upload_threads:
             thread = S3UploadThread(self.__uploadQueue, i, self.__resumeUpload, self)
