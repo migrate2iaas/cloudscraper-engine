@@ -619,46 +619,47 @@ class Migrator(object):
 
 
     def createDataTransferTargets(self):
+        for volinfo in self.__migrateOptions.getDataVolumes():
 
-        if self.__skipImaging == False or self.__skipUpload == False:
-            for volinfo in self.__migrateOptions.getDataVolumes():
+            if self.__skipImaging == False or self.__skipUpload == False:
                 media = self.createImageMedia(volinfo.getImagePath() , volinfo.getImageSize() + self.__additionalMediaSize)          
                 if media == None:
                     logging.error("!!!ERROR: Cannot create/open intermediate image (media) for an operation")
                     return False
                 self.__dataMediaList[volinfo.getVolumePath()]=media
-                if self.__runOnWindows:
-                    #TODO: need kinda redisign the stuff related to system adjusts!
-                    if self.__skipImaging == False:
+            
+            if self.__runOnWindows:
+                 #TODO: need kinda redisign the stuff related to system adjusts!
+                  if self.__skipImaging == False:
                        self.__dataTransferTargetList[volinfo.getVolumePath()] = self.createTransferTarget(
-                           media, volinfo.getImageSize(), self.__winSystemAdjustOptions)
+                            media, volinfo.getImageSize(), self.__winSystemAdjustOptions)
         
-                description = os.environ['COMPUTERNAME']+"_"+"data"+"_"+str(datetime.date.today())
+            description = os.environ['COMPUTERNAME']+"_"+"data"+"_"+str(datetime.date.today())
 
-                self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(
-                        self.__dataMediaList[volinfo.getVolumePath()].getMaxSize(),
-                        self.__cloudOptions.getServerName() or description,
-                        volinfo.getUploadPath(),
-                        self.__resumeUpload,
-                        self.__dataMediaList[volinfo.getVolumePath()].getImageSize())
+            self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(
+                    self.__dataMediaList[volinfo.getVolumePath()].getMaxSize(),
+                    self.__cloudOptions.getServerName() or description,
+                    volinfo.getUploadPath(),
+                    self.__resumeUpload,
+                    self.__dataMediaList[volinfo.getVolumePath()].getImageSize())
                 
-                if self.__skipUpload == False:
-                    self.__dataChannelList[volinfo.getVolumePath()].initStorage()
-                    # update the upload path in config in case it was changed or created by the channel
-                    uploadpath = self.__dataChannelList[volinfo.getVolumePath()].getUploadPath()
-                    logging.debug("The upload channel path is: " + uploadpath)
-                    volinfo.setUploadPath(uploadpath)
+            if self.__skipUpload == False:
+                self.__dataChannelList[volinfo.getVolumePath()].initStorage()
+                # update the upload path in config in case it was changed or created by the channel
+                uploadpath = self.__dataChannelList[volinfo.getVolumePath()].getUploadPath()
+                logging.debug("The upload channel path is: " + uploadpath)
+                volinfo.setUploadPath(uploadpath)
                 
-                if self.__skipUpload == True and not volinfo.getUploadId():
-                    # tested on aws only
-                    upload_ids = self.__dataChannelList[volinfo.getVolumePath()].findUploadId("*"+volinfo.getUploadPath())
-                    if not upload_ids:
-                        logging.error("!!!ERROR: Cannot find any matching manifest.xml file")
-                        return False
-                    # we pick latest entry due to date
-                    upload_id = upload_ids.sort()[-1]
-                    logging.info(">>>>>> Utilizing "+ upload_id + " restoration point")
-                    volinfo.setUploadId(upload_id)
+            if self.__skipUpload == True and not volinfo.getUploadId():
+                # tested on aws only
+                upload_ids = self.__dataChannelList[volinfo.getVolumePath()].findUploadId("*"+volinfo.getUploadPath())
+                if not upload_ids:
+                    logging.error("!!!ERROR: Cannot find any matching manifest.xml file")
+                    return False
+                # we pick latest entry due to date
+                upload_id = upload_ids.sort()[-1]
+                logging.info(">>>>>> Utilizing "+ upload_id + " restoration point")
+                volinfo.setUploadId(upload_id)
 
         return True
         
