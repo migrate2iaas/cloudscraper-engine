@@ -320,6 +320,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         self.__prevUploadTime = None
         self.__transferRate = 0
         self.__makeLinkPublic = make_link_public
+        self.__uploadThreadNumber = upload_threads
 
         #TODO:need to save it in common log directory
         boto.set_file_logger("boto", "boto.log", level=logging.DEBUG)
@@ -443,7 +444,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         # Initializing a number of threads, they are stopping when see None in queue job
         
         i = 0
-        while i < upload_threads:
+        while i < self.__uploadThreadNumber:
             thread = S3UploadThread(self.__uploadQueue, i, self.__resumeUpload, self)
 
             thread.start()
