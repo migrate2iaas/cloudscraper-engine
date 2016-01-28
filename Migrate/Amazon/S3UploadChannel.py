@@ -395,13 +395,13 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             logging.info(">>>>> Creating a new S3 bucket: " + self.__bucketName)
             try:
                 if self.__awsRegionConstraint:
-                    constraint = awsregion
+                    constraint = self.__awsRegionConstraint
                     self.__bucket = self.__S3.create_bucket(self.__bucketName , location=constraint)
                 else:
                     self.__bucket = self.__S3.create_bucket(self.__bucketName)
 
             except BotoServerError as botoex:
-                logging.error("!!!ERROR: Wasn't able to find or create bucket " + self.__bucketName + " in region " + location + " .")
+                logging.error("!!!ERROR: Wasn't able to find or create bucket " + self.__bucketName + " in region " + self.__awsRegionConstraint + " .")
                 if botoex.error_message:
                     logging.error("!!!ERROR: " + botoex.error_message)
                 else:
@@ -409,7 +409,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
                 logging.error(traceback.format_exc())
                 raise botoex
             except Exception as ex:
-                logging.error("!!!ERROR: Wasn't able to find or create bucket " + self.__bucketName + " in region " + location + " .")
+                logging.error("!!!ERROR: Wasn't able to find or create bucket " + self.__bucketName + " in region " + self.__awsRegionConstraint + " .")
                 logging.error("!!!ERROR: " + str(ex))
                 logging.error("!!!ERROR: It's possible the bucket with the same name exists but in another region. Try to specify another bucket name for the upload")
                 logging.error(traceback.format_exc())
