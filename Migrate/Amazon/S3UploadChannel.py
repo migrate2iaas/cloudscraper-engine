@@ -327,52 +327,28 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         awsregion = location
         if location == 'us-east-1':
            awsregion = ''
+        
+        self.__awsRegionConstraint = None
+        self.__bucketName = bucket
+        
+        if walrus:
+            self.__S3 = boto.connect_s3(
+                aws_access_key_id=awskey,
+                aws_secret_access_key=awssercret,
+                is_secure=use_ssl,
+                host=location,
+                port=walrus_port,
+                path=walrus_path,
+                calling_format=OrdinaryCallingFormat())
+            self.__hostName = location
+        else:
+            hostname = 's3.amazonaws.com'
+            self.__awsRegionConstraint = location
+            if awsregion:
+                hostname = 's3-'+awsregion+'.amazonaws.com'
+            self.__hostName = hostname
+            self.__S3 = S3Connection(awskey, awssercret, is_secure=use_ssl, host=hostname, debug=1)
 
-        offline = False # to do some offline testing
-        #TODO: catch kinda exception here if not connected. shouldn't last too long
-        if offline is False:
-            if walrus:
-                self.__S3 = boto.connect_s3(
-                    aws_access_key_id=awskey,
-                    aws_secret_access_key=awssercret,
-                    is_secure=use_ssl,
-                    host=location,
-                    port=walrus_port,
-                    path=walrus_path,
-                    calling_format=OrdinaryCallingFormat())
-            else:
-                hostname = 's3.amazonaws.com'
-                if awsregion:
-                    hostname = 's3-'+awsregion+'.amazonaws.com'
-                self.__S3 = S3Connection(awskey, awssercret, is_secure=use_ssl, host=hostname, debug=1)
-
-            self.__bucketName = bucket
-            try:
-                self.__bucket = self.__S3.get_bucket(self.__bucketName)
-            except Exception as ex:
-                logging.debug("Cannot get bucket. Reason: " + str(ex))
-                logging.info(">>>>> Creating a new S3 bucket: " + self.__bucketName)
-                try:
-                    if not walrus:
-                        constraint = awsregion
-                        self.__bucket = self.__S3.create_bucket(self.__bucketName , location=constraint)
-                    else:
-                        self.__bucket = self.__S3.create_bucket(self.__bucketName)
-
-                except BotoServerError as botoex:
-                    logging.error("!!!ERROR: Wasn't able to find or create bucket " + self.__bucketName + " in region " + location + " .")
-                    if botoex.error_message:
-                        logging.error("!!!ERROR: " + botoex.error_message)
-                    else:
-                        logging.error("!!!Unknown errror: ")
-                    logging.error(traceback.format_exc())
-                    raise botoex
-                except Exception as ex:
-                    logging.error("!!!ERROR: Wasn't able to find or create bucket " + self.__bucketName + " in region " + location + " .")
-                    logging.error("!!!ERROR: " + str(ex))
-                    logging.error("!!!ERROR: It's possible the bucket with the same name exists but in another region. Try to specify another bucket name for the upload")
-                    logging.error(traceback.format_exc())
-                    raise ex
 
         self.__chunkSize = chunksize
         self.__diskSize = resultDiskSizeBytes
@@ -390,29 +366,66 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         gigabyte = 1024*1024*1024
         self.__volumeToAllocateGb = int((resultDiskSizeBytes+gigabyte-1)/gigabyte)
 
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
+        
+        # Resume and increment database creation
+        self.__use_dr = use_dr
+        self.__manifestPath=manifest_path, 
+        self.__incrementDepth = increment_depth
+        self.__manifest = None
+        self.__well_known_blocks = None
+
+        self.__startTimestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
         if keynameBase:
             self.__keyBase = keynameBase
         else:
-            self.__keyBase = "Migrate{}/image".format(timestamp)
+            self.__keyBase = "Migrate{}/image".format(self.__startTimestamp)
 
+        # Unreachable code
+        # logging.info("Succesfully created an upload channel to S3 bucket " + self.__bucketName + " at " + location)
+
+    def initStorage(self, init_data_link = ''):
+        """initializes the storage by connecting to existing s3 bucket or creating new one"""
+        
         logging.info("\n>>>>>>>>>>>>>>>>> Initializing cloud storage\n")
 
-        # Resume and increment database creation
-        self.__use_dr = use_dr
+        try:
+            self.__bucket = self.__S3.get_bucket(self.__bucketName)
+        except Exception as ex:
+            logging.debug("Cannot get bucket. Reason: " + str(ex))
+            logging.info(">>>>> Creating a new S3 bucket: " + self.__bucketName)
+            try:
+                if self.__awsRegionConstraint:
+                    constraint = awsregion
+                    self.__bucket = self.__S3.create_bucket(self.__bucketName , location=constraint)
+                else:
+                    self.__bucket = self.__S3.create_bucket(self.__bucketName)
+
+            except BotoServerError as botoex:
+                logging.error("!!!ERROR: Wasn't able to find or create bucket " + self.__bucketName + " in region " + location + " .")
+                if botoex.error_message:
+                    logging.error("!!!ERROR: " + botoex.error_message)
+                else:
+                    logging.error("!!!Unknown errror: ")
+                logging.error(traceback.format_exc())
+                raise botoex
+            except Exception as ex:
+                logging.error("!!!ERROR: Wasn't able to find or create bucket " + self.__bucketName + " in region " + location + " .")
+                logging.error("!!!ERROR: " + str(ex))
+                logging.error("!!!ERROR: It's possible the bucket with the same name exists but in another region. Try to specify another bucket name for the upload")
+                logging.error(traceback.format_exc())
+                raise ex
+
         logging.info(
             "Resume upload file path: {}, resume upload is {}, use DR is {}, key base is {}".
-            format(manifest_path, self.__resumeUpload, self.__use_dr, self.__keyBase))
-        self.__manifest = None
-        self.__well_known_blocks = None
+            format(self.__manifestPath, self.__resumeUpload, self.__use_dr, self.__keyBase))
 
         try:
             # Number of cached records is equals 512 mb of data, so if something happens only 512 mb (in chunks)
             # wouldn't be saved to manifest database
             write_cache_size = int(512 * 1024 * 1024 / self.__chunkSize)
             self.__manifest = UploadManifest.ImageManifestDatabase(
-                UploadManifest.ImageDictionaryManifest, manifest_path, timestamp, threading.Lock(),
-                self.__resumeUpload, increment_depth=increment_depth, db_write_cache_size=write_cache_size,
+                UploadManifest.ImageDictionaryManifest, self.__manifestPath, self.__startTimestamp, threading.Lock(),
+                self.__resumeUpload, increment_depth=self.__incrementDepth, db_write_cache_size=write_cache_size,
                 use_dr=self.__use_dr)
 
             # Creating database for well known blocks to skipp them when uploading
@@ -438,10 +451,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             self.__workThreads.append(thread)
             i += 1
 
-        return
-
-        # Unreachable code
-        # logging.info("Succesfully created an upload channel to S3 bucket " + self.__bucketName + " at " + location)
+        return super(S3UploadChannel, self).initStorage(init_data_link)
 
     def getUploadPath(self):
         """ gets the upload path identifying the upload: key """
@@ -573,6 +583,55 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             s3key = Key(self.__bucket, key_name)
             s3key.set_contents_from_filename(self.__manifest.get_db_scheme_path())
 
+    def findUploadId(self, suggestion):
+        """
+        Tries to find previous upload id by using suggestion string
+        Args:
+            suggestion: str - suggested string (or regex) to find for an existing upload
+        Returns: 
+            None or empty string if nothing found. Or list of fitting strings
+        """
+        # we list all the buckets starting with the one channel attached to
+        mybucket = None
+        try:
+            mybucket = self.__S3.get_bucket(self.__bucketName)
+        except Exception as e:
+            logging.warn("! Cannot access to " + self.__bucketName + " bucket")
+
+        buckets = []
+        if mybucket:
+            buckets.append(mybucket)
+        #then will see the rest 
+        buckets.append(self.__S3.get_all_buckets())
+        found_keys = []
+        found = False
+        for bucket in buckets:
+            keys = bucket.list()
+            for key in keys:
+                if re.match(suggestion+"manifest.xml" , key.name):
+                    found_keys.append(keylink)
+                    keylink = self.__generateKeyLink(key, bucket.name , self.__makeLinkPublic)
+                    logging.info(">>>>>>> Found restoration point: " + keylink)
+                    found = True
+            # we check all manifests in a bucket, but skipping moving to the next bucket
+            if found == True:
+                break
+
+        if found == False:
+            return None
+        
+        return found_keys
+
+
+    def __generateKeyLink(self, s3key, bucketname, make_public):
+        """generates link"""
+        keylink = 'https://'+str(self.__bucketName)+ "." + self.__hostName + "/" +s3key.name
+        # it's for non-AWS
+        if make_public:
+            linktimeexp_seconds = 60*60*100     # 100 hours
+            keylink = s3key.generate_url(linktimeexp_seconds, method='GET', force_http=False)
+        return keylink
+
     def confirm(self):
         """
         Confirms good upload. uploads resulting xml describing VM container import to S3 
@@ -633,11 +692,9 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
         s3key = Key(self.__bucket, xmlkey)
         s3key.set_contents_from_filename(xmltempfile) 
+        
+        self.__xmlKey = self.__generateKeyLink(s3key , self.__bucketName, self.__makeLinkPublic)
 
-        self.__xmlKey = 'https://'+str(self.__bucketName)+'.s3.amazonaws.com/' + xmlkey
-        if self.__makeLinkPublic:
-            linktimeexp_seconds = 60*60*100     # 100 hours
-            self.__xmlKey = s3key.generate_url(linktimeexp_seconds, method='GET', force_http=False)
         s3key.close()
 
         # Uploading manifest database

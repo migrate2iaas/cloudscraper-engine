@@ -81,6 +81,15 @@ class UploadChannel(object):
         """
         raise NotImplementedError
    
+    def findUploadId(self, suggestion):
+        """
+        Tries to find previous upload id by using suggestion string. May be called before initStorage() is done
+        Args:
+            suggestion: str - suggested string (or regex) to find for an existing upload
+        Returns: 
+            None or empty string if nothing found. Or list of fitting strings
+        """
+        return ""
 
     def initStorage(self, init_data_link=""):
         """

@@ -373,20 +373,33 @@ class Migrator(object):
             
             #NOTE: the media should be created nevertheless of the imaging done
             #so , calls are
-            if self.__skipImaging == False:
-                self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__systemAdjustOptions , random_disk_id=False)
-            
-            description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
-            self.__systemTransferChannel = self.__cloudOptions.generateUploadChannel(self.__systemMedia.getMaxSize() , self.__cloudOptions.getServerName() or description, \
-                self.__migrateOptions.getSystemVolumeConfig().getUploadPath(), self.__resumeUpload , self.__systemMedia.getImageSize() )
-            self.__systemTransferChannel.initStorage()
-
-                
+        if self.__skipImaging == False:
+            self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__systemAdjustOptions , random_disk_id=False)
+        
+        sys_vol_info = self.__migrateOptions.getSystemVolumeConfig()
+           
+        description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
+        self.__systemTransferChannel = self.__cloudOptions.generateUploadChannel(self.__systemMedia.getMaxSize() , self.__cloudOptions.getServerName() or description, \
+                ssys_vol_info.getUploadPath(), self.__resumeUpload , self.__systemMedia.getImageSize() )
+        
+        if self.__skipUpload == False:
+            self.__systemTransferChannel.initStorage()        
             # update the upload path in config in case it was changed or created by the channel
             uploadpath = self.__systemTransferChannel.getUploadPath()
             logging.debug("The upload channel path is: " + uploadpath)
-            self.__migrateOptions.getSystemVolumeConfig().setUploadPath(uploadpath)
-
+            sys_vol_info.setUploadPath(uploadpath)
+        
+        if self.__skipUpload == True and sys_vol_info.getUploadId():
+            uploadpath = self.__systemTransferChannel.getUploadPath()
+            upload_ids = self.__systemTransferChannel.findUploadId("*"+sys_vol_info.getUploadPath())
+            if not upload_ids:
+                logging.error("!!!ERROR: Cannot find any matching manifest.xml file")
+                return False
+            # we pick latest entry due to date
+            upload_id = upload_ids.sort()[-1]
+            logging.info(">>>>>> Utilizing "+ upload_id + " restoration point")
+            volinfo.setUploadId(upload_id)
+            
         return True
         
     def adjustSystemBackupTarget(self):
@@ -620,22 +633,32 @@ class Migrator(object):
                        self.__dataTransferTargetList[volinfo.getVolumePath()] = self.createTransferTarget(
                            media, volinfo.getImageSize(), self.__winSystemAdjustOptions)
         
-                if self.__skipUpload == False:
-                    description = os.environ['COMPUTERNAME']+"_"+"data"+"_"+str(datetime.date.today())
+                description = os.environ['COMPUTERNAME']+"_"+"data"+"_"+str(datetime.date.today())
 
-                    self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(
+                self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(
                         self.__dataMediaList[volinfo.getVolumePath()].getMaxSize(),
                         self.__cloudOptions.getServerName() or description,
                         volinfo.getUploadPath(),
                         self.__resumeUpload,
                         self.__dataMediaList[volinfo.getVolumePath()].getImageSize())
-
+                
+                if self.__skipUpload == False:
                     self.__dataChannelList[volinfo.getVolumePath()].initStorage()
-
                     # update the upload path in config in case it was changed or created by the channel
                     uploadpath = self.__dataChannelList[volinfo.getVolumePath()].getUploadPath()
                     logging.debug("The upload channel path is: " + uploadpath)
                     volinfo.setUploadPath(uploadpath)
+                
+                if self.__skipUpload == True and not volinfo.getUploadId():
+                    # tested on aws only
+                    upload_ids = self.__dataChannelList[volinfo.getVolumePath()].findUploadId("*"+volinfo.getUploadPath())
+                    if not upload_ids:
+                        logging.error("!!!ERROR: Cannot find any matching manifest.xml file")
+                        return False
+                    # we pick latest entry due to date
+                    upload_id = upload_ids.sort()[-1]
+                    logging.info(">>>>>> Utilizing "+ upload_id + " restoration point")
+                    volinfo.setUploadId(upload_id)
 
         return True
         
