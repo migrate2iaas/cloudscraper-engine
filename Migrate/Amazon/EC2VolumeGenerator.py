@@ -27,42 +27,39 @@ import EC2ImportConnection
 import traceback
 import datetime
 
+import urllib
 
-def getImageDataFromXml(bucket, keyname, xml):
+
+
+def getImageDataFromXml(xmlurl):
     """returns tuple (volume-size-bytes,image-size-bytes,image-file-type)"""
     gb = 1024*1024*1024
     volume_size_bytes = 0
     image_file_size = 0
     imagetype = ''
     
-    if bucket:
-        key = bucket.get_key(keyname)
-        if key:
-            xmlheader = key.read(4096)
-            (head, sep ,tail) = xmlheader.partition("<file-format>")
-            if tail:
-                (head, sep ,tail) = tail.partition("</file-format>")
-                imagetype = head
+    with urllib.urlopen(xmlurl) as urldata:
+        xmlheader = urldata.read(4096)
+        (head, sep ,tail) = xmlheader.partition("<file-format>")
+        if tail:
+            (head, sep ,tail) = tail.partition("</file-format>")
+            imagetype = head
 
-            (head, sep ,tail) = xmlheader.partition("<size>")
-            if tail:
-                (head, sep ,tail) = tail.partition("</size>")
-                image_file_size = int(head , base = 10)
-                logging.debug("The image of size " + str(image_file_size))
-            else:
-                logging.warning("!Couldn't parse the xml describing the import done")
-            (head, sep ,tail) = xmlheader.partition("<volume-size>")
-            if tail:
-                (head, sep ,tail) = tail.partition("</volume-size>")
-                volume_size_bytes = int(head , base = 10) * gb
-                logging.debug("The volume would be of size " + str(volume_size_bytes))
-            else:
-                logging.warning("!Couldn't parse the xml describing the import done")
+        (head, sep ,tail) = xmlheader.partition("<size>")
+        if tail:
+            (head, sep ,tail) = tail.partition("</size>")
+            image_file_size = int(head , base = 10)
+            logging.debug("The image of size " + str(image_file_size))
         else:
-            logging.error("!!!ERROR: Cannot find " + xml + " describing the image uploaded") 
-    else:
-        logging.error("!!!ERROR: Couldn't access bucket " + str(bucket) + " to find " + xml + " describing the image uploaded")
-
+            logging.warning("!Couldn't parse the xml describing the import done")
+        (head, sep ,tail) = xmlheader.partition("<volume-size>")
+        if tail:
+            (head, sep ,tail) = tail.partition("</volume-size>")
+            volume_size_bytes = int(head , base = 10) * gb
+            logging.debug("The volume would be of size " + str(volume_size_bytes))
+        else:
+            logging.warning("!Couldn't parse the xml describing the import done")
+    
     return (volume_size_bytes, image_file_size , imagetype)
 
 
@@ -80,41 +77,16 @@ class EC2VolumeGenerator(object):
 
         windir = os.environ['windir']
 
-        xml = imageid
-        linktimeexp_seconds = 60*60*24*15 # 15 days
-
-        S3 = None
-        if walrus:
-            S3 = boto.connect_s3(aws_access_key_id=s3owner,
-            aws_secret_access_key=s3key,
-            is_secure=False,
-            host=location,
-            port=8773,
-            path=walrus_path,
-            calling_format=OrdinaryCallingFormat())
-        else:
-            S3 = S3Connection(s3owner, s3key, is_secure=True)
-
-        parsedurl = xml[xml.find('.com'):].split('/' , 1)
-        keyname = parsedurl[1]
-        bucketname = xml[xml.find("://")+len("://") : xml.find(".s3.amazonaws.com")]
-
-        gb = 1024*1024*1024
-
-        logging.debug("Manifest xml is in bucket " + bucketname + " , key " + keyname) 
-
-        xmlurl = S3.generate_url( linktimeexp_seconds, method='GET', bucket=bucketname, key=keyname, force_http=False)
-        #TODO: download the image-id xml if no volume_size and image_file_size given
+        xmlurl = imageid
+               
         if image_file_size == 0 and temp_local_image_path:
              if os.path.exists(temp_local_image_path):
                 image_file_size = os.stat(temp_local_image_path).st_size
 
         if volume_size_bytes == 0 or image_file_size == 0:
-            bucket = S3.get_bucket(bucketname)
-            (volume_size_bytes , image_file_size , imagetype) = getImageDataFromXml(bucket, keyname, xml)
+            (volume_size_bytes , image_file_size , imagetype) = getImageDataFromXml(xmlurl)
 
-        scripts_dir = ".\\Amazon"
-
+        
         ec2region = self.__region
         machine_arch = initialconfig.getArch()
         ec2zone = initialconfig.getZone()

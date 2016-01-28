@@ -51,28 +51,8 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
 
         windir = os.environ['windir']
 
-        xml = imageid
-        linktimeexp_seconds = 60*60*24*15 # 15 days
-
-        S3 = None
-        if walrus:
-            S3 = boto.connect_s3(aws_access_key_id=s3owner,
-            aws_secret_access_key=s3key,
-            is_secure=False,
-            host=self.__region,
-            port=walrus_port,
-            path=walrus_path,
-            calling_format=OrdinaryCallingFormat())
-        else:
-            S3 = S3Connection(s3owner, s3key, is_secure=True)
-
-        parsedurl = xml[xml.find('.com'):].split('/' , 1)
-        keyname = parsedurl[1]
-        bucketname = xml[xml.find("://")+len("://") : xml.find(".s3.amazonaws.com")]
-
-        logging.debug("Manifest xml is in bucket " + bucketname + " , key " + keyname) 
-
-        xmlurl = S3.generate_url( linktimeexp_seconds, method='GET', bucket=bucketname, key=keyname, force_http=False)
+        xmlurl = imageid
+           
 
         ec2region = self.__region
         machine_arch = initialconfig.getArch()
@@ -91,8 +71,7 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
 
         if volume_size_bytes == 0 or image_file_size == 0:
             if volume_size_bytes == 0 or image_file_size == 0:
-                bucket = S3.get_bucket(bucketname)
-                (volume_size_bytes , image_file_size , imagetype) = getImageDataFromXml(bucket, keyname, xml)
+                (volume_size_bytes , image_file_size , imagetype) = getImageDataFromXml(xmlurl)
 
 
         scripts_dir = ".\\Amazon"
