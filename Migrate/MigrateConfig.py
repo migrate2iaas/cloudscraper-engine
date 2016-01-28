@@ -60,6 +60,11 @@ class VolumeMigrateConfig(object):
     def saveConfig(self):
         raise NotImplementedError
 
+    def isSystem(self):
+        raise NotImplementedError
+
+    def setSystem(self , system_flag):
+        raise NotImplementedError
 
 class MigrateConfig(object):
     """ base class for the migration config"""
@@ -74,7 +79,8 @@ class MigrateConfig(object):
             # we emulate 'windir' for linux too
             originalwindir = os.environ['windir']
             windrive = originalwindir.split("\\")[0] #get C: substring
-            if windrive in config.getVolumePath():
+            #TODO: should remove this system volume auto-detection and rely on isSystem() flag solely
+            if windrive in config.getVolumePath() or config.isSystem():
                 self.__systemVolumeConfig = config
             else:
                 #TODO: make migration config for each volume not to have all this stuff

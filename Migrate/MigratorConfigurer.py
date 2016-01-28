@@ -57,6 +57,7 @@ class VolumeMigrateNoConfig(VolumeMigrateConfig):
         self.__pathToUpload = ''
         self.__uploadedImageId = ''
         self.__excludedDirs = list()
+        self.__system = False
 
     def getImagePath(self):
         return self.__imagePath
@@ -94,6 +95,12 @@ class VolumeMigrateNoConfig(VolumeMigrateConfig):
     def generateMigrationId(self):
         return
 
+    def isSystem(self):
+        return self.__system
+
+    def setSystem(self , system_flag):
+        self.__system = system_flag
+
 class VolumeMigrateIniConfig(VolumeMigrateConfig):
     """ volume migration parms got from ini file """
 
@@ -109,6 +116,7 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
         self.__pathToUpload = ''
         self.__uploadedImageId = ''
         self.__excludedDirs = list()
+        self.__system = False
 
         if config.has_section(section):
             if config.has_option(section, 'imagesize'):
@@ -131,6 +139,11 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
                 self.__imagePath = config.get(section, 'imagepath')
             else:
                 logging.debug("imagepath was not found in the config for volume " + str(self.__volumeName)) 
+
+            if config.has_option(section, 'system'):
+                self.__imagePath = config.getboolean(section, 'system')
+            else:
+                logging.debug("system was not found in the config for volume " + str(self.__volumeName)) 
 
             # excludedir is a string of dirs separated by ;
             if config.has_option(section, 'excludedir'):
@@ -176,6 +189,12 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
         logging.debug("imagesize for volume " + str(self.__volumeName) + " is set to " + str(self.__imageSize))
         #logging.debug(str(traceback.format_tb()))
 
+    def isSystem(self):
+        return self.__system
+
+    def setSystem(self , system_flag):
+        self.__system = system_flag
+
     def generateMigrationId(self):
         """generates an id to distinguish migration of the same volumes but for different times"""
         return (os.environ["COMPUTERNAME"] + "_" + datetime.date.today().strftime("%Y_%m_%d") + "_" + str(self.getVolumePath())).replace("\\" , "").replace("." , "_").replace(":" , "")
@@ -196,6 +215,9 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
 
         if self.__imagePath:
            self.__config.set(section, 'imagepath', self.__imagePath)
+
+        if self.__system:
+           self.__config.set(section, 'system', self.__system)
 
         fconf = codecs.open(self.__configFileName, "w", "utf16")#file(self.__configFileName, "w")
         self.__config.write(fconf)
