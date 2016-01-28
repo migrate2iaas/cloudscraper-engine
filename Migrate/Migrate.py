@@ -258,7 +258,7 @@ if __name__ == '__main__':
             error = __migrator.getError()
             if instance:
                 logging.info("\n>>>>>>>>>>>>>>>>> The server is in the stopped state, run it via " + str(cloud.getTargetCloud()) + " management console\n")
-            elif backup_mode and not error:  
+            elif backupmode and not error:  
                 logging.info("\n>>>>>>>>>>>>>>>>> Backup done\n")
             logging.info("\n>>>>>>>>>>>>>>>>> Transfer process ended successfully\n")
         except Exception as e:
