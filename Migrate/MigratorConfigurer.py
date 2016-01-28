@@ -706,16 +706,24 @@ class MigratorConfigurer(object):
                 if os.name == 'nt':
                     devicepath = '\\\\.\\'+letter+':'
                     sys.path.append('./Windows')
-                    import Windows
-                    size = Windows.Windows().getSystemInfo().getVolumeInfo(letter+":").getSize()
+                    try:
+                        import Windows
+                        size = Windows.Windows().getSystemInfo().getVolumeInfo(letter+":").getSize()
+                    except Exception as e:
+                        logging.debug("Cannot get local data on volume " + letter + " " + str(e))
+                        size = 0
                 else:
                     if not "/dev/" in letter: 
                         devicepath = "/dev/"+letter
                     else:
                         devicepath = letter
                     sys.path.append('./Linux')
-                    import Linux
-                    size = Linux.Linux().getSystemInfo().getVolumeInfo(devicepath).getSize()
+                    try:
+                        import Linux
+                        size = Linux.Linux().getSystemInfo().getVolumeInfo(devicepath).getSize()
+                    except Exception as e:
+                        logging.debug("Cannot get local data on volume " + letter + " " + str(e))
+                        size = 0
                 volume = VolumeMigrateIniConfig(config , configfile , letter , devicepath)
                 if volume.getImagePath() == '':
                     volume.setImagePath(imagedir+"/"+letter+"."+imagetype);
