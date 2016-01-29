@@ -395,7 +395,7 @@ class Migrator(object):
             logging.debug("The upload channel path is: " + uploadpath)
             sys_vol_info.setUploadPath(uploadpath)
         
-        if self.__skipUpload == True and sys_vol_info.getUploadId():
+        if self.__skipUpload == True and not sys_vol_info.getUploadId():
             uploadpath = self.__systemTransferChannel.getUploadPath()
             upload_ids = self.__systemTransferChannel.findUploadId("*"+sys_vol_info.getUploadPath())
             if not upload_ids:
