@@ -141,7 +141,7 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
                 logging.debug("imagepath was not found in the config for volume " + str(self.__volumeName)) 
 
             if config.has_option(section, 'system'):
-                self.__imagePath = config.getboolean(section, 'system')
+                self.__system = config.getboolean(section, 'system')
             else:
                 logging.debug("system was not found in the config for volume " + str(self.__volumeName)) 
 

@@ -377,10 +377,16 @@ class Migrator(object):
             self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__systemAdjustOptions , random_disk_id=False)
         
         sys_vol_info = self.__migrateOptions.getSystemVolumeConfig()
+
+        if self.__skipImaging == False or self.__skipUpload == False:
+                data_size = self.__systemMedia.getMaxSize()
+                image_size = self.__systemMedia.getImageSize()
+        else:
+                data_size = image_size = 0
            
         description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
-        self.__systemTransferChannel = self.__cloudOptions.generateUploadChannel(self.__systemMedia.getMaxSize() , self.__cloudOptions.getServerName() or description, \
-                sys_vol_info.getUploadPath(), self.__resumeUpload , self.__systemMedia.getImageSize() )
+        self.__systemTransferChannel = self.__cloudOptions.generateUploadChannel(data_size , self.__cloudOptions.getServerName() or description, \
+                sys_vol_info.getUploadPath(), self.__resumeUpload , image_size )
         
         if self.__skipUpload == False:
             self.__systemTransferChannel.initStorage()        
@@ -621,6 +627,7 @@ class Migrator(object):
     def createDataTransferTargets(self):
         for volinfo in self.__migrateOptions.getDataVolumes():
 
+            # INIT IMAGES:
             if self.__skipImaging == False or self.__skipUpload == False:
                 media = self.createImageMedia(volinfo.getImagePath() , volinfo.getImageSize() + self.__additionalMediaSize)          
                 if media == None:
@@ -633,16 +640,24 @@ class Migrator(object):
                   if self.__skipImaging == False:
                        self.__dataTransferTargetList[volinfo.getVolumePath()] = self.createTransferTarget(
                             media, volinfo.getImageSize(), self.__winSystemAdjustOptions)
-        
             description = os.environ['COMPUTERNAME']+"_"+"data"+"_"+str(datetime.date.today())
 
+            # if we are running from non-local system, data is and image size is unknown
+            if self.__skipImaging == False or self.__skipUpload == False:
+                data_size = self.__dataMediaList[volinfo.getVolumePath()].getMaxSize()
+                image_size = self.__dataMediaList[volinfo.getVolumePath()].getImageSize()
+            else:
+                data_size = image_size = 0
+            
+            # INIT CLOUD CONNECTION
             self.__dataChannelList[volinfo.getVolumePath()] = self.__cloudOptions.generateUploadChannel(
-                    self.__dataMediaList[volinfo.getVolumePath()].getMaxSize(),
+                    data_size,
                     self.__cloudOptions.getServerName() or description,
                     volinfo.getUploadPath(),
                     self.__resumeUpload,
-                    self.__dataMediaList[volinfo.getVolumePath()].getImageSize())
+                    image_size)
                 
+            # INIT STORAGE FOR THE UPLOAD
             if self.__skipUpload == False:
                 self.__dataChannelList[volinfo.getVolumePath()].initStorage()
                 # update the upload path in config in case it was changed or created by the channel
@@ -650,6 +665,7 @@ class Migrator(object):
                 logging.debug("The upload channel path is: " + uploadpath)
                 volinfo.setUploadPath(uploadpath)
                 
+            # FIND OLD UPLOAD RESULT IF POSSIBLE
             if self.__skipUpload == True and not volinfo.getUploadId():
                 # tested on aws only
                 upload_ids = self.__dataChannelList[volinfo.getVolumePath()].findUploadId("*"+volinfo.getUploadPath())
