@@ -202,8 +202,9 @@ class Migrator(object):
                     return None
 
             # 13) TODO: attach volumes here!
-            logging.info("Finalizing the instance making it ready for the user")
+            
             if self.__resultingInstance and isinstance(self.__resultingInstance, VmInstance.VmInstance):
+                logging.info("Finalizing the instance making it ready for the user")
                 self.__resultingInstance.finalize()
         
 

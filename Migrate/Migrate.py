@@ -258,10 +258,8 @@ if __name__ == '__main__':
             error = __migrator.getError()
             if instance:
                 logging.info("\n>>>>>>>>>>>>>>>>> The server is in the stopped state, run it via " + str(cloud.getTargetCloud()) + " management console\n")
-            elif backupmode and not error:  
+            if (backupmode == True and error == False):  
                 logging.info("\n>>>>>>>>>>>>>>>>> Backup done\n")
-            else:
-                error = True
         except Exception as e:
             error = True
             logging.error("\n!!!ERROR: Severe error while making the migration")
