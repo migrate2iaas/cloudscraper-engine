@@ -56,9 +56,6 @@ class EHCloudOptions(CloudConfig.CloudConfig):
     
     def getCloudPass(self):
         return  self.__pass
-    
-    def getNewSystemSize(self):
-        return self.__newSysSize
 
     def getTargetCloud(self):
         return "ElasticHosts"

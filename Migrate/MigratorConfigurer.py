@@ -512,16 +512,6 @@ class MigratorConfigurer(object):
             config = ConfigParser.RawConfigParser()
             config.read(configfile)
 
-        import os
-        if os.name == 'nt':
-            sys.path.append('./Windows')
-            import Windows
-            imagesize = Windows.Windows().getSystemInfo().getSystemVolumeInfo().getSize()  
-        else:
-            sys.path.append('./Linux')
-            import Linux
-            imagesize = Linux.Linux().getSystemInfo().getSystemVolumeInfo().getSize() 
-
         #cloud config
         if user == '':
             user = config.get('EC2', 's3key')
@@ -605,7 +595,7 @@ class MigratorConfigurer(object):
 
         use_dr, manifest_path, increment_depth = self.loadDRconfig(config)
 
-        newsize = imagesize
+        newsize = imagesize = 0 # de[recated
         installservice = None
 
         adjust_override = self.getOverrides(config, configfile)

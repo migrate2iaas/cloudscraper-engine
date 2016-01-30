@@ -29,7 +29,7 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         self.__bucket = bucket
         self.__user = user
         self.__pass = password
-        self.__newSysSize = newsize
+        self.__newSysSize = newsize #deprecated
         self.__arch = arch
         self.__zone = zone
         self.__region = region
@@ -94,9 +94,6 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
     
     def getCloudPass(self):
         return self.__pass
-    
-    def getNewSystemSize(self):
-        return self.__newSysSize
 
     def getTargetCloud(self):
         return "EC2"
