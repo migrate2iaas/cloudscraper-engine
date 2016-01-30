@@ -397,7 +397,7 @@ class Migrator(object):
         
         if self.__skipUpload == True and not sys_vol_info.getUploadId():
             uploadpath = self.__systemTransferChannel.getUploadPath()
-            upload_ids = self.__systemTransferChannel.findUploadId("*"+sys_vol_info.getUploadPath())
+            upload_ids = self.__systemTransferChannel.findUploadId(".*?"+sys_vol_info.getUploadPath())
             if not upload_ids:
                 logging.error("!!!ERROR: Cannot find any matching manifest.xml file")
                 return False
@@ -668,7 +668,7 @@ class Migrator(object):
             # FIND OLD UPLOAD RESULT IF POSSIBLE
             if self.__skipUpload == True and not volinfo.getUploadId():
                 # tested on aws only
-                upload_ids = self.__dataChannelList[volinfo.getVolumePath()].findUploadId("*"+volinfo.getUploadPath())
+                upload_ids = self.__dataChannelList[volinfo.getVolumePath()].findUploadId(".*?"+volinfo.getUploadPath())
                 if not upload_ids:
                     logging.error("!!!ERROR: Cannot find any matching manifest.xml file")
                     return False
