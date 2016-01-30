@@ -260,7 +260,8 @@ if __name__ == '__main__':
                 logging.info("\n>>>>>>>>>>>>>>>>> The server is in the stopped state, run it via " + str(cloud.getTargetCloud()) + " management console\n")
             elif backupmode and not error:  
                 logging.info("\n>>>>>>>>>>>>>>>>> Backup done\n")
-            logging.info("\n>>>>>>>>>>>>>>>>> Transfer process ended successfully\n")
+            else:
+                error = True
         except Exception as e:
             error = True
             logging.error("\n!!!ERROR: Severe error while making the migration")
@@ -271,6 +272,8 @@ if __name__ == '__main__':
                logging.info("\n>>>>>>>>>>>>>>>>>> Transfer process ended unsuccessfully\n")
                #sys.exit(errno.EFAULT)
                os._exit(errno.EFAULT)
+        else:
+            logging.info("\n>>>>>>>>>>>>>>>>> Transfer process ended successfully\n")
 
         # check if server responds in the test scenario
         # TODO: move the code to spearate file\class, looks ugly
