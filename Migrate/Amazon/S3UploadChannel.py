@@ -607,6 +607,10 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         found = False
         logging.info("Looking for " + suggestion+"manifest.xml")
         for bucket in buckets:
+            if self.__awsRegionConstraint:
+                if bucket.get_location() != self.__awsRegionConstraint:
+                    logging.debug("Skipping " + bucket.name + " as it is not in " + self.__awsRegionConstraint)
+                    continue
             logging.info("Listing bucket " + bucket.name)
             keys = bucket.list()
             for key in keys:
