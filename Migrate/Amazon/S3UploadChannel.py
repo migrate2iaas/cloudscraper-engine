@@ -615,8 +615,8 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             keys = bucket.list()
             for key in keys:
                 if re.match(suggestion+"manifest\.xml" , key.name):
-                    found_keys.append(keylink)
                     keylink = self.__generateKeyLink(key, bucket.name , self.__makeLinkPublic)
+                    found_keys.append(keylink)
                     logging.info(">>>>>>> Found restoration point: " + keylink)
                     found = True
             # we check all manifests in a bucket, but skipping moving to the next bucket
