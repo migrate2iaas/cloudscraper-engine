@@ -22,7 +22,8 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
             instancetype='m1.small', chunksize=10*1024*1024, disktype='VHD', keyname_prefix='', vpc="",
             custom_host="", custom_port=80, custom_suffix="", use_ssl=True,\
             minipad = False , minipad_ami = "",\
-            manifest_path="", increment_depth=1, use_dr=False):
+            manifest_path="", increment_depth=1, use_dr=False ,\
+            os_override = None):
 
         """inits with options"""
         super(AmazonCloudOptions, self).__init__()
@@ -52,6 +53,7 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         self.__manifest_path = manifest_path
         self.__increment_depth = increment_depth
         self.__use_dr = use_dr
+        self.__os = os_override
         #TODO: more amazon-specfiic configs needed
     
     def generateUploadChannel(self, targetsize, targetname=None, targetid=None, resume=False, imagesize=0):
@@ -121,6 +123,12 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
 
     def getSubnet(self):
         return self.__vpc
+
+    def getTargetOS(self):
+        """by default it's the same as ours"""
+        if self.__os:
+            return self.__os
+        return super(AmazonCloudOptions, self).getTargetOS()
 
 class AmazonMigrateConfig(MigrateConfig.MigrateConfig):
 

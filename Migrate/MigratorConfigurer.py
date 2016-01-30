@@ -588,6 +588,10 @@ class MigratorConfigurer(object):
         minipad_ami = None
         if config.has_option('EC2', 'minipad_ami'):
             minipad_ami = config.get('EC2', 'minipad_ami')
+
+        os_override = None
+        if config.has_option('EC2', 'os_override'):
+            os_override = config.get('EC2', 'os_override')
         
         (imagedir, image_placement, imagetype) = self.getImageOptions(config)
         volumes = self.createVolumesList(config, configfile, imagedir, imagetype, s3prefix)
@@ -608,7 +612,7 @@ class MigratorConfigurer(object):
             machinename="", securityid=security, instancetype=instancetype, chunksize=chunksize, disktype=imagetype,
             keyname_prefix=s3prefix, vpc=vpcsubnet, custom_host=custom_host, custom_port=custom_port,
             custom_suffix=custom_suffix, use_ssl=use_ssl, manifest_path=manifest_path , minipad = minipad , minipad_ami = minipad_ami, increment_depth=increment_depth,
-            use_dr=use_dr)
+            use_dr=use_dr, os_override=os_override)
         
 
         return (image,adjust_override,cloud)
