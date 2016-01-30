@@ -602,13 +602,15 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         if mybucket:
             buckets.append(mybucket)
         #then will see the rest 
-        buckets.append(self.__S3.get_all_buckets())
+        buckets.extend(self.__S3.get_all_buckets()) # append iterable to the list
         found_keys = []
         found = False
+        logging.info("Looking for " + suggestion+"manifest.xml")
         for bucket in buckets:
+            logging.info("Listing bucket " + bucket.name)
             keys = bucket.list()
             for key in keys:
-                if re.match(suggestion+"manifest.xml" , key.name):
+                if re.match(suggestion+"manifest\.xml" , key.name):
                     found_keys.append(keylink)
                     keylink = self.__generateKeyLink(key, bucket.name , self.__makeLinkPublic)
                     logging.info(">>>>>>> Found restoration point: " + keylink)
