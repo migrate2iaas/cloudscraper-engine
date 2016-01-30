@@ -402,9 +402,9 @@ class Migrator(object):
                 logging.error("!!!ERROR: Cannot find any matching manifest.xml file")
                 return False
             # we pick latest entry due to date
-            upload_id = upload_ids.sort()[-1]
+            upload_id = sorted(upload_ids)[-1]
             logging.info(">>>>>> Utilizing "+ upload_id + " restoration point")
-            volinfo.setUploadId(upload_id)
+            sys_vol_info.setUploadId(upload_id)
             
         return True
         
@@ -673,7 +673,7 @@ class Migrator(object):
                     logging.error("!!!ERROR: Cannot find any matching manifest.xml file")
                     return False
                 # we pick latest entry due to date
-                upload_id = upload_ids.sort()[-1]
+                upload_id = sorted(upload_ids)[-1]
                 logging.info(">>>>>> Utilizing "+ upload_id + " restoration point")
                 volinfo.setUploadId(upload_id)
 

@@ -38,7 +38,9 @@ def getImageDataFromXml(xmlurl):
     image_file_size = 0
     imagetype = ''
     
-    with urllib.urlopen(xmlurl) as urldata:
+    urldata = urllib.urlopen(xmlurl)
+
+    if urldata:
         xmlheader = urldata.read(4096)
         (head, sep ,tail) = xmlheader.partition("<file-format>")
         if tail:
