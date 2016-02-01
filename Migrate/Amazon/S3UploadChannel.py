@@ -324,10 +324,6 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
         #TODO:need to save it in common log directory
         boto.set_file_logger("boto", "boto.log", level=logging.DEBUG)
-
-        awsregion = location
-        if location == 'us-east-1':
-           awsregion = ''
         
         self.__awsRegionConstraint = None
         self.__bucketName = bucket
@@ -396,6 +392,8 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             try:
                 if self.__awsRegionConstraint:
                     constraint = self.__awsRegionConstraint
+                    if constraint == 'us-east-1':
+                        constraint = ''
                     self.__bucket = self.__S3.create_bucket(self.__bucketName , location=constraint)
                 else:
                     self.__bucket = self.__S3.create_bucket(self.__bucketName)
