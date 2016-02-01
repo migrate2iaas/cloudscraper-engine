@@ -321,6 +321,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         self.__transferRate = 0
         self.__makeLinkPublic = make_link_public
         self.__uploadThreadNumber = upload_threads
+
         self.__awsRegionConstraint = None
         self.__bucketName = bucket
         # to deal with Frankfurt region
