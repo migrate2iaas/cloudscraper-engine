@@ -260,6 +260,8 @@ if __name__ == '__main__':
                 logging.info("\n>>>>>>>>>>>>>>>>> The server is in the stopped state, run it via " + str(cloud.getTargetCloud()) + " management console\n")
             if (backupmode == True and error == False):  
                 logging.info("\n>>>>>>>>>>>>>>>>> Backup done\n")
+            if skipupload and error == False:
+                logging.info("\n>>>>>>>>>>>>>>>>> Restore done\n")
         except Exception as e:
             error = True
             logging.error("\n!!!ERROR: Severe error while making the migration")

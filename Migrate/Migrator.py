@@ -480,6 +480,7 @@ class Migrator(object):
             logging.info(">>>>>>>>>>>>> System volume transfer completed successfully");
             return True
         else:
+            self.__error = True
             return False
 
     def uploadImage(self , media, channel):
