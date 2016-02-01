@@ -36,6 +36,8 @@
     <Compile Include="Amazon\EC2Instance.py" />
     <Compile Include="Amazon\EC2InstanceGenerator.py" />
     <Compile Include="Amazon\EC2Instance_test.py" />
+    <Compile Include="Amazon\EC2MinipadInstanceGenerator.py" />
+    <Compile Include="Amazon\EC2MinipadInstanceGenerator_test.py" />
     <Compile Include="Amazon\EC2Volume.py" />
     <Compile Include="Amazon\EC2VolumeGenerator.py" />
     <Compile Include="Amazon\S3UploadChannel.py" />
