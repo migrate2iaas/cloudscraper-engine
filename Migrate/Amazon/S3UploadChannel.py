@@ -341,15 +341,15 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         else:
             hostname = 's3.amazonaws.com'
             self.__awsRegionConstraint = location
-            if awsregion:
-                hostname = 's3-'+awsregion+'.amazonaws.com'
+            if not location == 'us-east-1':
+                hostname = 's3-'+location+'.amazonaws.com'
             self.__hostName = hostname
             self.__S3 = S3Connection(awskey, awssercret, is_secure=use_ssl, host=hostname, debug=1)
 
 
         self.__chunkSize = chunksize
         self.__diskSize = resultDiskSizeBytes
-        self.__region = awsregion
+        self.__region = location
 
         self.__diskType = diskType.upper()
         self.__resumeUpload = resume_upload
