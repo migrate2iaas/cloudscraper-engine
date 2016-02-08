@@ -192,11 +192,11 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         newvalue =  struct.pack('=i',self.__adjustConfig.getNewMbrId()) + struct.pack('=q',self.__adjustConfig.getNewSysPartStart()) 
         win32api.RegSetValueEx(mountdevkey, "\\DosDevices\\"+windrive , 0, valtype, newvalue)
         for volinfo in volumes:
-            logging.info("Adjusting '\\DosDevices\\"+volinfo.__section+":'")
-            (oldvalue,valtype) = win32api.RegQueryValueEx(mountdevkey, "\\DosDevices\\"+volinfo.__section+":")
+            logging.info("Adjusting '\\DosDevices\\"+volinfo.getSection()+":'")
+            (oldvalue,valtype) = win32api.RegQueryValueEx(mountdevkey, "\\DosDevices\\"+volinfo.getSection()+":")
             # TODO: handle different offset value if this somehow happens
             newvalue = struct.pack('=i', volinfo.getMbrId()) + struct.pack('=q', self.__adjustConfig.getNewSysPartStart())
-            win32api.RegSetValueEx(mountdevkey, "\\DosDevices\\"+windrive , 0, valtype, newvalue)
+            win32api.RegSetValueEx(mountdevkey, "\\DosDevices\\"+volinfo.getSection()+":", 0, valtype, newvalue)
         #TODO: replace mountpoints for another vols\VolGuids too
         mountdevkey.close()
 

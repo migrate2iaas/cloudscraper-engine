@@ -7,7 +7,7 @@ class LinuxBackupAdjust(BackupAdjust.BackupAdjust):
         super(LinuxBackupAdjust, self).__init__()
 
     
-    def configureBackupAdjust(self , backupSource):
+    def configureBackupAdjust(self , backupSource, volumes):
         """
             here we should set the pathes for the backup source
             this function is called for the system volume only

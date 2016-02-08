@@ -157,6 +157,8 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
             logging.warn("! Section for drive letter cannot be found") 
             return
 
+    def getSection(self):
+        return self.__section
 
     def getImagePath(self):
         return self.__imagePath

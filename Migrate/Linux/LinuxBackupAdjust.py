@@ -6,7 +6,7 @@ class LinuxBackupAdjust(BackupAdjust.BackupAdjust):
     def __init__(self):
         super(LinuxBackupAdjust, self).__init__()
 
-    def configureBackupAdjust(self , backupSource):
+    def configureBackupAdjust(self , backupSource, volumes):
         # TODO: add service stop here
 
         # TODO: add sync here
