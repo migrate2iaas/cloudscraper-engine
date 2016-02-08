@@ -51,6 +51,7 @@ import SparseRawMedia
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
     def __init__(self, volumename, imagepath , imagesize):
+        super(VolumeMigrateNoConfig, self).__init__()
         self.__volumeName = volumename
         self.__imagePath = imagepath
         self.__imageSize = imagesize
@@ -107,6 +108,7 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
     #NOTE: really , there are just two functions to override: load config and save config
     # the common code should be moved to base class then
     def __init__(self, config, configname , section, volumename):
+        super(VolumeMigrateIniConfig, self).__init__()
         self.__config = config
         self.__section = section
         self.__configFileName = configname

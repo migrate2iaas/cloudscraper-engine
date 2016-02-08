@@ -157,7 +157,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             logging.debug(str(e))
         return True
 
-    def adjustSystemHive(self , hive_file_path):
+    def adjustSystemHive(self , hive_file_path, volumes):
         """make some adjusts to a system hive located at hive_file_path"""
         
         logging.info("Adjusting the system hive") 
@@ -191,6 +191,12 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         (oldvalue,valtype) = win32api.RegQueryValueEx(mountdevkey, "\\DosDevices\\"+windrive)
         newvalue =  struct.pack('=i',self.__adjustConfig.getNewMbrId()) + struct.pack('=q',self.__adjustConfig.getNewSysPartStart()) 
         win32api.RegSetValueEx(mountdevkey, "\\DosDevices\\"+windrive , 0, valtype, newvalue)
+        for volinfo in volumes:
+            logging.info("Adjusting '\\DosDevices\\"+volinfo.__section+":'")
+            (oldvalue,valtype) = win32api.RegQueryValueEx(mountdevkey, "\\DosDevices\\"+volinfo.__section+":")
+            # TODO: handle different offset value if this somehow happens
+            newvalue = struct.pack('=i', volinfo.getMbrId()) + struct.pack('=q', self.__adjustConfig.getNewSysPartStart())
+            win32api.RegSetValueEx(mountdevkey, "\\DosDevices\\"+windrive , 0, valtype, newvalue)
         #TODO: replace mountpoints for another vols\VolGuids too
         mountdevkey.close()
 
@@ -544,7 +550,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         return
  
 
-    def adjustRegistry(self , backupSource):
+    def adjustRegistry(self , backupSource, volumes):
 
         originalwindir = os.environ['windir']
         windir = originalwindir.split(":\\")[-1] #get substring after X:\
@@ -560,7 +566,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
         sysHiveTmp.close() 
 
-        self.adjustSystemHive(sys_hive_path)
+        self.adjustSystemHive(sys_hive_path, volumes)
 
         #NOTE: it works for local images only
         extentsSoftHive = backupSource.getFileBlockRange(self.__adjustConfig.softwareHivePath())
@@ -579,7 +585,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         self.replaceFile(windir+"\\system32\\config\\software" , soft_hive_path)
 
 
-    def configureBackupAdjust(self , backupSource):
+    def configureBackupAdjust(self , backupSource, volumes):
         
 
         #Note: we may use adjust config here too 
@@ -595,7 +601,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         # 1) Replace files we gonna change
         #TODO: add auto-add data to an any extent we read
 
-        self.adjustRegistry(backupSource)
+        self.adjustRegistry(backupSource, volumes)
 
         
         #NOTE: we shall use it only if HAL needed to be changed
