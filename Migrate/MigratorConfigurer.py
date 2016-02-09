@@ -12,14 +12,9 @@ sys.path.append('./Helper')
 
 import AmazonConfigs
 import EHConfigs
-import AzureConfigs
-#import CloudSigmaConfigs
-import onAppConfigs
-#import OpenStack
-#from OpenStack import OpenStackConfigs
 
-import OpenStack
-from OpenStack import OpenStackConfigs
+import onAppConfigs
+
 
 
 import platform
@@ -267,6 +262,14 @@ class MigratorConfigurer(object):
         (imagedir, image_placement, imagetype) = self.getImageOptions(config)
         volumes = self.createVolumesList(config , configfile, imagedir, imagetype)        
         factory = self.createImageFactory(config , image_placement , imagetype)
+
+        try:
+            import OpenStack
+            from OpenStack import OpenStackConfigs
+        except ImportError as e:
+            logging.error("!!!ERROR: Cannot load OpenStack related API libraries: " + str(e))
+            raise 
+
         
         user = config.get('OpenStack', 'user')
         endpoint = config.get('OpenStack', 'endpoint')
@@ -460,6 +463,11 @@ class MigratorConfigurer(object):
         volumes = self.createVolumesList(config , configfile, imagedir, imagetype)        
         factory = self.createImageFactory(config , image_placement , imagetype)
 
+        try:
+            import AzureConfigs
+        except ImportError as e:
+            logging.error("!!!ERROR: Cannot load Azure related API modules : " + str(e))
+            raise e
 
         # Azure-specific
         account = config.get('Azure', 'storage-account')
