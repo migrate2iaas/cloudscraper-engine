@@ -633,8 +633,6 @@ class Migrator(object):
             logging.info(">>>>>>>>>>>>>>>>> The data volume " + str(volname) + " created")
             return True
 
-
-
         return None
 
 
