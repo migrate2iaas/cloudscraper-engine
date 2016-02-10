@@ -745,7 +745,8 @@ class Migrator(object):
                 
                 #TODO: move somewhere else
                 if self.__runOnWindows:
-                    self.__windows.freeDataBackupSource(self.__dataBackupSourceList[volinfo.getVolumePath()].getBackupDataSource())
+                    self.__windows.freeDataBackupSource(
+                        self.__dataBackupSourceList[volinfo.getVolumePath()].getBackupSource().getBackupDataSource())
 
                 # we save the config to reflect the image generated is ready. 
                 #TODO: add the creation time here? or something alike? snapshot time too?
