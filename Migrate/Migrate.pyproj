@@ -65,6 +65,8 @@
     <Compile Include="ElasticHosts\EHUploadChannel.py" />
     <Compile Include="ElasticHosts\EHUploadChannel_test.py" />
     <Compile Include="Helper\UnicodeConfigParser.py" />
+    <Compile Include="Images\QemuImgMedia.py" />
+    <Compile Include="Images\QemuImgMediaFactory.py" />
     <Compile Include="Images\SparseRawMedia.py" />
     <Compile Include="Images\SparseRawMediaFactory.py" />
     <Compile Include="Images\StreamVmdkMedia.py" />
