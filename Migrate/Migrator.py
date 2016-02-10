@@ -623,8 +623,9 @@ class Migrator(object):
             return None
 
         if vol:
-            logging.info(">>>>>>>>>>>>>>>>> The data volume " + str(volname) + " created. You could add it to your server via " + self.__cloudName + " management console")
-            return vol
+            vol.attach(self.__resultingInstance.getId())
+            logging.info(">>>>>>>>>>>>>>>>> The data volume " + str(volname) + " created and added to VM instance " + self.__resultingInstance.getId())
+            return True
 
         return None
 
