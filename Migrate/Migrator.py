@@ -614,14 +614,13 @@ class Migrator(object):
             logging.info(">>>>>>>>>>>>>>>>> The data volume image is uploaded ")
             logging.info(">>>>>>>>>>>>>>>>> You could add it to your server via " + self.__cloudName + " management console");
             logging.info(">>>>>>>>>>>>>>>>> Data was uploaded to " + str(imageid))
-            return True
+            return None
 
         if vol:
-            #TODO: add volume attach here
             logging.info(">>>>>>>>>>>>>>>>> The data volume " + str(volname) + " created. You could add it to your server via " + self.__cloudName + " management console")
-            return True
+            return vol
 
-        return False
+        return None
 
 
     def createDataTransferTargets(self):
