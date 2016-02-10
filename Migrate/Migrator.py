@@ -188,6 +188,12 @@ class Migrator(object):
                     logging.info("Couldn't adjust the copy source")
                     return None
 
+                # 11) adjusts data backup source
+                logging.info("Adjusting the data copy parms")
+                if self.adjustDataBackupSource() == False:
+                    logging.info(">>>>>>>>>>>> Couldn't adjust the copy parms")
+                    return None
+
                 # 11) adjust transfer target to fit our needs
                 logging.info("Adjusting the copy target")
                 if self.adjustDataBackupTarget() == False:
@@ -268,7 +274,8 @@ class Migrator(object):
             import WindowsBackupSource
             import WindowsBackupAdjust
             self.__systemBackupSource = WindowsBackupSource.WindowsBackupSource()
-            self.__adjustOption = WindowsBackupAdjust.WindowsBackupAdjust(self.__winSystemAdjustOptions , self.__windows.getVersion())
+            self.__adjustOption = WindowsBackupAdjust.WindowsBackupAdjust(
+                self.__winSystemAdjustOptions, self.__windows.getVersion())
         else:
             if self.__linuxGC:
                 import Linux_GC
@@ -321,7 +328,7 @@ class Migrator(object):
             media.open()
         else:
             logging.error("Cannot open or create intermediate media to save the machine state")
-        logging.info("Created new media " + repr(media));
+        logging.info("Created new media " + repr(media))
         return media
 
     def createTransferTarget(self , media , size , adjustoptions, newtarget = True, random_disk_id=True):
@@ -682,14 +689,37 @@ class Migrator(object):
     def createDataBackupSources(self):
         if self.__skipImaging:
             return True
+
         if self.__runOnWindows:
             import WindowsBackupSource
             import WindowsBackupAdjust
             for volinfo in self.__migrateOptions.getDataVolumes():
                 backupsource = WindowsBackupSource.WindowsBackupSource()
                 backupsource.setBackupDataSource(self.generateDataBackupSource(volinfo.getVolumePath()))
-                self.__dataBackupSourceList[volinfo.getVolumePath()] = backupsource
-            
+
+                # Adding adjusted source options
+                asjustedsource = AdjustedBackupSource.AdjustedBackupSource()
+                asjustedsource.setBackupSource(backupsource)
+                asjustedsource.setAdjustOption(WindowsBackupAdjust.WindowsBackupAdjust(
+                    self.__winSystemAdjustOptions, self.__windows.getVersion()))
+                self.__dataBackupSourceList[volinfo.getVolumePath()] = asjustedsource
+
+        return True
+
+    def adjustDataBackupSource(self):
+        """configures all adjusts needed for the system to be backed-up to transfer target"""
+        if self.__skipImaging:
+            return True
+
+        # remove excluded files and dirs
+        for volinfo in self.__migrateOptions.getDataVolumes():
+            for excluded in volinfo.getExcludedDirs():
+                logging.info("Removing the file contents from directory " + str(excluded))
+                fileenum = self.__dataBackupSourceList[volinfo.getVolumePath()].getFileEnum(excluded)
+                for file in fileenum:
+                    logging.debug("Contents of file " + str(file) + " is set to removal")
+                    self.__dataBackupSourceList[volinfo.getVolumePath()].getAdjustOption().removeFile(str(file))
+
         return True
         
 
@@ -697,7 +727,6 @@ class Migrator(object):
         return True
 
     def startDataBackup(self):
-        
         if self.__skipImaging:
             logging.info("\n>>>>>>>>>>>>>>>>> Skipping the data volume imaging\n") 
         else:
