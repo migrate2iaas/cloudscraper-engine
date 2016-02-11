@@ -58,7 +58,7 @@ class AllFilesIterator(object):
 
         # data[0] == attributes
         if (data[0] & win32con.FILE_ATTRIBUTE_DIRECTORY):
-            currentpath = self.__rootPath+'\\'+data[8]
+            currentpath = self.__rootPath+'\\'#+data[8]
             try:
                 self.__currentIterator = AllFilesIterator(win32file.FindFilesIterator(currentpath+'\\*', None ) , currentpath)
             except Exception as ex:
