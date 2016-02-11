@@ -737,6 +737,7 @@ class Migrator(object):
             for excluded in volinfo.getExcludedDirs():
                 vol_path = str(volinfo.getVolumePath())
                 if vol_path.endswith(str(excluded)[:2]):
+                    excluded = str(excluded)[2:]
                     logging.info("Removing the file contents from directory " + str(excluded))
                     fileenum = self.__dataBackupSourceList[vol_path].getFileEnum(excluded)
                     for file in fileenum:
