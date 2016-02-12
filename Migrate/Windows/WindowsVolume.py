@@ -58,9 +58,9 @@ class AllFilesIterator(object):
 
         # data[0] == attributes
         if (data[0] & win32con.FILE_ATTRIBUTE_DIRECTORY):
-            currentpath = self.__rootPath+'\\'#+data[8]
+            currentpath = self.__rootPath+'\\'+data[8]
             try:
-                self.__currentIterator = AllFilesIterator(win32file.FindFilesIterator(currentpath+'\\*', None ) , currentpath)
+                self.__currentIterator = AllFilesIterator(win32file.FindFilesIterator(currentpath+'\\*', None), currentpath)
             except Exception as ex:
                 raise FileException(currentpath , ex)
             return self.next()
@@ -140,7 +140,9 @@ class WindowsVolume(object):
     def getFileEnumerator(self , rootpath = "\\" , mask = "*"):
         filename = self.__volumeName+rootpath
         try:
-            return AllFilesIterator(win32file.FindFilesIterator(self.__volumeName + rootpath + mask, None ) , filename)
+            return AllFilesIterator(win32file.FindFilesIterator(
+                "{}{}\\{}".format(self.__volumeName, rootpath, mask), None),
+                filename)
         except Exception as ex:
             raise FileException(filename , ex)
 
