@@ -203,14 +203,15 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                 continue
             #NOTE: it may work faster if it's sorted, ugly code by the way
             for removedextent in removedrange:
+                logging.debug("Removed extent {}".format(removedextent))
                 for block in blocksrange:
                     if removedextent.intersect(block):
                         blockindex = blocksrange.index(block)
                         blocksrange.remove(block)
+                        logging.debug("Removing block ".format(block))
                         pieces = block.substract(removedextent)
                         for piece in pieces:
                              blocksrange.insert(blockindex+pieces.index(piece), piece)
-                        break
 
         blocksrange = sorted(blocksrange)
         #adding replaced files
