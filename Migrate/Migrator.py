@@ -736,13 +736,18 @@ class Migrator(object):
         for volinfo in self.__migrateOptions.getDataVolumes():
             for excluded in volinfo.getExcludedDirs():
                 vol_path = str(volinfo.getVolumePath())
-                if vol_path.endswith(str(excluded)[:2]):
-                    excluded = str(excluded)[2:]
-                    logging.info("Removing the file contents from directory " + str(excluded))
-                    fileenum = self.__dataBackupSourceList[vol_path].getFileEnum(excluded)
-                    for file in fileenum:
-                        logging.debug("Contents of file " + str(file) + " is set to removal")
-                        self.__dataBackupSourceList[vol_path].getAdjustOption().removeFile(str(file))
+                # if exclude dir starts with volume name
+                if not str(excluded).startswith("\\"):
+                    # compare volume name
+                    if vol_path.endswith(str(excluded)[:2]):
+                        excluded = str(excluded)[2:]
+                    else:
+                        continue
+                logging.info("Removing the file contents from directory " + str(excluded))
+                fileenum = self.__dataBackupSourceList[vol_path].getFileEnum(excluded)
+                for file in fileenum:
+                    logging.debug("Contents of file " + str(file) + " is set to removal")
+                    self.__dataBackupSourceList[vol_path].getAdjustOption().removeFile(str(file))
 
         return True
         
