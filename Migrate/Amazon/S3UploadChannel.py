@@ -323,10 +323,12 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         self.__uploadThreadNumber = upload_threads
 
         #TODO:need to save it in common log directory
-        boto.set_file_logger("boto", "boto.log", level=logging.DEBUG)
+        #boto.set_file_logger("boto", "boto.log", level=logging.DEBUG)
         
         self.__awsRegionConstraint = None
         self.__bucketName = bucket
+        # to deal with Frankfurt region
+        os.environ['S3_USE_SIGV4'] = 'True'
         
         if walrus:
             self.__S3 = boto.connect_s3(
