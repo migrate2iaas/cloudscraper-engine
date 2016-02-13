@@ -189,18 +189,24 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         # 2a) mountdevs
         mountdevkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\MountedDevices" , 0 , win32con.KEY_ALL_ACCESS )
         (oldvalue,valtype) = win32api.RegQueryValueEx(mountdevkey, "\\DosDevices\\"+windrive)
-        newvalue =  struct.pack('=i',self.__adjustConfig.getNewMbrId()) + struct.pack('=q',self.__adjustConfig.getNewSysPartStart()) 
+        newvalue =  struct.pack('=i',self.__adjustConfig.getNewMbrId()) + struct.pack('=q',self.__adjustConfig.getNewSysPartStart())
         win32api.RegSetValueEx(mountdevkey, "\\DosDevices\\"+windrive , 0, valtype, newvalue)
+        logging.debug("Set the mountpoint for\\DosDevices\\"+windrive + " from " + str(oldvalue) + "to " + str(newvalue))
+        guidmp = win32file.GetVolumeNameForVolumeMountPoint(windrive+"\\")
+        guidmp = "\\??" + guidmp[3:-1]
+        logging.info("System volume guid is " + guidmp)
+        win32api.RegSetValueEx(mountdevkey, guidmp, 0, valtype, newvalue)
         for volinfo in volumes:
             logging.info("Adjusting '\\DosDevices\\"+volinfo.getSection()+":'")
             (oldvalue,valtype) = win32api.RegQueryValueEx(mountdevkey, "\\DosDevices\\"+volinfo.getSection()+":")
             # TODO: handle different offset value if this somehow happens
             newvalue = struct.pack('=i', volinfo.getMbrId()) + struct.pack('=q', self.__adjustConfig.getNewSysPartStart())
             win32api.RegSetValueEx(mountdevkey, "\\DosDevices\\"+volinfo.getSection()+":", 0, valtype, newvalue)
-        #TODO: replace mountpoints for another vols\VolGuids too
+            guidmp = win32file.GetVolumeNameForVolumeMountPoint(volinfo.getSection()+":\\")
+            guidmp = "\\??" + guidmp[3:-1]
+            logging.info("Volume guid is " + guidmp)
+            win32api.RegSetValueEx(mountdevkey, guidmp, 0, valtype, newvalue)
         mountdevkey.close()
-
-        logging.debug("Set the mountpoint for\\DosDevices\\"+windrive + " from " + str(oldvalue) + "to " + str(newvalue)) 
 
         # 2b) change firmware\system entires in \\CurrentControlSet\Control
         selectkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\Select" , 0 , win32con.KEY_READ )
