@@ -49,7 +49,6 @@ class Migrator(object):
             insert_vitio : bool - inserts virtio drivers to the running system. Note, this option can be overriden with migrate_options.insertVirtIo()
             insert_xen : bool - inserts xen drivers to the running system. Note, this option can be overriden with migrate_options.insertXen()
             backup_mode : bool - doesn't create a VM inside the cloud. Just stores image there
->>>>>>> 812_inc_backup_and_DR
         """
         self.__adjustedSystemBackupSource = None
         self.__systemBackupSource = None
