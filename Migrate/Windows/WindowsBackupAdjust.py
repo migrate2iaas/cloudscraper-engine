@@ -157,7 +157,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
             logging.debug(str(e))
         return True
 
-    def adjustSystemHive(self , hive_file_path):
+    def adjustSystemHive(self , hive_file_path, volumes):
         """make some adjusts to a system hive located at hive_file_path"""
         
         logging.info("Adjusting the system hive") 
@@ -189,12 +189,24 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         # 2a) mountdevs
         mountdevkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\MountedDevices" , 0 , win32con.KEY_ALL_ACCESS )
         (oldvalue,valtype) = win32api.RegQueryValueEx(mountdevkey, "\\DosDevices\\"+windrive)
-        newvalue =  struct.pack('=i',self.__adjustConfig.getNewMbrId()) + struct.pack('=q',self.__adjustConfig.getNewSysPartStart()) 
+        newvalue =  struct.pack('=i',self.__adjustConfig.getNewMbrId()) + struct.pack('=q',self.__adjustConfig.getNewSysPartStart())
         win32api.RegSetValueEx(mountdevkey, "\\DosDevices\\"+windrive , 0, valtype, newvalue)
-        #TODO: replace mountpoints for another vols\VolGuids too
+        logging.debug("Set the mountpoint for\\DosDevices\\"+windrive + " from " + str(oldvalue) + "to " + str(newvalue))
+        guidmp = win32file.GetVolumeNameForVolumeMountPoint(windrive+"\\")
+        guidmp = "\\??" + guidmp[3:-1]
+        logging.info("System volume guid is " + guidmp)
+        win32api.RegSetValueEx(mountdevkey, guidmp, 0, valtype, newvalue)
+        for volinfo in volumes:
+            logging.info("Adjusting '\\DosDevices\\"+volinfo.getSection()+":'")
+            (oldvalue,valtype) = win32api.RegQueryValueEx(mountdevkey, "\\DosDevices\\"+volinfo.getSection()+":")
+            # TODO: handle different offset value if this somehow happens
+            newvalue = struct.pack('=i', volinfo.getMbrId()) + struct.pack('=q', self.__adjustConfig.getNewSysPartStart())
+            win32api.RegSetValueEx(mountdevkey, "\\DosDevices\\"+volinfo.getSection()+":", 0, valtype, newvalue)
+            guidmp = win32file.GetVolumeNameForVolumeMountPoint(volinfo.getSection()+":\\")
+            guidmp = "\\??" + guidmp[3:-1]
+            logging.info("Volume guid is " + guidmp)
+            win32api.RegSetValueEx(mountdevkey, guidmp, 0, valtype, newvalue)
         mountdevkey.close()
-
-        logging.debug("Set the mountpoint for\\DosDevices\\"+windrive + " from " + str(oldvalue) + "to " + str(newvalue)) 
 
         # 2b) change firmware\system entires in \\CurrentControlSet\Control
         selectkey = win32api.RegOpenKeyEx(win32con.HKEY_LOCAL_MACHINE, hivekeyname+"\\Select" , 0 , win32con.KEY_READ )
@@ -544,7 +556,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         return
  
 
-    def adjustRegistry(self , backupSource):
+    def adjustRegistry(self , backupSource, volumes):
 
         originalwindir = os.environ['windir']
         windir = originalwindir.split(":\\")[-1] #get substring after X:\
@@ -560,7 +572,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
         sysHiveTmp.close() 
 
-        self.adjustSystemHive(sys_hive_path)
+        self.adjustSystemHive(sys_hive_path, volumes)
 
         #NOTE: it works for local images only
         extentsSoftHive = backupSource.getFileBlockRange(self.__adjustConfig.softwareHivePath())
@@ -579,8 +591,9 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         self.replaceFile(windir+"\\system32\\config\\software" , soft_hive_path)
 
 
-    def configureBackupAdjust(self , backupSource):
-        
+    def configureBackupAdjust(self , backupSource, volumes):
+        # volumes parameter needed by adjustSystemHive which configure HKLM\System\MountedDevices.
+        # In this case function needs drive letters and mbr_id for every partition
 
         #Note: we may use adjust config here too 
         # now it's hardcoded
@@ -595,7 +608,7 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
         # 1) Replace files we gonna change
         #TODO: add auto-add data to an any extent we read
 
-        self.adjustRegistry(backupSource)
+        self.adjustRegistry(backupSource, volumes)
 
         
         #NOTE: we shall use it only if HAL needed to be changed

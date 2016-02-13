@@ -303,7 +303,7 @@ class Migrator(object):
         self.__adjustedSystemBackupSource = AdjustedBackupSource.AdjustedBackupSource()
         self.__adjustedSystemBackupSource.setBackupSource(self.__systemBackupSource)
 
-        self.__adjustOption.configureBackupAdjust(self.__systemBackupSource)
+        self.__adjustOption.configureBackupAdjust(self.__systemBackupSource, self.__migrateOptions.getDataVolumes())
         # remove excluded files and dirs
         excludeddirs = self.__migrateOptions.getSystemVolumeConfig().getExcludedDirs()
         for excluded in excludeddirs:
@@ -331,7 +331,7 @@ class Migrator(object):
         logging.info("Created new media " + repr(media))
         return media
 
-    def createTransferTarget(self , media , size , adjustoptions, newtarget = True, random_disk_id=True):
+    def createTransferTarget(self , media , size , adjustoptions, mbr, newtarget = True):
         """
         Internal call to make transfer target (disk volume abstraction) based on media and adjust options
         
@@ -339,8 +339,8 @@ class Migrator(object):
             media :ImageMedia - the media transfer target is based on
             size :long - the size of transfer target (volume)
             adjustoptions :SystemAdjustOptions - note really WindowsAdjustOptions is used. getNewMbrId() is declared there only
+            mbr: id of disk in mbr partition table
             newtarget: bool - if the target should be new one or old one could be used (not used, needed to signal the existing container should be re-created)
-            random_disk_id: bool - if we use random disk id for the disk or get it from adjustoptions. Generally it's False for system disks but True for non-system ones
         """
         if newtarget:
 
@@ -356,9 +356,6 @@ class Migrator(object):
                 logging.info("Initializing a transfer task of the whole disk")
                 return ProxyTransferTarget.ProxyTransferTarget(SimpleDataTransferProto.SimpleDataTransferProto(media))
 
-            mbr = adjustoptions.getNewMbrId();
-            if random_disk_id:
-                mbr = int(random.randint(1, 0x0FFFFFFF))
             parser = SimpleDiskParser.SimpleDiskParser(SimpleDataTransferProto.SimpleDataTransferProto(media) , mbr_id = mbr , default_offset = self.__additionalMediaSize , windows = self.__runOnWindows)
             
             part_type = SimpleDiskParser.SimpleDiskParser.PART_TYPE_NTFS
@@ -381,7 +378,8 @@ class Migrator(object):
             #NOTE: the media should be created nevertheless of the imaging done
             #so , calls are
         if self.__skipImaging == False:
-            self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia , self.__migrateOptions.getSystemImageSize() , self.__systemAdjustOptions , random_disk_id=False)
+            self.__systemTransferTarget = self.createTransferTarget(self.__systemMedia, self.__migrateOptions.getSystemImageSize(),
+                self.__systemAdjustOptions, self.__systemAdjustOptions.getNewMbrId())
         
         sys_vol_info = self.__migrateOptions.getSystemVolumeConfig()
 
@@ -646,7 +644,7 @@ class Migrator(object):
                  #TODO: need kinda redisign the stuff related to system adjusts!
                   if self.__skipImaging == False:
                        self.__dataTransferTargetList[volinfo.getVolumePath()] = self.createTransferTarget(
-                            media, volinfo.getImageSize(), self.__winSystemAdjustOptions)
+                            media, volinfo.getImageSize(), self.__winSystemAdjustOptions, volinfo.getMbrId())
             description = os.environ['COMPUTERNAME']+"_"+"data"+"_"+str(datetime.date.today())
 
             # if we are running from non-local system, data is and image size is unknown
