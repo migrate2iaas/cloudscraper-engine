@@ -333,8 +333,8 @@ class Migrator(object):
             media :ImageMedia - the media transfer target is based on
             size :long - the size of transfer target (volume)
             adjustoptions :SystemAdjustOptions - note really WindowsAdjustOptions is used. getNewMbrId() is declared there only
+            mbr: id of disk in mbr partition table
             newtarget: bool - if the target should be new one or old one could be used (not used, needed to signal the existing container should be re-created)
-            random_disk_id: bool - if we use random disk id for the disk or get it from adjustoptions. Generally it's False for system disks but True for non-system ones
         """
         if newtarget:
 

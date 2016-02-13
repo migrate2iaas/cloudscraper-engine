@@ -25,6 +25,9 @@ class VolumeMigrateConfig(object):
     """ base class for volume migration parms """
 
     def __init__(self):
+        # mbr_id value used in two cases
+        # first is Migrator->createTransferTarget. Function create disk image
+        # second is WindowsBackupAdjust->adjustSystemHive. Function setup HKLM\System\MountedDevices
         self.__mbr_id = int(random.randint(1, 0x0FFFFFFF))
 
     def getMbrId(self):

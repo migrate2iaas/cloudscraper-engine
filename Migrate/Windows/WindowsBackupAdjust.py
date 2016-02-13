@@ -592,7 +592,8 @@ class WindowsBackupAdjust(BackupAdjust.BackupAdjust):
 
 
     def configureBackupAdjust(self , backupSource, volumes):
-        
+        # volumes parameter needed by adjustSystemHive which configure HKLM\System\MountedDevices.
+        # In this case function needs drive letters and mbr_id for every partition
 
         #Note: we may use adjust config here too 
         # now it's hardcoded
