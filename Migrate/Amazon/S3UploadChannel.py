@@ -77,7 +77,7 @@ class S3ManfiestBuilder:
 
     def addUploadedPart(self , index , rangeStart , rangeEnd , keyName):
         
-        linktimeexp_seconds = 60*60*24*15   # 15 days
+        linktimeexp_seconds = 60*60*24*5   # 5 days
 
         indexstr = '\n\t\t\t <part index="'+str(index)+'">\n\t\t\t\t '+'<byte-range end="' + str (rangeEnd) + '" start="'+ str(rangeStart) +'" />'
         self.__file.write(indexstr)
@@ -635,7 +635,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         keylink = 'https://'+str(self.__bucketName)+ "." + self.__hostName + "/" +s3key.name
         # it's for non-AWS
         if make_public:
-            linktimeexp_seconds = 60*60*100     # 100 hours
+            linktimeexp_seconds = 60*60*24*5     # 5 days
             keylink = s3key.generate_url(linktimeexp_seconds, method='GET', force_http=False)
         return keylink
 
