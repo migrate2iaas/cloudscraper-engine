@@ -328,7 +328,8 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         self.__awsRegionConstraint = None
         self.__bucketName = bucket
         # to deal with Frankfurt region
-        os.environ['S3_USE_SIGV4'] = 'True'
+        # os.environ['S3_USE_SIGV4'] = 'True'
+        # Linux breaks with it
         
         if walrus:
             self.__S3 = boto.connect_s3(
