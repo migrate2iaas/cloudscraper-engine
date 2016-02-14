@@ -41,9 +41,7 @@ class EC2Instance(VmInstance.VmInstance):
 
     def __str__(self):
         """gets string representation of instance"""
-        return "EC2 instance ID="+str(self.__instanceId)
-
-    
+        return str(self.__instanceId)
 
     def attachDataVolume(self):
         """attach data volume"""
