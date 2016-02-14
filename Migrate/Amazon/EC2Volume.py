@@ -5,10 +5,10 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 
 import boto
 from boto.ec2.volume import Volume
-
+import VmVolume
 
 #TODO: make base class for instances
-class EC2Volume(object):
+class EC2Volume(VmVolume.VmVolume):
     """represents a volume in AWS"""
 
     device_letter = 'p'

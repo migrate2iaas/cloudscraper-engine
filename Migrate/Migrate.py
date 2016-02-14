@@ -142,7 +142,6 @@ if __name__ == '__main__':
         parser.add_argument('-t', '--testrun', help="Makes test run on the migrated server to see it responding.", action="store_true") 
         parser.add_argument('-z', '--timeout', help="Specify timeout to wait for test run server to respond", type=int, default=480)                  
         parser.add_argument('-b', '--heartbeat', help="Specifies interval in seconds to write hearbeat messages to stdout. No heartbeat if this flag is ommited", type=int)                   
-        parser.add_argument('-q', '--statusfile', help="Specifies status file to write current output") 
         parser.add_argument('-v', '--virtio', help="Injects virtio drivers in the running server driver store", action="store_true")
         parser.add_argument('-j', '--reboottimeout', help="Time to wait in seconds for VM to reboot while doing test run", type=int, default=200)
         parser.add_argument('-p', '--backup', help="Backup mode. Skips deploying machine in the cloud - just takes an image and uploads it to cloud", action="store_true")
