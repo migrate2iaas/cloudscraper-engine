@@ -378,7 +378,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         if keynameBase:
             self.__keyBase = keynameBase
         else:
-            self.__keyBase = "Migrate{}/image".format(self.__startTimestamp)
+            self.__keyBase = "Migrate{0}/image".format(self.__startTimestamp)
 
         self.__workThreads = list()
 
@@ -417,7 +417,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
                 raise ex
 
         logging.info(
-            "Resume upload file path: {}, resume upload is {}, use DR is {}, key base is {}".
+            "Resume upload file path: {0}, resume upload is {1}, use DR is {2}, key base is {3}".
             format(self.__manifestPath, self.__resumeUpload, self.__use_dr, self.__keyBase))
 
         try:
@@ -439,7 +439,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
             self.__well_known_blocks.insert(null_md5.hexdigest(), self.__keyBase + "NullBlock", null_data)
         except Exception as e:
-            logging.error("!!!ERROR: cannot open file containing segments. Reason: {}".format(e))
+            logging.error("!!!ERROR: cannot open file containing segments. Reason: {0}".format(e))
             raise
 
         # Initializing a number of threads, they are stopping when see None in queue job
@@ -574,13 +574,13 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         if self.__use_dr:
             # Uploading tables
             for table in self.__manifest.get_db_tables():
-                key_name = "DR/{}/{}".format(os.environ['COMPUTERNAME'], table.get_name())
+                key_name = "DR/{0}/{1}".format(os.environ['COMPUTERNAME'], table.get_name())
                 if self.__bucket.get_key(key_name) is None:
                     s3key = Key(self.__bucket, key_name)
                     s3key.set_contents_from_filename(table.get_path())
-                    logging.debug("Saving manifest: {}".format(key_name))
+                    logging.debug("Saving manifest: {0}".format(key_name))
             # Uploading database scheme
-            key_name = "DR/{}/{}".format(os.environ['COMPUTERNAME'], self.__manifest.DB_SCHEME_EXTENSION)
+            key_name = "DR/{0}/{1}".format(os.environ['COMPUTERNAME'], self.__manifest.DB_SCHEME_EXTENSION)
             s3key = Key(self.__bucket, key_name)
             s3key.set_contents_from_filename(self.__manifest.get_db_scheme_path())
 
@@ -664,7 +664,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         res_list.sort(key=lambda di: int(di["offset"]))
         for rec in res_list:
             if rec["offset"] != str(offset):
-                raise Exception("Offset {} missing in manifest database".format(offset))
+                raise Exception("Offset {0} missing in manifest database".format(offset))
             offset += self.__chunkSize
 
         #TODO: profile
@@ -709,7 +709,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             try:
                 self.uploadDB()
             except Exception as e:
-                logging.error("!!!ERROR: unable to upload DR database, reason: {}".format(e))
+                logging.error("!!!ERROR: unable to upload DR database, reason: {0}".format(e))
                 return None
 
         return self.__xmlKey

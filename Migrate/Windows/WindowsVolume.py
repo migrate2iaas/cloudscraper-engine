@@ -141,7 +141,7 @@ class WindowsVolume(object):
         filename = self.__volumeName+rootpath
         try:
             return AllFilesIterator(win32file.FindFilesIterator(
-                "{}{}\\{}".format(self.__volumeName, rootpath, mask), None),
+                "{0}{1}\\{2}".format(self.__volumeName, rootpath, mask), None),
                 filename)
         except Exception as ex:
             raise FileException(filename , ex)

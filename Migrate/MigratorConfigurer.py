@@ -539,7 +539,7 @@ class MigratorConfigurer(object):
 
         imagearch = config.get('Image', 'source-arch')
             
-        s3prefix = "{}/".format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M"))
+        s3prefix = "{0}/".format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M"))
         if config.has_option('EC2', 's3prefix'):
            s3prefix = config.get('EC2', 's3prefix') 
        
