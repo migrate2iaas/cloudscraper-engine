@@ -52,10 +52,10 @@ class TinyDBImageFileManifest(ImageManifest):
     def __init__(self, manifest_path, timestamp, lock, db_write_cache_size=1, use_dr=False):
 
         self.__table_name = str(timestamp)
-        path = "{}/{}".format(manifest_path, self.__table_name)
+        path = "{0}/{1}".format(manifest_path, self.__table_name)
 
         logging.debug(
-            "Creating or opening image manifest database {}. It's uses tinydb project "
+            "Creating or opening image manifest database {0}. It's uses tinydb project "
             "(https://pypi.python.org/pypi/tinydb) and has json format. Just copy-past content of this file "
             "to online web service, that can represent it in more user-friendly format, for example, "
             "http://jsonviewer.stack.hu/ http://www.jsoneditoronline.org/ http://codebeautify.org/jsonviewer"
@@ -88,7 +88,7 @@ class TinyDBImageFileManifest(ImageManifest):
     def create(manifest_path, table_name, lock, db_write_cache_size, use_dr):
         return TinyDBImageFileManifest(
             manifest_path,
-            "{}.cloudscraper-manifest-tables".format(table_name),
+            "{0}.cloudscraper-manifest-tables".format(table_name),
             lock,
             db_write_cache_size,
             use_dr)
@@ -220,7 +220,7 @@ class TinyDBImageFileManifest(ImageManifest):
 
     def get_path(self):
         if self.__use_dr:
-            return "{}/{}".format(self.__manifest_path, self.__table_name)
+            return "{0}/{1}".format(self.__manifest_path, self.__table_name)
 
 
 class ImageDictionaryManifest(ImageManifest):
@@ -233,10 +233,10 @@ class ImageDictionaryManifest(ImageManifest):
 
     def __init__(self, manifest_path, table_name, lock, db_write_cache_size=1, use_dr=False):
         self.__table_name = str(table_name)
-        path = "{}/{}".format(manifest_path, self.__table_name)
+        path = "{0}/{1}".format(manifest_path, self.__table_name)
 
         logging.debug(
-            "Creating or opening image manifest database {}. It's uses dictionaty to store data."
+            "Creating or opening image manifest database {0}. It's uses dictionaty to store data."
             .format(path))
 
         self.__db = {}
@@ -256,7 +256,7 @@ class ImageDictionaryManifest(ImageManifest):
                 self.__storage["_default"] = {}
                 self.__storage[self.__table_name] = {}
         except Exception as e:
-            logging.error("!!!ERROR: Failed to create or open image manifest database: {}".format(e))
+            logging.error("!!!ERROR: Failed to create or open image manifest database: {0}".format(e))
             raise
 
         self.__manifest_path = manifest_path
@@ -267,7 +267,7 @@ class ImageDictionaryManifest(ImageManifest):
 
     @staticmethod
     def create(manifest_path, table_name, lock, db_write_cache_size, use_dr):
-        file_name = "{}{}".format(table_name, ImageDictionaryManifest.DB_TABLES_EXTENSION)
+        file_name = "{0}{1}".format(table_name, ImageDictionaryManifest.DB_TABLES_EXTENSION)
 
         storage = {
             "_default": {},
@@ -275,7 +275,7 @@ class ImageDictionaryManifest(ImageManifest):
         }
 
         if use_dr:
-            with open("{}/{}".format(manifest_path, file_name), "w") as f:
+            with open("{0}/{1}".format(manifest_path, file_name), "w") as f:
                 json.dump(storage, f)
 
         return ImageDictionaryManifest.open(
@@ -296,7 +296,7 @@ class ImageDictionaryManifest(ImageManifest):
 
     def flush(self):
         if self.__use_dr:
-            with open("{}/{}".format(self.__manifest_path, self.__table_name), "w") as f:
+            with open("{0}/{1}".format(self.__manifest_path, self.__table_name), "w") as f:
                 json.dump(self.__storage, f)
 
     def insert_db_meta(self, res):
@@ -413,7 +413,7 @@ class ImageDictionaryManifest(ImageManifest):
 
     def get_path(self):
         if self.__use_dr:
-            return "{}/{}".format(self.__manifest_path, self.__table_name)
+            return "{0}/{1}".format(self.__manifest_path, self.__table_name)
 
 
 class ImageManifestDatabase(object):
@@ -497,7 +497,7 @@ class ImageManifestDatabase(object):
                 "resume": str(resume),
                 "increment_depth": str(increment_depth)})
         except Exception as e:
-            logging.error("!!!ERROR: unable to create (or open) image file manifest for {}: {}".format(
+            logging.error("!!!ERROR: unable to create (or open) image file manifest for {0}: {1}".format(
                 manifest_path, e))
             raise
 
@@ -520,7 +520,7 @@ class ImageManifestDatabase(object):
         return self.__db
 
     def get_db_scheme_path(self):
-        return "{}/{}".format(self.__manifest_path, self.DB_SCHEME_EXTENSION)
+        return "{0}/{1}".format(self.__manifest_path, self.DB_SCHEME_EXTENSION)
 
     def insert(self, etag, local_hash, part_name, offset, size, status):
         # Inserting in first (meaning last) manifest in list
@@ -562,7 +562,7 @@ class ImageManifestDatabase(object):
             self.__db[0].flush()
 
         except Exception as e:
-            logging.debug("Failed to finalize image manifest file: {}".format(e))
+            logging.debug("Failed to finalize image manifest file: {0}".format(e))
             raise
 
 
