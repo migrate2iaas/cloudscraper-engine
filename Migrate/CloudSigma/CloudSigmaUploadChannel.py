@@ -64,7 +64,7 @@ class CloudsigmaUploadTask(MultithreadUpoadChannel.UploadTask):
         super(CloudsigmaUploadTask, self).__init__(channel , chunk_size , self.__chunkNumber*chunk_size)
 
     def getUploadUrl(self):
-        url = '/{}/{}/upload/'.format('drives', self.__driveUuid)
+        url = '/{0}/{1}/upload/'.format('drives', self.__driveUuid)
         if url[0] == '/':
                url = url[1:]
         upload_url = urlparse.urljoin(self.__apiEndpoint, url)
@@ -223,7 +223,7 @@ class CloudSigmaUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
 
         res = requests.get(upload_url, params=resumable_js_data, **kwargs)
         if 199 < res.status_code < 300:
-            logging.debug('Chunk #{} offset {} already uploaded'.format(chunk_number, chunk_offset))
+            logging.debug('Chunk #{0} offset {1} already uploaded'.format(chunk_number, chunk_offset))
             uploadtask.notifyDataSkipped()
             return
         
@@ -233,13 +233,13 @@ class CloudSigmaUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
 
         res = requests.post(upload_url, files=resumable_js_data_multipart, **kwargs)
         if 199 < res.status_code < 300:
-            logging.debug('Chunk #{} offset {} size {} finished uploading'.format(chunk_number, chunk_offset, len(file_data)))
+            logging.debug('Chunk #{0} offset {1} size {2} finished uploading'.format(chunk_number, chunk_offset, len(file_data)))
             uploadtask.notifyDataTransfered()
             return
         else:
-            logging.error('Wrong status {} returned for request '
-                            '{}:{}:{}. Response body is:'
-                            '\n{}'.format(res.status_code, chunk_number, chunk_offset, len(file_data), res.text))
+            logging.error('Wrong status {0} returned for request '
+                            '{1}:{2}:{3}. Response body is:'
+                            '\n{4}'.format(res.status_code, chunk_number, chunk_offset, len(file_data), res.text))
             res.raise_for_status()
             
 

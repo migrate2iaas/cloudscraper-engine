@@ -140,7 +140,9 @@ class WindowsVolume(object):
     def getFileEnumerator(self , rootpath = "\\" , mask = "*"):
         filename = self.__volumeName+rootpath
         try:
-            return AllFilesIterator(win32file.FindFilesIterator(self.__volumeName + rootpath + mask, None ) , filename)
+            return AllFilesIterator(win32file.FindFilesIterator(
+                "{0}{1}\\{2}".format(self.__volumeName, rootpath, mask), None),
+                filename)
         except Exception as ex:
             raise FileException(filename , ex)
 

@@ -151,7 +151,7 @@ class SwiftUploadThread(threading.Thread):
             connection = self.__uploadChannel.createConnection()
 
             # Part name example: "medium.file/slo/0"
-            part_name = "{}/slo/{}".format(self.__uploadChannel.getDiskName(), self.__offset)
+            part_name = "{0}/slo/{1}".format(self.__uploadChannel.getDiskName(), self.__offset)
 
             # Trying to check existing segment
             try:
@@ -169,12 +169,12 @@ class SwiftUploadThread(threading.Thread):
                                 "skipped")
                             # self.__manifest.update(i["etag"], i["part_name"], {"status": "skipped"})
                             upload = False
-                            logging.info("Data upload skipped for {}".format(i["part_name"]))
+                            logging.info("Data upload skipped for {0}".format(i["part_name"]))
 
             except (ClientException, Exception) as e:
                 # Passing exception here, it"s means that when we unable to check
                 # uploaded segment (it"s missing or etag mismatch) we reuploading that segment
-                logging.error("! Unable to reupload segment {}: {}".format(self.__offset, str(e)))
+                logging.error("! Unable to reupload segment {0}: {1}".format(self.__offset, str(e)))
                 logging.error(traceback.format_exc())
                 pass
 
@@ -194,7 +194,7 @@ class SwiftUploadThread(threading.Thread):
 
         except (ClientException, Exception) as e:
             self.__fileProxy.cancel()
-            logging.error("!!!ERROR: unable to upload segment {}. Reason: {}".format(self.__offset, e))
+            logging.error("!!!ERROR: unable to upload segment {0}. Reason: {1}".format(self.__offset, e))
             logging.error(traceback.format_exc())
         finally:
             # We should compete every file proxy to avoid deadlocks
@@ -212,7 +212,7 @@ class SwiftUploadThread(threading.Thread):
                 connection.close()
             self.__uploadChannel.completeUploadThread()
 
-        logging.debug("Upload thread for {} done".format(self.__offset))
+        logging.debug("Upload thread for {0} done".format(self.__offset))
 
 
 
@@ -270,14 +270,14 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         logging.info("SSL compression is " + str(self.__compression))
 
         # Resume upload
-        logging.info("Resume upload file path: {}, resume upload is {}".format(manifest_path, self.__resumeUpload))
+        logging.info("Resume upload file path: {0}, resume upload is {1}".format(manifest_path, self.__resumeUpload))
         self.__manifest = None
         try:
             self.__manifest = UploadManifest.ImageManifestDatabase(
                 UploadManifest.ImageDictionaryManifest, manifest_path, self.__containerName, threading.Lock(),
                 self.__resumeUpload, increment_depth)
         except Exception as e:
-            logging.error("!!!ERROR: cannot open file containing segments. Reason: {}".format(e))
+            logging.error("!!!ERROR: cannot open file containing segments. Reason: {0}".format(e))
             raise
 
         super(SwiftUploadChannel_new, self).__init__()
@@ -408,7 +408,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                 total_size += int(rec["size"])
 
             if total_size != self.__diskSize:
-                raise ClientException("Not all segments uploaded successfully: {} uploaded, {} expected".format(
+                raise ClientException("Not all segments uploaded successfully: {0} uploaded, {1} expected".format(
                     total_size, self.__diskSize))
 
             # Segments can upload not in sequential order, so we need to sort them for manifest

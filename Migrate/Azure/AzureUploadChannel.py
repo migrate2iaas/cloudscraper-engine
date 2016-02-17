@@ -191,7 +191,7 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
 
         offset = uploadtask.getUploadOffset()
         size = uploadtask.getUploadSize()
-        chunk_range = 'bytes={}-{}'.format(offset, offset + size - 1)
+        chunk_range = 'bytes={0}-{1}'.format(offset, offset + size - 1)
 
         if self.getDiskUploadedProperty() > offset + size:
             logging.debug("%s/%s range %s skipped", str(container_name), diskname , chunk_range );
