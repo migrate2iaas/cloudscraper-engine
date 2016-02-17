@@ -211,6 +211,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
             for removedextent in removedrange:
                 logging.debug("Removed extent {0}".format(removedextent))
                 for block in blocksrange[:]:
+
                     if removedextent.intersect(block):
                         blockindex = blocksrange.index(block)
                         blocksrange.remove(block)
