@@ -623,8 +623,7 @@ class Migrator(object):
             return None
 
         if vol:
-            vol.attach(self.__resultingInstance.getId())
-            logging.info(">>>>>>>>>>>>>>>>> The data volume " + str(volname) + " created and added to VM instance " + self.__resultingInstance.getId())
+            logging.info(">>>>>>>>>>>>>>>>> The data volume " + str(volname) + " created")
             return True
 
 
