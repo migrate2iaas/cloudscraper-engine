@@ -623,7 +623,7 @@ class Migrator(object):
             return None
 
         if vol:
-            logging.info(">>>>>>>>>>>>>>>>> The data volume " + str(volname) + " created")
+            logging.info(">>>>>>>>>>>>>>>>> The data volume " + str(volname) + " created and available in " + self.__cloudName + " management console")
             return True
 
         return None
