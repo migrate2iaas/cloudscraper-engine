@@ -174,8 +174,21 @@ class Linux(object):
 
         #TODO: make assert media size equals file size
         options = AttrDict()
-        #TODO: should pass the size suitable to hold all data for a resulting FS
-        options['fs_size']  = size
+        # Getting total used disk space and if size lesser than that will increase size
+        command_out = Popen("df", stdout=PIPE).communicate()[0]
+        total_used = 0
+        for line in command_out.split('\n'):
+            val = re.split("\s+", line)
+            try:
+                total_used = total_used + int(val[2])
+            except:
+                pass
+        minimum_size = int(total_used*1.1*1024)
+        if size < minimum_size:
+            logging.warning("Too low size value (%i) automaticalliy increased to  %i" % (size, minimum_size))
+            size = minimum_size
+        options['fs_size'] = size
+
         options['skip_disk_space_check'] = True;
         #TODO: Should pass somehow
         options['file_system'] = "ext3"
