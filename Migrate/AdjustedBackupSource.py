@@ -209,7 +209,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                     if removedextent.intersect(block):
                         blockindex = blocksrange.index(block)
                         blocksrange.remove(block)
-                        logging.debug("Removing block ".format(block))
+                        logging.debug("Removing block {0}".format(block))
                         pieces = block.substract(removedextent)
                         for piece in pieces:
                              blocksrange.insert(blockindex+pieces.index(piece), piece)
