@@ -188,6 +188,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
         if self.__adjustOption == None:
             raise PropertyNotInitialized("__adjustOption", " Use setAdjustOption() to init it")
         blocksrange = self.__backupSource.getFilesBlockRange()
+        logging.debug("number of blocks {0}".format(len(blocksrange)))
 
         #removing removed files from the filled extents
         for removed in self.__adjustOption.getRemovedFilesEnum():
@@ -214,8 +215,9 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                              blocksrange.insert(blockindex+pieces.index(piece), piece)
 
         blocksrange = sorted(blocksrange)
+        logging.debug("number of blocks after removing {0}".format(len(blocksrange)))
         #adding replaced files
-        for (removed,replacement) in self.__adjustOption.getReplacedFilesEnum():
+        for (removed, replacement) in self.__adjustOption.getReplacedFilesEnum():
             replacedfile = removed
             volname = self.__backupSource.getBackupDataSource().getVolumeName()
             if replacedfile.startswith(volname):
@@ -288,6 +290,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                 blocksrange.extend(newblocks)
                 blocksrange = sorted(blocksrange)
 
+        logging.debug("total number of blocks {0}".format(len(blocksrange)))
         return sorted(blocksrange)
                        
         
