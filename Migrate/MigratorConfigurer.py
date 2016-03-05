@@ -152,7 +152,7 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
                 if str(config.get(section, 'autoexclude')).lower() == "true":
                     dirstr += ";$RECYCLE.BIN;System Volume Information;cloudscraper-images"
 
-            logging.debug("excludedirs " + str(dirstr) + " for volume " + str(self.__volumeName))
+            logging.info("excludedirs " + str(dirstr) + " for volume " + str(self.__volumeName))
             if dirstr:
                 self.__excludedDirs = dirstr.split(";")
         else:
