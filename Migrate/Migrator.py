@@ -748,10 +748,15 @@ class Migrator(object):
                     else:
                         continue
                 logging.info("Removing the file contents from directory " + str(excluded))
-                fileenum = self.__dataBackupSourceList[vol_path].getFileEnum(excluded)
-                for file in fileenum:
-                    logging.debug("Contents of file " + str(file) + " is set to removal")
-                    self.__dataBackupSourceList[vol_path].getAdjustOption().removeFile(str(file))
+                try:
+                    fileenum = self.__dataBackupSourceList[vol_path].getFileEnum(excluded)
+                    for file in fileenum:
+                        logging.debug("Contents of file " + str(file) + " is set to removal")
+                        self.__dataBackupSourceList[vol_path].getAdjustOption().removeFile(str(file))
+                except FileException as e:
+                    logging.debug("Got file exception " + str(e))
+                    # Passing file exceptions
+                    pass
 
         return True
         
