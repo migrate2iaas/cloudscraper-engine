@@ -317,8 +317,8 @@ class Migrator(object):
                     self.__adjustOption.removeFile(str(file))
             except FileException as e:
                 # Skiping errors
-                pass
-        
+                logging.debug("Got file exception " + str(e))
+
         # for every file in a mask do the following. the excludes shopuld be flexible in vdi migration case
         #self.__systemBackupSource.getFileEnum("\\" , mask)
         self.__adjustedSystemBackupSource.setAdjustOption(self.__adjustOption)
