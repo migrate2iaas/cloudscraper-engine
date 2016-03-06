@@ -28,6 +28,8 @@ import SimpleTransferTarget
 import ProxyTransferTarget
 import VmInstance
 
+from MigrateExceptions import FileException
+
 class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT reside"""
 
@@ -308,10 +310,14 @@ class Migrator(object):
         excludeddirs = self.__migrateOptions.getSystemVolumeConfig().getExcludedDirs()
         for excluded in excludeddirs:
             logging.info("Removing the file contents from directory " + str(excluded))
-            fileenum = self.__systemBackupSource.getFileEnum(excluded)
-            for file in fileenum:
-                logging.debug("Contents of file " + str(file) + " is set to removal")
-                self.__adjustOption.removeFile(str(file))
+            try:
+                fileenum = self.__systemBackupSource.getFileEnum(excluded)
+                for file in fileenum:
+                    logging.debug("Contents of file " + str(file) + " is set to removal")
+                    self.__adjustOption.removeFile(str(file))
+            except FileException as e:
+                # Skiping errors
+                pass
         
         # for every file in a mask do the following. the excludes shopuld be flexible in vdi migration case
         #self.__systemBackupSource.getFileEnum("\\" , mask)

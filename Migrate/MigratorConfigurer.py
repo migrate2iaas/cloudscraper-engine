@@ -143,14 +143,14 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
                 logging.debug("system was not found in the config for volume " + str(self.__volumeName)) 
 
             # excludedir is a string of dirs separated by ;
-            dirstr = ""
+            dirstr = ''
             if config.has_option(section, 'excludedir'):
-                dirstr = config.get(section, 'excludedir')
+                dirstr = config.get(section, 'excludedir') + ';'
 
             # Add additional auto exclude dirs here
             if config.has_option(section, 'autoexclude'):
                 if str(config.get(section, 'autoexclude')).lower() == "true":
-                    dirstr += ";$RECYCLE.BIN;System Volume Information;cloudscraper-images"
+                    dirstr += "\\$RECYCLE.BIN;\\System Volume Information;\\cloudscraper-images"
 
             logging.info("excludedirs " + str(dirstr) + " for volume " + str(self.__volumeName))
             if dirstr:
