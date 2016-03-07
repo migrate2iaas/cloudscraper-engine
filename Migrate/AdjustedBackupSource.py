@@ -205,14 +205,15 @@ class AdjustedBackupSource(BackupSource.BackupSource):
             #NOTE: it may work faster if it's sorted, ugly code by the way
             for removedextent in removedrange:
                 logging.debug("Removed extent {0}".format(removedextent))
-                for block in blocksrange:
+                for block in blocksrange[:]:
                     if removedextent.intersect(block):
                         blockindex = blocksrange.index(block)
                         blocksrange.remove(block)
                         logging.debug("Removing block {0}".format(block))
                         pieces = block.substract(removedextent)
                         for piece in pieces:
-                             blocksrange.insert(blockindex+pieces.index(piece), piece)
+                            blocksrange.insert(blockindex+pieces.index(piece), piece)
+                            logging.debug("Inserting piece {0}".format(piece))
 
         blocksrange = sorted(blocksrange)
         logging.debug("number of blocks after removing {0}".format(len(blocksrange)))
