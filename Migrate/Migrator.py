@@ -28,7 +28,7 @@ import SimpleTransferTarget
 import ProxyTransferTarget
 import VmInstance
 
-from MigrateExceptions import FileException
+from MigrateExceptions import FileException, AccessDeniedException
 
 class Migrator(object):
     """Here I came to the trap of all products: make kinda place with function DO-EVERYTHING-I-WANT reside"""
@@ -315,9 +315,10 @@ class Migrator(object):
                 for file in fileenum:
                     logging.debug("Contents of file " + str(file) + " is set to removal")
                     self.__adjustOption.removeFile(str(file))
-            except FileException as e:
-                # Skiping errors
-                logging.debug("Got file exception " + str(e))
+            except AccessDeniedException as e:
+                logging.debug("{0}".format(e))
+            except FileException:
+                raise
 
         # for every file in a mask do the following. the excludes shopuld be flexible in vdi migration case
         #self.__systemBackupSource.getFileEnum("\\" , mask)
@@ -753,10 +754,11 @@ class Migrator(object):
                     for file in fileenum:
                         logging.debug("Contents of file " + str(file) + " is set to removal")
                         self.__dataBackupSourceList[vol_path].getAdjustOption().removeFile(str(file))
-                except FileException as e:
-                    logging.debug("Got file exception " + str(e))
-                    # Passing file exceptions
-                    pass
+                except AccessDeniedException as e:
+                    # Just logging access denied exception
+                    logging.debug("{0}".format(e))
+                except FileException:
+                    raise
 
         return True
         

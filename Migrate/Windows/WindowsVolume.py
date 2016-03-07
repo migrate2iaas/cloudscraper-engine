@@ -5,7 +5,7 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 
 import sys
 sys.path.append(sys.path[0]+'\\..')
-from MigrateExceptions import FileException
+from MigrateExceptions import FileException, AccessDeniedException
 
 import win32file
 import win32event
@@ -53,7 +53,7 @@ class AllFilesIterator(object):
             self.__currentIterator = None
 
         data = self.__rootIterator.next()
-        while data[8] == "." or data[8] == ".." or data[8] == "System Volume Information":
+        while data[8] == "." or data[8] == "..":
             data = self.__rootIterator.next()
 
         # data[0] == attributes
@@ -144,7 +144,10 @@ class WindowsVolume(object):
                 "{0}{1}\\{2}".format(self.__volumeName, rootpath, mask), None),
                 filename)
         except Exception as ex:
-            raise FileException(filename , ex)
+            # Check if it's access denied error
+            if ex[0] == 5:
+                raise AccessDeniedException(filename)
+            raise FileException(filename, ex)
 
     def getVolumeName(self):
         return self.__volumeName

@@ -150,7 +150,7 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
             # Add additional auto exclude dirs here
             if config.has_option(section, 'autoexclude'):
                 if str(config.get(section, 'autoexclude')).lower() == "true":
-                    dirstr += "\\$RECYCLE.BIN;\\System Volume Information;\\cloudscraper-images"
+                    dirstr += "\\$RECYCLE.BIN;\\System Volume Information"
 
             logging.info("excludedirs " + str(dirstr) + " for volume " + str(self.__volumeName))
             if dirstr:
