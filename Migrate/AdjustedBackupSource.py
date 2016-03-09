@@ -188,7 +188,12 @@ class AdjustedBackupSource(BackupSource.BackupSource):
         if self.__adjustOption == None:
             raise PropertyNotInitialized("__adjustOption", " Use setAdjustOption() to init it")
         blocksrange = self.__backupSource.getFilesBlockRange()
-        logging.debug("number of blocks {0}".format(len(blocksrange)))
+
+        # Calculate data size
+        existing_size = removed_size = 0
+        for extent in blocksrange:
+            existing_size += extent.getSize()
+        logging.info("Overall data size {0}MB".format(existing_size / (1024 * 1024)))
 
         #removing removed files from the filled extents
         for removed in self.__adjustOption.getRemovedFilesEnum():
@@ -209,14 +214,16 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                     if removedextent.intersect(block):
                         blockindex = blocksrange.index(block)
                         blocksrange.remove(block)
+                        removed_size += block.getSize()
                         logging.debug("Removing block {0}".format(block))
                         pieces = block.substract(removedextent)
                         for piece in pieces:
                             blocksrange.insert(blockindex+pieces.index(piece), piece)
+                            removed_size -= piece.getSize()
                             logging.debug("Inserting piece {0}".format(piece))
 
         blocksrange = sorted(blocksrange)
-        logging.debug("number of blocks after removing {0}".format(len(blocksrange)))
+        logging.info("Excluded data size {0}MB".format(removed_size / (1024 * 1024)))
         #adding replaced files
         for (removed, replacement) in self.__adjustOption.getReplacedFilesEnum():
             replacedfile = removed
@@ -287,11 +294,11 @@ class AdjustedBackupSource(BackupSource.BackupSource):
                     logging.debug("\tRemoving inital block " + str(block) + " from block list")
                     blocksrange.remove(block)
                 for block in newblocks:
-                    logging.debug("\tAdding block "+ str(block) +" to overall block list")
+                    logging.debug("\tAdding block " + str(block) +" to overall block list")
                 blocksrange.extend(newblocks)
                 blocksrange = sorted(blocksrange)
 
-        logging.debug("total number of blocks {0}".format(len(blocksrange)))
+        logging.info("Resulting data size {0}MB".format((existing_size - removed_size) / (1024 * 1024)))
         return sorted(blocksrange)
                        
         

@@ -316,7 +316,7 @@ class Migrator(object):
                     logging.debug("Contents of file " + str(file) + " is set to removal")
                     self.__adjustOption.removeFile(str(file))
             except AccessDeniedException as e:
-                logging.debug("{0}".format(e))
+                logging.warning("{0}".format(e))
             except FileException:
                 raise
 
@@ -756,7 +756,7 @@ class Migrator(object):
                         self.__dataBackupSourceList[vol_path].getAdjustOption().removeFile(str(file))
                 except AccessDeniedException as e:
                     # Just logging access denied exception
-                    logging.debug("{0}".format(e))
+                    logging.warning("{0}".format(e))
                 except FileException:
                     raise
 
