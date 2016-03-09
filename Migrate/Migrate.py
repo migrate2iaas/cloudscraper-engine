@@ -65,12 +65,14 @@ def decode(key, enc):
         dec.append(dec_c)
     return "".join(dec)
 
-jan1 = str(int(time.mktime((2016,1,1,1,1,1,1,1,1))))
+jan1 = str(int(time.mktime((2016,5,1,1,1,1,1,1,1))))
 encoded = encode("0xEDAEDA", jan1)
 print (encoded)
 decoded = decode("0xEDAEDA", encoded)
 print (decoded)
 print (time.ctime(int(decoded)))
+decoded = decode("0xEDAEDA", 'Yax6fHR5d3Fiqg==')
+print (decoded)
 
 if os.name == 'nt':
     sys.path.append('./Windows')
