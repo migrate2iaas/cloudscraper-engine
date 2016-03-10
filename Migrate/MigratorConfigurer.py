@@ -336,6 +336,10 @@ class MigratorConfigurer(object):
         if config.has_option('OpenStack', 'use_new_channel'):
             use_new_channel = config.get('OpenStack', 'use_new_channel')
 
+        swift_max_segments = 0
+        if config.has_option('OpenStack', 'swift_max_segments'):
+            swift_max_segments = config.getint('OpenStack', 'swift_max_segments')
+
         ignore_etag = False
         if config.has_option('OpenStack', 'ignore_etag'):
             ignore_etag = config.get('OpenStack', 'ignore_etag')
@@ -350,7 +354,7 @@ class MigratorConfigurer(object):
         cloud = OpenStackConfigs.OpenStackCloudOptions(
             endpoint, user, tennant, password, network, imagetype, container, flavor=flavor, ip_pool_name=ip_pool,
             swift_server_url=swift_server_url, swift_tennant_name=swift_tennant_name, swift_username=swift_username,
-            swift_password=swift_password, swift_container=swift_container, compression=swift_compression,
+            swift_password=swift_password, swift_container=swift_container, compression=swift_compression, swift_max_segments=swift_max_segments,
             use_new_channel=use_new_channel, manifest_path=manifest_path, increment_depth=increment_depth,
             ignore_etag=ignore_etag, glance_only=glance_only)
         return (image, adjust_override, cloud)

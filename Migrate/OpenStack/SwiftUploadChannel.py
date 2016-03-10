@@ -230,7 +230,7 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
     """
 
     def __init__(self ,resulting_size_bytes , server_url, username, tennant_name , password , disk_name, container_name , compression = False \
-                 , resume_upload = False , chunksize=10*1024*1024 , upload_threads=10):
+                 , resume_upload = False , chunksize=10*1024*1024 , upload_threads=10, swift_max_segments=0):
         """constructor"""
         self.__chunkSize = chunksize
         self.__accountName = username
@@ -248,8 +248,11 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
         self.__nullMd5 = md5encoder.hexdigest()
         self.__sslCompression = compression
 
+        self.__maxSegments = swift_max_segments
+        if (swift_max_segments == 0):
+            self.__maxSegments = 512
         # max segment number is 1000 (it's configurable see http://docs.openstack.org/developer/swift/middleware.html )
-        self.__segmentSize = max(int(resulting_size_bytes / 512) , self.__chunkSize) 
+        self.__segmentSize = max(int(resulting_size_bytes / self.__maxSegments) , self.__chunkSize) 
         if self.__segmentSize % self.__chunkSize:
             self.__segmentSize = self.__segmentSize - (self.__segmentSize % self.__chunkSize) # make segment size an integer of chunks
 

@@ -240,7 +240,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             chunksize=1024*1024*10,
             upload_threads=10,
             queue_size=8,
-            ignore_etag=False):
+            ignore_etag=False,
+            swift_max_segments=0):
         """constructor"""
         self.__serverURL = server_url
         self.__userName = username
@@ -260,8 +261,12 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__fileProxies = []
         self.__ignoreEtag = ignore_etag
 
+        self.__maxSegments = swift_max_segments
+        if (swift_max_segments == 0):
+            self.__maxSegments = 512
+
         # Max segment number is 1000 (it"s configurable see http://docs.openstack.org/developer/swift/middleware.html )
-        self.__segmentSize = max(int(self.__diskSize / 512), self.__chunkSize)
+        self.__segmentSize = max(int(self.__diskSize / self.__maxSegments), self.__chunkSize)
         if self.__segmentSize % self.__chunkSize:
             # Make segment size an integer of chunks
             self.__segmentSize -= self.__segmentSize % self.__chunkSize
