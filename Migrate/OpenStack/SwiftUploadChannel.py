@@ -185,12 +185,12 @@ if not swiftclient.service.stat == defferedStat:
     original_stat = swiftclient.service.stat
 
 
-def swiftUploadThreadRoutine(proxyFileObj, container, upload_object, swiftService):
+def swiftUploadThreadRoutine(proxyFileObj, container, upload_object, swiftService , use_slo=True):
     try:
         verbose = True
         proxy_file = proxyFileObj
         logging.info(">>> Image transfer begins");
-        options = {'segment_container':container , 'use_slo':True}
+        options = {'segment_container':container , 'use_slo':use_slo}
         results = swiftService.upload(container , [upload_object], options=options)
         for r in results:
             if r['success']:
@@ -230,7 +230,7 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
     """
 
     def __init__(self ,resulting_size_bytes , server_url, username, tennant_name , password , disk_name, container_name , compression = False \
-                 , resume_upload = False , chunksize=10*1024*1024 , upload_threads=10, swift_max_segments=0):
+                 , resume_upload = False , chunksize=10*1024*1024 , upload_threads=10, swift_max_segments=0 , swift_use_static_object_manifest = True):
         """constructor"""
         self.__chunkSize = chunksize
         self.__accountName = username
@@ -241,6 +241,7 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
         self.__uploadThreads = upload_threads
         self.__serverUrl = server_url
         self.__diskSize = resulting_size_bytes
+        self.__useSlo = swift_use_static_object_manifest
 
         self.__nullData = bytearray(self.__chunkSize)
         md5encoder = md5()
@@ -305,7 +306,7 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
            max_part_number = self.__uploadThreads*(int((self.__segmentSize-1)/self.__chunkSize)+2) # set part number enough to have all upload threads working
            self.__proxyFileObj = DefferedUploadDataStream(deffered_path , self.__diskSize, self.__chunkSize, max_part_number)
            upload_object = SwiftUploadObject(deffered_path,self.__diskName)
-           self.__thread = threading.Thread(target = swiftUploadThreadRoutine, args=(self.__proxyFileObj,self.__containerName,upload_object, self.__swiftService) )
+           self.__thread = threading.Thread(target = swiftUploadThreadRoutine, args=(self.__proxyFileObj,self.__containerName,upload_object, self.__swiftService, self.__useSlo) )
            self.__thread.start()
       
        self.__proxyFileObj.writeData(extent)

@@ -340,6 +340,10 @@ class MigratorConfigurer(object):
         if config.has_option('OpenStack', 'swift_max_segments'):
             swift_max_segments = config.getint('OpenStack', 'swift_max_segments')
 
+        swift_use_slo = True
+        if config.has_option('OpenStack', 'swift_use_slo'):
+            swift_use_slo = config.getboolean('OpenStack', 'swift_use_slo')
+
         ignore_etag = False
         if config.has_option('OpenStack', 'ignore_etag'):
             ignore_etag = config.get('OpenStack', 'ignore_etag')
@@ -347,7 +351,7 @@ class MigratorConfigurer(object):
         glance_only = False
         if config.has_option('OpenStack', 'glance_only'):
             glance_only = config.getboolean('OpenStack', 'glance_only')
-            
+
         adjust_override = self.getOverrides(config, configfile)
         use_dr, manifest_path, increment_depth = self.loadDRconfig(config)
         image = OpenStackConfigs.OpenStackMigrateConfig(volumes, factory, 'x86_64', imagetype)
