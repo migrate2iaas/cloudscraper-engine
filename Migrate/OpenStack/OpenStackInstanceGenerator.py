@@ -97,7 +97,7 @@ class OpenStackNovaVolume(VmVolume.VmVolume):
     def __str__(self):
         return str(self.getId())
 
-class OpenStackCinderrVolume(VmVolume.VmVolume):
+class OpenStackCinderVolume(VmVolume.VmVolume):
     """represents a volume in OpenStack"""
 
     device_letter = "p"
