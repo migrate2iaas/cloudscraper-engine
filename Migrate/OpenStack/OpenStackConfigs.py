@@ -82,9 +82,9 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         """
 
         if self.__glanceOnly:
-            glance = GlanceUploadChannel.GlanceUploadChannel(
+            return GlanceUploadChannel.GlanceUploadChannel(
                 imagesize, self.__server, self.__tennant, self.__username, self.__password, disk_format=self.__disk_format,
-                image_name=targetname, container_format=self.__container_format)
+                image_name=targetname, container_format=self.__container_format , version="2")
 
         return OpenStackUploadChannel.OpenStackUploadChannel(
             imagesize,
