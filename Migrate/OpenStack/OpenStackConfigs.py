@@ -18,6 +18,7 @@ import CloudConfig
 import MigrateConfig
 
 import OpenStackUploadChannel
+import GlanceUploadChannel
 
 
 import OpenStackInstanceGenerator
@@ -33,7 +34,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             self, server_url, username, tennant_name, password, network_name=None, disk_format="vhd",
             container_format="bare", flavor=None, ip_pool_name=None, swift_server_url=None, swift_tennant_name=None,
             swift_username=None, swift_password=None, swift_container="cloudscraper-upload", compression=0,
-            chunksize=10*1024*1024, use_new_channel=False, manifest_path=None, increment_depth=1, ignore_etag=False):
+            chunksize=10*1024*1024, use_new_channel=False, manifest_path=None, increment_depth=1, ignore_etag=False, glance_only=False):
         """
         Constructor
         """
@@ -56,6 +57,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         self.__swiftPassword = swift_password
         self.__swiftContainer = swift_container
         self.__ignoreEtag = ignore_etag
+        self.__glanceOnly = glance_only
         
         if compression: # in case compression is int 
             self.__compression = True
@@ -77,6 +79,11 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             resume: Boolean - to recreate disk representation (False) or to reupload (True)
             imagesize: long - image file size in bytes
         """
+
+        if self.__glanceOnly:
+            glance = GlanceUploadChannel.GlanceUploadChannel(
+                imagesize, self.__server, self.__tennant, self.__username, self.__password, disk_format=self.__disk_format,
+                image_name=targetname, container_format=self.__container_format)
 
         return OpenStackUploadChannel.OpenStackUploadChannel(
             imagesize,

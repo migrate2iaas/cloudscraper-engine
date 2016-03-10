@@ -19,7 +19,7 @@ import keystoneclient.v2_0.client as ksclient
 from keystoneclient.auth.identity import v2
 from keystoneclient import session
 from novaclient import client
-#from cinderclient.v2 import client as ciclient
+
 
 import logging
 import traceback
@@ -136,6 +136,7 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
         self.__nova.authenticate()
 
         try:
+            from cinderclient.v2 import client as ciclient
             self.__cinder = ciclient.Client(username=username,api_key=password,project_id=tennant_name,auth_url=server_url,service_type='volume')
             self.__cinder.authenticate()
         except Exception as e:

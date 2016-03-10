@@ -320,7 +320,7 @@ class MigratorConfigurer(object):
         if config.has_option('OpenStack', 'swift_user'):
             swift_username = config.get('OpenStack', 'swift_user')
 
-        swift_password = user
+        swift_password = password
         if config.has_option('OpenStack', 'swift_password'):
             swift_password = config.get('OpenStack', 'swift_password')
 
@@ -339,6 +339,10 @@ class MigratorConfigurer(object):
         ignore_etag = False
         if config.has_option('OpenStack', 'ignore_etag'):
             ignore_etag = config.get('OpenStack', 'ignore_etag')
+
+        glance_only = False
+        if config.has_option('OpenStack', 'glance_only'):
+            glance_only = config.getboolean('OpenStack', 'glance_only')
             
         adjust_override = self.getOverrides(config, configfile)
         use_dr, manifest_path, increment_depth = self.loadDRconfig(config)
@@ -348,7 +352,7 @@ class MigratorConfigurer(object):
             swift_server_url=swift_server_url, swift_tennant_name=swift_tennant_name, swift_username=swift_username,
             swift_password=swift_password, swift_container=swift_container, compression=swift_compression,
             use_new_channel=use_new_channel, manifest_path=manifest_path, increment_depth=increment_depth,
-            ignore_etag=ignore_etag)
+            ignore_etag=ignore_etag, glance_only=glance_only)
         return (image, adjust_override, cloud)
 
     def configOnApp(self, configfile, config, password):

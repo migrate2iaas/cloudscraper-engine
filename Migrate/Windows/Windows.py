@@ -411,7 +411,7 @@ class Windows(object):
         
         """
         
-        logging.info(">>>> Adding virt-io drivers to the running system")
+        logging.info(">>>> Adding virt-io drivers to the running system driver store")
 
         root_virtio = Windows.virtRelIoDir # + virtio_path
         virtiodir="%SystemRoot%\\system32\\drivers\\virtio"
