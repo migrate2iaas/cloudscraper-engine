@@ -290,6 +290,7 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
         
         # getting the image size. Primarily we rely on min_disk attribute we set when image is created
         size_gb = 0
+        size = 0
         if image.minDisk:
             size_gb = image.minDisk
         else:
@@ -298,6 +299,12 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
             if not size:
                 if image._info.has_key('size') and int(image._info.has_key('size')):
                     size = int(image._info['size'])
+            if not size:
+                if image.__dict__.has_key('OS-EXT-IMG-SIZE:size'):
+                    size = int(image.__dict__.has_key('OS-EXT-IMG-SIZE:size'))
+        
+        if not size:
+            logging.error("!!!ERROR: cannot get the image size: " + repr(image) + " " + repr(image.__dict__))
         if not size_gb:
             size_gb = int((int(size)-1) / (1024*1024*1024)) + 1
 

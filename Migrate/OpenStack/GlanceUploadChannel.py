@@ -128,7 +128,7 @@ class GlanceUploadChannel(UploadChannel.UploadChannel):
         #TODO: get metadata from configs
             logging.info("Adding metadata to the image")
             metadata = {'isolate_os':'windows' , 'requires_ssh_key':'false' , 'windows12':'true'}
-            self.__image.update(properties=metadata)
+            self.__glance.images.update(self.__image.id,properties=metadata)
         except Exception as e:
             logging.warn("! Cannot set metadata to imate " + self.__image.name + " (" + self.__image.id + ")")
             logging.warn(repr(e))
