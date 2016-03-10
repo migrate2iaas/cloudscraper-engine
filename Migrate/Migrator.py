@@ -129,12 +129,14 @@ class Migrator(object):
                 logging.info("Checking system compatibility...")
                 # 1) test the system on compatibility
                 if self.checkSystemCompatibility() == False:
+                    self.__error = True
                     logging.info(">>>>>>>>>>>> Compatipility check failed")
                     return None
 
                 logging.info("Checking the input config params")
                 # 2) check the input parms
                 if self.checkInputParams() == False:
+                    self.__error = True
                     logging.info(">>>>>>>>>>>> Parameter check failed")
                     return None
 
@@ -142,30 +144,35 @@ class Migrator(object):
                 #NOTE: disk size should be min 1 mb larger (offset from mbr)
                 # 3) create virtual image (transfer target)
                 if self.createSystemTransferTarget() == False:
+                    self.__error = True
                     logging.info(">>>>>>>>>>>> Transfer target creation failed")
                     return None
         
                 # 4) gets system backup source
                 logging.info("Initializing system copy source")
                 if self.createSystemBackupSource() == False:
+                    self.__error = True
                     logging.info(">>>>>>>>>>>> Couldn't adjust the copy source")
                     return None
 
                 # 5) adjusts the system backup source
                 logging.info("Adjusting the system copy parms")
                 if self.adjustSystemBackupSource() == False:
+                    self.__error = True
                     logging.info(">>>>>>>>>>>> Couldn't adjust the copy parms")
                     return None
 
                 # 6) adjust transfer target to fit our needs
                 logging.info("Adjusting the copy target")
                 if self.adjustSystemBackupTarget() == False:
+                    self.__error = True
                     logging.info(">>>>>>>>>>>> Couldn't adjust the copy target")
                     return None
 
                 # 7) starts the data transfer
                 logging.info("System copy started")
                 if self.startSystemBackup() == False:
+                    self.__error = True
                     logging.info(">>>>>>>>>>>> System copy failed")
                     return None
             else:
