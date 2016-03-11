@@ -391,16 +391,21 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
         
         timeinterval = 30
         timeleft = self.__objectRecognizeTimeout
+        error = True
 
         while timeleft > 0:
             r = requests.head(url)
             if int(r.headers['content-length']) == self.__diskSize:
+                logging.info("Swift object for disk is ready");
+                error = False
                 break
             else:
                 logging.debug("Disk object size is " + (r.headers['content-length']) + " instead of " + str(self.__diskSize) + " Request Status: " + str(r.status_code))
             time.sleep(timeinterval)
             timeleft = timeleft - timeinterval
-        #if self.__diskSize:
+        
+        if error:
+            logging.warn("!Couldn't confirm disk object size in Swift")
 
         return url
 

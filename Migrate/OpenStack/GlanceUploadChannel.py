@@ -120,7 +120,7 @@ class GlanceUploadChannel(UploadChannel.UploadChannel):
         size_gb = int((int(self.__diskSize)-1) / (1024*1024*1024)) + 1
         if self.__imageUrl:
             logging.info("Creating image referencing to " + init_data_link)
-            self.__image = self.__glance.images.create(name=self.__name, disk_format=self.__disk_format ,container_format=self.__container , location = self.__imageUrl, min_disk=size_gb)
+            self.__image = self.__glance.images.create(name=self.__name, disk_format=self.__disk_format ,container_format=self.__container , location = self.__imageUrl, min_disk=size_gb, size=self.__diskSize)
         else:
             self.__image = self.__glance.images.create(name=self.__name, disk_format=self.__disk_format ,container_format=self.__container)
 
