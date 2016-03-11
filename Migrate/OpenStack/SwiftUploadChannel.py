@@ -243,7 +243,7 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
         self.__diskSize = resulting_size_bytes
         self.__useSlo = swift_use_static_object_manifest
         
-        self.__objectRecognizeTimeout = 5000 #todo move to parm
+        self.__objectRecognizeTimeout = 120 #todo move to parm
 
         self.__nullData = bytearray(self.__chunkSize)
         md5encoder = md5()
