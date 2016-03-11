@@ -242,6 +242,8 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
         self.__serverUrl = server_url
         self.__diskSize = resulting_size_bytes
         self.__useSlo = swift_use_static_object_manifest
+        
+        self.__objectRecognizeTimeout = 5000 #todo move to parm
 
         self.__nullData = bytearray(self.__chunkSize)
         md5encoder = md5()
@@ -384,6 +386,21 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
            os.stat = original_stat
 
         url = self.getUploadedUrl()
+
+        logging.info("Waiting till Swift recognizes new object")
+        
+        timeinterval = 30
+        timeleft = self.__objectRecognizeTimeout
+
+        while timeleft > 0:
+            r = requests.head(url)
+            if int(r.headers['content-length']) == self.__diskSize:
+                break
+            else:
+                logging.debug("Disk object size is " + (r.headers['content-length']) + " instead of " + str(self.__diskSize) + " Request Status: " + str(r.status_code))
+            time.sleep(timeinterval)
+            timeleft = timeleft - timeinterval
+        #if self.__diskSize:
 
         return url
 

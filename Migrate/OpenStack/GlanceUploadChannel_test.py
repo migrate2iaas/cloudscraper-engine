@@ -23,6 +23,22 @@ class GlanceUploadChannel_test(unittest.TestCase):
     """FtpUploadChannel class unittest"""
 
     #--------------------- Tests:
+    def test_a(self):
+        """test1 desctiption"""
+        size = long(1024*1024)*1024*10
+
+        try:
+            channel = GlanceUploadChannel.GlanceUploadChannel(size , disk_format="raw", server_url="http://87.237.203.66:5000/v2.0" , username="migrate2iaas" , tennant_name="migrate2iaas" , password = "migrate2iaas" )
+            # https://eu01.webzillafiles.com:8080/v1/WEBZILLA_e99d95f8cde748b7b7bd86b3e9ba8ab4/testcontainer1/testdisk1_3gb")
+            #"swift://2344:3186:icafLFsmAOswwISn@auth.nl01.cloud.webzilla.com:5000/v2.0/cloudscraper-test12/12312RCF2_data_2015-08-25"
+            channel.waitTillUploadComplete()
+            image_id = channel.confirm()
+        except Exception as e:
+            logging.error(e)
+            raise
+
+        return
+
     def test_copy_from(self):
         """test1 desctiption"""
         filename = 'E:\\win2003.qcow2'

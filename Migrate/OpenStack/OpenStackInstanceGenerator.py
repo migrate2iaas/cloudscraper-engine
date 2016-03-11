@@ -302,11 +302,12 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
             if not size:
                 if image.__dict__.has_key('OS-EXT-IMG-SIZE:size'):
                     size = int(image.__dict__.has_key('OS-EXT-IMG-SIZE:size'))
-        
-        if not size:
-            logging.error("!!!ERROR: cannot get the image size: " + repr(image) + " " + repr(image.__dict__))
+      
         if not size_gb:
-            size_gb = int((int(size)-1) / (1024*1024*1024)) + 1
+            if not size:
+                logging.error("!!!ERROR: cannot get the image size: " + repr(image) + " " + repr(image.__dict__))
+            else:
+                size_gb = int((int(size)-1) / (1024*1024*1024)) + 1
 
         if self.__cinder:
             #TODO: somehow we should get the size
