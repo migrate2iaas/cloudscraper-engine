@@ -61,7 +61,7 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
             swift = SwiftUploadChannel.SwiftUploadChannel(
                 result_disk_size_bytes, swift_server_url, swift_username, swift_tennant_name, swift_password,
                 disk_name, container_name, compression, resume_upload=resume_upload, chunksize=chunksize,
-                upload_threads=upload_threads , swift_max_segments = swift_max_segments, swift_use_static_object_manifest = swift_use_slo)
+                upload_threads=upload_threads , swift_max_segments = swift_max_segments, swift_use_slo = swift_use_slo)
         glance = GlanceUploadChannel.GlanceUploadChannel(
             result_disk_size_bytes, server_url, tennant_name, username, password, disk_format=disk_format,
             image_name=image_name, container_format=container_format)

@@ -151,7 +151,7 @@ class SwiftUploadThread(threading.Thread):
             connection = self.__uploadChannel.createConnection()
 
             # Part name example: "medium.file/slo/0"
-            part_name = "{0}/slo/{1}".format(self.__uploadChannel.getDiskName(), self.__offset)
+            part_name = "{0}/{1:032}".format(self.__uploadChannel.getPartPrefix(), self.__offset)
 
             # Trying to check existing segment
             try:
@@ -241,6 +241,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             upload_threads=10,
             queue_size=8,
             ignore_etag=False,
+            swift_use_slo=True,
             swift_max_segments=0):
         """constructor"""
         self.__serverURL = server_url
@@ -256,6 +257,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__resumeUpload = resume_upload
         self.__uploadThreads = threading.BoundedSemaphore(upload_threads)
         self.__segmentQueueSize = queue_size
+        self.__swift_use_slo = swift_use_slo
         self.__segmentsList = []
 
         self.__fileProxies = []
@@ -273,6 +275,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         logging.info("Segment size: " + str(self.__segmentSize) + " chunk size: " + str(self.__chunkSize))
         logging.info("SSL compression is " + str(self.__compression))
+        logging.info("Dynamic large objects is " + str(self.__swift_use_slo))
 
         # Resume upload
         logging.info("Resume upload file path: {0}, resume upload is {1}".format(manifest_path, self.__resumeUpload))
@@ -418,7 +421,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
             # Segments can upload not in sequential order, so we need to sort them for manifest
             r_list.sort(key=lambda di: int(di["offset"]))
-            storage_url = self.__uploadCloudManifest(self.__createCloudManifest(r_list))
+            # Use SLO or not, this call returns different manifest file type
+            storage_url = self.__uploadCloudManifest(self.__createCloudManifest(r_list), self.__swift_use_slo)
 
             # Notify manifest database that backup completed
             self.__manifest.complete_manifest(total_size)
@@ -436,21 +440,38 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                 "size_bytes": int(d["size"])
         } for d in segment_list])
 
-    def __uploadCloudManifest(self, manifest_data):
+    def __uploadCloudManifest(self, manifest_data, swift_use_slo):
+
+        # For DLO the manifest file is a zero-byte file with the extra X-Object-Manifest {container}/{prefix} header,
+        # where {container} is the container the object segments are in and {prefix} is the common prefix for all
+        # the segments.
+
         mr = {}
+        headers = {"x-static-large-object": "true"}
+        query_string = "multipart-manifest=put"
+        if not swift_use_slo:
+            headers = {"X-Object-Manifest": "{0}/{1}/".format(self.__containerName, self.getPartPrefix())}
+            manifest_data = None
+            query_string = None
+
         connection = self.createConnection()
         connection.put_object(
             self.__containerName,
             self.__diskName,
             manifest_data,
-            headers={"x-static-large-object": "true"},
-            query_string="multipart-manifest=put",
+            headers=headers,
+            query_string=query_string,
             response_dict=mr
         )
         storage_url = connection.url + "/" + self.__containerName + "/" + self.__diskName
         connection.close()
 
         return storage_url
+
+
+    def getPartPrefix(self):
+        return "{0}/slo".format(self.getDiskName())
+
 
     def getTransferChunkSize(self):
         """
