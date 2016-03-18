@@ -361,7 +361,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             connection = self.createConnection()
             connection.put_container(res["container"], headers=res["headers"], response_dict=resp_dict)
 
-            res["headers"] = {"X-Container-Read": ".r:*"}
+            # res["headers"] = {"X-Container-Read": ".r:*"}
+            res["headers"] = {"X-Container-Read": ".r:" + self.__userName}
             connection.post_container(res["container"], headers=res["headers"], response_dict=resp_dict)
 
             res["success"] = True
