@@ -9,35 +9,16 @@ sys.path.append('.\..')
 sys.path.append('.\..\OpenStack')
 sys.path.append('.\OpenStack')
 
-import os 
-import hashlib
-import Queue
-import time
-import io
-
-import MigrateExceptions
-import traceback
-
-import StringIO
-import logging
-import threading 
 import UploadChannel
-import DataExtent
 
-import sys
+import datetime
 import Queue
 import traceback
 import logging
 import threading
-import json
 import swiftclient.client
 import UploadChannel
 import UploadManifest
-
-from tinydb import where
-from hashlib import md5
-from swiftclient.exceptions import ClientException
-
 
 import json
 from md5 import md5
@@ -215,8 +196,6 @@ class SwiftUploadThread(threading.Thread):
         logging.debug("Upload thread for {0} done".format(self.__offset))
 
 
-
-
 class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     """
     Upload channel for Swift implementation
@@ -250,7 +229,6 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__password = password
         self.__retries = retries
         self.__compression = compression
-        self.__containerName = container_name
         self.__diskName = disk_name
         self.__chunkSize = chunksize
         self.__diskSize = resulting_size_bytes
@@ -262,6 +240,9 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         self.__fileProxies = []
         self.__ignoreEtag = ignore_etag
+
+        # Adding timestamp to container name for distinguish backups
+        self.__containerName = "{0}/{1}".format(container_name, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M"))
 
         self.__maxSegments = swift_max_segments
         if (swift_max_segments == 0):
@@ -289,6 +270,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             raise
 
         super(SwiftUploadChannel_new, self).__init__()
+
 
     def uploadData(self, extent):
         logging.debug("Uploading extent: start: " + str(extent.getStart()) + " size: " + str(extent.getSize()))
@@ -319,16 +301,20 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         return True
 
+
     def completeUploadThread(self):
         # Releasing semaphore. This call must be for every created upload thread
         # to avoid thread endless waiting.
         self.__uploadThreads.release()
 
+
     def getContainerName(self):
         return self.__containerName
 
+
     def getDiskName(self):
         return self.__diskName
+
 
     def skipExisting(self):
         return self.__resumeUpload
@@ -337,8 +323,10 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     def getResumePath(self):
         return self.__resumePath
 
+
     def getChunkSize(self):
         return self.__chunkSize
+
 
     def createConnection(self):
         return swiftclient.client.Connection(
@@ -470,7 +458,10 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
 
     def getPartPrefix(self):
-        return "{0}/slo".format(self.getDiskName())
+        if self.__swift_use_slo:
+            return "{0}/slo".format(self.getDiskName())
+        else:
+            return "{0}/dlo".format(self.getDiskName())
 
 
     def getTransferChunkSize(self):
