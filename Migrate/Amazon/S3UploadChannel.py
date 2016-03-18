@@ -429,7 +429,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
                 self.__resumeUpload, increment_depth=self.__incrementDepth, db_write_cache_size=write_cache_size,
                 use_dr=self.__use_dr)
 
-            # Creating database for well known blocks to skipp them when uploading
+            # Creating database for well known blocks to skip them when uploading
             self.__well_known_blocks = UploadManifest.ImageWellKnownBlockDatabase(threading.Lock())
 
             # Inserting well known null block, another blocks can be added here
