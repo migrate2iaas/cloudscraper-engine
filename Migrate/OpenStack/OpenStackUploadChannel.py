@@ -56,7 +56,7 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
                 swift_tennant_name, swift_password, disk_name, container_name,
                 retries=3, compression=compression, resume_upload=resume_upload, manifest_path=manifest_path,
                 increment_depth=increment_depth, chunksize=chunksize, upload_threads=upload_threads,
-                ignore_etag=ignore_etag , swift_max_segments = swift_max_segments)
+                ignore_etag=ignore_etag , swift_max_segments = swift_max_segments, swift_use_slo=swift_use_slo)
         else:
             swift = SwiftUploadChannel.SwiftUploadChannel(
                 result_disk_size_bytes, swift_server_url, swift_username, swift_tennant_name, swift_password,

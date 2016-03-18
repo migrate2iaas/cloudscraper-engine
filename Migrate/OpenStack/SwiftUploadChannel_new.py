@@ -256,7 +256,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         logging.info("Segment size: " + str(self.__segmentSize) + " chunk size: " + str(self.__chunkSize))
         logging.info("SSL compression is " + str(self.__compression))
-        logging.info("Dynamic large objects is " + str(self.__swift_use_slo))
+        logging.info("Static large objects is " + str(self.__swift_use_slo))
 
         # Resume upload
         logging.info("Resume upload file path: {0}, resume upload is {1}".format(manifest_path, self.__resumeUpload))
