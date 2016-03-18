@@ -141,14 +141,13 @@ class SwiftUploadThread(threading.Thread):
                 if res and not self.__ignoreEtag:
                     # Check, if segment with same local part_name exsists in storage, and
                     # etag in manifest and storage are the same
-                    head = connection.head_object(self.__uploadChannel.getContainerName(), part_name)
                     for i in res:
+                        head = connection.head_object(i["container_name"], part_name)
                         if i["etag"] == head["etag"]:
                             # We should insert new record if this part found in another manifest
                             self.__manifest.insert(
                                 i["etag"], i["local_hash"], part_name, self.__offset, self.__fileProxy.getSize(),
-                                "skipped")
-                            # self.__manifest.update(i["etag"], i["part_name"], {"status": "skipped"})
+                                "skipped", i["container_name"])
                             upload = False
                             logging.info("Data upload skipped for {0}".format(i["part_name"]))
                             self.__uploadChannel.notifyOverallDataSkipped(self.__fileProxy.getSize())

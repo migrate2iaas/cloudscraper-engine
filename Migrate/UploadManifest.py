@@ -24,7 +24,7 @@ class ImageManifest(object):
     def flush(self):
         raise NotImplementedError
 
-    def insert(self, etag, local_hash, part_name, offset, size, status):
+    def insert(self, etag, local_hash, part_name, offset, size, status, container_name):
         raise NotImplementedError
 
     def select(self, etag=None, part_name=None):
@@ -161,7 +161,7 @@ class TinyDBImageFileManifest(ImageManifest):
 
         return self.__table.search(key)
 
-    def insert(self, etag, local_hash, part_name, offset, size, status):
+    def insert(self, etag, local_hash, part_name, offset, size, status, contrainer_name=None):
         """
         Insert record in database. Pair (etag, offset) has table unique key semantics,
         so in given table there are no records with same hash and offset
@@ -310,6 +310,7 @@ class ImageDictionaryManifest(ImageManifest):
 
         with self.__lock:
             self.__db[self.__db_count] = res
+            self.flush()
             self.__db_count += 1
 
     def update(self, etag, offset, rec):
@@ -345,7 +346,7 @@ class ImageDictionaryManifest(ImageManifest):
 
         return res
 
-    def insert(self, etag, local_hash, part_name, offset, size, status):
+    def insert(self, etag, local_hash, part_name, offset, size, status, container_name=None):
         """
         Insert record in database. Pair (etag, offset) has table unique key semantics,
         so in given table there are no records with same hash and offset
@@ -376,7 +377,8 @@ class ImageDictionaryManifest(ImageManifest):
             "part_name": str(part_name),
             "offset": str(offset),
             "size": str(size),
-            "status": str(status)
+            "status": str(status),
+            "container_name": str(container_name),
         }
 
         # We can't insert record with same etag and offset (has unique key semantic)
@@ -451,6 +453,7 @@ class ImageManifestDatabase(object):
         self.__increment_depth = None
         self.__manifest_path = None
         self.__image_manifest = image_manifest
+        self.__container_name = container_name
         if use_dr:
             self.__increment_depth = increment_depth
 
@@ -471,7 +474,7 @@ class ImageManifestDatabase(object):
 
                 # First, creating manifest if no resume required, than getting list (new manifest just created)
                 if resume is False:
-                    image_manifest.create(self.__manifest_path, container_name, lock, db_write_cache_size, use_dr)
+                    image_manifest.create(self.__manifest_path, self.__container_name, lock, db_write_cache_size, use_dr)
 
                 m_list = self.get_db_tables_source(increment_depth)
                 if not m_list and resume:
@@ -492,7 +495,7 @@ class ImageManifestDatabase(object):
             # Inserting metadata to default table for opened (last) manifest
             self.__db[0].insert_db_meta({
                 "start": str(datetime.datetime.now()),
-                "container_name": container_name,
+                "container_name": self.__container_name,
                 "status": "progress",
                 "resume": str(resume),
                 "increment_depth": str(increment_depth)})
@@ -522,9 +525,12 @@ class ImageManifestDatabase(object):
     def get_db_scheme_path(self):
         return "{0}/{1}".format(self.__manifest_path, self.DB_SCHEME_EXTENSION)
 
-    def insert(self, etag, local_hash, part_name, offset, size, status):
-        # Inserting in first (meaning last) manifest in list
-        return self.__db[0].insert(etag, local_hash, part_name, offset, size, status)
+    def insert(self, etag, local_hash, part_name, offset, size, status, container_name=None):
+        # inserting in first (meaning last) manifest in list
+        # if container_name is empty setting current
+        if not container_name:
+            container_name = self.__container_name
+        return self.__db[0].insert(etag, local_hash, part_name, offset, size, status, container_name)
 
     def select(self, etag=None, part_name=None):
         # TODO: make expression more python-like
