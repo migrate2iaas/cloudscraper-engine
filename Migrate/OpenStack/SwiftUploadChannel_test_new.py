@@ -94,12 +94,14 @@ class SwiftUploadChannel_test(unittest.TestCase):
             username="migrate2iaas",
             tennant_name="migrate2iaas",
             password="migrate2iaas",
-            disk_name="medium.file",
-            container_name="cloudscraper-pub3",
+            disk_name="test/medium.file",
+            container_name="cloudscraper-pub5",
             manifest_path="D:\\backup-manifest",
             chunksize=10*1024*1024,
             increment_depth=3,
-            swift_use_slo=False)
+            swift_use_slo=False,
+            use_dr=True
+            )
         channel.initStorage()
 
         file = open(filename, "rb")

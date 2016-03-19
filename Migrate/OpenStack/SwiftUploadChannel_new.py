@@ -142,12 +142,12 @@ class SwiftUploadThread(threading.Thread):
                     # Check, if segment with same local part_name exsists in storage, and
                     # etag in manifest and storage are the same
                     for i in res:
-                        head = connection.head_object(i["container_name"], part_name)
+                        head = connection.head_object(self.__uploadChannel.getContainerName(), part_name)
                         if i["etag"] == head["etag"]:
                             # We should insert new record if this part found in another manifest
                             self.__manifest.insert(
                                 i["etag"], i["local_hash"], part_name, self.__offset, self.__fileProxy.getSize(),
-                                "skipped", i["container_name"])
+                                "skipped")
                             upload = False
                             logging.info("Data upload skipped for {0}".format(i["part_name"]))
                             self.__uploadChannel.notifyOverallDataSkipped(self.__fileProxy.getSize())
@@ -268,8 +268,13 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__manifest = None
         try:
             self.__manifest = UploadManifest.ImageManifestDatabase(
-                UploadManifest.ImageDictionaryManifest, manifest_path, self.__containerName, threading.Lock(),
-                self.__resumeUpload, increment_depth, use_dr=use_dr)
+                UploadManifest.ImageDictionaryManifest,
+                manifest_path,
+                '{0}.{1}'.format(self.__containerName, self.__diskName).replace('/', '.'),
+                threading.Lock(),
+                self.__resumeUpload,
+                increment_depth,
+                use_dr=use_dr)
         except Exception as e:
             logging.error("!!!ERROR: cannot open file containing segments. Reason: {0}".format(e))
             raise
