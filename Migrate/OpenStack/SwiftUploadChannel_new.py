@@ -390,8 +390,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         # Waiting till upload queues in all proxy files becomes empty
         for item in self.__fileProxies:
             item.waitTillComplete()
-        logging.info("Upload threads are completed, closing threads")
-        self.close()
+
         return
 
 
@@ -425,7 +424,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         # make container as public storage
         self.__set_container_acl(self.__containerName, '*')
-        logging.debug("Making {0} as public storage".format(self.__containerName))
+        logging.info("Making {0} as public storage".format(self.__containerName))
 
         return storage_url
 
@@ -527,9 +526,6 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
 
     def close(self):
-        """Closes the channel, sending all upload threads signal to end their operation"""
-        logging.debug("Closing the upload threads, End signal message was sent")
-
         # make container as private storage
         self.__set_container_acl(self.__containerName, '')
-        logging.debug("Making {0} as private storage".format(self.__containerName))
+        logging.info("Making {0} as private storage".format(self.__containerName))
