@@ -811,7 +811,8 @@ class Migrator(object):
                 channel = self.__dataChannelList[volinfo.getVolumePath()]
                 media = self.__dataMediaList[volinfo.getVolumePath()]
                 imageid = self.uploadImage(media,channel)
-                channel.close()
+                # TODO: verify if we able to not closing channel here
+                # channel.close()
                 mediaimagesize = media.getImageSize()
                 disksize = media.getMaxSize()
                 
