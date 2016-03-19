@@ -95,7 +95,7 @@ class SwiftUploadChannel_test(unittest.TestCase):
             tennant_name="migrate2iaas",
             password="migrate2iaas",
             disk_name="test/medium.file",
-            container_name="cloudscraper-pub5",
+            container_name="cloudscraper-pub4",
             manifest_path="D:\\backup-manifest",
             chunksize=10*1024*1024,
             increment_depth=3,
@@ -123,6 +123,7 @@ class SwiftUploadChannel_test(unittest.TestCase):
 
         channel.waitTillUploadComplete()
         channel.confirm()
+        channel.close()
 
         return
 

@@ -354,30 +354,24 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         Inits storage to run upload
         Throws in case of unrecoverable errors
         """
-        res = {
-            "success": False,
-            "headers": None,
-            "container": self.__containerName,
-        }
+        connection = self.createConnection()
+        connection.put_container(self.__containerName)
 
-        resp_dict = {}
+        return True
+
+    def __set_container_acl(self, container_name, acl):
         connection = None
         try:
             connection = self.createConnection()
-            connection.put_container(res["container"], headers=res["headers"], response_dict=resp_dict)
+            connection.post_container(container_name, {"X-Container-Read": ".r:{0}".format(acl)})
 
-            # res["headers"] = {"X-Container-Read": ".r:*"}
-            res["headers"] = {"X-Container-Read": ".r:" + self.__userName}
-            connection.post_container(res["container"], headers=res["headers"], response_dict=resp_dict)
-
-            res["success"] = True
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
         finally:
             if connection:
                 connection.close()
 
-        return res["success"]
+        return True
 
     def getUploadPath(self):
         """
@@ -428,6 +422,10 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
             logging.error(traceback.format_exc())
+
+        # make container as public storage
+        self.__set_container_acl(self.__containerName, '*')
+        logging.debug("Making {0} as public storage".format(self.__containerName))
 
         return storage_url
 
@@ -531,3 +529,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     def close(self):
         """Closes the channel, sending all upload threads signal to end their operation"""
         logging.debug("Closing the upload threads, End signal message was sent")
+
+        # make container as private storage
+        self.__set_container_acl(self.__containerName, '')
+        logging.debug("Making {0} as private storage".format(self.__containerName))
