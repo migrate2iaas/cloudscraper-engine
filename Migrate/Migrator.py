@@ -477,7 +477,8 @@ class Migrator(object):
 
             imageid = self.uploadImage(media,channel)
 
-            channel.close()
+            # TODO: verify if we able to not closing channel here
+            # channel.close()
             if imageid:
                 self.__migrateOptions.getSystemVolumeConfig().setUploadId(imageid)
                 self.__migrateOptions.getSystemVolumeConfig().saveConfig()
