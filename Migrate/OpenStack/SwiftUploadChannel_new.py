@@ -9,35 +9,16 @@ sys.path.append('.\..')
 sys.path.append('.\..\OpenStack')
 sys.path.append('.\OpenStack')
 
-import os 
-import hashlib
-import Queue
-import time
-import io
-
-import MigrateExceptions
-import traceback
-
-import StringIO
-import logging
-import threading 
 import UploadChannel
-import DataExtent
 
-import sys
+import datetime
 import Queue
 import traceback
 import logging
 import threading
-import json
 import swiftclient.client
 import UploadChannel
 import UploadManifest
-
-from tinydb import where
-from hashlib import md5
-from swiftclient.exceptions import ClientException
-
 
 import json
 from md5 import md5
@@ -150,8 +131,9 @@ class SwiftUploadThread(threading.Thread):
         try:
             connection = self.__uploadChannel.createConnection()
 
-            # Part name example: "medium.file/slo/0"
-            part_name = "{0}/slo/{1}".format(self.__uploadChannel.getDiskName(), self.__offset)
+            # part name, starts with zeros, 32 character length, needed for dlo, because they use sorted
+            # sequence to define segment order.
+            part_name = "{0}/{1:032}".format(self.__uploadChannel.getPartPrefix(), self.__offset)
 
             # Trying to check existing segment
             try:
@@ -160,38 +142,35 @@ class SwiftUploadThread(threading.Thread):
                 if res and not self.__ignoreEtag:
                     # Check, if segment with same local part_name exsists in storage, and
                     # etag in manifest and storage are the same
-                    head = connection.head_object(self.__uploadChannel.getContainerName(), part_name)
                     for i in res:
+                        head = connection.head_object(self.__uploadChannel.getContainerName(), part_name)
                         if i["etag"] == head["etag"]:
                             # We should insert new record if this part found in another manifest
                             self.__manifest.insert(
                                 i["etag"], i["local_hash"], part_name, self.__offset, self.__fileProxy.getSize(),
                                 "skipped")
-                            # self.__manifest.update(i["etag"], i["part_name"], {"status": "skipped"})
                             upload = False
                             logging.info("Data upload skipped for {0}".format(i["part_name"]))
+                            self.__uploadChannel.notifyOverallDataSkipped(self.__fileProxy.getSize())
 
             except (ClientException, Exception) as e:
                 # Passing exception here, it"s means that when we unable to check
                 # uploaded segment (it"s missing or etag mismatch) we reuploading that segment
-                logging.error("! Unable to reupload segment {0}: {1}".format(self.__offset, str(e)))
-                logging.error(traceback.format_exc())
+                logging.warning("Segment {0} verification failed: {1}".format(part_name, e))
                 pass
 
-            results_dict = {}
             if upload:
                 etag = connection.put_object(
                     self.__uploadChannel.getContainerName(),
                     part_name,
                     self.__fileProxy,
-                    chunk_size=self.__uploadChannel.getChunkSize(),
-                    response_dict=results_dict)
+                    chunk_size=self.__uploadChannel.getChunkSize())
                 # getMD5() updates only when data in file proxy (used by put_object()) readed.
                 segment_md5 = self.__fileProxy.getMD5()
                 # TODO: make status ("uploaded") as enumeration
                 self.__manifest.insert(
                     etag, segment_md5, part_name, self.__offset, self.__fileProxy.getSize(), "uploaded")
-
+                self.__uploadChannel.notifyOverallDataTransfered(self.__fileProxy.getSize())
         except (ClientException, Exception) as e:
             self.__fileProxy.cancel()
             logging.error("!!!ERROR: unable to upload segment {0}. Reason: {1}".format(self.__offset, e))
@@ -213,8 +192,6 @@ class SwiftUploadThread(threading.Thread):
             self.__uploadChannel.completeUploadThread()
 
         logging.debug("Upload thread for {0} done".format(self.__offset))
-
-
 
 
 class SwiftUploadChannel_new(UploadChannel.UploadChannel):
@@ -241,7 +218,9 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             upload_threads=10,
             queue_size=8,
             ignore_etag=False,
-            swift_max_segments=0):
+            swift_use_slo=True,
+            swift_max_segments=0,
+            use_dr=False):
         """constructor"""
         self.__serverURL = server_url
         self.__userName = username
@@ -249,17 +228,24 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__password = password
         self.__retries = retries
         self.__compression = compression
-        self.__containerName = container_name
         self.__diskName = disk_name
         self.__chunkSize = chunksize
         self.__diskSize = resulting_size_bytes
         self.__resumeUpload = resume_upload
         self.__uploadThreads = threading.BoundedSemaphore(upload_threads)
         self.__segmentQueueSize = queue_size
+        self.__swift_use_slo = swift_use_slo
         self.__segmentsList = []
 
         self.__fileProxies = []
         self.__ignoreEtag = ignore_etag
+
+        # Upload size calculation
+        self.__uploadedSize = 0
+        self.__uploadSkippedSize = 0
+
+        # Adding timestamp to container name for distinguish backups
+        self.__containerName = container_name
 
         self.__maxSegments = swift_max_segments
         if (swift_max_segments == 0):
@@ -273,19 +259,26 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         logging.info("Segment size: " + str(self.__segmentSize) + " chunk size: " + str(self.__chunkSize))
         logging.info("SSL compression is " + str(self.__compression))
+        logging.info("Static large objects is " + str(self.__swift_use_slo))
 
         # Resume upload
         logging.info("Resume upload file path: {0}, resume upload is {1}".format(manifest_path, self.__resumeUpload))
         self.__manifest = None
         try:
             self.__manifest = UploadManifest.ImageManifestDatabase(
-                UploadManifest.ImageDictionaryManifest, manifest_path, self.__containerName, threading.Lock(),
-                self.__resumeUpload, increment_depth)
+                UploadManifest.ImageDictionaryManifest,
+                manifest_path,
+                '{0}.{1}'.format(self.__containerName, self.__diskName).replace('/', '.'),
+                threading.Lock(),
+                self.__resumeUpload,
+                increment_depth,
+                use_dr=use_dr)
         except Exception as e:
             logging.error("!!!ERROR: cannot open file containing segments. Reason: {0}".format(e))
             raise
 
         super(SwiftUploadChannel_new, self).__init__()
+
 
     def uploadData(self, extent):
         logging.debug("Uploading extent: start: " + str(extent.getStart()) + " size: " + str(extent.getSize()))
@@ -316,16 +309,20 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         return True
 
+
     def completeUploadThread(self):
         # Releasing semaphore. This call must be for every created upload thread
         # to avoid thread endless waiting.
         self.__uploadThreads.release()
 
+
     def getContainerName(self):
         return self.__containerName
 
+
     def getDiskName(self):
         return self.__diskName
+
 
     def skipExisting(self):
         return self.__resumeUpload
@@ -334,8 +331,10 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
     def getResumePath(self):
         return self.__resumePath
 
+
     def getChunkSize(self):
         return self.__chunkSize
+
 
     def createConnection(self):
         return swiftclient.client.Connection(
@@ -353,29 +352,26 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         Inits storage to run upload
         Throws in case of unrecoverable errors
         """
-        res = {
-            "success": False,
-            "headers": None,
-            "container": self.__containerName,
-        }
+        connection = self.createConnection()
+        connection.put_container(self.__containerName)
 
-        resp_dict = {}
+        return True
+
+    def __set_container_acl(self, container_name, acl):
         connection = None
+        success = True
         try:
             connection = self.createConnection()
-            connection.put_container(res["container"], headers=res["headers"], response_dict=resp_dict)
+            connection.post_container(container_name, {"X-Container-Read": ".r:{0}".format(acl)})
 
-            res["headers"] = {"X-Container-Read": ".r:*"}
-            connection.post_container(res["container"], headers=res["headers"], response_dict=resp_dict)
-
-            res["success"] = True
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
+            success = False
         finally:
             if connection:
                 connection.close()
 
-        return res["success"]
+        return success
 
     def getUploadPath(self):
         """
@@ -394,8 +390,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         # Waiting till upload queues in all proxy files becomes empty
         for item in self.__fileProxies:
             item.waitTillComplete()
-        logging.info("Upload threads are completed, closing threads")
-        self.close()
+
         return
 
 
@@ -418,13 +413,21 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
             # Segments can upload not in sequential order, so we need to sort them for manifest
             r_list.sort(key=lambda di: int(di["offset"]))
-            storage_url = self.__uploadCloudManifest(self.__createCloudManifest(r_list))
+            # Use SLO or not, this call returns different manifest file type
+            storage_url = self.__uploadCloudManifest(self.__createCloudManifest(r_list), self.__swift_use_slo)
 
             # Notify manifest database that backup completed
             self.__manifest.complete_manifest(total_size)
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
             logging.error(traceback.format_exc())
+
+        # make container as public storage
+        if self.__set_container_acl(self.__containerName, '*'):
+            logging.info("Making {0} as public storage".format(self.__containerName))
+        else:
+            logging.error("!!!ERROR: unable to make {0} as public storage".format(self.__containerName))
+            return None
 
         return storage_url
 
@@ -436,21 +439,44 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                 "size_bytes": int(d["size"])
         } for d in segment_list])
 
-    def __uploadCloudManifest(self, manifest_data):
+    def __uploadCloudManifest(self, manifest_data, swift_use_slo):
+
+        # For DLO the manifest file is a zero-byte file with the extra X-Object-Manifest {container}/{prefix} header,
+        # where {container} is the container the object segments are in and {prefix} is the common prefix for all
+        # the segments.
+
         mr = {}
+        headers = {"x-static-large-object": "true"}
+        query_string = "multipart-manifest=put"
+        if not swift_use_slo:
+            headers = {"X-Object-Manifest": "{0}/{1}/".format(self.__containerName, self.getPartPrefix())}
+            manifest_data = None
+            query_string = None
+
         connection = self.createConnection()
         connection.put_object(
             self.__containerName,
             self.__diskName,
             manifest_data,
-            headers={"x-static-large-object": "true"},
-            query_string="multipart-manifest=put",
+            headers=headers,
+            query_string=query_string,
             response_dict=mr
         )
         storage_url = connection.url + "/" + self.__containerName + "/" + self.__diskName
         connection.close()
 
         return storage_url
+
+
+    def getPartPrefix(self):
+        """
+        Returns prefix for all the parts in this upload session
+        """
+        if self.__swift_use_slo:
+            return "{0}/slo".format(self.getDiskName())
+        else:
+            return "{0}/dlo".format(self.getDiskName())
+
 
     def getTransferChunkSize(self):
         """
@@ -466,33 +492,28 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         """
         return 0
 
+
+    def notifyOverallDataSkipped(self, size):
+        self.__uploadSkippedSize += size
+
+
     def getOverallDataSkipped(self):
         """
         Gets overall size of data skipped in bytes.
         Data is skipped by the channel when the block with same checksum is already present in the cloud
         """
-        total_size = 0
-        try:
-            for f in self.__fileProxies:
-                total_size += f.getSkippedSize()
-        except Exception as err:
-            logging.debug("Unable to calculete skipped data size: " + str(err))
+        return self.__uploadSkippedSize
 
-        return total_size
+
+    def notifyOverallDataTransfered(self, size):
+        self.__uploadedSize += size
 
 
     def getOverallDataTransfered(self):
         """
         Gets overall size of data actually uploaded (not skipped) in bytes.
         """
-        total_size = 0
-        try:
-            for f in self.__fileProxies:
-                total_size += f.getCompletedSize()
-        except Exception as err:
-            logging.debug("Unable to calculete completed data size: " + str(err))
-
-        return total_size
+        return self.__uploadedSize
 
 
     def getImageSize(self):
@@ -511,5 +532,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
 
     def close(self):
-        """Closes the channel, sending all upload threads signal to end their operation"""
-        logging.debug("Closing the upload threads, End signal message was sent")
+        # make container as private storage
+        if self.__set_container_acl(self.__containerName, ''):
+            logging.info("Making {0} as private storage".format(self.__containerName))
+        else:
+            logging.warning("Unable to make {0} as private storage".format(self.__containerName))

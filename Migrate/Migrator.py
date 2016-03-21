@@ -477,7 +477,6 @@ class Migrator(object):
 
             imageid = self.uploadImage(media,channel)
 
-            channel.close()
             if imageid:
                 self.__migrateOptions.getSystemVolumeConfig().setUploadId(imageid)
                 self.__migrateOptions.getSystemVolumeConfig().saveConfig()
@@ -811,7 +810,6 @@ class Migrator(object):
                 channel = self.__dataChannelList[volinfo.getVolumePath()]
                 media = self.__dataMediaList[volinfo.getVolumePath()]
                 imageid = self.uploadImage(media,channel)
-                channel.close()
                 mediaimagesize = media.getImageSize()
                 disksize = media.getMaxSize()
                 

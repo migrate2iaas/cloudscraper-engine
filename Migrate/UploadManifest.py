@@ -310,6 +310,7 @@ class ImageDictionaryManifest(ImageManifest):
 
         with self.__lock:
             self.__db[self.__db_count] = res
+            self.flush()
             self.__db_count += 1
 
     def update(self, etag, offset, rec):
@@ -376,7 +377,7 @@ class ImageDictionaryManifest(ImageManifest):
             "part_name": str(part_name),
             "offset": str(offset),
             "size": str(size),
-            "status": str(status)
+            "status": str(status),
         }
 
         # We can't insert record with same etag and offset (has unique key semantic)
@@ -523,7 +524,7 @@ class ImageManifestDatabase(object):
         return "{0}/{1}".format(self.__manifest_path, self.DB_SCHEME_EXTENSION)
 
     def insert(self, etag, local_hash, part_name, offset, size, status):
-        # Inserting in first (meaning last) manifest in list
+        # inserting in first (meaning last) manifest in list
         return self.__db[0].insert(etag, local_hash, part_name, offset, size, status)
 
     def select(self, etag=None, part_name=None):
