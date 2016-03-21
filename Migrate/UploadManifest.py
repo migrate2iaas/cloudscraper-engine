@@ -161,7 +161,7 @@ class TinyDBImageFileManifest(ImageManifest):
 
         return self.__table.search(key)
 
-    def insert(self, etag, local_hash, part_name, offset, size, status, contrainer_name=None):
+    def insert(self, etag, local_hash, part_name, offset, size, status):
         """
         Insert record in database. Pair (etag, offset) has table unique key semantics,
         so in given table there are no records with same hash and offset

@@ -131,7 +131,8 @@ class SwiftUploadThread(threading.Thread):
         try:
             connection = self.__uploadChannel.createConnection()
 
-            # Part name example: "medium.file/slo/0"
+            # part name, starts with zeros, 32 character length, needed for dlo, because they use sorted
+            # sequence to define segment order.
             part_name = "{0}/{1:032}".format(self.__uploadChannel.getPartPrefix(), self.__offset)
 
             # Trying to check existing segment
@@ -358,17 +359,19 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
     def __set_container_acl(self, container_name, acl):
         connection = None
+        success = True
         try:
             connection = self.createConnection()
             connection.post_container(container_name, {"X-Container-Read": ".r:{0}".format(acl)})
 
         except (ClientException, Exception) as err:
             logging.error("!!!ERROR: " + err.message)
+            success = False
         finally:
             if connection:
                 connection.close()
 
-        return True
+        return success
 
     def getUploadPath(self):
         """
@@ -420,8 +423,11 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             logging.error(traceback.format_exc())
 
         # make container as public storage
-        self.__set_container_acl(self.__containerName, '*')
-        logging.info("Making {0} as public storage".format(self.__containerName))
+        if self.__set_container_acl(self.__containerName, '*'):
+            logging.info("Making {0} as public storage".format(self.__containerName))
+        else:
+            logging.error("!!!ERROR: unable to make {0} as public storage".format(self.__containerName))
+            return None
 
         return storage_url
 
@@ -463,6 +469,9 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
 
     def getPartPrefix(self):
+        """
+        Returns prefix for all the parts in this upload session
+        """
         if self.__swift_use_slo:
             return "{0}/slo".format(self.getDiskName())
         else:
@@ -524,5 +533,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
     def close(self):
         # make container as private storage
-        self.__set_container_acl(self.__containerName, '')
-        logging.info("Making {0} as private storage".format(self.__containerName))
+        if self.__set_container_acl(self.__containerName, ''):
+            logging.info("Making {0} as private storage".format(self.__containerName))
+        else:
+            logging.warning("Unable to make {0} as private storage".format(self.__containerName))
