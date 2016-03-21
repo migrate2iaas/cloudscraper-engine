@@ -155,18 +155,15 @@ class SwiftUploadThread(threading.Thread):
             except (ClientException, Exception) as e:
                 # Passing exception here, it"s means that when we unable to check
                 # uploaded segment (it"s missing or etag mismatch) we reuploading that segment
-                logging.error("! Unable to reupload segment {0}: {1}".format(self.__offset, str(e)))
-                logging.error(traceback.format_exc())
+                logging.warning("Segment {0} verification failed: {1}".format(part_name, e))
                 pass
 
-            results_dict = {}
             if upload:
                 etag = connection.put_object(
                     self.__uploadChannel.getContainerName(),
                     part_name,
                     self.__fileProxy,
-                    chunk_size=self.__uploadChannel.getChunkSize(),
-                    response_dict=results_dict)
+                    chunk_size=self.__uploadChannel.getChunkSize())
                 # getMD5() updates only when data in file proxy (used by put_object()) readed.
                 segment_md5 = self.__fileProxy.getMD5()
                 # TODO: make status ("uploaded") as enumeration
