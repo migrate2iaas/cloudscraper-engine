@@ -105,16 +105,20 @@ class GzipChunkMedia(ImageMedia.ImageMedia):
             gzipfile.close()
             file.close()
 
-        file = open(chunkfilename, "rb")
-        gzipfile = gzip.GzipFile("offset"+str(chunknumber*self.__chunkSize), "r" , self.__compression , file)
-        chunk = gzipfile.read()
-        gzipfile.close()
-        file.close()
+        with open(chunkfilename, "rb") as file:
+            gzipfile = gzip.GzipFile("offset"+str(chunknumber*self.__chunkSize), "r" , self.__compression , file)
+            chunk = gzipfile.read()
+            gzipfile.close()
 
         #in case the file is broken, no gzip data is in it
         if len(chunk) == 0:
             #logging.warning("!Warning: Found bad part in archive " + chunkfilename + " , replacing it");
-            os.remove(chunkfilename)
+            # TODO: is it necessary to remove this file? Sometime it throws
+            # [Error 32] The process cannot access the file because it is being used by another process
+            try:
+                os.remove(chunkfilename)
+            except Exception as e:
+                logging.debug("Unable to remove {0}, reason: ".format(chunkfilename, e))
             return self.getUnzippedChunk(chunknumber)
 
         return chunk

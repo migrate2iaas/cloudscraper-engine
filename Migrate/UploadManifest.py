@@ -310,6 +310,7 @@ class ImageDictionaryManifest(ImageManifest):
 
         with self.__lock:
             self.__db[self.__db_count] = res
+            self.flush()
             self.__db_count += 1
 
     def update(self, etag, offset, rec):
@@ -376,7 +377,7 @@ class ImageDictionaryManifest(ImageManifest):
             "part_name": str(part_name),
             "offset": str(offset),
             "size": str(size),
-            "status": str(status)
+            "status": str(status),
         }
 
         # We can't insert record with same etag and offset (has unique key semantic)
@@ -501,20 +502,16 @@ class ImageManifestDatabase(object):
                 manifest_path, e))
             raise
 
-    def get_db_tables_source(self, number):
-        number = 0
-        # Getting list all available manifests (backups) in manifest path, after sorting:
-        # f[0] last (by timestamp) manifest
-        # f[1...N] previous manifests ordered by timestamp too.
+    def get_db_tables_source(self, increment_depth):
         f = []
         for filename in os.listdir(self.__manifest_path):
             if filename.endswith(self.__image_manifest.DB_TABLES_EXTENSION):
                 f.append(filename)
-        f.sort(reverse=True)
+        # sorting by creation time (reverse)
+        # NOTE: in unix-like os getctime() returns last metadata change, see reference
+        f.sort(key=lambda x: os.path.getctime(os.path.join(self.__manifest_path, x)), reverse=True)
 
-        # len(f) > number > 0 means that if number is less than available manifests in path or 0, we should
-        # return whole available list
-        return f[0:number] if len(f) > number > 0 else f
+        return f[0:increment_depth] if len(f) > increment_depth > 0 else f
 
     def get_db_tables(self):
         return self.__db
@@ -523,7 +520,7 @@ class ImageManifestDatabase(object):
         return "{0}/{1}".format(self.__manifest_path, self.DB_SCHEME_EXTENSION)
 
     def insert(self, etag, local_hash, part_name, offset, size, status):
-        # Inserting in first (meaning last) manifest in list
+        # inserting in first (meaning last) manifest in list
         return self.__db[0].insert(etag, local_hash, part_name, offset, size, status)
 
     def select(self, etag=None, part_name=None):

@@ -69,17 +69,39 @@ class SwiftUploadChannel_test(unittest.TestCase):
         filename = 'D:\\cloudscraper-test-files\\medium.file'
         size = os.stat(filename).st_size
 
+        #
+        # webzilla usage
+        #
+        # channel = SwiftUploadChannel_new.SwiftUploadChannel_new(
+        #     size,
+        #     server_url="https://eu01-auth.webzilla.com:5000/v2.0",
+        #     username="3186",
+        #     tennant_name="2344",
+        #     password="icafLFsmAOswwISn",\
+        #     disk_name="medium.file",
+        #     container_name="testcontainer2",
+        #     manifest_path="D:\\backup-manifest",
+        #     chunksize=1024*1024,
+        #     increment_depth=3,
+        #     swift_use_slo=False)
+
+        #
+        # cloudex.rs usage
+        #
         channel = SwiftUploadChannel_new.SwiftUploadChannel_new(
             size,
-            server_url="https://eu01-auth.webzilla.com:5000/v2.0",
-            username="3186",
-            tennant_name="2344",
-            password="icafLFsmAOswwISn",\
-            disk_name="medium.file",
-            container_name="testcontainer2",
+            server_url="http://87.237.203.66:5000/v2.0",
+            username="migrate2iaas",
+            tennant_name="migrate2iaas",
+            password="migrate2iaas",
+            disk_name="test/medium.file",
+            container_name="cloudscraper-pub4",
             manifest_path="D:\\backup-manifest",
-            chunksize=1024*1024,
-            increment_depth=3)
+            chunksize=10*1024*1024,
+            increment_depth=3,
+            swift_use_slo=False,
+            use_dr=True
+            )
         channel.initStorage()
 
         file = open(filename, "rb")
@@ -101,6 +123,7 @@ class SwiftUploadChannel_test(unittest.TestCase):
 
         channel.waitTillUploadComplete()
         channel.confirm()
+        channel.close()
 
         return
 
