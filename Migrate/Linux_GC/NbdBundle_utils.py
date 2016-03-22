@@ -124,7 +124,7 @@ class Nbd_LoadDiskImage(object):
     if self._virtual_image:
         mountpath =  self._ndb_path
         modprobe_cmd = ['modprobe', 'nbd']
-        logging.info(">>> Starting qemu block device emulation")
+        logging.info("Starting qemu block device emulation")
         output = RunCommand(modprobe_cmd)
         nbd_cmd = ["qemu-nbd", "-c" , mountpath, self._file_path]
         output = RunCommand(nbd_cmd)
