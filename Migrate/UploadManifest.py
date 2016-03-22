@@ -502,20 +502,16 @@ class ImageManifestDatabase(object):
                 manifest_path, e))
             raise
 
-    def get_db_tables_source(self, number):
-        number = 0
-        # Getting list all available manifests (backups) in manifest path, after sorting:
-        # f[0] last (by timestamp) manifest
-        # f[1...N] previous manifests ordered by timestamp too.
+    def get_db_tables_source(self, increment_depth):
         f = []
         for filename in os.listdir(self.__manifest_path):
             if filename.endswith(self.__image_manifest.DB_TABLES_EXTENSION):
                 f.append(filename)
-        f.sort(reverse=True)
+        # sorting by creation time (reverse)
+        # NOTE: in unix-like os getctime() returns last metadata change, see reference
+        f.sort(key=lambda x: os.path.getctime(os.path.join(self.__manifest_path, x)), reverse=True)
 
-        # len(f) > number > 0 means that if number is less than available manifests in path or 0, we should
-        # return whole available list
-        return f[0:number] if len(f) > number > 0 else f
+        return f[0:increment_depth] if len(f) > increment_depth > 0 else f
 
     def get_db_tables(self):
         return self.__db
