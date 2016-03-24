@@ -518,10 +518,12 @@ class ImageManifestDatabase(object):
         result = []
         t_list = self.__db_scheme.all()
 
-        t_list.sort(key=lambda x: x["table_timestamp"], reverse=True)
-        # Adding file extension
+        # Check, if table_timestamp exists for backward compatibility
+        t_list.sort(key=lambda x: x["table_timestamp"] if "table_timestamp" in x else None, reverse=True)
         for table in t_list:
-            result.append(table["table_name"] + self.__image_manifest.DB_TABLES_EXTENSION)
+            if "table_timestamp" in table:
+                # Adding file extension
+                result.append(table["table_name"] + self.__image_manifest.DB_TABLES_EXTENSION)
 
         return result[0:increment_depth] if len(result) > increment_depth > 0 else result
 
