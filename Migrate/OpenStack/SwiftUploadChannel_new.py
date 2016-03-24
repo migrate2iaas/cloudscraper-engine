@@ -89,7 +89,6 @@ class DefferedUploadFileProxy(object):
         if not self.__cancel:
             with self.__inner_queue.mutex:
                 self.__cancel = True
-                self.__inner_queue.queue.clear()
                 self.setComplete()
 
     def cancelled(self):
@@ -165,7 +164,8 @@ class SwiftUploadThread(threading.Thread):
                     part_name,
                     self.__fileProxy,
                     chunk_size=self.__uploadChannel.getChunkSize())
-                # getMD5() updates only when data in file proxy (used by put_object()) readed.
+
+                # getMD5() updates only when data in file proxy (used by put_object()) read.
                 segment_md5 = self.__fileProxy.getMD5()
                 # TODO: make status ("uploaded") as enumeration
                 self.__manifest.insert(
@@ -173,8 +173,7 @@ class SwiftUploadThread(threading.Thread):
                 self.__uploadChannel.notifyOverallDataTransfered(self.__fileProxy.getSize())
         except (ClientException, Exception) as e:
             self.__fileProxy.cancel()
-            logging.error("!!!ERROR: unable to upload segment {0}. Reason: {1}".format(self.__offset, e))
-            logging.error(traceback.format_exc())
+            logging.warn("!Unable to upload segment {0}. Reason: {1}".format(self.__offset, e))
         finally:
             # We should compete every file proxy to avoid deadlocks
             # Notify that upload complete
@@ -386,13 +385,12 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
     def waitTillUploadComplete(self):
         """Waits till upload completes"""
-        logging.debug("Upload complete, waiting for threads to complete")
+        logging.info("Upload complete, waiting for threads to complete...")
         # Waiting till upload queues in all proxy files becomes empty
         for item in self.__fileProxies:
             item.waitTillComplete()
 
         return
-
 
     def confirm(self):
         """

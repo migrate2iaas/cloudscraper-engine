@@ -275,7 +275,14 @@ class ImageDictionaryManifest(ImageManifest):
         }
 
         if use_dr:
-            with open("{0}/{1}".format(manifest_path, file_name), "w") as f:
+            # first, remove if file exists, to update creation time
+            file_path = "{0}/{1}".format(manifest_path, file_name)
+            try:
+                os.remove(file_path)
+                logging.info("Deleting {0}".format(file_path))
+            except Exception as e:
+                logging.warn("!Unable to delete {0} manifest database, reason: {1}".format(file_path, e))
+            with open(file_path, "w") as f:
                 json.dump(storage, f)
 
         return ImageDictionaryManifest.open(
