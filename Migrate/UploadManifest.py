@@ -275,14 +275,7 @@ class ImageDictionaryManifest(ImageManifest):
         }
 
         if use_dr:
-            # first, remove if file exists, to update creation time
-            file_path = "{0}/{1}".format(manifest_path, file_name)
-            try:
-                os.remove(file_path)
-                logging.info("Deleting {0}".format(file_path))
-            except Exception as e:
-                logging.warn("!Unable to delete {0} manifest database, reason: {1}".format(file_path, e))
-            with open(file_path, "w") as f:
+            with open("{0}/{1}".format(manifest_path, file_name), "w") as f:
                 json.dump(storage, f)
 
         return ImageDictionaryManifest.open(
@@ -432,7 +425,7 @@ class ImageManifestDatabase(object):
     DB_SCHEME_EXTENSION = ".cloudscraper-manifest-database"
 
     def __init__(
-            self, image_manifest, manifest_path, container_name, lock, resume=False, increment_depth=1,
+            self, image_manifest, manifest_path, table_name, lock, resume=False, increment_depth=1,
             db_write_cache_size=1, use_dr=False):
         """
         Creates or opens existing manifest file
@@ -440,8 +433,8 @@ class ImageManifestDatabase(object):
         :param manifest_path: path to manifest files
         :type manifest_path: string
 
-        :param container_name: image name
-        :type container_name: string
+        :param table_name: table name
+        :type table_name: string
 
         :param lock: synchronization for write (read) to database
         :type lock: threading.Lock()
@@ -459,6 +452,7 @@ class ImageManifestDatabase(object):
         self.__increment_depth = None
         self.__manifest_path = None
         self.__image_manifest = image_manifest
+        self.__table_name = table_name
         if use_dr:
             self.__increment_depth = increment_depth
 
@@ -474,24 +468,32 @@ class ImageManifestDatabase(object):
                 # Creating or opening database scheme
                 self.__db_scheme = TinyDB(self.get_db_scheme_path())
 
-                # increment_depth = 0 meaning that we use all available manifests
-                # increment_depth = N meaning that we use last N (by timestamp) available manifests
-
-                # First, creating manifest if no resume required, than getting list (new manifest just created)
+                # First, creating manifest if no resume required, then getting list (new manifest just created)
                 if resume is False:
-                    image_manifest.create(self.__manifest_path, container_name, lock, db_write_cache_size, use_dr)
+                    image_manifest.create(self.__manifest_path, table_name, lock, db_write_cache_size, use_dr)
 
+                    # Inserting new table name if it's doesn't exists
+                    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
+                    if not self.__db_scheme.search(where("table_name") == str(table_name)):
+                        self.__db_scheme.insert({
+                            "table_name": str(table_name),
+                            "table_timestamp": timestamp,
+                        })
+                    # Updating creation time otherwise
+                    else:
+                        self.__db_scheme.update({"table_timestamp": timestamp}, where("table_name") == table_name)
+
+                # increment_depth = 0 meaning that we use all available manifests
+                # increment_depth = N meaning that we use last N available manifests
                 m_list = self.get_db_tables_source(increment_depth)
                 if not m_list and resume:
                     raise Exception("Unable to resuming upload. Previous upload (manifest) not found")
 
-                for table_name in m_list:
+                for table in m_list:
                     self.__db.append(
                         self.__image_manifest.open(
-                            self.__manifest_path, table_name, lock, db_write_cache_size, use_dr))
-                    # Inserting new table name if it's doesn't exists
-                    if not self.__db_scheme.search(where("table_name") == str(table_name)):
-                        self.__db_scheme.insert({"table_name": str(table_name)})
+                            self.__manifest_path, table, lock, db_write_cache_size, use_dr))
+
             else:
                 self.__db.append(
                     self.__image_manifest.open(
@@ -500,7 +502,7 @@ class ImageManifestDatabase(object):
             # Inserting metadata to default table for opened (last) manifest
             self.__db[0].insert_db_meta({
                 "start": str(datetime.datetime.now()),
-                "container_name": container_name,
+                "table_name": table_name,
                 "status": "progress",
                 "resume": str(resume),
                 "increment_depth": str(increment_depth)})
@@ -509,16 +511,19 @@ class ImageManifestDatabase(object):
                 manifest_path, e))
             raise
 
-    def get_db_tables_source(self, increment_depth):
-        f = []
-        for filename in os.listdir(self.__manifest_path):
-            if filename.endswith(self.__image_manifest.DB_TABLES_EXTENSION):
-                f.append(filename)
-        # sorting by creation time (reverse)
-        # NOTE: in unix-like os getctime() returns last metadata change, see reference
-        f.sort(key=lambda x: os.path.getctime(os.path.join(self.__manifest_path, x)), reverse=True)
+    def get_timestamp(self):
+        return self.__db_scheme.get(where("table_name") == str(self.__table_name))["table_timestamp"]
 
-        return f[0:increment_depth] if len(f) > increment_depth > 0 else f
+    def get_db_tables_source(self, increment_depth):
+        result = []
+        t_list = self.__db_scheme.all()
+
+        t_list.sort(key=lambda x: x["table_timestamp"], reverse=True)
+        # Adding file extension
+        for table in t_list:
+            result.append(table["table_name"] + self.__image_manifest.DB_TABLES_EXTENSION)
+
+        return result[0:increment_depth] if len(result) > increment_depth > 0 else result
 
     def get_db_tables(self):
         return self.__db
