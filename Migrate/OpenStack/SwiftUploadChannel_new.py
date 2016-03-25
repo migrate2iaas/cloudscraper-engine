@@ -270,6 +270,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                 self.__resumeUpload,
                 increment_depth,
                 use_dr=use_dr)
+            logging.info("Manifest name: {0}".format(self.__manifest.get_table_name()))
         except Exception as e:
             logging.error("!!!ERROR: cannot open file containing segments. Reason: {0}".format(e))
             raise
@@ -451,7 +452,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         connection = self.createConnection()
         connection.put_object(
             self.__containerName,
-            self.__diskName,
+            "{0}/{1}".format(self.__diskName, self.__manifest.get_timestamp()),
             manifest_data,
             headers=headers,
             query_string=query_string,

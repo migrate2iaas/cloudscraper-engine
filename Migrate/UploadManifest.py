@@ -514,6 +514,9 @@ class ImageManifestDatabase(object):
     def get_timestamp(self):
         return self.__db_scheme.get(where("table_name") == str(self.__table_name))["table_timestamp"]
 
+    def get_table_name(self):
+        return self.__table_name
+
     def get_db_tables_source(self, increment_depth):
         result = []
         t_list = self.__db_scheme.all()
