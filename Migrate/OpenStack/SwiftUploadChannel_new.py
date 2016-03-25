@@ -450,15 +450,16 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             query_string = None
 
         connection = self.createConnection()
+        cloud_path = "{0}/{1}".format(self.__diskName, self.__manifest.get_timestamp())
         connection.put_object(
             self.__containerName,
-            "{0}/{1}".format(self.__diskName, self.__manifest.get_timestamp()),
+            cloud_path,
             manifest_data,
             headers=headers,
             query_string=query_string,
             response_dict=mr
         )
-        storage_url = connection.url + "/" + self.__containerName + "/" + self.__diskName
+        storage_url = connection.url + "/" + self.__containerName + "/" + cloud_path
         connection.close()
 
         return storage_url
