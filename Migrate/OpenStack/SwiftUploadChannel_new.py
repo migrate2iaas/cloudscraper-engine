@@ -242,12 +242,10 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         # Upload size calculation
         self.__uploadedSize = 0
         self.__uploadSkippedSize = 0
-
-        # Adding timestamp to container name for distinguish backups
         self.__containerName = container_name
 
         self.__maxSegments = swift_max_segments
-        if (swift_max_segments == 0):
+        if swift_max_segments == 0:
             self.__maxSegments = 512
 
         # Max segment number is 1000 (it"s configurable see http://docs.openstack.org/developer/swift/middleware.html )
@@ -272,6 +270,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                 self.__resumeUpload,
                 increment_depth,
                 use_dr=use_dr)
+            logging.info("Manifest name: {0}".format(self.__manifest.get_table_name()))
         except Exception as e:
             logging.error("!!!ERROR: cannot open file containing segments. Reason: {0}".format(e))
             raise
@@ -379,7 +378,6 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         """
         return self.__diskName
 
-
     def getTransferChunkSize(self):
         return self.__chunkSize
 
@@ -452,29 +450,29 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             query_string = None
 
         connection = self.createConnection()
+        cloud_path = "{0}/{1}".format(self.__diskName, self.__manifest.get_timestamp())
         connection.put_object(
             self.__containerName,
-            self.__diskName,
+            cloud_path,
             manifest_data,
             headers=headers,
             query_string=query_string,
             response_dict=mr
         )
-        storage_url = connection.url + "/" + self.__containerName + "/" + self.__diskName
+        storage_url = connection.url + "/" + self.__containerName + "/" + cloud_path
         connection.close()
 
         return storage_url
-
 
     def getPartPrefix(self):
         """
         Returns prefix for all the parts in this upload session
         """
+        base = "{0}/{1}".format(self.getDiskName(), self.__manifest.get_timestamp())
         if self.__swift_use_slo:
-            return "{0}/slo".format(self.getDiskName())
+            return "{0}/slo".format(base)
         else:
-            return "{0}/dlo".format(self.getDiskName())
-
+            return "{0}/dlo".format(base)
 
     def getTransferChunkSize(self):
         """
