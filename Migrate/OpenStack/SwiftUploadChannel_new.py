@@ -258,6 +258,9 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         logging.info("SSL compression is " + str(self.__compression))
         logging.info("Static large objects is " + str(self.__swift_use_slo))
 
+        if swift_use_slo is False and increment_depth != 1:
+            logging.warn("!Wrong increment depth for DLO, should be 1")
+
         # Resume upload
         logging.info("Resume upload file path: {0}, resume upload is {1}".format(manifest_path, self.__resumeUpload))
         self.__manifest = None
