@@ -159,6 +159,8 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         size = self.files[path]['st_size']
         if self.files[path]['upload_channel'] == None:
             self.files[path]['upload_channel'] = self.createChannel(path, size)
+        return self.files[path]['upload_channel']
+
 
     def write(self, path, data, offset, fh):
         
