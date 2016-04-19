@@ -14,6 +14,7 @@ import RemoteMounter
 import os
 import threading
 import logging
+import time
 
 class FuseMounter(RemoteMounter.RemoteMounter):
     """Fuse mount is a class to start Fuse-based filesystems"""
@@ -37,6 +38,8 @@ class FuseMounter(RemoteMounter.RemoteMounter):
         os.mkdir(directory , 0700)
         thread = threading.Thread(target = self.__mount_thread , args = ())
         thread.start()
+        # TODO: wait till FUSE is ready...
+        time.sleep(15)
         #self.__mount_thread()
         
 
