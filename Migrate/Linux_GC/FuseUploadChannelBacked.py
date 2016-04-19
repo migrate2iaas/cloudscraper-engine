@@ -126,6 +126,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         """method to generate channels by path"""
         channel = self.cloud_options.generateUploadChannel(size, targetid=path)
         channel.initStorage()
+        return channel
 
     def create(self, path, mode):
         logging.info(" FUSE CREATE")
