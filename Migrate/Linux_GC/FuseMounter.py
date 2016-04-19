@@ -25,7 +25,7 @@ class FuseMounter(RemoteMounter.RemoteMounter):
 
     def __mount_thread(self):
         # TODO: cancel\notify on mount end
-        self.__fuse = FUSE(self.__fuseCallbackObj, self.__mountDir) #, foreground=False)
+        self.__fuse = FUSE(self.__fuseCallbackObj, self.__mountDir, foreground=False)
 
     def mount(self, directory):
         self.__mountDir = directory 

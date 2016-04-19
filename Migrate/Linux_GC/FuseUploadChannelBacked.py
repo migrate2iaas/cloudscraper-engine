@@ -128,6 +128,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         channel.initStorage()
 
     def create(self, path, mode):
+        logging.info(" FUSE CREATE")
         # TODO: here we seek for existing UploadChannel or create a new one
         if self.channels.has_key(path):
             upload_channel = self.channels[path]
@@ -146,6 +147,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         return self.fd
 
     def open(self, path, flags):
+        logging.info(" FUSE OPEN")
         self.fd += 1
         self.files[path]["fds"].append(self.fd)
         return self.fd
