@@ -36,7 +36,7 @@ class RemoteMountDecoratorMediaFactory(ImageMediaFactory.ImageMediaFactory):
             self.__mounter.mount(self.__mountdir)
             #TODO: think when to do unmount
         
-        mountedpath = self.__mountdir + os.path.basename(imagepath)
+        mountedpath = self.__mountdir + "/" +  os.path.basename(imagepath)
         
         return self.__factory.createMedia(mountedpath , imagesize)
 
