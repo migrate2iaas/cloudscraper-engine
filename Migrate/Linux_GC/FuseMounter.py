@@ -31,7 +31,8 @@ class FuseMounter(RemoteMounter.RemoteMounter):
         self.__mountDir = directory 
         # TODO:	modprobe fuse
         os.mkdir(directory , 0700)
-        threading.Thread(target = self.__mount_thread , args = ())
+        thread = threading.Thread(target = self.__mount_thread , args = ())
+        thread.start()
         
 
     def unmount(self):
