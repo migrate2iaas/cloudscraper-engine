@@ -36,6 +36,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         now = time()
         self.files['/'] = dict(st_mode=(S_IFDIR | 0o755), st_ctime=now,
                                st_mtime=now, st_atime=now, st_nlink=2)
+        self.cache = defaultdict(bytes)
 
    
     #STANDARD FROM EXAMPLE
@@ -103,7 +104,10 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         attrs[name] = value
 
     def statfs(self, path):
-        return dict(f_bsize=512, f_blocks=4096, f_bavail=2048)
+        chunk = 10*1024*1024
+        overall_size = chunk*1024*1024
+        return dict(f_bsize=10*1024*1024
+                    , f_blocks=overall_size, f_bavail=overall_size)
 
     def symlink(self, target, source):
         self.files[target] = dict(st_mode=(S_IFLNK | 0o777), st_nlink=1,
@@ -129,7 +133,6 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         return channel
 
     def create(self, path, mode):
-        logging.info(" FUSE CREATE")
         # TODO: here we seek for existing UploadChannel or create a new one
         if self.channels.has_key(path):
             upload_channel = self.channels[path]
@@ -148,7 +151,6 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         return self.fd
 
     def open(self, path, flags):
-        logging.info(" FUSE OPEN")
         self.fd += 1
         self.files[path]["fds"].append(self.fd)
         return self.fd
@@ -164,7 +166,8 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
 
 
     def write(self, path, data, offset, fh):
-        
+        logging.info(" FUSE WRITE " + str(len(data)) + " Bytes OFFSET " + str(offset) )
+
         if self.files[path]['st_size'] < offset + len(data):
             self.files[path]['st_size'] = offset + len(data)
 
@@ -174,6 +177,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         dataext.setData(data)
         channel.uploadData(dataext)
 
+        self.data[path] = self.data[path][:offset] + data
         #TODO: update channel size if needed
 
         return len(data)
@@ -182,4 +186,4 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         #TODO: here we should have a kinda cache?
         #or an ability to read from UploadChannel?
         #TODO: read from Upload channel
-        return ""
+        return self.data[path][offset:offset + size]
