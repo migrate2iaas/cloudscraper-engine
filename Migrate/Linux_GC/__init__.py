@@ -344,4 +344,9 @@ class Linux(object):
             logging.info("There is no " + rootdrive + " device, treating " +  rootdev+ " as system disk")
             return rootdev
 
+    def getFuseMounter(self, cloudconfig):
+        import FuseMounter
+        import FuseUploadChannelBacked
+        return FuseMounter.FuseMounter(FuseUploadChannelBacked.FuseUploadChannelBacked(cloudconfig))
+
      

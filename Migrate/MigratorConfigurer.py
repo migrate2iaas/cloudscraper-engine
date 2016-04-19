@@ -41,7 +41,7 @@ import SparseRawMediaFactory
 import QemuImgMediaFactory
 import VhdQcow2MediaFactory
 import SparseRawMedia
-
+import RemoteMountDecoratorMediaFactory
 
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
@@ -650,27 +650,29 @@ class MigratorConfigurer(object):
         if config.has_option('EC2', 'os_override'):
             os_override = config.get('EC2', 'os_override')
         
-        (imagedir, image_placement, imagetype) = self.getImageOptions(config)
-        volumes = self.createVolumesList(config, configfile, imagedir, imagetype, s3prefix)
-        factory = self.createImageFactory(config, image_placement, imagetype)
-
+       
         use_dr, manifest_path, increment_depth = self.loadDRconfig(config)
 
-        newsize = imagesize = 0 # de[recated
+        newsize = imagesize = 0 # deprecated
         installservice = None
 
         adjust_override = self.getOverrides(config, configfile)
 
-
-        image = AmazonConfigs.AmazonMigrateConfig(volumes, factory, imagearch, imagetype)
         #TODO: add machine name
         cloud = AmazonConfigs.AmazonCloudOptions(
             bucket=bucket, user=user, password=password, newsize=newsize, arch=arch, zone=zone, region=region,
             machinename="", securityid=security, instancetype=instancetype, chunksize=chunksize, disktype=imagetype,
             keyname_prefix=s3prefix, vpc=vpcsubnet, custom_host=custom_host, custom_port=custom_port,
+
             custom_suffix=custom_suffix, use_ssl=use_ssl, manifest_path=manifest_path, minipad=minipad,
             minipad_ami=minipad_ami, increment_depth=increment_depth, use_dr=use_dr, os_override=os_override)
-        
+       
+        (imagedir, image_placement, imagetype) = self.getImageOptions(config)
+        volumes = self.createVolumesList(config, configfile, imagedir, imagetype, s3prefix)
+    
+        factory = self.createImageFactory(config, image_placement, imagetype , cloud)
+        image = AmazonConfigs.AmazonMigrateConfig(volumes, factory, imagearch, imagetype)
+
 
         return (image,adjust_override,cloud)
 
@@ -809,7 +811,7 @@ class MigratorConfigurer(object):
                 volumes.append( volume )
         return volumes
 
-    def createImageFactory(self , config , image_placement , imagetype):
+    def createImageFactory(self , config , image_placement , imagetype, cloudconfig=None):
         """generates factory to create media (virtual disk files) to store image before upload"""
         compression = 2
         if config.has_option('Image', 'compression'):
@@ -841,7 +843,28 @@ class MigratorConfigurer(object):
                 qemu_convert_params = int(config.get('Qemu', 'qemu_convert_params'))
             factory = VhdQcow2MediaFactory.VhdQcow2MediaFactory(factory , qemu_path , dest_imagetype , qemu_convert_params = qemu_convert_params)
 
+        if image_placement == "remote":
+            mounter = self.getMounter(config,cloudconfig)
+            factory = RemoteMountDecoratorMediaFactory.RemoteMountDecoratorMediaFactory(mounter, factory)
+
         return factory
+
+    def getMounter(self, config, cloudconfig):
+        """gets direct cloud mounter options"""
+        mount = ""
+        if config.has_option('Image', 'mount'):
+            mount = config.get('Image', 'mount')
+
+        mounter = RemoteMounter.NoRemoteMounter()
+
+        if mount == "FUSE":
+            import Linux_GC
+            mounter = Linux_GC.Linux.getFuseMounter(cloudconfig)
+            #import Linux_GC.FuseMount
+            #import Linux_GC.FuseUploadChannelBacked
+            #return Linux_GC.FuseMount.FuseMount()
+        return mounter
+
 
     def getImageOptions(self , config):
         """gets tuple of image related data (image placement , image types , image path (directory) ) """
