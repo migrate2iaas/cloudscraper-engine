@@ -860,7 +860,7 @@ class MigratorConfigurer(object):
 
         if mount == "FUSE":
             import Linux_GC
-            mounter = Linux_GC.Linux.getFuseMounter(cloudconfig)
+            mounter = Linux_GC.Linux().getFuseMounter(cloudconfig)
             #import Linux_GC.FuseMount
             #import Linux_GC.FuseUploadChannelBacked
             #return Linux_GC.FuseMount.FuseMount()
