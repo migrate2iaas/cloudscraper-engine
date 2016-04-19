@@ -264,8 +264,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         self.__makeLinkPublic = make_link_public
         self.__uploadThreadNumber = upload_threads
 
-        #TODO:need to save it in common log directory
-        #boto.set_file_logger("boto", "boto.log", level=logging.DEBUG)
+        boto.set_file_logger("boto", "../../logs/boto.log", level=logging.DEBUG)
         
         self.__awsRegionConstraint = None
         self.__bucketName = bucket
