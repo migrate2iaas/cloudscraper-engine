@@ -13,6 +13,7 @@ from subprocess import *
 import RemoteMounter
 import os
 import threading
+import logging
 
 class FuseMounter(RemoteMounter.RemoteMounter):
     """Fuse mount is a class to start Fuse-based filesystems"""
@@ -25,15 +26,18 @@ class FuseMounter(RemoteMounter.RemoteMounter):
 
     def __mount_thread(self):
         # TODO: cancel\notify on mount end
-        self.__fuse = FUSE(self.__fuseCallbackObj, self.__mountDir, foreground=True)
+        try:
+            self.__fuse = FUSE(self.__fuseCallbackObj, self.__mountDir, foreground=True)
+        except:
+            logging.error("!!! Failed to load FUSE driver for remote storage connection")
 
     def mount(self, directory):
         self.__mountDir = directory 
         # TODO:	modprobe fuse
         os.mkdir(directory , 0700)
-        #thread = threading.Thread(target = self.__mount_thread , args = ())
-        #thread.start()
-        self.__mount_thread()
+        thread = threading.Thread(target = self.__mount_thread , args = ())
+        thread.start()
+        #self.__mount_thread()
         
 
     def unmount(self):
