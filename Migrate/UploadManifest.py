@@ -36,7 +36,7 @@ class ImageManifest(object):
     def all(self):
         raise NotImplementedError
 
-    def get_table_name(self):
+    def get_name(self):
         raise NotImplementedError
 
     def get_path(self):
@@ -51,7 +51,6 @@ class TinyDBImageFileManifest(ImageManifest):
 
     def __init__(self, manifest_path, timestamp, lock, db_write_cache_size=1, use_dr=False):
 
-        # Change
         self.__table_name = str(timestamp)
         path = "{0}/{1}".format(manifest_path, self.__table_name)
 
@@ -230,11 +229,11 @@ class ImageDictionaryManifest(ImageManifest):
     for file storage, based on JSON format.
     """
 
-    DB_TABLES_EXTENSION = "!.cloudscraper-manifest-tables"
+    DB_TABLES_EXTENSION = ".cloudscraper-manifest-tables"
 
     def __init__(self, manifest_path, table_name, lock, db_write_cache_size=1, use_dr=False):
         self.__table_name = str(table_name)
-        path = "{0}/{1}".format(manifest_path, "{0}{1}".format(table_name, self.DB_TABLES_EXTENSION))
+        path = "{0}/{1}".format(manifest_path, self.__table_name)
 
         logging.debug(
             "Creating or opening image manifest database {0}. It's uses dictionaty to store data."
@@ -272,7 +271,7 @@ class ImageDictionaryManifest(ImageManifest):
 
         storage = {
             "_default": {},
-            table_name: {},
+            file_name: {},
         }
 
         if use_dr:
@@ -281,7 +280,7 @@ class ImageDictionaryManifest(ImageManifest):
 
         return ImageDictionaryManifest.open(
             manifest_path,
-            table_name,
+            file_name,
             lock,
             db_write_cache_size,
             use_dr)
@@ -297,7 +296,7 @@ class ImageDictionaryManifest(ImageManifest):
 
     def flush(self):
         if self.__use_dr:
-            with open(self.get_path(), "w") as f:
+            with open("{0}/{1}".format(self.__manifest_path, self.__table_name), "w") as f:
                 json.dump(self.__storage, f)
 
     def insert_db_meta(self, res):
@@ -338,17 +337,21 @@ class ImageDictionaryManifest(ImageManifest):
         :return: list of records or empty []
         """
 
-        res = {}
+        res = []
         for item in self.all():
-            if etag and offset:
-                if item["etag"] == str(etag) and item["offset"] == str(offset):
-                    return item
+            if etag:
+                if item["etag"] == str(etag):
+                    if part_name:
+                        if item["part_name"] == str(part_name):
+                            res.append(item)
+                    else:
+                        res.append(item)
             elif part_name:
                 if item["part_name"] == str(part_name):
-                    return item
+                    res.append(item)
             elif offset:
                 if item["offset"] == str(offset):
-                    return item
+                    res.append(item)
 
         return res
 
@@ -387,15 +390,19 @@ class ImageDictionaryManifest(ImageManifest):
         }
 
         # First check etag for current offset
-        rec_offset = self.select(offset=res["offset"])
-        if rec_offset:
+        rec_offset_list = self.select(offset=res["offset"])
+        if len(rec_offset_list) == 1:
+            rec_offset = rec_offset_list.pop()
             # If etag mismatch update record in current manifest for given offset
             if rec_offset["etag"] != res["etag"]:
                 res["status"] = "updated"
                 self.update(rec_offset["etag"], rec_offset["offset"], res)
+        elif len(rec_offset_list) > 1:
+            raise Exception("Manifest contains more than 1 record with given offset")
 
         # We can't insert record with same etag and offset (has unique key semantic)
-        if not rec_offset:
+        rec_list = self.select(res["etag"])
+        if any(d['offset'] == str(offset) for d in rec_list) is False:
             with self.__lock:
                 self.__table[self.__table_count] = res
                 self.__table_count += 1
@@ -417,7 +424,7 @@ class ImageDictionaryManifest(ImageManifest):
                 res.append(self.__table[i])
             return res
 
-    def get_table_name(self):
+    def get_name(self):
         """
         Returns name of backup, in this case it's means manifest file name.
 
@@ -427,7 +434,7 @@ class ImageDictionaryManifest(ImageManifest):
 
     def get_path(self):
         if self.__use_dr:
-            return "{0}/{1}{2}".format(self.__manifest_path, self.__table_name, self.DB_TABLES_EXTENSION)
+            return "{0}/{1}".format(self.__manifest_path, self.__table_name)
 
 
 class ImageManifestDatabase(object):
@@ -438,8 +445,8 @@ class ImageManifestDatabase(object):
     DB_SCHEME_EXTENSION = ".cloudscraper-manifest-database"
 
     def __init__(
-            self, image_manifest, manifest_path, table_name, lock, increment_depth=1, db_write_cache_size=1,
-            use_dr=False, resume=False, volname=None, target_id=None):
+            self, image_manifest, manifest_path, table_name, lock, resume=False, increment_depth=1,
+            db_write_cache_size=1, use_dr=False):
         """
         Creates or opens existing manifest file
 
@@ -465,12 +472,8 @@ class ImageManifestDatabase(object):
         self.__increment_depth = None
         self.__manifest_path = None
         self.__image_manifest = image_manifest
-        self.__target_id = target_id
-        self.__volname = str(volname).rsplit('\\').pop().split(':')[0]
-        self.__resume = resume
-        self.__use_dr = use_dr
-
-        if self.__use_dr:
+        self.__table_name = table_name
+        if use_dr:
             self.__increment_depth = increment_depth
 
             # Creating directory if it doesn't exsists
@@ -481,56 +484,47 @@ class ImageManifestDatabase(object):
         self.__db = []
         self.__db_scheme = None
         try:
-            table_name_tmp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
-            # If table_name defined in parameter, override it
-            if table_name:
-                table_name_tmp = table_name
-
-            if self.__use_dr:
+            if use_dr:
                 # Creating or opening database scheme
                 self.__db_scheme = TinyDB(self.get_db_scheme_path())
 
                 # First, creating manifest if no resume required, then getting list (new manifest just created)
-                if self.__resume is False:
-                    image_manifest.create(self.__manifest_path, table_name_tmp, lock, db_write_cache_size, use_dr)
+                if resume is False:
+                    image_manifest.create(self.__manifest_path, table_name, lock, db_write_cache_size, use_dr)
 
                     # Inserting new table name if it's doesn't exists
-                    self.__db_scheme.insert({
-                        "table_name": str(table_name_tmp),
-                        "table_timestamp": str(datetime.datetime.now()),
-                        "volname": str(self.__volname),
-                        "targed_id": str(self.__target_id),
-                    })
+                    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
+                    if not self.__db_scheme.search(where("table_name") == str(table_name)):
+                        self.__db_scheme.insert({
+                            "table_name": str(table_name),
+                            "table_timestamp": timestamp,
+                        })
+                    # Updating creation time otherwise
+                    else:
+                        self.__db_scheme.update({"table_timestamp": timestamp}, where("table_name") == table_name)
 
                 # increment_depth = 0 meaning that we use all available manifests
                 # increment_depth = N meaning that we use last N available manifests
-                m_list = self.get_db_tables_source(increment_depth, volname, target_id)
-                if not m_list and self.__resume:
+                m_list = self.get_db_tables_source(increment_depth)
+                if not m_list and resume:
                     raise Exception("Unable to resuming upload. Previous upload (manifest) not found")
 
                 for table in m_list:
                     self.__db.append(
                         self.__image_manifest.open(
-                            self.__manifest_path, table, lock, db_write_cache_size, self.__use_dr))
+                            self.__manifest_path, table, lock, db_write_cache_size, use_dr))
+
             else:
                 self.__db.append(
                     self.__image_manifest.open(
-                        self.__manifest_path, "in_memory_table", lock, db_write_cache_size, self.__use_dr))
-
-            # Saving current manifest table name
-            self.__table_name = self.__db[0].get_table_name()
-
-            if self.__use_dr:
-                # Updating creation time of current manifest
-                self.__db_scheme.update(
-                    {"table_timestamp": str(datetime.datetime.now())}, where("table_name") == self.__table_name)
+                        self.__manifest_path, "in_memory_table", lock, db_write_cache_size, use_dr))
 
             # Inserting metadata to default table for opened (last) manifest
             self.__db[0].insert_db_meta({
                 "start": str(datetime.datetime.now()),
-                "table_name": self.__table_name,
+                "table_name": table_name,
                 "status": "progress",
-                "resume": str(self.__resume),
+                "resume": str(resume),
                 "increment_depth": str(increment_depth)})
         except Exception as e:
             logging.error("!!!ERROR: unable to create (or open) image file manifest for {0}: {1}".format(
@@ -543,22 +537,16 @@ class ImageManifestDatabase(object):
     def get_table_name(self):
         return self.__table_name
 
-    def get_target_id(self):
-        return self.__target_id
-
-    def get_increment_depth(self):
-        return self.__increment_depth
-
-    def get_db_tables_source(self, increment_depth, volname, targed_id):
+    def get_db_tables_source(self, increment_depth):
         result = []
-        t_list = self.__db_scheme.search(where("volname") == str(volname) and where("targed_id") == targed_id)
+        t_list = self.__db_scheme.all()
 
         # Check, if table_timestamp exists for backward compatibility
         t_list.sort(key=lambda x: x["table_timestamp"] if "table_timestamp" in x else None, reverse=True)
         for table in t_list:
             if "table_timestamp" in table:
                 # Adding file extension
-                result.append(table["table_name"])
+                result.append(table["table_name"] + self.__image_manifest.DB_TABLES_EXTENSION)
 
         return result[0:increment_depth] if len(result) > increment_depth > 0 else result
 
@@ -568,36 +556,18 @@ class ImageManifestDatabase(object):
     def get_db_scheme_path(self):
         return "{0}/{1}".format(self.__manifest_path, self.DB_SCHEME_EXTENSION)
 
-    def get_path(self):
-        return self.__manifest_path
-
-    def is_resume(self):
-        return self.__resume
-
-    def is_dr(self):
-        return self.__use_dr
-
-    def get_key_base(self):
-        return "{0}/{1}/{2}".format(self.__target_id, self.__table_name, self.__volname)
-
-    def get_part_name(self, offset):
-        return "{0}/{1:032}".format(self.get_key_base(), offset)
-
-    def insert(self, etag, local_hash, offset, size, status, part_name=None):
-        # inserting in current manifest
-        if part_name is None:
-            part_name = self.get_part_name(offset)
-
+    def insert(self, etag, local_hash, part_name, offset, size, status):
+        # inserting in first (meaning last) manifest in list
         return self.__db[0].insert(etag, local_hash, part_name, offset, size, status)
 
-    def select(self, etag=None, part_name=None, offset=None):
+    def select(self, etag=None, part_name=None):
         # TODO: make expression more python-like
         for table in self.__db:
-            rec = table.select(etag, part_name, offset)
+            rec = table.select(etag, part_name)
             if rec:
                 return rec
 
-        return {}
+        return []
 
     def update(self, local_hash, part_name, rec):
         return self.__db[0].update(local_hash, part_name, rec)
