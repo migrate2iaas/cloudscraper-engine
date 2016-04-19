@@ -12,6 +12,7 @@ import re
 from subprocess import *
 import RemoteMounter
 import os
+import threading
 
 class FuseMounter(RemoteMounter.RemoteMounter):
     """Fuse mount is a class to start Fuse-based filesystems"""
@@ -22,11 +23,16 @@ class FuseMounter(RemoteMounter.RemoteMounter):
         self.__fuseCallbackObj = fuse_operations
         self.__fuse = None
 
+    def __mount_thread(self):
+        # TODO: cancel\notify on mount end
+        self.__fuse = FUSE(self.__fuseCallbackObj, self.__mountDir) #, foreground=False)
+
     def mount(self, directory):
         self.__mountDir = directory 
         # TODO:	modprobe fuse
         os.mkdir(directory , 0700)
-        self.__fuse = FUSE(self.__fuseCallbackObj, self.__mountDir) #, foreground=False)
+        threading.Thread(target = self.__mount_thread , args = ())
+        
 
     def unmount(self):
         p1 = Popen(["umount" , self.__mountDir], stdout=PIPE)
