@@ -42,6 +42,7 @@ import QemuImgMediaFactory
 import VhdQcow2MediaFactory
 import SparseRawMedia
 import RemoteMountDecoratorMediaFactory
+import RemoteMounter
 
 
 class VolumeMigrateNoConfig(VolumeMigrateConfig):
