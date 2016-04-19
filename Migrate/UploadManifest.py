@@ -472,7 +472,6 @@ class ImageManifestDatabase(object):
         self.__increment_depth = None
         self.__manifest_path = None
         self.__image_manifest = image_manifest
-        self.__table_name = table_name
         if use_dr:
             self.__increment_depth = increment_depth
 
@@ -519,10 +518,12 @@ class ImageManifestDatabase(object):
                     self.__image_manifest.open(
                         self.__manifest_path, "in_memory_table", lock, db_write_cache_size, use_dr))
 
+            self.__table_name = str(self.__db[0].get_name()).split(self.__db[0].DB_TABLES_EXTENSION)[0]
+
             # Inserting metadata to default table for opened (last) manifest
             self.__db[0].insert_db_meta({
                 "start": str(datetime.datetime.now()),
-                "table_name": table_name,
+                "table_name": self.__table_name,
                 "status": "progress",
                 "resume": str(resume),
                 "increment_depth": str(increment_depth)})

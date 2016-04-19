@@ -377,6 +377,9 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             null_md5.update(str(null_data))
 
             self.__well_known_blocks.insert(null_md5.hexdigest(), self.__keyBase + "NullBlock", null_data)
+
+            # Hack: use manifest database timestamp instead given in key base
+            self.__keyBase = "{0}/{1}".format(self.__manifest.get_table_name(), str(self.__keyBase).rsplit('/').pop())
         except Exception as e:
             logging.error("!!!ERROR: cannot open file containing segments. Reason: {0}".format(e))
             raise
