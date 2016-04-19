@@ -32,7 +32,7 @@ class RemoteMountDecoratorMediaFactory(ImageMediaFactory.ImageMediaFactory):
     def createMedia(self , imagepath , imagesize):
         if self.__mounter.isMounted() == False:
             basedir = os.path.dirname(imagepath);
-            self.__mountdir = os.path.join( basedir, "mount" + str(int(time.time())))
+            self.__mountdir = os.path.join( basedir , str(os.pathsep) , "mount" + str(int(time.time())))
             self.__mounter.mount(self.__mountdir)
             #TODO: think when to do unmount
         
