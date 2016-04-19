@@ -28,8 +28,8 @@ class FuseMounter(RemoteMounter.RemoteMounter):
         # TODO: cancel\notify on mount end
         try:
             self.__fuse = FUSE(self.__fuseCallbackObj, self.__mountDir, foreground=True)
-        except:
-            logging.error("!!! Failed to load FUSE driver for remote storage connection")
+        except Exception as e:
+            logging.error("!!! Failed to load FUSE driver for remote storage connection. " + repr(e))
 
     def mount(self, directory):
         self.__mountDir = directory 
