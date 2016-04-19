@@ -316,9 +316,12 @@ class ImageDictionaryManifest(ImageManifest):
     def update(self, etag, offset, rec):
         """
         """
-        pass
+        for i in self.__table:
+            if self.__table[i]["etag"] == str(etag) and self.__table[i]["offset"] == str(offset):
+                with self.__lock:
+                    self.__table[i] = rec
 
-    def select(self, etag=None, part_name=None):
+    def select(self, etag=None, part_name=None, offset=None):
         """
         Search records by given etag or (and) part name
 
@@ -327,6 +330,9 @@ class ImageDictionaryManifest(ImageManifest):
 
         :param part_name: part name to search
         :type part_name: string
+
+        param offset: offset to search
+        :type offset: string
 
         :return: list of records or empty []
         """
@@ -342,6 +348,9 @@ class ImageDictionaryManifest(ImageManifest):
                         res.append(item)
             elif part_name:
                 if item["part_name"] == str(part_name):
+                    res.append(item)
+            elif offset:
+                if item["offset"] == str(offset):
                     res.append(item)
 
         return res
@@ -379,6 +388,17 @@ class ImageDictionaryManifest(ImageManifest):
             "size": str(size),
             "status": str(status),
         }
+
+        # First check etag for current offset
+        rec_offset_list = self.select(offset=res["offset"])
+        if len(rec_offset_list) == 1:
+            rec_offset = rec_offset_list.pop()
+            # If etag mismatch update record in current manifest for given offset
+            if rec_offset["etag"] != res["etag"]:
+                res["status"] = "updated"
+                self.update(rec_offset["etag"], rec_offset["offset"], res)
+        elif len(rec_offset_list) > 1:
+            raise Exception("Manifest contains more than 1 record with given offset")
 
         # We can't insert record with same etag and offset (has unique key semantic)
         rec_list = self.select(res["etag"])
