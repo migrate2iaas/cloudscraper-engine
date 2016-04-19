@@ -25,7 +25,7 @@ class FuseMounter(RemoteMounter.RemoteMounter):
     def mount(self, directory):
         self.__mountDir = directory 
         # TODO:	modprobe fuse
-        os.mkdir(directory , mode=0700)
+        os.mkdir(directory , 0700)
         self.__fuse = FUSE(self.__fuseCallbackObj, self.__mountDir) #, foreground=False)
 
     def unmount(self):
