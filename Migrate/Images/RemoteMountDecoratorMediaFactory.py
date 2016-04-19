@@ -38,6 +38,6 @@ class RemoteMountDecoratorMediaFactory(ImageMediaFactory.ImageMediaFactory):
         
         mountedpath = self.__mountdir + os.path.basename(imagepath)
         
-        return self.__factory(mountedpath , imagesize)
+        return self.__factory.createMedia(mountedpath , imagesize)
 
 
