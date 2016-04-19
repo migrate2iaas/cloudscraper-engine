@@ -169,7 +169,6 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
 
         dataext = DataExtent.DataExtent(offset , len(data))
         dataext.setData(data)
-        dataplace = dataplace + len(data)
         channel.uploadData(dataext)
 
         #TODO: update channel size if needed
