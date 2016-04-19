@@ -650,7 +650,9 @@ class MigratorConfigurer(object):
         if config.has_option('EC2', 'os_override'):
             os_override = config.get('EC2', 'os_override')
         
-       
+
+        (imagedir, image_placement, imagetype) = self.getImageOptions(config)
+        volumes = self.createVolumesList(config, configfile, imagedir, imagetype, s3prefix)       
         use_dr, manifest_path, increment_depth = self.loadDRconfig(config)
 
         newsize = imagesize = 0 # deprecated
@@ -663,13 +665,11 @@ class MigratorConfigurer(object):
             bucket=bucket, user=user, password=password, newsize=newsize, arch=arch, zone=zone, region=region,
             machinename="", securityid=security, instancetype=instancetype, chunksize=chunksize, disktype=imagetype,
             keyname_prefix=s3prefix, vpc=vpcsubnet, custom_host=custom_host, custom_port=custom_port,
-
             custom_suffix=custom_suffix, use_ssl=use_ssl, manifest_path=manifest_path, minipad=minipad,
             minipad_ami=minipad_ami, increment_depth=increment_depth, use_dr=use_dr, os_override=os_override)
        
         (imagedir, image_placement, imagetype) = self.getImageOptions(config)
-        volumes = self.createVolumesList(config, configfile, imagedir, imagetype, s3prefix)
-    
+        volumes = self.createVolumesList(config, configfile, imagedir, imagetype, s3prefix) 
         factory = self.createImageFactory(config, image_placement, imagetype , cloud)
         image = AmazonConfigs.AmazonMigrateConfig(volumes, factory, imagearch, imagetype)
 
