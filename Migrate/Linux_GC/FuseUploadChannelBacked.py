@@ -105,8 +105,8 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         attrs[name] = value
 
     def statfs(self, path):
-        chunk = 1024*1024*10
-        overall_size = 1024#2048#1024*1024*1024
+        chunk = 4096
+        overall_size = 2048#2048#1024*1024*1024
         return dict(f_bsize=chunk
                     , f_blocks=overall_size, f_bavail=overall_size)
 
