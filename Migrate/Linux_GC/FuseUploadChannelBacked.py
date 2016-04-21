@@ -167,9 +167,9 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
 
     def write(self, path, data, offset, fh):
         #logging.info(" FUSE WRITE " + str(len(data)) + " Bytes OFFSET " + str(offset) )
-        if self.data[path] == None:
+        if self.data.has_key(path) == False:
             self.data[path] = defaultdict(bytes)
-            self.data[path][offset] = data
+        self.data[path][offset] = data
 
         if self.files[path]['st_size'] < offset + len(data):
             self.files[path]['st_size'] = offset + len(data)
@@ -191,7 +191,8 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
 
     def read(self, path, size, offset, fh):
         logging.info(" FUSE READ " + str(size) + " Bytes OFFSET " + str(offset) )
-        if self.data[path]:
-            return self.data[path][offset][:size]
+        if self.data.has_key(path):
+            if self.data[path]:
+                return self.data[path][offset][:size]
 
         return bytearray(size)
