@@ -178,7 +178,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
                 self.data[path] = defaultdict(bytes)
             self.data[path][offset] = data
         
-            if len(self.data[path]) > 512:
+            if len(self.data[path].keys) > 256:
                 for key in self.data[path].keys:
                     del self.data[path][key]
                     logging.info("Deleted offset " + str(key) + " from cache")
