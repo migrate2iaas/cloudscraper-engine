@@ -170,7 +170,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         #logging.info(" FUSE WRITE " + str(len(data)) + " Bytes OFFSET " + str(offset) )
         
         # cache
-        if self.cached_data.has_key(path) == False:
+        if self.cached_data.has_key(path):
             if self.cached_data[path].has_key(offset):
                 self.cached_data[path][offset] = data
         else:
