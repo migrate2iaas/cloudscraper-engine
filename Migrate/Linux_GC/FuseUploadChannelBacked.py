@@ -32,6 +32,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         self.files = {}
         self.channels = {}
         self.data = {} #defaultdict(bytes)
+        self.cached_data = {}
         self.fd = 0
         now = time()
         self.files['/'] = dict(st_mode=(S_IFDIR | 0o755), st_ctime=now,
@@ -167,10 +168,16 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
 
     def write(self, path, data, offset, fh):
         #logging.info(" FUSE WRITE " + str(len(data)) + " Bytes OFFSET " + str(offset) )
+        # cache
         if self.data.has_key(path) == False:
             self.data[path] = defaultdict(bytes)
         self.data[path][offset] = data
+        
+        if len(self.data[path]) > 512:
+            for key in self.data[path].keys:
+                del self.data[path][key]
 
+        #end cache
         if self.files[path]['st_size'] < offset + len(data):
             self.files[path]['st_size'] = offset + len(data)
 
@@ -180,19 +187,22 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         dataext.setData(data)
         channel.uploadData(dataext)
 
-        #self.data[path];
-        
-        # simple cache purge
-        #if len(self.data) > 256:
-        #    del
-        #TODO: update channel size if needed
-
         return len(data)
 
     def read(self, path, size, offset, fh):
         logging.info(" FUSE READ " + str(size) + " Bytes OFFSET " + str(offset) )
+        
+        if self.cached_data.has_key(path):
+            if self.cached_data[path].has_key(offset):
+                data = self.cached_data[path][offset][:size]
+                return data
+
         if self.data.has_key(path):
-            if self.data[path]:
-                return self.data[path][offset][:size]
+            if self.data[path].has_key(offset):
+                data = self.data[path][offset][:size]
+                if self.cached_data.has_key(path) == False:
+                    self.cached_data[path] = defaultdict(bytes)
+                self.cached_data[path][offset] = data
+                return data
 
         return bytearray(size)

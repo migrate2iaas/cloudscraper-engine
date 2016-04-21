@@ -404,8 +404,9 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         #TODO: test the resume upload scenario on these failed tasks
         #should split the chunk or wait till new data arrives for the same data block
         # the last one could be less than 10Mb
-        if size != self.__chunkSize:
-            logging.warning("Bad chunk size for upload , should be " + str(self.__chunkSize))
+
+        #if size != self.__chunkSize:
+        #    logging.warning("Bad chunk size for upload , should be " + str(self.__chunkSize))
 
         if self.__errorUploading is True:
             return False
