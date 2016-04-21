@@ -190,7 +190,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         return len(data)
 
     def read(self, path, size, offset, fh):
-        logging.info(" FUSE READ " + str(len(data)) + " Bytes OFFSET " + str(offset) )
+        logging.info(" FUSE READ " + str(size) + " Bytes OFFSET " + str(offset) )
         if self.data[path]:
             return self.data[path][offset][:size]
 
