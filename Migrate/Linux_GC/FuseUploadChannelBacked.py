@@ -205,4 +205,4 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
                 self.cached_data[path][offset] = data
                 return data
 
-        return bytearray(size)
+        return str(bytearray(size))
