@@ -698,8 +698,13 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             local_offset= offset - int(offset/self.__chunkSize)*self.__chunkSize
             keyname = self.__keyBase+".part"+str(int(offset/self.__chunkSize))
             s3key = self.__bucket.get_key(keyname)
+            if s3key == None:
+                break
             data = s3key.get_contents_as_string()
             result = result + data[local_offset:]
             offset = offset + len(data) - local_offset
-        return result[:size]
+            read = read + len(data) - local_offset
+        if len(result) > size:
+            return result[:size]
+        return result
 
