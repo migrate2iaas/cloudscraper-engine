@@ -167,7 +167,6 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
 
 
     def write(self, path, data, offset, fh):
-        #logging.info(" FUSE WRITE " + str(len(data)) + " Bytes OFFSET " + str(offset) )
         if self.data.has_key(path) == False:
             self.data[path] = defaultdict(bytes)
         if self.cached_data.has_key(path) == False:
@@ -178,7 +177,8 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
             self.cached_data[path][offset] = data
         else:
             self.data[path][offset] = data
-            if len(self.data[path]) > 256:
+            logging.info(" FUSE WRITE offset " + str(offset) + " , number of entries in cache " + str(len(self.data[path])))
+            if len(self.data[path]) > 128:
                 for key in self.data[path].keys:
                     del self.data[path][key]
                     logging.info("Deleted offset " + str(key) + " from cache")
