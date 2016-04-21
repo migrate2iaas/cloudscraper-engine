@@ -180,15 +180,15 @@ class Linux(object):
         for line in command_out.split('\n'):
             val = re.split("\s+", line)
             try:
-                total_used = total_used + int(val[2])
+                total_used = total_used + int(val[2]) # possibly buggy place, should be refactored
             except:
                 pass
         minimum_size = int(total_used*1.1*1024)
         if size < minimum_size:
-            logging.warning("Too low size value (%i) automaticalliy increased to  %i" % (size, minimum_size))
+            logging.warning("!The available disk size is too low (%i) to store data size of %i" % (minimum_size , size))
             size = minimum_size
-        options['fs_size'] = size
 
+        options['fs_size'] = size
         options['skip_disk_space_check'] = True;
         #TODO: Should pass somehow
         options['file_system'] = "ext3"

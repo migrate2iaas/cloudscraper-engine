@@ -177,11 +177,9 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
             self.cached_data[path][offset] = data
         else:
             self.data[path][offset] = data
-            logging.info(" FUSE WRITE offset " + str(offset) + " , number of entries in cache " + str(len(self.data[path])))
-            if len(self.data[path]) > 128:
-                for key in self.data[path].keys():
+            if len(self.data[path]) > 512:
+                for key in sorted(self.data[path].keys()):
                     self.data[path].pop(key)
-                    logging.info("Deleted offset " + str(key) + " from cache")
                     break
         #end cache
 

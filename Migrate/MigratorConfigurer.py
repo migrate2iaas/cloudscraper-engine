@@ -761,24 +761,28 @@ class MigratorConfigurer(object):
                 letters = config.get('Volumes', 'letters')                 
             letterslist = letters.split(',')
 
+            system_image_size = 0
+            sysvol = os.environ['windir'].split(':')[0] #todo: change to cross-platform way. windir is set artificially at the program start for linux
+
             # if system is set , add autolocated system volume by default
             if config.has_option('Volumes', 'system'):
                 addsys = config.getboolean('Volumes', 'system') 
                 if addsys:
                     logging.debug("system is set in volumes config")
-                    sysvol = os.environ['windir'].split(':')[0] #todo: change to cross-platform way. windir is set artificially at the program start for linux
                     if not sysvol in letterslist:
                         letterslist.append(sysvol)
                         logging.debug("appending system volume " + sysvol + " to the volume list")
                     else:
                         logging.debug("skipping  " + sysvol + " - it is already in the list")
+                    if config.has_option('Volumes', 'system_image_size_gb'):
+                        system_image_size = config.getint('Volumes', 'system_image_size_gb')
+                        system_image_size = system_image_size * 1024 * 1024 * 1024
 
             logging.debug("Volume letters to process are: " + str(letterslist))
             for letter in letterslist:
                 letter = str(letter).strip() #remove spaces between commas
                 if not letter:
                     continue
-                letter = str(letter).strip()
                 if os.name == 'nt':
                     devicepath = '\\\\.\\'+letter+':'
                     sys.path.append('./Windows')
@@ -797,6 +801,9 @@ class MigratorConfigurer(object):
                     try:
                         import Linux
                         size = Linux.Linux().getSystemInfo().getVolumeInfo(devicepath).getSize()
+                        # TODO: make it dependable on the volume name
+                        if system_image_size and sysvol == letter:
+                            size = system_image_size
                     except Exception as e:
                         logging.debug("Cannot get local data on volume " + letter + " " + str(e))
                         size = 0
