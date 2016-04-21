@@ -188,6 +188,7 @@ class Linux(object):
             logging.warning("!The available disk size is too low (%i) to store data size of %i" % (minimum_size , size))
             size = minimum_size
 
+        logging.info("Setting image disk size " + str(size) ) 
         options['fs_size'] = size
         options['skip_disk_space_check'] = True;
         #TODO: Should pass somehow
