@@ -181,6 +181,7 @@ class Linux(object):
             val = re.split("\s+", line)
             try:
                 total_used = total_used + int(val[2]) # possibly buggy place, should be refactored
+                logging.info("Found disk of " + str(total_used) + " used")
             except:
                 pass
         minimum_size = int(total_used*1.1*1024)
