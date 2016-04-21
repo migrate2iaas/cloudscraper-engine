@@ -104,9 +104,9 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         attrs[name] = value
 
     def statfs(self, path):
-        chunk = 10*1024*1024
+        chunk = 1024*1024*10
         overall_size = 1024#2048#1024*1024*1024
-        return dict(f_bsize=10*1024*1024
+        return dict(f_bsize=chunk
                     , f_blocks=overall_size, f_bavail=overall_size)
 
     def symlink(self, target, source):
@@ -166,7 +166,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
 
 
     def write(self, path, data, offset, fh):
-        logging.info(" FUSE WRITE " + str(len(data)) + " Bytes OFFSET " + str(offset) )
+        #logging.info(" FUSE WRITE " + str(len(data)) + " Bytes OFFSET " + str(offset) )
 
         if self.files[path]['st_size'] < offset + len(data):
             self.files[path]['st_size'] = offset + len(data)
@@ -183,6 +183,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         return len(data)
 
     def read(self, path, size, offset, fh):
+        logging.info(" FUSE READ " + str(len(data)) + " Bytes OFFSET " + str(offset) )
         #TODO: here we should have a kinda cache?
         #or an ability to read from UploadChannel?
         #TODO: read from Upload channel
