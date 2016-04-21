@@ -31,7 +31,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         self.cloud_options = cloud_options
         self.files = {}
         self.channels = {}
-        self.data = defaultdict(bytes)
+        self.data = {} #defaultdict(bytes)
         self.fd = 0
         now = time()
         self.files['/'] = dict(st_mode=(S_IFDIR | 0o755), st_ctime=now,
@@ -81,7 +81,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         return ['.', '..'] + [x[1:] for x in self.files if x != '/']
 
     def readlink(self, path):
-        return self.data[path]
+        return self.data[path][0]
 
     def removexattr(self, path, name):
         attrs = self.files[path].get('attrs', {})
@@ -167,6 +167,9 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
 
     def write(self, path, data, offset, fh):
         #logging.info(" FUSE WRITE " + str(len(data)) + " Bytes OFFSET " + str(offset) )
+        if self.data[path] == None:
+            self.data[path] = defaultdict(bytes)
+            self.data[path][offset] = data
 
         if self.files[path]['st_size'] < offset + len(data):
             self.files[path]['st_size'] = offset + len(data)
@@ -177,14 +180,18 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         dataext.setData(data)
         channel.uploadData(dataext)
 
-        self.data[path] = self.data[path][:offset] + data
+        #self.data[path];
+        
+        # simple cache purge
+        #if len(self.data) > 256:
+        #    del
         #TODO: update channel size if needed
 
         return len(data)
 
     def read(self, path, size, offset, fh):
         logging.info(" FUSE READ " + str(len(data)) + " Bytes OFFSET " + str(offset) )
-        #TODO: here we should have a kinda cache?
-        #or an ability to read from UploadChannel?
-        #TODO: read from Upload channel
-        return self.data[path][offset:offset + size]
+        if self.data[path]:
+            return self.data[path][offset][:size]
+
+        return bytearray(size)
