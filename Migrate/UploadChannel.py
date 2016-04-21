@@ -120,8 +120,21 @@ class UploadChannel(object):
         """
         return False
 
+
     def reconfirm(self, uploadid):
         """
         Recomfirms existing upload making sure the upload is valid for the deploy (e.g. the upload may have expired)
         """
         return True
+
+    def canDownload(self):
+        """
+        Tests if the channel supports random-read downloads via download method
+        """
+        return False
+
+    def download(self, offset, size):
+        """
+        Downloads some already uploaded data from the channel
+        """
+        raise NotImplementedError

@@ -210,5 +210,10 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
                 self.cached_data[path][offset] = data
                 return data
 
+        channel = self.getChannel(path)
+        if channel.canDownload():
+            data = channel.download(offset, size)
+            return data
+
         logging.info("GOT NO DATA TO SERVER at OFFSET " + str(offset))
         return str(bytearray(size))

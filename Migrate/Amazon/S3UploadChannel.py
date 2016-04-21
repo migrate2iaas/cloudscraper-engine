@@ -631,6 +631,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         for thread in self.__workThreads:
             self.__uploadQueue.put(None)
 
+
     def reconfirm(self, uploadid):
         """
         Recomfirms existing upload making sure the upload is valid for the deploy (e.g. the upload may have expired)
@@ -679,3 +680,26 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         logging.info("+++ "+ renewed_upload_id)
 
         return True
+
+    def canDownload(self):
+        """
+        Tests if the channel supports random-read downloads via download method
+        """
+        return True
+
+    def download(self, offset, size):
+        """
+        Downloads some already uploaded data from the channel
+        """
+        result = ""
+        read = 0
+        while read < size:
+            # for the first chunk
+            local_offset= offset - int(offset/self.__chunkSize)*self.__chunkSize
+            keyname = self.__keyBase+".part"+str(int(offset/self.__chunkSize))
+            s3key = self.__bucket.get_key(keyname)
+            data = s3key.get_contents_as_string()
+            result = result + data[local_offset:]
+            offset = offset + len(data) - local_offset
+        return result[:size]
+
