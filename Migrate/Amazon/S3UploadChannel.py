@@ -693,6 +693,8 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         """
         result = ""
         read = 0
+        #wait till all current tasks are done
+        self.__uploadQueue.join()
         while read < size:
             # for the first chunk
             local_offset= offset - int(offset/self.__chunkSize)*self.__chunkSize

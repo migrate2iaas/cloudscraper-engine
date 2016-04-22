@@ -170,9 +170,9 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         if self.files[path]['st_mode'] & S_IFDIR != 0:
             logging.info("Skipping write to dir")
             return len(data)
-        if self.files[path]['st_mode'] & S_IFLNK != 0:
-            logging.info("Skipping write to link")
-            return len(data)
+        #if self.files[path]['st_mode'] & S_IFLNK != 0:
+        #    logging.info("Skipping write to link")
+        #    return len(data)
 
         if self.data.has_key(path) == False:
             self.data[path] = defaultdict(bytes)
