@@ -167,9 +167,9 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
 
 
     def write(self, path, data, offset, fh):
-        if self.files[path]['st_mode'] | S_IFDIR != 0:
+        if self.files[path]['st_mode'] & S_IFDIR != 0:
             return len(data)
-        if self.files[path]['st_mode'] | S_IFLNK != 0:
+        if self.files[path]['st_mode'] & S_IFLNK != 0:
             return len(data)
 
         if self.data.has_key(path) == False:
