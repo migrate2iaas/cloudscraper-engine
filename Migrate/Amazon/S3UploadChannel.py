@@ -172,7 +172,6 @@ class S3UploadThread(threading.Thread):
 
                     s3key = None
                     upload = True
-                    res["part_name"] = uploadtask.getTargetKey()
 
                     # First, if well known blocks database exists, checkout data chunk there
                     res_well_known = None
@@ -183,35 +182,33 @@ class S3UploadThread(threading.Thread):
 
                     # If data chunk IS NOT well known, trying to find in manifest database if it's exists
                     if res_well_known is None:
-                        res_temp = self.__manifest.select(md5_hexdigest)
-                        for i in res_temp:
-                            if int(i["offset"]) == offset:
-                                res = i
-                                break
+                        res = self.__manifest.select(md5_hexdigest, offset=offset)
 
                     # Trying to find block in cloud
                     try:
-                        s3key = bucket.get_key(res["part_name"])
+                        if res:
+                            s3key = bucket.get_key(res["part_name"])
+
                         if s3key:
                             self.__manifest.insert(
-                                res["etag"], md5_hexdigest, res["part_name"], offset, size, "skipped")
+                                res["etag"], md5_hexdigest, offset, size, "skipped")
                             logging.debug("key with same md5 found, skip uploading")
                             upload = False
                     except Exception as e:
-                        logging.debug(
+                        logging.info(
                             "Failed to get key. Got exception from the source server. Sometimes it means errors "
                             "from not fully s3 compatible sources " + repr(e))
 
                     # If key is not found, creating
                     if s3key is None:
-                        s3key = Key(bucket, res["part_name"])
+                        s3key = Key(bucket, self.__manifest.get_part_name(offset))
 
                     if upload:
                         md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest)
                         s3key.set_contents_from_string(
                             str(data), replace=True, policy=None, md5=(md5digest, base64md5), reduced_redundancy=False,
                             encrypt_key=False)
-                        self.__manifest.insert(md5digest, md5_hexdigest, res["part_name"], offset, size, "uploaded")
+                        self.__manifest.insert(md5digest, md5_hexdigest, offset, size, "uploaded")
                         uploadtask.notifyDataTransfered()
                     else:
                         logging.debug("Skipped the data upload: %s/%s ", str(bucket), res["part_name"])
@@ -249,10 +246,10 @@ class S3UploadChannel(UploadChannel.UploadChannel):
     #chunk size means one data element to be uploaded. it waits till all the chunk is transfered to the channel than makes an upload (not fully implemented)
 
     def __init__(
-            self, bucket, awskey, awssercret, resultDiskSizeBytes, location='', keynameBase=None, diskType='VHD',
+            self, bucket, awskey, awssercret, resultDiskSizeBytes, location='', diskType='VHD',
             resume_upload=False, chunksize=10*1024*1024, upload_threads=4, queue_size=16, use_ssl=True,
-            manifest_path=None, increment_depth=1, use_dr=False, walrus=False, walrus_path="/services/WalrusBackend",
-            walrus_port=8773, make_link_public=False):
+            manifest=None, walrus=False, walrus_path="/services/WalrusBackend", walrus_port=8773,
+            make_link_public=False):
 
         self.__uploadQueue = Queue.Queue(queue_size)
         self.__statLock = threading.Lock()
@@ -305,20 +302,8 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         gigabyte = 1024*1024*1024
         self.__volumeToAllocateGb = int((resultDiskSizeBytes+gigabyte-1)/gigabyte)
 
-        
-        # Resume and increment database creation
-        self.__use_dr = use_dr
-        self.__manifestPath=manifest_path 
-        self.__incrementDepth = increment_depth
-        self.__manifest = None
+        self.__manifest = manifest
         self.__well_known_blocks = None
-
-        self.__startTimestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
-        if keynameBase:
-            self.__keyBase = keynameBase
-        else:
-            self.__keyBase = "Migrate{0}/image".format(self.__startTimestamp)
-
         self.__workThreads = list()
 
     def initStorage(self, init_data_link = ''):
@@ -356,18 +341,12 @@ class S3UploadChannel(UploadChannel.UploadChannel):
                 raise ex
 
         logging.info(
-            "Resume upload file path: {0}, resume upload is {1}, use DR is {2}, key base is {3}".
-            format(self.__manifestPath, self.__resumeUpload, self.__use_dr, self.__keyBase))
+            "DR path: {0}, resume upload is {1}, use DR is {2}, key base is {3}".
+            format(
+                self.__manifest.get_path(), self.__manifest.is_resume(), self.__manifest.is_dr(),
+                self.__manifest.get_key_base()))
 
         try:
-            # Number of cached records is equals 512 mb of data, so if something happens only 512 mb (in chunks)
-            # wouldn't be saved to manifest database
-            write_cache_size = int(512 * 1024 * 1024 / self.__chunkSize)
-            self.__manifest = UploadManifest.ImageManifestDatabase(
-                UploadManifest.ImageDictionaryManifest, self.__manifestPath, self.__startTimestamp, threading.Lock(),
-                self.__resumeUpload, increment_depth=self.__incrementDepth, db_write_cache_size=write_cache_size,
-                use_dr=self.__use_dr)
-
             # Creating database for well known blocks to skip them when uploading
             self.__well_known_blocks = UploadManifest.ImageWellKnownBlockDatabase(threading.Lock())
 
@@ -376,12 +355,9 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             null_md5 = md5()
             null_md5.update(str(null_data))
 
-            self.__well_known_blocks.insert(null_md5.hexdigest(), self.__keyBase + "NullBlock", null_data)
-
-            # Hack: use manifest database timestamp instead given in key base
-            self.__keyBase = "{0}/{1}".format(self.__manifest.get_table_name(), str(self.__keyBase).rsplit('/').pop())
+            self.__well_known_blocks.insert(null_md5.hexdigest(), self.__manifest.get_key_base() + "NullBlock", null_data)
         except Exception as e:
-            logging.error("!!!ERROR: cannot open file containing segments. Reason: {0}".format(e))
+            logging.error("!!!ERROR: in well known blocks database. Reason: {0}".format(e))
             raise
 
         # Initializing a number of threads, they are stopping when see None in queue job
@@ -400,7 +376,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         """ gets the upload path identifying the upload: key """
         # return self.__bucketName + "/" +self.__keyBase
         # Note: we should return keyname sufficient to reupload at the same place in case we already had a bucket
-        return self.__keyBase
+        return self.__manifest.get_target_id()
 
     # this one is async
     def uploadData(self, extent):
@@ -412,7 +388,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         #TODO: monitor the queue sizes
         start = extent.getStart()
         size = extent.getSize()
-        keyname = self.__keyBase+".part"+str(int(start/self.__chunkSize))
+        keyname = self.__manifest.get_part_name(start)
 
         #NOTE: the last one could be less than 10Mb.
         # there are two options 1) to align the whole file or to make it possible to use the smaller chunks
@@ -513,10 +489,10 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         return
 
     def uploadDB(self):
-        if self.__use_dr:
+        if self.__manifest.is_dr():
             # Uploading tables
             for table in self.__manifest.get_db_tables():
-                key_name = "DR/{0}/{1}".format(os.environ['COMPUTERNAME'], table.get_name())
+                key_name = "DR/{0}/{1}".format(os.environ['COMPUTERNAME'], table.get_table_name())
                 if self.__bucket.get_key(key_name) is None:
                     s3key = Key(self.__bucket, key_name)
                     s3key.set_contents_from_filename(table.get_path())
@@ -622,7 +598,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         # keyprefix = "result"
         # NOTE: really we may not build XML, it'd be built by ec2-import-script
         # but the parts should be named in a right way
-        xmlkey = self.__keyBase + ".manifest.xml"
+        xmlkey = self.__manifest.get_key_base() + "/manifest.xml"
 
         manifest = S3ManfiestBuilder(xmltempfile, xmlkey, self.__bucketName, self.__S3, self.__diskType)
         manifest.buildHeader(self.__overallSize, self.__volumeToAllocateGb, fragment_count)
@@ -648,11 +624,12 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         s3key.close()
 
         # Uploading manifest database
-        if self.__use_dr:
+        if self.__manifest.is_dr():
             try:
                 self.uploadDB()
             except Exception as e:
                 logging.error("!!!ERROR: unable to upload DR database, reason: {0}".format(e))
+                logging.error(traceback.format_exc())
                 return None
 
         return self.__xmlKey

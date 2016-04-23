@@ -54,18 +54,17 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
 
         #TODO: more amazon-specfiic configs needed
     
-    def generateUploadChannel(self, targetsize, targetname=None, targetid=None, resume=False, imagesize=0, volname='system'):
+    def generateUploadChannel(self, targetsize, targetname=None, targetid=None, resume=False, imagesize=0, volname=None):
         """
         Generates new upload channel
 
         Args:
             targetsize: long - target cloud disk size in bytes
             targetname: str - arbitrary description to mark the disk after migration (ignored)
-            targetid: str - a cloud-defined path describing the machine name
+            targetid: str - a cloud-defined path describing the upload (path to key in the bucket)
             resume: Boolean - to recreate disk representation or to reupload
             imagesize: long - image file size in bytes
             preserve_existing_data: bool - if preserve (make versioned copy) of existing data (only if resume is true)
-            volname - volume letter or descrption, used to generate cloud path
         """
         # check if we use custom (non AWS) S3 
         custom = False
@@ -75,7 +74,8 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         manifest = UploadManifest.ImageManifestDatabase(
             UploadManifest.ImageDictionaryManifest, self.__manifest_path, None, threading.Lock(),
             increment_depth=self.__increment_depth, db_write_cache_size=self.__db_write_cache_size,
-            use_dr=self.__use_dr, resume=resume, volname=volname, target_id=targetid)
+            use_dr=self.__use_dr, resume=resume)
+        manifest.set_additional_params(target_id=targetid, volname=volname)
 
         return S3UploadChannel.S3UploadChannel(
             self.__bucket, self.__user, self.__pass, targetsize, self.__custom_host or self.__region,
