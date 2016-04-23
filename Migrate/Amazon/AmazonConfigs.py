@@ -74,8 +74,7 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         manifest = UploadManifest.ImageManifestDatabase(
             UploadManifest.ImageDictionaryManifest, self.__manifest_path, None, threading.Lock(),
             increment_depth=self.__increment_depth, db_write_cache_size=self.__db_write_cache_size,
-            use_dr=self.__use_dr, resume=resume)
-        manifest.set_additional_params(target_id=targetid, volname=volname)
+            use_dr=self.__use_dr, resume=resume, volname=volname, target_id=targetid)
 
         return S3UploadChannel.S3UploadChannel(
             self.__bucket, self.__user, self.__pass, targetsize, self.__custom_host or self.__region,
