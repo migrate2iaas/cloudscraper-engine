@@ -172,7 +172,7 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
         return self.__imagePath
 
     def getUploadPath(self):
-        return  self.__pathToUpload 
+        return self.__pathToUpload
 
     def getUploadId(self):
         return self.__uploadedImageId
@@ -653,8 +653,8 @@ class MigratorConfigurer(object):
             bucket=bucket, user=user, password=password, newsize=newsize, arch=arch, zone=zone, region=region,
             machinename="", securityid=security, instancetype=instancetype, chunksize=chunksize, disktype=imagetype,
             keyname_prefix=s3prefix, vpc=vpcsubnet, custom_host=custom_host, custom_port=custom_port,
-            custom_suffix=custom_suffix, use_ssl=use_ssl, manifest_path=manifest_path , minipad = minipad , minipad_ami = minipad_ami, increment_depth=increment_depth,
-            use_dr=use_dr, os_override=os_override)
+            custom_suffix=custom_suffix, use_ssl=use_ssl, manifest_path=manifest_path, minipad=minipad,
+            minipad_ami=minipad_ami, increment_depth=increment_depth, use_dr=use_dr, os_override=os_override)
         
 
         return (image,adjust_override,cloud)
@@ -788,7 +788,9 @@ class MigratorConfigurer(object):
                 if volume.getImageSize() == 0:
                     volume.setImageSize(size)
                 if volume.getUploadPath() == '':
-                    volume.setUploadPath(upload_prefix+os.environ['COMPUTERNAME']+"-"+letter)
+                    # TODO: verify
+                    # volume.setUploadPath(upload_prefix+os.environ['COMPUTERNAME']+"-"+letter)
+                    volume.setUploadPath(os.environ['COMPUTERNAME'])
                 volumes.append( volume )
         return volumes
 

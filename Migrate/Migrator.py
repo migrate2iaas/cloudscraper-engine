@@ -686,7 +686,8 @@ class Migrator(object):
                     self.__cloudOptions.getServerName() or description,
                     volinfo.getUploadPath(),
                     self.__resumeUpload,
-                    image_size)
+                    image_size,
+                    volinfo.getVolumePath())
                 
             # INIT STORAGE FOR THE UPLOAD
             if self.__skipUpload == False:

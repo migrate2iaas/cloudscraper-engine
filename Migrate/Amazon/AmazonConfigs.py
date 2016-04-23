@@ -4,15 +4,13 @@ __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
 
-import SystemAdjustOptions
 import CloudConfig
 import MigrateConfig
 import S3UploadChannel
 import EC2InstanceGenerator
 import EC2MinipadInstanceGenerator
-
-import time
-import os
+import UploadManifest
+import threading
 
 
 class AmazonCloudOptions(CloudConfig.CloudConfig):
@@ -20,10 +18,8 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
     def __init__(
             self, bucket, user, password, newsize, arch, zone, region, machinename, securityid='',
             instancetype='m1.small', chunksize=10*1024*1024, disktype='VHD', keyname_prefix='', vpc="",
-            custom_host="", custom_port=80, custom_suffix="", use_ssl=True,\
-            minipad = False , minipad_ami = "",\
-            manifest_path="", increment_depth=1, use_dr=False ,\
-            os_override = None):
+            custom_host="", custom_port=80, custom_suffix="", use_ssl=True, minipad = False , minipad_ami="",
+            manifest_path="", increment_depth=1, use_dr=False, os_override=None, db_write_cache_size=20):
 
         """inits with options"""
         super(AmazonCloudOptions, self).__init__()
@@ -54,9 +50,11 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         self.__increment_depth = increment_depth
         self.__use_dr = use_dr
         self.__os = os_override
+        self.__db_write_cache_size = db_write_cache_size
+
         #TODO: more amazon-specfiic configs needed
     
-    def generateUploadChannel(self, targetsize, targetname=None, targetid=None, resume=False, imagesize=0):
+    def generateUploadChannel(self, targetsize, targetname=None, targetid=None, resume=False, imagesize=0, volname=None):
         """
         Generates new upload channel
 
@@ -73,11 +71,16 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         if self.__custom_host:
             custom = True
 
-        return S3UploadChannel.S3UploadChannel(self.__bucket , self.__user , self.__pass , targetsize, self.__custom_host or self.__region , targetid or self.__keynamePrefix , self.__diskType , \
-            resume_upload = resume , chunksize = self.__chunkSize, \
-            walrus = custom , walrus_path = self.__custom_suffix , walrus_port = self.__custom_port , use_ssl = self.__use_ssl,\
-            make_link_public = True,\
-            manifest_path=self.__manifest_path, increment_depth=self.__increment_depth, use_dr=self.__use_dr)
+        manifest = UploadManifest.ImageManifestDatabase(
+            UploadManifest.ImageDictionaryManifest, self.__manifest_path, None, threading.Lock(),
+            increment_depth=self.__increment_depth, db_write_cache_size=self.__db_write_cache_size,
+            use_dr=self.__use_dr, resume=resume)
+        manifest.set_additional_params(target_id=targetid, volname=volname)
+
+        return S3UploadChannel.S3UploadChannel(
+            self.__bucket, self.__user, self.__pass, targetsize, self.__custom_host or self.__region,
+            self.__diskType, chunksize=self.__chunkSize, walrus=custom, walrus_path=self.__custom_suffix,
+            walrus_port=self.__custom_port, use_ssl=self.__use_ssl, make_link_public=True, manifest=manifest)
          
     def generateInstanceFactory(self):
         """returns object of InstanceFactory type to create servers from uploaded images"""
@@ -85,7 +88,9 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
         if self.__custom_host:
             return None
         if self.__minipad:
-            return EC2MinipadInstanceGenerator.EC2MinipadInstanceGenerator(self.__region , self.__minipadAmi , self.__user , self.__pass, self.__zone, self.__instanceType , self.__vpc , self.__securityGroup)
+            return EC2MinipadInstanceGenerator.EC2MinipadInstanceGenerator(
+                self.__region, self.__minipadAmi, self.__user, self.__pass, self.__zone, self.__instanceType,
+                self.__vpc, self.__securityGroup)
         return EC2InstanceGenerator.EC2InstanceGenerator(self.__region)
 
     def getCloudStorage(self):
