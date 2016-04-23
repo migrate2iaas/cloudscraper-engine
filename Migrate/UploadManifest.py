@@ -438,7 +438,7 @@ class ImageManifestDatabase(object):
 
     def __init__(
             self, image_manifest, manifest_path, table_name, lock, increment_depth=1, db_write_cache_size=1,
-            use_dr=False, resume=False):
+            use_dr=False, resume=False, volname=None, target_id=None):
         """
         Creates or opens existing manifest file
 
@@ -464,8 +464,8 @@ class ImageManifestDatabase(object):
         self.__increment_depth = None
         self.__manifest_path = None
         self.__image_manifest = image_manifest
-        self.__target_id = None
-        self.__volname = None
+        self.__target_id = target_id
+        self.__volname = str(volname).rsplit('\\').pop().split(':')[0]
         self.__resume = resume
         self.__use_dr = use_dr
 
@@ -497,11 +497,13 @@ class ImageManifestDatabase(object):
                     self.__db_scheme.insert({
                         "table_name": str(table_name_tmp),
                         "table_timestamp": str(datetime.datetime.now()),
+                        "volname": str(self.__volname),
+                        "targed_id": str(self.__target_id),
                     })
 
                 # increment_depth = 0 meaning that we use all available manifests
                 # increment_depth = N meaning that we use last N available manifests
-                m_list = self.get_db_tables_source(increment_depth)
+                m_list = self.get_db_tables_source(increment_depth, volname, target_id)
                 if not m_list and self.__resume:
                     raise Exception("Unable to resuming upload. Previous upload (manifest) not found")
 
@@ -542,15 +544,9 @@ class ImageManifestDatabase(object):
     def get_target_id(self):
         return self.__target_id
 
-    def set_additional_params(self, target_id=None, resume=False, volname=None):
-        if target_id:
-            self.__target_id = target_id
-        if volname:
-            self.__volname = str(volname).rsplit('\\').pop().split(':')[0]
-
-    def get_db_tables_source(self, increment_depth):
+    def get_db_tables_source(self, increment_depth, volname, targed_id):
         result = []
-        t_list = self.__db_scheme.all()
+        t_list = self.__db_scheme.search(where("volname") == str(volname) and where("targed_id") == targed_id)
 
         # Check, if table_timestamp exists for backward compatibility
         t_list.sort(key=lambda x: x["table_timestamp"] if "table_timestamp" in x else None, reverse=True)
