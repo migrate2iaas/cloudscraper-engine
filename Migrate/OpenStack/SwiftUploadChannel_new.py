@@ -457,7 +457,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             query_string = None
 
         connection = self.createConnection()
-        cloud_path = "{0}/{1}".format(self.__diskName, self.__manifest.get_timestamp())
+        cloud_path = self.__manifest.get_key_base()
         connection.put_object(
             self.__containerName,
             cloud_path,
@@ -475,11 +475,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         """
         Returns prefix for all the parts in this upload session
         """
-        base = "{0}/{1}".format(self.getDiskName(), self.__manifest.get_timestamp())
-        if self.__swift_use_slo:
-            return "{0}/slo".format(base)
-        else:
-            return "{0}/dlo".format(base)
+        return self.__manifest.get_key_base()
 
     def getTransferChunkSize(self):
         """
