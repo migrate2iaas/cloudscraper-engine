@@ -407,7 +407,7 @@ class Migrator(object):
            
         description = os.environ['COMPUTERNAME']+"-"+"system"+"-"+str(datetime.date.today())
         self.__systemTransferChannel = self.__cloudOptions.generateUploadChannel(data_size , self.__cloudOptions.getServerName() or description, \
-                sys_vol_info.getUploadPath(), self.__resumeUpload , image_size )
+                sys_vol_info.getUploadPath(), self.__resumeUpload , image_size , sys_vol_info.getVolumePath())
         
         if self.__skipUpload == False:
             self.__systemTransferChannel.initStorage()        
