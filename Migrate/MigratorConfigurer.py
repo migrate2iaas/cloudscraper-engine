@@ -359,6 +359,7 @@ class MigratorConfigurer(object):
 
         adjust_override = self.getOverrides(config, configfile)
         use_dr, manifest_path, increment_depth = self.loadDRconfig(config)
+
         image = OpenStackConfigs.OpenStackMigrateConfig(volumes, factory, 'x86_64', imagetype)
         cloud = OpenStackConfigs.OpenStackCloudOptions(
             endpoint, user, tennant, password, network, imagetype, container, flavor=flavor, ip_pool_name=ip_pool,

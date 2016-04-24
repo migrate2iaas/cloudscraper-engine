@@ -10,21 +10,16 @@ __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
-import logging
-import traceback
+import threading
 
-import SystemAdjustOptions
 import CloudConfig
 import MigrateConfig
 
 import OpenStackUploadChannel
 import GlanceUploadChannel
-
+import UploadManifest
 
 import OpenStackInstanceGenerator
-
-import time
-import os
 
 
 class OpenStackCloudOptions(CloudConfig.CloudConfig):
@@ -35,7 +30,9 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             container_format="bare", flavor=None, ip_pool_name=None, swift_server_url=None, swift_tennant_name=None,
             swift_username=None, swift_password=None, swift_container="cloudscraper-upload", compression=0, swift_max_segments=0, swift_use_slo=True,
             chunksize=10*1024*1024, use_new_channel=False, manifest_path=None, increment_depth=1, ignore_etag=False, glance_only=False,
-            use_dr=False , ignore_ssl_cert = False):
+            use_dr=False, 
+            ignore_ssl_cert = False,
+            db_write_cache_size=20):
         """
         Constructor
         """
@@ -63,6 +60,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         self.__swiftUseSlo = swift_use_slo
         self.__use_dr = use_dr
         self.__ignoreSslCert = ignore_ssl_cert
+        self.__db_write_cache_size = db_write_cache_size
         
         if compression: # in case compression is int 
             self.__compression = True
@@ -73,7 +71,8 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
 
         
         
-    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0):
+    def generateUploadChannel(
+            self, targetsize, targetname=None, targetid = None, resume = False, imagesize=0, volname=None):
         """
         Generates new upload channel
 
@@ -89,6 +88,11 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             return GlanceUploadChannel.GlanceUploadChannel(
                 imagesize, self.__server, self.__tennant, self.__username, self.__password, disk_format=self.__disk_format,
                 image_name=targetname, container_format=self.__container_format , version="2" , ignore_ssl_cert = self.__ignoreSslCert)
+
+        manifest = UploadManifest.ImageManifestDatabase(
+            UploadManifest.ImageDictionaryManifest, self.__manifestPath, None, threading.Lock(),
+            increment_depth=self.__increment_depth, db_write_cache_size=self.__db_write_cache_size,
+            use_dr=self.__use_dr, resume=resume, volname=volname, target_id=targetid)
 
         return OpenStackUploadChannel.OpenStackUploadChannel(
             imagesize,
@@ -109,14 +113,12 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             container_name=self.__swiftContainer,
             compression=self.__compression,
             use_new_channel=self.__useNewChannel,
-            manifest_path=self.__manifestPath,
-            increment_depth=self.__increment_depth,
             ignore_etag=self.__ignoreEtag,
             swift_max_segments=self.__swiftMaxSegments,
             swift_use_slo=self.__swiftUseSlo,
             use_dr=self.__use_dr ,
             ignore_ssl_cert = self.__ignoreSslCert)
-
+            manifest=manifest)
 
     def generateInstanceFactory(self):
         return OpenStackInstanceGenerator.OpenStackInstanceGenerator(

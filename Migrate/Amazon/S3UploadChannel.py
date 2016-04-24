@@ -190,8 +190,7 @@ class S3UploadThread(threading.Thread):
                             s3key = bucket.get_key(res["part_name"])
 
                         if s3key:
-                            self.__manifest.insert(
-                                res["etag"], md5_hexdigest, offset, size, "skipped")
+                            self.__manifest.insert(res["etag"], md5_hexdigest, offset, size, "skipped")
                             logging.debug("key with same md5 found, skip uploading")
                             upload = False
                     except Exception as e:

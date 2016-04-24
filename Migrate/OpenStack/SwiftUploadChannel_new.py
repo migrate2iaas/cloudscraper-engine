@@ -11,14 +11,12 @@ sys.path.append('.\OpenStack')
 
 import UploadChannel
 
-import datetime
 import Queue
 import traceback
 import logging
 import threading
 import swiftclient.client
 import UploadChannel
-import UploadManifest
 
 import json
 from md5 import md5
@@ -132,25 +130,24 @@ class SwiftUploadThread(threading.Thread):
 
             # part name, starts with zeros, 32 character length, needed for dlo, because they use sorted
             # sequence to define segment order.
-            part_name = "{0}/{1:032}".format(self.__uploadChannel.getPartPrefix(), self.__offset)
+            part_name = self.__manifest.get_part_name(self.__offset)
 
             # Trying to check existing segment
             try:
                 # Select returns list of records matches part_name from manifest database
                 res = self.__manifest.select(part_name=part_name)
-                if res and not self.__ignoreEtag:
+                if not self.__ignoreEtag:
                     # Check, if segment with same local part_name exsists in storage, and
                     # etag in manifest and storage are the same
-                    for i in res:
-                        head = connection.head_object(self.__uploadChannel.getContainerName(), part_name)
-                        if i["etag"] == head["etag"]:
-                            # We should insert new record if this part found in another manifest
-                            self.__manifest.insert(
-                                i["etag"], i["local_hash"], part_name, self.__offset, self.__fileProxy.getSize(),
-                                "skipped")
-                            upload = False
-                            logging.info("Data upload skipped for {0}".format(i["part_name"]))
-                            self.__uploadChannel.notifyOverallDataSkipped(self.__fileProxy.getSize())
+                    head = connection.head_object(self.__uploadChannel.getContainerName(), part_name)
+                    if res["etag"] == head["etag"]:
+                        # We should insert new record if this part found in another manifest
+                        self.__manifest.insert(
+                            res["etag"], res["local_hash"], self.__offset, self.__fileProxy.getSize(),
+                            "skipped")
+                        upload = False
+                        logging.info("Data upload skipped for {0}".format(res["part_name"]))
+                        self.__uploadChannel.notifyOverallDataSkipped(self.__fileProxy.getSize())
 
             except (ClientException, Exception) as e:
                 # Passing exception here, it"s means that when we unable to check
@@ -169,7 +166,7 @@ class SwiftUploadThread(threading.Thread):
                 segment_md5 = self.__fileProxy.getMD5()
                 # TODO: make status ("uploaded") as enumeration
                 self.__manifest.insert(
-                    etag, segment_md5, part_name, self.__offset, self.__fileProxy.getSize(), "uploaded")
+                    etag, segment_md5, self.__offset, self.__fileProxy.getSize(), "uploaded")
                 self.__uploadChannel.notifyOverallDataTransfered(self.__fileProxy.getSize())
         except (ClientException, Exception) as e:
             self.__fileProxy.cancel()
@@ -212,8 +209,6 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             retries=3,
             compression=False,
             resume_upload=False,
-            manifest_path=None,
-            increment_depth=1,
             chunksize=1024*1024*10,
             upload_threads=10,
             queue_size=8,
@@ -222,6 +217,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             swift_max_segments=0,
             use_dr=False, 
             ignore_ssl_cert = True):
+            manifest=None):
         """constructor"""
         self.__serverURL = server_url
         self.__userName = username
@@ -232,12 +228,12 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__diskName = disk_name
         self.__chunkSize = chunksize
         self.__diskSize = resulting_size_bytes
-        self.__resumeUpload = resume_upload
         self.__uploadThreads = threading.BoundedSemaphore(upload_threads)
         self.__segmentQueueSize = queue_size
         self.__swift_use_slo = swift_use_slo
         self.__ignoreSslCert = ignore_ssl_cert
         self.__segmentsList = []
+        self.__manifest = manifest
 
         self.__fileProxies = []
         self.__ignoreEtag = ignore_etag
@@ -261,25 +257,14 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         logging.info("SSL compression is " + str(self.__compression))
         logging.info("Static large objects is " + str(self.__swift_use_slo))
 
-        if swift_use_slo is False and increment_depth != 1:
+        if swift_use_slo is False and self.__manifest.get_increment_depth() != 1:
             logging.warn("!Wrong increment depth for DLO, should be 1")
 
-        # Resume upload
-        logging.info("Resume upload file path: {0}, resume upload is {1}".format(manifest_path, self.__resumeUpload))
-        self.__manifest = None
-        try:
-            self.__manifest = UploadManifest.ImageManifestDatabase(
-                UploadManifest.ImageDictionaryManifest,
-                manifest_path,
-                '{0}.{1}'.format(self.__containerName, self.__diskName).replace('/', '.'),
-                threading.Lock(),
-                self.__resumeUpload,
-                increment_depth,
-                use_dr=use_dr)
-            logging.info("Manifest name: {0}".format(self.__manifest.get_table_name()))
-        except Exception as e:
-            logging.error("!!!ERROR: cannot open file containing segments. Reason: {0}".format(e))
-            raise
+        logging.info(
+            "DR path: {0}, resume upload is {1}, use DR is {2}, key base is {3}".
+            format(
+                self.__manifest.get_path(), self.__manifest.is_resume(), self.__manifest.is_dr(),
+                self.__manifest.get_key_base()))
 
         super(SwiftUploadChannel_new, self).__init__()
 
@@ -329,7 +314,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
 
     def skipExisting(self):
-        return self.__resumeUpload
+        return self.__manifest.is_resume()
 
 
     def getResumePath(self):

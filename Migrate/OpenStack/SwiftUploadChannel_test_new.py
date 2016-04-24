@@ -15,8 +15,8 @@ import sys
 
 import os
 import DataExtent
-import time
-#import OpenStackUploadChannel
+import threading
+import UploadManifest
 from OpenStack import SwiftUploadChannel_new
 
 
@@ -72,36 +72,42 @@ class SwiftUploadChannel_test(unittest.TestCase):
         #
         # webzilla usage
         #
-        # channel = SwiftUploadChannel_new.SwiftUploadChannel_new(
-        #     size,
-        #     server_url="https://eu01-auth.webzilla.com:5000/v2.0",
-        #     username="3186",
-        #     tennant_name="2344",
-        #     password="icafLFsmAOswwISn",\
-        #     disk_name="medium.file",
-        #     container_name="testcontainer2",
-        #     manifest_path="D:\\backup-manifest",
-        #     chunksize=1024*1024,
-        #     increment_depth=3,
-        #     swift_use_slo=False)
+        manifest = UploadManifest.ImageManifestDatabase(
+            UploadManifest.ImageDictionaryManifest, "C:\\backup-manifest", None, threading.Lock(),
+            increment_depth=1, db_write_cache_size=20,
+            use_dr=False, resume=False, volname="B", target_id="HOME-PC")
+
+        channel = SwiftUploadChannel_new.SwiftUploadChannel_new(
+            size,
+            server_url="https://eu01-auth.webzilla.com:5000/v2.0",
+            username="3186",
+            tennant_name="2344",
+            password="icafLFsmAOswwISn",\
+            disk_name="medium.file",
+            container_name="testcontainer2",
+            manifest_path="D:\\backup-manifest",
+            chunksize=1024*1024,
+            increment_depth=3,
+            swift_use_slo=False,
+            manifest=manifest)
 
         #
         # cloudex.rs usage
         #
-        channel = SwiftUploadChannel_new.SwiftUploadChannel_new(
-            size,
-            server_url="http://87.237.203.66:5000/v2.0",
-            username="migrate2iaas",
-            tennant_name="migrate2iaas",
-            password="migrate2iaas",
-            disk_name="test/medium.file",
-            container_name="cloudscraper-pub4",
-            manifest_path="D:\\backup-manifest",
-            chunksize=10*1024*1024,
-            increment_depth=3,
-            swift_use_slo=False,
-            use_dr=True
-            )
+        # channel = SwiftUploadChannel_new.SwiftUploadChannel_new(
+        #     size,
+        #     server_url="http://87.237.203.66:5000/v2.0",
+        #     username="migrate2iaas",
+        #     tennant_name="migrate2iaas",
+        #     password="migrate2iaas",
+        #     disk_name="test/medium.file",
+        #     container_name="cloudscraper-pub4",
+        #     manifest_path="D:\\backup-manifest",
+        #     chunksize=10*1024*1024,
+        #     increment_depth=3,
+        #     swift_use_slo=False,
+        #     use_dr=True
+        #     )
         channel.initStorage()
 
         file = open(filename, "rb")
