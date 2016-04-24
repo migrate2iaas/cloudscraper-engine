@@ -10,13 +10,13 @@ __author__ = "Vladimir Fedorov"
 __copyright__ = "Copyright (C) 2013 Migrate2Iaas"
 #---------------------------------------------------------
 
-import logging
-import traceback
 import datetime
+import threading
 
 import SystemAdjustOptions
 import CloudConfig
 import MigrateConfig
+import UploadManifest
 
 import S3UploadChannel
 
@@ -72,7 +72,9 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
 
         
         
-    def generateUploadChannel(self , targetsize , targetname = None, targetid = None , resume = False , imagesize = 0 , preserve_existing_data = False):
+    def generateUploadChannel(
+            self, targetsize, targetname=None, targetid=None, resume=False, imagesize=0, preserve_existing_data=False,
+            volname=None):
         """
         Generates new upload channel
 
@@ -88,11 +90,15 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
         if self.__custom_host:
             custom = True
 
+        manifest = UploadManifest.ImageManifestDatabase(
+            UploadManifest.ImageDictionaryManifest, self.__manifest_path, None, threading.Lock(),
+            increment_depth=self.__increment_depth, db_write_cache_size=self.__db_write_cache_size,
+            use_dr=self.__use_dr, resume=resume, volname=volname, target_id=targetid)
+
         return S3UploadChannel.S3UploadChannel(
             self.__s3bucket, self.__s3user, self.__s3password, targetsize, self.__s3region,
-            targetid or self.__keynamePrefix, self.__diskType, resume_upload=resume, chunksize=self.__chunkSize,
-            walrus=custom, walrus_path="", walrus_port=443, make_link_public=True,
-            manifest_path=self.__manifest_path, increment_depth=self.__increment_depth, use_dr=self.__use_dr)
+            targetid or self.__keynamePrefix, self.__diskType, chunksize=self.__chunkSize,
+            walrus=custom, walrus_path="", walrus_port=443, make_link_public=True, manifest=manifest)
 
     def generateInstanceFactory(self):
         #generate signleton
