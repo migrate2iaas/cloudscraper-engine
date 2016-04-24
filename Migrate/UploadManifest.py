@@ -511,7 +511,6 @@ class ImageManifestDatabase(object):
                     self.__db.append(
                         self.__image_manifest.open(
                             self.__manifest_path, table, lock, db_write_cache_size, self.__use_dr))
-
             else:
                 self.__db.append(
                     self.__image_manifest.open(
@@ -519,9 +518,11 @@ class ImageManifestDatabase(object):
 
             # Saving current manifest table name
             self.__table_name = self.__db[0].get_table_name()
-            # Updating creation time of current manifest
-            self.__db_scheme.update(
-                {"table_timestamp": str(datetime.datetime.now())}, where("table_name") == self.__table_name)
+
+            if self.__use_dr:
+                # Updating creation time of current manifest
+                self.__db_scheme.update(
+                    {"table_timestamp": str(datetime.datetime.now())}, where("table_name") == self.__table_name)
 
             # Inserting metadata to default table for opened (last) manifest
             self.__db[0].insert_db_meta({
@@ -543,6 +544,9 @@ class ImageManifestDatabase(object):
 
     def get_target_id(self):
         return self.__target_id
+
+    def get_increment_depth(self):
+        return self.__increment_depth
 
     def get_db_tables_source(self, increment_depth, volname, targed_id):
         result = []
