@@ -596,7 +596,7 @@ class ImageManifestDatabase(object):
             if rec:
                 return rec
 
-        return []
+        return {}
 
     def update(self, local_hash, part_name, rec):
         return self.__db[0].update(local_hash, part_name, rec)
