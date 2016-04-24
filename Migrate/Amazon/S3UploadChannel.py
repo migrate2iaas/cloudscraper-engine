@@ -354,7 +354,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             null_md5 = md5()
             null_md5.update(str(null_data))
 
-            self.__well_known_blocks.insert(null_md5.hexdigest(), self.__manifest.get_key_base() + "NullBlock", null_data)
+            self.__well_known_blocks.insert(null_md5.hexdigest(), self.__manifest.get_key_base() + "/NullBlock", null_data)
         except Exception as e:
             logging.error("!!!ERROR: in well known blocks database. Reason: {0}".format(e))
             raise
