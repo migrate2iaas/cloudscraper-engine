@@ -39,6 +39,7 @@ import threading
 import datetime
 import UploadChannel
 import UploadManifest
+import CloudManifestBuilder
 
 
 import base64
@@ -46,6 +47,70 @@ import math
 from md5 import md5
 from XmlManifestUtils import *
 import urlparse
+
+# TODO: code below depricated, remove it after tests
+# class S3ManfiestBuilder:
+#
+#     def __init__(self, tmpFileName, s3XmlKey, bucketname, s3connection, fileFormat='VHD'):
+#         self.__file = open(tmpFileName, "wb")
+#         self.__xmlKey = s3XmlKey
+#         self.__fileFormat = fileFormat
+#         self.__bucket = bucketname
+#         self.__S3 = s3connection
+#
+#         return
+#
+#     def buildHeader(self, bytesToUpload, resultingSizeGb, fragmentCount):
+#       #TODO: change file format
+#        header = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?> \n\t <manifest> \n\t\t <version>2010-11-15</version> \n\t\t <file-format>'+self.__fileFormat+'</file-format> \n\t\t <importer>'
+#        self.__file.write(header)
+#
+#        #TODO: we emulate the standart utility XML (otherwise, the import won't work properly)
+#        importerver = '\n\t\t\t <name>ec2-upload-disk-image</name> \n\t\t\t <version>1.0.0</version> \n\t\t\t  <release>2010-11-15</release>'
+#        self.__file.write(importerver)
+#
+#        linktimeexp_seconds = 60*60*24*15 # 15 days
+#        urldelete = self.__S3.generate_url( linktimeexp_seconds, method='DELETE', bucket=self.__bucket,  key=self.__xmlKey, force_http=False)
+#        selfdestruct = '\n\t\t </importer> \n\t\t  <self-destruct-url>'+urldelete.replace('&' ,'&amp;')+'</self-destruct-url> '
+#        self.__file.write(selfdestruct)
+#
+#        importvol = '\n\t\t <import> \n\t\t\t <size>'+ str(bytesToUpload) + '</size> \n\t\t\t <volume-size>' + str(resultingSizeGb) + '</volume-size>' + '\n\t\t\t <parts count="'+str(fragmentCount)+'">'
+#        self.__file.write(importvol)
+#
+#        return
+#
+#     def addUploadedPart(self , index , rangeStart , rangeEnd , keyName):
+#
+#         linktimeexp_seconds = 60*60*24*5   # 5 days
+#
+#         indexstr = '\n\t\t\t <part index="'+str(index)+'">\n\t\t\t\t '+'<byte-range end="' + str (rangeEnd) + '" start="'+ str(rangeStart) +'" />'
+#         self.__file.write(indexstr)
+#
+#         keystr = '\n\t\t\t\t <key>'+str(keyName)+'</key>'
+#         self.__file.write(keystr)
+#
+#         urlhead = self.__S3.generate_url( linktimeexp_seconds, method='HEAD', bucket=self.__bucket, key=keyName, force_http=False)
+#         gethead = '\n\t\t\t\t <head-url>'+urlhead.replace('&' ,'&amp;')+'</head-url>'
+#         self.__file.write(gethead)
+#
+#         urlget = self.__S3.generate_url( linktimeexp_seconds, method='GET', bucket=self.__bucket, key=keyName, force_http=False)
+#         getstr = '\n\t\t\t\t <get-url>'+urlget.replace('&' ,'&amp;')+'</get-url>'
+#         self.__file.write(getstr)
+#
+#         urldelete = self.__S3.generate_url( linktimeexp_seconds, method='DELETE', bucket=self.__bucket, key=keyName, force_http=False)
+#         getdelete = '\n\t\t\t\t <delete-url>'+urldelete.replace('&' ,'&amp;')+'</delete-url>'
+#         self.__file.write(getdelete)
+#
+#         partend = '\n\t\t\t </part>'
+#         self.__file.write(partend)
+#
+#         return
+#
+#     def finalize(self):
+#         end = '\n </parts>\n </import> \n </manifest>\n'
+#         self.__file.write(end)
+#         self.__file.close()
+#         return
 
 #TODO: add wait completion\notification\delegates on this part completion
 class UploadQueueTask(object):
@@ -599,26 +664,11 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         # but the parts should be named in a right way
         xmlkey = self.__keyBase + ".manifest.xml"
 
-        manifest = S3ManfiestBuilder(xmltempfile, xmlkey, self.__bucketName, self.__S3, self.__diskType)
-        manifest.buildHeader(self.__overallSize, self.__volumeToAllocateGb, fragment_count)
+        builder = CloudManifestBuilder.AmazonS3ManifestBuilder(self.__S3, self.__manifest, self.__bucketName)
+        s3key = Key(self.__bucket, builder.get_xml_key())
+        s3key.set_contents_from_string(builder.get(60*60*24*5, self.__diskType))
         
-        #TODO: faster the solution by re-sorting the dictionary or have an another container
-        for res in res_list:
-            # here we rename the parts to reflect their sequence numbers
-            # NOTE: it takes to much time. 
-            # newkeyname = self.__keyBase+"/"+keyprefix+".part"+str(fragment_index);
-            # self.__bucket.copy_key(newkeyname, self.__bucketName, keyname)
-            # self.__bucket.delete_key(keyname)
-            manifest.addUploadedPart(
-                fragment_index, int(res["offset"]), int(res["offset"]) + int(res["size"]), res["part_name"])
-            fragment_index += 1
-        
-        manifest.finalize()
-
-        s3key = Key(self.__bucket, xmlkey)
-        s3key.set_contents_from_filename(xmltempfile) 
-        
-        self.__xmlKey = self.__generateKeyLink(s3key , self.__bucketName, self.__makeLinkPublic)
+        self.__xmlKey = self.__generateKeyLink(s3key, self.__bucketName, self.__makeLinkPublic)
 
         s3key.close()
 
