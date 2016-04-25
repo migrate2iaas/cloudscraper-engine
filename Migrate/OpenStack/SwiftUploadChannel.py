@@ -230,7 +230,7 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
     """
 
     def __init__(self ,resulting_size_bytes , server_url, username, tennant_name , password , disk_name, container_name , compression = False \
-                 , resume_upload = False , chunksize=10*1024*1024 , upload_threads=10, swift_max_segments=0 , swift_use_static_object_manifest = True):
+                 , resume_upload = False , chunksize=10*1024*1024 , upload_threads=10, swift_max_segments=0 , swift_use_static_object_manifest = True, ignore_ssl_cert = True):
         """constructor"""
         self.__chunkSize = chunksize
         self.__accountName = username
@@ -242,6 +242,7 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
         self.__serverUrl = server_url
         self.__diskSize = resulting_size_bytes
         self.__useSlo = swift_use_static_object_manifest
+        self.__ignoreSslCert = ignore_ssl_cert
         
         self.__objectRecognizeTimeout = 120 #todo move to parm
 
@@ -264,7 +265,7 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
 
         self.__serviceOpts = { 'auth' : server_url , 'user':tennant_name+":"+self.__accountName , "key":self.__accessKey , "auth_version":"2" , \
             "segment_threads":upload_threads , "segment_size" : self.__segmentSize , \
-           'ssl_compression' : self.__sslCompression }
+           'ssl_compression' : self.__sslCompression, "insecure" : self.__ignoreSslCert }
         self.__swiftService = SwiftService(options = self.__serviceOpts)
 
  

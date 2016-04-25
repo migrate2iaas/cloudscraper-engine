@@ -219,7 +219,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             ignore_etag=False,
             swift_use_slo=True,
             swift_max_segments=0,
-            use_dr=False):
+            use_dr=False, 
+            ignore_ssl_cert = True):
         """constructor"""
         self.__serverURL = server_url
         self.__userName = username
@@ -234,6 +235,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__uploadThreads = threading.BoundedSemaphore(upload_threads)
         self.__segmentQueueSize = queue_size
         self.__swift_use_slo = swift_use_slo
+        self.__ignoreSslCert = ignore_ssl_cert
         self.__segmentsList = []
 
         self.__fileProxies = []
@@ -346,7 +348,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             auth_version="2",
             snet=False,
             ssl_compression=self.__compression,
-            timeout=86400)
+            timeout=86400, insecure = True)
 
     def initStorage(self, init_data_link=""):
         """

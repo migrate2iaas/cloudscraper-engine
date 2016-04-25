@@ -352,6 +352,10 @@ class MigratorConfigurer(object):
         if config.has_option('OpenStack', 'glance_only'):
             glance_only = config.getboolean('OpenStack', 'glance_only')
 
+        ignore_ssl_cert = False
+        if config.has_option('OpenStack', 'ignore_ssl_cert'):
+            ignore_ssl_cert = config.getboolean('OpenStack', 'ignore_ssl_cert')
+
         adjust_override = self.getOverrides(config, configfile)
         use_dr, manifest_path, increment_depth = self.loadDRconfig(config)
         image = OpenStackConfigs.OpenStackMigrateConfig(volumes, factory, 'x86_64', imagetype)
@@ -361,7 +365,7 @@ class MigratorConfigurer(object):
             swift_password=swift_password, swift_container=swift_container, compression=swift_compression,
             swift_max_segments=swift_max_segments, swift_use_slo=swift_use_slo, use_new_channel=use_new_channel,
             manifest_path=manifest_path, increment_depth=increment_depth, use_dr=use_dr,
-            ignore_etag=ignore_etag, glance_only=glance_only)
+            ignore_etag=ignore_etag, glance_only=glance_only, ignore_ssl_cert = ignore_ssl_cert)
         return (image, adjust_override, cloud)
 
     def configOnApp(self, configfile, config, password):

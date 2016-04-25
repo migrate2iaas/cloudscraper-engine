@@ -35,7 +35,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             container_format="bare", flavor=None, ip_pool_name=None, swift_server_url=None, swift_tennant_name=None,
             swift_username=None, swift_password=None, swift_container="cloudscraper-upload", compression=0, swift_max_segments=0, swift_use_slo=True,
             chunksize=10*1024*1024, use_new_channel=False, manifest_path=None, increment_depth=1, ignore_etag=False, glance_only=False,
-            use_dr=False):
+            use_dr=False , ignore_ssl_cert = False):
         """
         Constructor
         """
@@ -62,6 +62,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         self.__swiftMaxSegments = swift_max_segments
         self.__swiftUseSlo = swift_use_slo
         self.__use_dr = use_dr
+        self.__ignoreSslCert = ignore_ssl_cert
         
         if compression: # in case compression is int 
             self.__compression = True
@@ -87,7 +88,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         if self.__glanceOnly:
             return GlanceUploadChannel.GlanceUploadChannel(
                 imagesize, self.__server, self.__tennant, self.__username, self.__password, disk_format=self.__disk_format,
-                image_name=targetname, container_format=self.__container_format , version="2")
+                image_name=targetname, container_format=self.__container_format , version="2" , ignore_ssl_cert = self.__ignoreSslCert)
 
         return OpenStackUploadChannel.OpenStackUploadChannel(
             imagesize,
@@ -113,7 +114,8 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             ignore_etag=self.__ignoreEtag,
             swift_max_segments=self.__swiftMaxSegments,
             swift_use_slo=self.__swiftUseSlo,
-            use_dr=self.__use_dr)
+            use_dr=self.__use_dr ,
+            ignore_ssl_cert = self.__ignoreSslCert)
 
 
     def generateInstanceFactory(self):

@@ -36,7 +36,7 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
                  swift_server_url=None, swift_tennant_name = None, swift_username=None, swift_password=None,
                  disk_name="", container_name="cloudscraper-container", compression=False, upload_threads=10,
                  use_new_channel=False, manifest_path=None, increment_depth=1, ignore_etag=False, swift_max_segments=0,
-                 swift_use_slo=True, use_dr=False):
+                 swift_use_slo=True, use_dr=False, ignore_ssl_cert = False):
         """constructor"""
         super(OpenStackUploadChannel, self).__init__()
 
@@ -58,15 +58,15 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
                 retries=3, compression=compression, resume_upload=resume_upload, manifest_path=manifest_path,
                 increment_depth=increment_depth, chunksize=chunksize, upload_threads=upload_threads,
                 ignore_etag=ignore_etag , swift_max_segments=swift_max_segments, swift_use_slo=swift_use_slo,
-                use_dr=use_dr)
+                use_dr=use_dr , ignore_ssl_cert=ignore_ssl_cert)
         else:
             swift = SwiftUploadChannel.SwiftUploadChannel(
                 result_disk_size_bytes, swift_server_url, swift_username, swift_tennant_name, swift_password,
                 disk_name, container_name, compression, resume_upload=resume_upload, chunksize=chunksize,
-                upload_threads=upload_threads , swift_max_segments = swift_max_segments, swift_use_static_object_manifest = swift_use_slo)
+                upload_threads=upload_threads , swift_max_segments = swift_max_segments, swift_use_static_object_manifest = swift_use_slo , ignore_ssl_cert = ignore_ssl_cert)
         glance = GlanceUploadChannel.GlanceUploadChannel(
             result_disk_size_bytes, server_url, tennant_name, username, password, disk_format=disk_format,
-            image_name=image_name, container_format=container_format)
+            image_name=image_name, container_format=container_format , ignore_ssl_cert = ignore_ssl_cert)
         self.appendChannel(swift)
         self.appendChannel(glance)
 

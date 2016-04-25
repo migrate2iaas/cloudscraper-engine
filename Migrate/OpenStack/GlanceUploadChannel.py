@@ -78,12 +78,12 @@ class GlanceUploadChannel(UploadChannel.UploadChannel):
     This class may work in two modes: either uploading existing data or pointing glance to outer source url where the image may be downloaded
     """
 
-    def __init__(self, result_disk_size_bytes, server_url , tennant_name , username , password, disk_format = "vhd", image_name=None, resume_upload = False , chunksize=64*1024 , upload_threads=1 , queue_size=1 , container_format="bare" , version="1"):
+    def __init__(self, result_disk_size_bytes, server_url , tennant_name , username , password, disk_format = "vhd", image_name=None, resume_upload = False , chunksize=64*1024 , upload_threads=1 , queue_size=1 , container_format="bare" , version="1", ignore_ssl_cert = True):
         """constructor"""
-        keystone = ksclient.Client(auth_url=server_url,   username=username, password=password, tenant_name= tennant_name)
+        keystone = ksclient.Client(auth_url=server_url,   username=username, password=password, tenant_name= tennant_name , insecure = ignore_ssl_cert)
         glance_endpoint = keystone.service_catalog.url_for(service_type='image')
         self.__auth = keystone.auth_token
-        self.__glance = glclient.Client(version,glance_endpoint,token=self.__auth)
+        self.__glance = glclient.Client(version,glance_endpoint,token=self.__auth , insecure = ignore_ssl_cert)
         if image_name:
             self.__name = image_name
         else:
