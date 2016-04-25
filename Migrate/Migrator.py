@@ -426,7 +426,7 @@ class Migrator(object):
         """aux function to perform tasks on existing uploads"""
         if not vol_info.getUploadId():
             uploadpath = channel.getUploadPath()
-            upload_ids = channel.findUploadId(".*?"+vol_info.getUploadPath())
+            upload_ids = channel.findUploadId(".*?"+vol_info.getUploadPath()+".*?")
             if not upload_ids:
                 logging.error("!!!ERROR: Cannot find any matching manifest.xml file")
                 return False

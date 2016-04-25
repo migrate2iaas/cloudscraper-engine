@@ -707,6 +707,6 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
         s3key.close()
         # NOTE: + sign means it'll be shown in build result for Recovery-local job
-        logging.info("+ "+ renewed_upload_id)
+        logging.info("+++ "+ renewed_upload_id)
 
         return True
