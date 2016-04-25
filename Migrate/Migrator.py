@@ -825,8 +825,14 @@ class Migrator(object):
                     logging.error("!!!Error: Upload error. Please make a reupload via resume upload")
                     return False
               
+            if self.__backupMode == True:
+                #skip creating instance
+                logging.info(">>>>>>>>>>>>> The image has been succesfully uploaded to: " + volinfo.getUploadId() )
+                logging.info(">>>>>>>>>>>>> Backup mode is enabled: server volumes is not created. "  )
+                continue
+
             logging.info("Creating volume from the image stored at " + str(volinfo.getUploadId()))
-            
+
             # image size is really size of data, imagesize here is size of image file
             # dammit, needs clarifications
             volume = self.generateVolume(volinfo.getUploadId() , volinfo.getImagePath() , mediaimagesize , disksize , volinfo.generateMigrationId() )
