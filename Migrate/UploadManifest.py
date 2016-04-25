@@ -51,6 +51,7 @@ class TinyDBImageFileManifest(ImageManifest):
 
     def __init__(self, manifest_path, timestamp, lock, db_write_cache_size=1, use_dr=False):
 
+        # Change
         self.__table_name = str(timestamp)
         path = "{0}/{1}".format(manifest_path, self.__table_name)
 
