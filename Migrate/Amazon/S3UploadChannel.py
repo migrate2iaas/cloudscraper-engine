@@ -39,6 +39,7 @@ import threading
 import datetime
 import UploadChannel
 import UploadManifest
+import CloudManifestBuilder
 
 
 import base64
@@ -46,6 +47,8 @@ import math
 from md5 import md5
 from XmlManifestUtils import *
 import urlparse
+
+
 
 #TODO: add wait completion\notification\delegates on this part completion
 class UploadQueueTask(object):
@@ -599,26 +602,11 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         # but the parts should be named in a right way
         xmlkey = self.__manifest.get_key_base() + "/manifest.xml"
 
-        manifest = S3ManfiestBuilder(xmltempfile, xmlkey, self.__bucketName, self.__S3, self.__diskType)
-        manifest.buildHeader(self.__overallSize, self.__volumeToAllocateGb, fragment_count)
+        builder = CloudManifestBuilder.AmazonS3ManifestBuilder(self.__S3, self.__manifest, self.__bucketName)
+        s3key = Key(self.__bucket, builder.get_xml_key())
+        s3key.set_contents_from_string(builder.get(60*60*24*5, self.__diskType))
         
-        #TODO: faster the solution by re-sorting the dictionary or have an another container
-        for res in res_list:
-            # here we rename the parts to reflect their sequence numbers
-            # NOTE: it takes to much time. 
-            # newkeyname = self.__keyBase+"/"+keyprefix+".part"+str(fragment_index);
-            # self.__bucket.copy_key(newkeyname, self.__bucketName, keyname)
-            # self.__bucket.delete_key(keyname)
-            manifest.addUploadedPart(
-                fragment_index, int(res["offset"]), int(res["offset"]) + int(res["size"]), res["part_name"])
-            fragment_index += 1
-        
-        manifest.finalize()
-
-        s3key = Key(self.__bucket, xmlkey)
-        s3key.set_contents_from_filename(xmltempfile) 
-        
-        self.__xmlKey = self.__generateKeyLink(s3key , self.__bucketName, self.__makeLinkPublic)
+        self.__xmlKey = self.__generateKeyLink(s3key, self.__bucketName, self.__makeLinkPublic)
 
         s3key.close()
 

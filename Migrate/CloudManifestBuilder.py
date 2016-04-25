@@ -14,6 +14,7 @@ class AmazonS3ManifestBuilder(object):
         self.__connection = connection
         self.__manifest = manifest
         self.__bucket = bucket
+        self.__xml_key = "{0}/{1}".format(self.__manifest.get_key_base(), "manifest.xml")
 
     def get(self, linktimeexp_seconds, file_format='VHD'):
         res_list = self.__manifest.all()
@@ -27,7 +28,15 @@ class AmazonS3ManifestBuilder(object):
         etree.SubElement(importer, 'version').text = "1.0.0"
         etree.SubElement(importer, 'release').text = "2010-11-15"
 
+        etree.SubElement(res_xml, 'self-destruct-url').text = self.__connection.generate_url(
+                linktimeexp_seconds,
+                method='DELETE',
+                bucket=self.__bucket,
+                key=self.__xml_key,
+                force_http=False)
+
         imports = etree.SubElement(res_xml, 'import')
+        vol_size_to_allocate = etree.SubElement(res_xml, 'volume-size')
         parts = etree.SubElement(imports, 'parts', count=str(len(res_list)))
 
         size = 0
@@ -62,6 +71,12 @@ class AmazonS3ManifestBuilder(object):
 
         etree.SubElement(imports, 'size').text = str(size)
 
+        gigabyte = 1024 * 1024 * 1024
+        vol_size_to_allocate.text = str((size + gigabyte - 1) / gigabyte)
+
         return "{0}\n{1}".format(
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
             etree.tostring(res_xml, pretty_print=True))
+
+    def get_xml_key(self):
+        return self.__xml_key
