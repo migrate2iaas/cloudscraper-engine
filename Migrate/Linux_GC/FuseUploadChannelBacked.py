@@ -202,7 +202,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         return len(data)
 
     def read(self, path, size, offset, fh):
-        logging.info(" FUSE READ " + str(size) + " Bytes OFFSET " + str(offset) )
+        #logging.info(" FUSE READ " + str(size) + " Bytes OFFSET " + str(offset) )
         
         if self.cached_data.has_key(path):
             if self.cached_data[path].has_key(offset):
@@ -215,6 +215,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
                 if self.cached_data.has_key(path) == False:
                     self.cached_data[path] = defaultdict(bytes)
                 self.cached_data[path][offset] = data
+                logging.info(" FUSE READ " + str(size) + " Bytes OFFSET " + str(offset) + " added to cache")
                 return data
 
         channel = self.getChannel(path)
