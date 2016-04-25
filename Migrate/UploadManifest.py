@@ -229,7 +229,7 @@ class ImageDictionaryManifest(ImageManifest):
     for file storage, based on JSON format.
     """
 
-    DB_TABLES_EXTENSION = ".cloudscraper-manifest-tables"
+    DB_TABLES_EXTENSION = "!.cloudscraper-manifest-tables"
 
     def __init__(self, manifest_path, table_name, lock, db_write_cache_size=1, use_dr=False):
         self.__table_name = str(table_name)
