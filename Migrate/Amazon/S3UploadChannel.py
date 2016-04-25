@@ -44,69 +44,8 @@ import UploadManifest
 import base64
 import math
 from md5 import md5
-
-class S3ManfiestBuilder:
-
-    def __init__(self, tmpFileName, s3XmlKey, bucketname, s3connection, fileFormat='VHD'):
-        self.__file = open(tmpFileName, "wb")
-        self.__xmlKey = s3XmlKey
-        self.__fileFormat = fileFormat
-        self.__bucket = bucketname
-        self.__S3 = s3connection
-
-        return
-
-    def buildHeader(self, bytesToUpload, resultingSizeGb, fragmentCount):
-      #TODO: change file format
-       header = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?> \n\t <manifest> \n\t\t <version>2010-11-15</version> \n\t\t <file-format>'+self.__fileFormat+'</file-format> \n\t\t <importer>'
-       self.__file.write(header)
-
-       #TODO: we emulate the standart utility XML (otherwise, the import won't work properly)
-       importerver = '\n\t\t\t <name>ec2-upload-disk-image</name> \n\t\t\t <version>1.0.0</version> \n\t\t\t  <release>2010-11-15</release>'
-       self.__file.write(importerver)
-       
-       linktimeexp_seconds = 60*60*24*15 # 15 days
-       urldelete = self.__S3.generate_url( linktimeexp_seconds, method='DELETE', bucket=self.__bucket,  key=self.__xmlKey, force_http=False)
-       selfdestruct = '\n\t\t </importer> \n\t\t  <self-destruct-url>'+urldelete.replace('&' ,'&amp;')+'</self-destruct-url> '
-       self.__file.write(selfdestruct)
-
-       importvol = '\n\t\t <import> \n\t\t\t <size>'+ str(bytesToUpload) + '</size> \n\t\t\t <volume-size>' + str(resultingSizeGb) + '</volume-size>' + '\n\t\t\t <parts count="'+str(fragmentCount)+'">'
-       self.__file.write(importvol)
-         
-       return
-
-    def addUploadedPart(self , index , rangeStart , rangeEnd , keyName):
-        
-        linktimeexp_seconds = 60*60*24*5   # 5 days
-
-        indexstr = '\n\t\t\t <part index="'+str(index)+'">\n\t\t\t\t '+'<byte-range end="' + str (rangeEnd) + '" start="'+ str(rangeStart) +'" />'
-        self.__file.write(indexstr)
-
-        keystr = '\n\t\t\t\t <key>'+str(keyName)+'</key>'
-        self.__file.write(keystr)
-          
-        urlhead = self.__S3.generate_url( linktimeexp_seconds, method='HEAD', bucket=self.__bucket, key=keyName, force_http=False)
-        gethead = '\n\t\t\t\t <head-url>'+urlhead.replace('&' ,'&amp;')+'</head-url>'
-        self.__file.write(gethead)
-
-        urlget = self.__S3.generate_url( linktimeexp_seconds, method='GET', bucket=self.__bucket, key=keyName, force_http=False)
-        getstr = '\n\t\t\t\t <get-url>'+urlget.replace('&' ,'&amp;')+'</get-url>'
-        self.__file.write(getstr)
-
-        urldelete = self.__S3.generate_url( linktimeexp_seconds, method='DELETE', bucket=self.__bucket, key=keyName, force_http=False)
-        getdelete = '\n\t\t\t\t <delete-url>'+urldelete.replace('&' ,'&amp;')+'</delete-url>'
-        self.__file.write(getdelete)
-
-        partend = '\n\t\t\t </part>'
-        self.__file.write(partend)
-
-        return
-
-    def finalize(self):
-        end = '\n </parts>\n </import> \n </manifest>\n'
-        self.__file.write(end)
-        self.__file.close()
-        return 
+from XmlManifestUtils import *
+import urlparse
 
 #TODO: add wait completion\notification\delegates on this part completion
 class UploadQueueTask(object):
@@ -610,12 +549,13 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         for bucket in buckets:
             if self.__awsRegionConstraint:
                 if bucket.get_location() != self.__awsRegionConstraint:
-                    logging.debug("Skipping " + bucket.name + " as it is not in " + self.__awsRegionConstraint)
-                    continue
+                    if not (self.__awsRegionConstraint == "us-east-1" and not bucket.get_location()):   # meaning data in us standard, it's special rule for location
+                        logging.debug("Skipping " + bucket.name + " as it is not in " + self.__awsRegionConstraint)
+                        continue
             logging.info("Listing bucket " + bucket.name)
             keys = bucket.list()
             for key in keys:
-                if re.match(suggestion+"manifest\.xml" , key.name):
+                if re.match(suggestion+".?manifest\.xml" , key.name):
                     keylink = self.__generateKeyLink(key, bucket.name , self.__makeLinkPublic)
                     found_keys.append(keylink)
                     logging.info(">>>>>>> Found restoration point: " + keylink)
@@ -679,7 +619,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         # keyprefix = "result"
         # NOTE: really we may not build XML, it'd be built by ec2-import-script
         # but the parts should be named in a right way
-        xmlkey = self.__keyBase + "manifest.xml"
+        xmlkey = self.__keyBase + ".manifest.xml"
 
         manifest = S3ManfiestBuilder(xmltempfile, xmlkey, self.__bucketName, self.__S3, self.__diskType)
         manifest.buildHeader(self.__overallSize, self.__volumeToAllocateGb, fragment_count)
@@ -721,3 +661,52 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         logging.debug("Closing the upload threads, End signal message was sent")
         for thread in self.__workThreads:
             self.__uploadQueue.put(None)
+
+    def reconfirm(self, uploadid):
+        """
+        Recomfirms existing upload making sure the upload is valid for the deploy (e.g. the upload may have expired)
+        """
+        #here we get bucket and path from the link
+        parsed = urlparse.urlparse(uploadid)
+        bucket = str(parsed.netloc).split(".")[0]
+        xmlkey = str(parsed.path)
+        if xmlkey[0] == "/":
+            xmlkey = xmlkey[1:]
+        logging.info("Updating manifest " + uploadid + " bucket = " + bucket + " key = " + xmlkey)
+
+        # NOTE: we catch the security warning from tempnam (really, there is no unsecure data, not sure however)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            xmltempfile = os.tempnam("s3manifest") + ".xml"
+
+        s3bucket = self.__S3.get_bucket(bucket)
+        s3key = Key(s3bucket, xmlkey)
+        xml = s3key.get_contents_as_string()
+
+        (volume_size_bytes , image_file_size , imagetype, fragment_count) = getImageDataFromXmlData(xml)
+
+        manifest = S3ManfiestBuilder(xmltempfile, xmlkey, bucket, self.__S3, imagetype)
+        volume_size_gb = volume_size_bytes/(1024*1024*1024)
+        manifest.buildHeader(image_file_size, volume_size_gb, fragment_count)
+        
+        fragment_index = 0
+        #finds all xml entries and reuploads them
+        for match in re.finditer(r"<byte-range end=\"([0-9]+)\" start=\"([0-9]+)\" />\s<key>([^<]+)</key>" , xml , re.MULTILINE):
+            end = int(match.group(1))
+            start = int(match.group(2))
+            partname = str(match.group(3))
+            manifest.addUploadedPart(
+                fragment_index, start, end, partname)
+            fragment_index += 1
+        
+        manifest.finalize()
+
+        s3key.set_contents_from_filename(xmltempfile) 
+        
+        renewed_upload_id = self.__generateKeyLink(s3key , bucket, self.__makeLinkPublic)
+
+        s3key.close()
+        # NOTE: + sign means it'll be shown in build result for Recovery-local job
+        logging.info("+ "+ renewed_upload_id)
+
+        return True

@@ -35,7 +35,7 @@ class Migrator(object):
 
 
     def __init__(self , cloud_options , migrate_options, sys_adjust_overrides , skip_imaging=False, resume_upload=False, skip_upload=False ,\
-        self_checks=False , limits = None , insert_vitio = False , insert_xen = False, backup_mode = False):
+        self_checks=False , limits = None , insert_vitio = False , insert_xen = False, backup_mode = False, renew_manifest = False):
         """
         Inits the Migrator mega-class. 
 
@@ -51,6 +51,7 @@ class Migrator(object):
             insert_vitio : bool - inserts virtio drivers to the running system. Note, this option can be overriden with migrate_options.insertVirtIo()
             insert_xen : bool - inserts xen drivers to the running system. Note, this option can be overriden with migrate_options.insertXen()
             backup_mode : bool - doesn't create a VM inside the cloud. Just stores image there
+            renew_manifest : bool - renews every manifest representing exisitng upload. should be used with skip_upload = True
         """
         self.__adjustedSystemBackupSource = None
         self.__systemBackupSource = None
@@ -78,6 +79,7 @@ class Migrator(object):
         self.__skipUpload = skip_upload
         self.__resumeUpload = resume_upload
         self.__backupMode = backup_mode
+        self.__renewManifest = renew_manifest
        
         self.__resultingInstance = None
 
@@ -414,19 +416,30 @@ class Migrator(object):
             logging.debug("The upload channel path is: " + uploadpath)
             sys_vol_info.setUploadPath(uploadpath)
         
-        if self.__skipUpload == True and not sys_vol_info.getUploadId():
-            uploadpath = self.__systemTransferChannel.getUploadPath()
-            upload_ids = self.__systemTransferChannel.findUploadId(".*?"+sys_vol_info.getUploadPath())
-            if not upload_ids:
-                logging.error("!!!ERROR: Cannot find any matching manifest.xml file")
-                return False
-            # we pick latest entry due to date
-            upload_id = sorted(upload_ids)[-1]
-            logging.info(">>>>>> Utilizing "+ upload_id + " restoration point")
-            sys_vol_info.setUploadId(upload_id)
+        # TODO: make the code generic. e.g. handle exisitng upload from channel
+        if self.__skipUpload == True:
+            return self.handleExistingUpload(self.__systemTransferChannel , sys_vol_info)
             
         return True
         
+    def handleExistingUpload(self, channel , vol_info):
+        """aux function to perform tasks on existing uploads"""
+        if not vol_info.getUploadId():
+            uploadpath = channel.getUploadPath()
+            upload_ids = channel.findUploadId(".*?"+vol_info.getUploadPath())
+            if not upload_ids:
+                logging.error("!!!ERROR: Cannot find any matching manifest.xml file")
+                return False
+            if self.__renewManifest:
+                for id in upload_ids:
+                    channel.reconfirm(id)
+            # we pick latest entry due to date
+            upload_id = sorted(upload_ids)[-1]
+            logging.info(">>>>>> Utilizing "+ upload_id + " restoration point")
+            vol_info.setUploadId(upload_id)
+        if self.__renewManifest:
+            channel.reconfirm(vol_info.getUploadId())
+
     def adjustSystemBackupTarget(self):
         # dunno really what could we do here
         return True
@@ -486,7 +499,7 @@ class Migrator(object):
   
         
         if self.__backupMode == True:
-            #skip imaging
+            #skip creating instance
             logging.info(">>>>>>>>>>>>> The image has been succesfully uploaded to: " + self.__migrateOptions.getSystemVolumeConfig().getUploadId())
             logging.info(">>>>>>>>>>>>> Backup mode is enabled: server instance is not created. Enable redeploy mode to DR from the uploaded image.")
             return True
@@ -684,16 +697,8 @@ class Migrator(object):
                 volinfo.setUploadPath(uploadpath)
                 
             # FIND OLD UPLOAD RESULT IF POSSIBLE
-            if self.__skipUpload == True and not volinfo.getUploadId():
-                # tested on aws only
-                upload_ids = self.__dataChannelList[volinfo.getVolumePath()].findUploadId(".*?"+volinfo.getUploadPath())
-                if not upload_ids:
-                    logging.error("!!!ERROR: Cannot find any matching manifest.xml file")
-                    return False
-                # we pick latest entry due to date
-                upload_id = sorted(upload_ids)[-1]
-                logging.info(">>>>>> Utilizing "+ upload_id + " restoration point")
-                volinfo.setUploadId(upload_id)
+            if self.__skipUpload == True:
+                self.handleExistingUpload(self.__dataChannelList[volinfo.getVolumePath()] , volinfo)
 
         return True
         

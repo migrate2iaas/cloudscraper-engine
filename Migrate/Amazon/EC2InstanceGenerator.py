@@ -23,7 +23,7 @@ import traceback
 import datetime
 
 import EC2ImportConnection
-from EC2VolumeGenerator import getImageDataFromXml
+from XmlManifestUtils import getImageDataFromXml
 
 import InstanceGenerator
 
@@ -71,7 +71,7 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
 
         if volume_size_bytes == 0 or image_file_size == 0:
             if volume_size_bytes == 0 or image_file_size == 0:
-                (volume_size_bytes , image_file_size , imagetype) = getImageDataFromXml(xmlurl)
+                (volume_size_bytes , image_file_size , imagetype, fragments) = getImageDataFromXml(xmlurl)
 
 
         scripts_dir = ".\\Amazon"

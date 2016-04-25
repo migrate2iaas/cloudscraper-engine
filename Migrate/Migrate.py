@@ -148,6 +148,9 @@ if __name__ == '__main__':
         parser.add_argument('-j', '--reboottimeout', help="Time to wait in seconds for VM to reboot while doing test run", type=int, default=200)
         parser.add_argument('-p', '--backup', help="Backup mode. Skips deploying machine in the cloud - just takes an image and uploads it to cloud", action="store_true")
         parser.add_argument('-l', '--logfile', help="Specifies the place to store full log")
+        parser.add_argument('-r', '--renew_manifest', help="Renews manifests file representing upload done. Should be used wih -s (--skipupload) option", action="store_true")
+        parser.add_argument('-d', '--skip_deploy', help="Skips final deployment step (instance creation)", action="store_true")
+        
 
         logfile = "../../logs/migrate.log"
         if parser.parse_args().logfile:
@@ -235,6 +238,10 @@ if __name__ == '__main__':
         if parser.parse_args().skipupload:
             skipupload = True
 
+        renew_manifest = False
+        if parser.parse_args().renew_manifest:
+            renew_manifest = True
+
         password = s3key or ehkey or azurekey or cloudsigmapass or apikey
         limits = None
         try:
@@ -249,7 +256,8 @@ if __name__ == '__main__':
             os._exit(errno.EFAULT)
     
         logging.info("\n>>>>>>>>>>>>>>>>> Configuring the Transfer Process:\n")
-        __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload , limits = limits , insert_vitio=parser.parse_args().virtio, backup_mode = backupmode)
+        __migrator = Migrator.Migrator(cloud,image,adjust, resumeupload or skipupload , resumeupload, skipupload , limits = limits ,\
+            insert_vitio=parser.parse_args().virtio, backup_mode = backupmode, renew_manifest = renew_manifest)
         logging.info("Migrator test started")
         # Doing the task
         instance = None

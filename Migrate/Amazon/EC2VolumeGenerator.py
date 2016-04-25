@@ -27,42 +27,7 @@ import EC2ImportConnection
 import traceback
 import datetime
 
-import urllib
-
-
-
-def getImageDataFromXml(xmlurl):
-    """returns tuple (volume-size-bytes,image-size-bytes,image-file-type)"""
-    gb = 1024*1024*1024
-    volume_size_bytes = 0
-    image_file_size = 0
-    imagetype = ''
-    
-    urldata = urllib.urlopen(xmlurl)
-
-    if urldata:
-        xmlheader = urldata.read(4096)
-        (head, sep ,tail) = xmlheader.partition("<file-format>")
-        if tail:
-            (head, sep ,tail) = tail.partition("</file-format>")
-            imagetype = head
-
-        (head, sep ,tail) = xmlheader.partition("<size>")
-        if tail:
-            (head, sep ,tail) = tail.partition("</size>")
-            image_file_size = int(head , base = 10)
-            logging.debug("The image of size " + str(image_file_size))
-        else:
-            logging.warning("!Couldn't parse the xml describing the import done")
-        (head, sep ,tail) = xmlheader.partition("<volume-size>")
-        if tail:
-            (head, sep ,tail) = tail.partition("</volume-size>")
-            volume_size_bytes = int(head , base = 10) * gb
-            logging.debug("The volume would be of size " + str(volume_size_bytes))
-        else:
-            logging.warning("!Couldn't parse the xml describing the import done")
-    
-    return (volume_size_bytes, image_file_size , imagetype)
+from XmlManifestUtils import getImageDataFromXml
 
 
 
@@ -86,7 +51,7 @@ class EC2VolumeGenerator(object):
                 image_file_size = os.stat(temp_local_image_path).st_size
 
         if volume_size_bytes == 0 or image_file_size == 0:
-            (volume_size_bytes , image_file_size , imagetype) = getImageDataFromXml(xmlurl)
+            (volume_size_bytes , image_file_size , imagetype, fragments) = getImageDataFromXml(xmlurl)
 
         
         ec2region = self.__region

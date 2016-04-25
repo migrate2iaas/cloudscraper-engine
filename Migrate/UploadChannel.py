@@ -119,3 +119,9 @@ class UploadChannel(object):
         Returns False if disk property could be loaded, True if it was loaded and saved, excepts otherwise
         """
         return False
+
+    def reconfirm(self, uploadid):
+        """
+        Recomfirms existing upload making sure the upload is valid for the deploy (e.g. the upload may have expired)
+        """
+        return True
