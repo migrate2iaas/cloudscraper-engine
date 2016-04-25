@@ -9,7 +9,7 @@ sys.path.append('.\..')
 sys.path.append('.\..\OpenStack')
 sys.path.append('.\OpenStack')
 
-import UploadChannel
+import CloudManifestBuilder
 
 import Queue
 import traceback
@@ -414,10 +414,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                 raise ClientException("Not all segments uploaded successfully: {0} uploaded, {1} expected".format(
                     total_size, self.__diskSize))
 
-            # Segments can upload not in sequential order, so we need to sort them for manifest
-            r_list.sort(key=lambda di: int(di["offset"]))
             # Use SLO or not, this call returns different manifest file type
-            storage_url = self.__uploadCloudManifest(self.__createCloudManifest(r_list), self.__swift_use_slo)
+            storage_url = self.__uploadCloudManifest(self.__swift_use_slo)
 
             # Notify manifest database that backup completed
             self.__manifest.complete_manifest(total_size)
@@ -434,28 +432,12 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         return storage_url
 
-    def __createCloudManifest(self, segment_list):
-        # Creating manifest
-        return json.dumps([{
-                "path": self.__containerName + "/" + d["part_name"],
-                "etag": d["etag"],
-                "size_bytes": int(d["size"])
-        } for d in segment_list])
+    def __uploadCloudManifest(self, swift_use_slo):
 
-    def __uploadCloudManifest(self, manifest_data, swift_use_slo):
-
-        # For DLO the manifest file is a zero-byte file with the extra X-Object-Manifest {container}/{prefix} header,
-        # where {container} is the container the object segments are in and {prefix} is the common prefix for all
-        # the segments.
+        builder = CloudManifestBuilder.OpenStackManifestBuilder(self.__manifest, self.__containerName)
+        manifest_data, query_string, headers = builder.get(swift_use_slo)
 
         mr = {}
-        headers = {"x-static-large-object": "true"}
-        query_string = "multipart-manifest=put"
-        if not swift_use_slo:
-            headers = {"X-Object-Manifest": "{0}/{1}/".format(self.__containerName, self.getPartPrefix())}
-            manifest_data = None
-            query_string = None
-
         connection = self.createConnection()
         cloud_path = self.__manifest.get_key_base()
         connection.put_object(
