@@ -691,7 +691,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         
         fragment_index = 0
         #finds all xml entries and reuploads them
-        for match in re.finditer(r"<byte-range end=\"([0-9]+)\" start=\"([0-9]+)\" />\s<key>([^<]+)</key>" , xml , re.MULTILINE):
+        for match in re.finditer(r"<byte-range end=\"([0-9]+)\" start=\"([0-9]+)\" />[^<]*<key>([^<]+)</key>" , xml , re.MULTILINE + re.DOTALL):
             end = int(match.group(1))
             start = int(match.group(2))
             partname = str(match.group(3))
