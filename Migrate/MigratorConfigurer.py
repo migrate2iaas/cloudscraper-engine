@@ -869,16 +869,17 @@ class MigratorConfigurer(object):
         return (imagedir, image_placement, imagetype)
 
     def loadDRconfig(self, config):
-        use_dr = False
-        manifest_path = increment_depth = None
+        use_dr = True # we have DR even we don't want to
+        manifest_path = './backup-manifest'
+        increment_depth = 1
 
         if config.has_section('DR'):
-            use_dr = True # NOT sure if relevant anymore to existing code. we have DR even we don't want to
-            manifest_path = 'C:\\backup-manifest'
+            if config.has_option('DR', 'forbid_dr'):
+                use_dr = not config.getboolean('DR', 'forbid_dr')
+
             if config.has_option('DR', 'manifest_path'):
                 manifest_path = config.get('DR', 'manifest_path')
 
-            increment_depth = 1
             if config.has_option('DR', 'increment_depth'):
                 increment_depth = config.get('DR', 'increment_depth')
 
