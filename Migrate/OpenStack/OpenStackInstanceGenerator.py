@@ -125,19 +125,20 @@ class OpenStackCinderVolume(VmVolume.VmVolume):
 class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
     """Generator of vm instances for OpenStack based clouds."""
 
-    def __init__(self , server_url , tennant_name , username , password , vmbuild_timeout_sec = 1200 , version="2"):
+    def __init__(self , server_url , tennant_name , username , password , vmbuild_timeout_sec = 1200 , version="2" , ignore_ssl_cert = True):
         self.__server_url = server_url
         self.__tennant = tennant_name
         self.__username = username
         self.__password = password
+        self.__ignoreSslCert = ignore_ssl_cert
         #keystone = ksclient.Client(auth_url=server_url,   username=username, password=password, tenant_name= tennant_name)
         #self.__auth = keystone.auth_token
-        self.__nova = client.Client(version,username,password,tennant_name,server_url)
+        self.__nova = client.Client(version,username,password,tennant_name,server_url,insecure=self.__ignoreSslCert)
         self.__nova.authenticate()
 
         try:
             from cinderclient.v2 import client as ciclient
-            self.__cinder = ciclient.Client(username=username,api_key=password,project_id=tennant_name,auth_url=server_url,service_type='volume')
+            self.__cinder = ciclient.Client(username=username,api_key=password,project_id=tennant_name,auth_url=server_url,service_type='volume',insecure=self.__ignoreSslCert)
             self.__cinder.authenticate()
         except Exception as e:
             self.__cinder = None

@@ -395,7 +395,7 @@ class SwiftUploadChannel(UploadChannel.UploadChannel):
         error = True
 
         while timeleft > 0:
-            r = requests.head(url)
+            r = requests.head(url , verify=(not self.__ignoreSslCert))
             if int(r.headers['content-length']) == self.__diskSize:
                 logging.info("Swift object for disk is ready");
                 error = False

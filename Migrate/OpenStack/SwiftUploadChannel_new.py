@@ -174,6 +174,7 @@ class SwiftUploadThread(threading.Thread):
         except (ClientException, Exception) as e:
             self.__fileProxy.cancel()
             logging.warn("!Unable to upload segment {0}. Reason: {1}".format(self.__offset, e))
+            logging.debug(logging.error(traceback.format_exc()))
         finally:
             # We should compete every file proxy to avoid deadlocks
             # Notify that upload complete
@@ -376,6 +377,22 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
         return success
 
+    def __clear_container_acl(self, container_name):
+        connection = None
+        success = True
+        try:
+            connection = self.createConnection()
+            connection.post_container(container_name, {"X-Container-Read": "."})
+
+        except (ClientException, Exception) as err:
+            logging.error("!!!ERROR: " + err.message)
+            success = False
+        finally:
+            if connection:
+                connection.close()
+
+        return success
+
     def getUploadPath(self):
         """
         Gets the upload path identifying the upload sufficient to upload the disk in case storage account and
@@ -534,7 +551,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
     def close(self):
         # make container as private storage
-        if self.__set_container_acl(self.__containerName, ''):
+        if self.__clear_container_acl(self.__containerName):
             logging.info("Making {0} as private storage".format(self.__containerName))
         else:
             logging.warning("Unable to make {0} as private storage".format(self.__containerName))
