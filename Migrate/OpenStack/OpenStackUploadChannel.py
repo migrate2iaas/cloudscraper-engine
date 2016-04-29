@@ -35,7 +35,7 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
                  image_name="cloudscraper-image", resume_upload = False, chunksize=10*1024*1024, container_format="bare",
                  swift_server_url=None, swift_tennant_name = None, swift_username=None, swift_password=None,
                  disk_name="", container_name="cloudscraper-container", compression=False, upload_threads=10,
-                 use_new_channel=False, increment_depth=1, ignore_etag=False, swift_max_segments=0,
+                 use_new_channel=False, ignore_etag=False, swift_max_segments=0,
                  swift_use_slo=True, 
                  ignore_ssl_cert = False,
                  manifest=None):
@@ -58,7 +58,7 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
                 result_disk_size_bytes, swift_server_url, swift_username,
                 swift_tennant_name, swift_password, disk_name, container_name,
                 retries=3, compression=compression, resume_upload=resume_upload,
-                increment_depth=increment_depth, chunksize=chunksize, upload_threads=upload_threads,
+                chunksize=chunksize, upload_threads=upload_threads,
                 ignore_etag=ignore_etag , swift_max_segments=swift_max_segments, swift_use_slo=swift_use_slo,
                 ignore_ssl_cert=ignore_ssl_cert,manifest=manifest)
 
