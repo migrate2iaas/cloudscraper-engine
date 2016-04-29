@@ -2,7 +2,7 @@
 onAppConfigs
 ~~~~~~~~~~~~~~~~~
 
-This module provides onAppConfigs class
+This module provides OpenStackConfigs class
 """
 
 # --------------------------------------------------------
