@@ -2,7 +2,8 @@ import json
 
 from lxml import etree
 
-
+#TODO: split into several modules
+# make 'get' virtual
 class CloudManifestBuilder(object):
 
     def __init__(self, cloud, manifest):
@@ -16,7 +17,7 @@ class AmazonS3ManifestBuilder(object):
         self.__connection = connection
         self.__manifest = manifest
         self.__bucket = bucket
-        self.__xml_key = "{0}/{1}".format(self.__manifest.get_key_base(), "manifest.xml")
+        self.__xml_key = "{0}/{1}".format(self.__manifest.get_key_base(), ".manifest.xml")
 
     def get(self, linktimeexp_seconds, file_format='VHD'):
         try:
@@ -43,6 +44,8 @@ class AmazonS3ManifestBuilder(object):
             parts = etree.SubElement(imports, 'parts', count=str(len(res_list)))
 
             size = 0
+            # sort by offset before passing next to xml build
+            res_list = sorted(res_list , key = lambda res: res["offset"])
             for i in res_list:
                 size += int(i["size"])
 
