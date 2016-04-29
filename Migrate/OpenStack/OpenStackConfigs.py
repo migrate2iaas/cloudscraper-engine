@@ -121,7 +121,6 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             ignore_etag=self.__ignoreEtag,
             swift_max_segments=self.__swiftMaxSegments,
             swift_use_slo=self.__swiftUseSlo,
-            use_dr=self.__use_dr ,
             ignore_ssl_cert = self.__ignoreSslCert,
             manifest=manifest)
 

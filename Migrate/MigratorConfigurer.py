@@ -873,7 +873,7 @@ class MigratorConfigurer(object):
         manifest_path = increment_depth = None
 
         if config.has_section('DR'):
-            use_dr = True
+            use_dr = True # NOT sure if relevant anymore to existing code. we have DR even we don't want to
             manifest_path = 'C:\\backup-manifest'
             if config.has_option('DR', 'manifest_path'):
                 manifest_path = config.get('DR', 'manifest_path')

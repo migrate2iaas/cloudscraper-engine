@@ -215,7 +215,6 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             ignore_etag=False,
             swift_use_slo=True,
             swift_max_segments=0,
-            use_dr=False, 
             ignore_ssl_cert = True,
             manifest=None):
         """constructor"""
