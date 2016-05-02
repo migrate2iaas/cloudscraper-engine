@@ -202,11 +202,11 @@ class SwiftUploadThread(threading.Thread):
         finally:
             # We should compete every file proxy to avoid deadlocks
             # Notify that upload complete
-            self.__fileProxy.setComplete(upload)
-
-            # Each file proxy must be released, because internally it"s use Queue
-            # synchronization primitive and it must be released, when, for example, exception happens
-            self.__fileProxy.release()
+            if not extent and self.__fileProxy:
+                self.__fileProxy.setComplete(upload)
+                # Each file proxy must be released, because internally it"s use Queue
+                # synchronization primitive and it must be released, when, for example, exception happens
+                self.__fileProxy.release()
 
             # Closing swift connection and completing upload thread.
             # Every thread creation must call completeUploadThread() function to avoid
