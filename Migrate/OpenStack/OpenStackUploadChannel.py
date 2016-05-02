@@ -17,6 +17,7 @@ sys.path.append('.\OpenStack')
 
 
 import os 
+import urlparse
 
 from OpenStack import GlanceUploadChannel
 from OpenStack import SwiftUploadChannel
@@ -38,8 +39,14 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
                  use_new_channel=False, ignore_etag=False, swift_max_segments=0,
                  swift_use_slo=True, 
                  ignore_ssl_cert = False,
+                 private_container = False,
                  manifest=None):
-        """constructor"""
+        """constructor
+
+        we form the chain to a) upload data to swift b) run glance to create image based on swift data
+        if private_container is false, it makes the swift container public until data is read from it
+        if private_container is true, it sets specific acls for container allowing only private access by openstack host for live-long 
+        """
         super(OpenStackUploadChannel, self).__init__()
 
         if not swift_server_url:
@@ -53,6 +60,15 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
         if not disk_name:
             disk_name = image_name + "." + disk_format
 
+        container_acl = "*"
+        if private_container:
+            # means we make container private to use via glance and openstack only
+            #note: this approach works when glance, nova and keystone share the same host. it doesn't work if 
+            # there are installed on different hosts. 
+            # NOTE: if they do not share the same host we should ask keystone for glance and nova hosts and set them to acl
+            container_acl = urlparse.urlparse(server_url).hostname
+
+
         if use_new_channel:
             swift = SwiftUploadChannel_new.SwiftUploadChannel_new(
                 result_disk_size_bytes, swift_server_url, swift_username,
@@ -60,7 +76,8 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
                 retries=3, compression=compression, resume_upload=resume_upload,
                 chunksize=chunksize, upload_threads=upload_threads,
                 ignore_etag=ignore_etag , swift_max_segments=swift_max_segments, swift_use_slo=swift_use_slo,
-                ignore_ssl_cert=ignore_ssl_cert,manifest=manifest)
+                ignore_ssl_cert=ignore_ssl_cert,manifest=manifest, 
+                acl=container_acl, clear_acl_on_close=not private_container)
 
         else:
             swift = SwiftUploadChannel.SwiftUploadChannel(

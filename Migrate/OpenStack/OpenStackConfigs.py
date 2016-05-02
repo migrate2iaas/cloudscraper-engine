@@ -36,6 +36,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             ignore_etag=False, 
             glance_only=False,
             ignore_ssl_cert = False,
+            private_container = False,
             use_dr=False ,  
             db_write_cache_size=20):
         """
@@ -66,6 +67,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         self.__use_dr = use_dr
         self.__ignoreSslCert = ignore_ssl_cert
         self.__db_write_cache_size = db_write_cache_size
+        self.__privateContainer = private_container
         
         if compression: # in case compression is int 
             self.__compression = True
@@ -122,6 +124,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             swift_max_segments=self.__swiftMaxSegments,
             swift_use_slo=self.__swiftUseSlo,
             ignore_ssl_cert = self.__ignoreSslCert,
+            private_container = self.__privateContainer,
             manifest=manifest)
 
     def generateInstanceFactory(self):

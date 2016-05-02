@@ -216,6 +216,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             swift_use_slo=True,
             swift_max_segments=0,
             ignore_ssl_cert = True,
+            acl="*",
+            clear_acl_on_close=True,
             manifest=None):
         """constructor"""
         self.__serverURL = server_url
@@ -233,6 +235,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__ignoreSslCert = ignore_ssl_cert
         self.__segmentsList = []
         self.__manifest = manifest
+        self.__acl = acl
+        self.__clearAcl = clear_acl_on_close
 
         self.__fileProxies = []
         self.__ignoreEtag = ignore_etag
@@ -333,7 +337,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             auth_version="2",
             snet=False,
             ssl_compression=self.__compression,
-            timeout=86400, insecure = True)
+            timeout=86400, insecure = self.__ignoreSslCert)
 
     def initStorage(self, init_data_link=""):
         """
@@ -423,7 +427,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             logging.error(traceback.format_exc())
 
         # make container as public storage
-        if self.__set_container_acl(self.__containerName, '*'):
+        if self.__set_container_acl(self.__containerName, self.__acl):
             logging.info("Making {0} as public storage".format(self.__containerName))
         else:
             logging.error("!!!ERROR: unable to make {0} as public storage".format(self.__containerName))
@@ -459,7 +463,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         return self.__manifest.get_key_base()
 
     def getTransferChunkSize(self):
-        """
+        """self.__clearAcl
         Gets the size of transfer chunk in bytes.
         All the data except the last chunk should be aligned and be integral of this size
         """
@@ -513,7 +517,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
 
     def close(self):
         # make container as private storage
-        if self.__clear_container_acl(self.__containerName):
-            logging.info("Making {0} as private storage".format(self.__containerName))
-        else:
-            logging.warning("Unable to make {0} as private storage".format(self.__containerName))
+        if self.__clearAcl:
+            if self.__clear_container_acl(self.__containerName):
+                logging.info("Making {0} as private storage".format(self.__containerName))
+            else:
+                logging.warning("Unable to make {0} as private storage".format(self.__containerName))
