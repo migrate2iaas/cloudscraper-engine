@@ -108,12 +108,14 @@ class DefferedUploadFileProxy(object):
 
 class SwiftUploadThread(threading.Thread):
     """thread making all uploading works"""
-    def __init__(self, upload_channel, file_proxy, offset, manifest, ignore_etag=False):
+    def __init__(self, upload_channel, file_proxy, offset, manifest, ignore_etag=False, data_extent=None):
         self.__uploadChannel = upload_channel
         self.__fileProxy = file_proxy
         self.__offset = offset
         self.__manifest = manifest
         self.__ignoreEtag = ignore_etag
+        #if data extent is set we ignore file proxy
+        self.__extent = data_extent
 
 
         super(SwiftUploadThread, self).__init__()
@@ -122,28 +124,43 @@ class SwiftUploadThread(threading.Thread):
         if self.__uploadChannel.skipExisting():
             logging.debug("Upload thread started with reuploading turned on")
 
-
+        extent = self.__extent
         upload = True
         connection = None
+        if extent:
+            md5encoder = md5()
+            data = extent.getData()
+            md5encoder.update(data)
+            md5_hexdigest = md5encoder.hexdigest()
+                    
         try:
             connection = self.__uploadChannel.createConnection()
 
             # part name, starts with zeros, 32 character length, needed for dlo, because they use sorted
             # sequence to define segment order.
             part_name = self.__manifest.get_part_name(self.__offset)
-
+            
             # Trying to check existing segment
             try:
                 # Select returns list of records matches part_name from manifest database
-                res = self.__manifest.select(part_name=part_name)
+                if extent:
+                    res = self.__manifest.select(md5_hexdigest, offset=offset)
+                else:
+                    #use old logic if extent unavailable
+                    res = self.__manifest.select(part_name=part_name)
+
                 if not self.__ignoreEtag:
                     # Check, if segment with same local part_name exsists in storage, and
                     # etag in manifest and storage are the same
-                    head = connection.head_object(self.__uploadChannel.getContainerName(), part_name)
+                    head = connection.head_object(self.__uploadChannel.getContainerName(), res["part_name"]) 
                     if res["etag"] == head["etag"]:
+                        if not extent:
+                            local_md5 = res["local_hash"]
+                        else:
+                            local_md5 = md5_hexdigest
                         # We should insert new record if this part found in another manifest
                         self.__manifest.insert(
-                            res["etag"], res["local_hash"], self.__offset, self.__fileProxy.getSize(),
+                            res["etag"], local_md5, self.__offset, self.__fileProxy.getSize(),
                             "skipped")
                         upload = False
                         logging.info("Data upload skipped for {0}".format(res["part_name"]))
@@ -156,14 +173,24 @@ class SwiftUploadThread(threading.Thread):
                 pass
 
             if upload:
-                etag = connection.put_object(
-                    self.__uploadChannel.getContainerName(),
-                    part_name,
-                    self.__fileProxy,
-                    chunk_size=self.__uploadChannel.getChunkSize())
+                if not extent:
+                    etag = connection.put_object(
+                     self.__uploadChannel.getContainerName(),
+                     part_name,
+                     self.__fileProxy,
+                     # TODO: seems like that's the reason of failed uploads. too large chunks get lost in http
+                     chunk_size=self.__uploadChannel.getChunkSize())
+                else:
+                    etag = connection.put_object(
+                     self.__uploadChannel.getContainerName(),
+                     part_name,
+                     str(extent.getData()))
 
                 # getMD5() updates only when data in file proxy (used by put_object()) read.
-                segment_md5 = self.__fileProxy.getMD5()
+                if not extent:
+                    segment_md5 = md5_hexdigest
+                else:
+                    segment_md5 = self.__fileProxy.getMD5()
                 # TODO: make status ("uploaded") as enumeration
                 self.__manifest.insert(
                     etag, segment_md5, self.__offset, self.__fileProxy.getSize(), "uploaded")
@@ -288,16 +315,27 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                 segment_size = self.__diskSize - extent.getStart()
             else:
                 segment_size = self.__segmentSize
-            self.__fileProxies.insert(index, DefferedUploadFileProxy(self.__segmentQueueSize, segment_size))
 
-            SwiftUploadThread(
-                self,
-                self.__fileProxies[index],
-                extent.getStart(),
-                self.__manifest,
-                self.__ignoreEtag).start()
-
-        self.__fileProxies[index].write(extent)
+            if self.__segmentSize == self.__chunkSize:
+                #if segment matches chunk size thus we have all data ready in memory
+                #TODO: implement upload thread queue (inherit from MulttihreadedUpload class)
+                SwiftUploadThread(
+                    self,
+                    None,
+                    extent.getStart(),
+                    self.__manifest,
+                    self.__ignoreEtag, 
+                    extent).start()
+            else:
+                # if segment size (object size available in swift) is larger than file, we use old data implementation
+                self.__fileProxies.insert(index, DefferedUploadFileProxy(self.__segmentQueueSize, segment_size))
+                SwiftUploadThread(
+                    self,
+                    self.__fileProxies[index],
+                    extent.getStart(),
+                    self.__manifest,
+                    self.__ignoreEtag).start()
+                self.__fileProxies[index].write(extent)
 
         return True
 
