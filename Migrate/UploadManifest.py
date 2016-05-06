@@ -578,7 +578,11 @@ class ImageManifestDatabase(object):
         return self.__use_dr
 
     def get_key_base(self):
-        return "{0}/{1}/{2}".format(self.__target_id, self.__table_name, self.__volname)
+        chainid = self.__table_name
+        if self.__increment_depth == 1:
+            chainid = self.__table_name + "-full"
+
+        return "{0}/{1}/{2}".format(self.__target_id, chainid, self.__volname)
 
     def get_part_name(self, offset):
         return "{0}/{1:032}".format(self.get_key_base(), offset)
