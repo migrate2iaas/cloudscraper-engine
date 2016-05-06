@@ -163,7 +163,7 @@ class SwiftUploadThread(threading.Thread):
                         # We should insert new record if this part found in another manifest
                         self.__manifest.insert(
                             res["etag"], local_md5, self.__offset, size,
-                            "skipped")
+                            "skipped" , part_name=res["part_name"])
                         upload = False
                         logging.info("Data upload skipped for {0}".format(res["part_name"]))
                         self.__uploadChannel.notifyOverallDataSkipped(size)
@@ -196,7 +196,7 @@ class SwiftUploadThread(threading.Thread):
                     segment_md5 = self.__fileProxy.getMD5()
                 # TODO: make status ("uploaded") as enumeration
                 self.__manifest.insert(
-                    etag, segment_md5, self.__offset, size, "uploaded")
+                    etag, segment_md5, self.__offset, size, "uploaded" , part_name)
                 self.__uploadChannel.notifyOverallDataTransfered(size)
         except (ClientException, Exception) as e:
             if self.__fileProxy:
