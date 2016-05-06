@@ -97,7 +97,8 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             return GlanceUploadChannel.GlanceUploadChannel(
                 imagesize, self.__server, self.__tennant, self.__username, self.__password, disk_format=self.__disk_format,
                 image_name=targetname, container_format=self.__container_format , version="2" , ignore_ssl_cert = self.__ignoreSslCert)
-
+        
+        #TODO: should show timestamp in here
         manifest = UploadManifest.ImageManifestDatabase(
             UploadManifest.ImageDictionaryManifest, self.__manifestPath, None, threading.Lock(),
             increment_depth=self.__increment_depth, db_write_cache_size=self.__db_write_cache_size,

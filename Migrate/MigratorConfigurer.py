@@ -889,7 +889,7 @@ class MigratorConfigurer(object):
                 manifest_path = config.get('DR', 'manifest_path')
 
             if config.has_option('DR', 'increment_depth'):
-                increment_depth = config.get('DR', 'increment_depth')
+                increment_depth = config.getint('DR', 'increment_depth')
 
         return use_dr, manifest_path, increment_depth
 
