@@ -190,12 +190,14 @@ class SwiftUploadThread(threading.Thread):
                 # getMD5() updates only when data in file proxy (used by put_object()) read.
                 if extent:
                     segment_md5 = md5_hexdigest
+                    size = extent.getSize()
                 else:
                     segment_md5 = self.__fileProxy.getMD5()
+                    size = self.__fileProxy.getSize()
                 # TODO: make status ("uploaded") as enumeration
                 self.__manifest.insert(
-                    etag, segment_md5, self.__offset, self.__fileProxy.getSize(), "uploaded")
-                self.__uploadChannel.notifyOverallDataTransfered(self.__fileProxy.getSize())
+                    etag, segment_md5, self.__offset, size, "uploaded")
+                self.__uploadChannel.notifyOverallDataTransfered(size)
         except (ClientException, Exception) as e:
             if self.__fileProxy:
                 self.__fileProxy.cancel()
