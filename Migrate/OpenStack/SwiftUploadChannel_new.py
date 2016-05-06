@@ -144,16 +144,16 @@ class SwiftUploadThread(threading.Thread):
             try:
                 # Select returns list of records matches part_name from manifest database
                 if extent:
-                    res = self.__manifest.select(md5_hexdigest, offset=offset)
+                    res = self.__manifest.select(md5_hexdigest, offset=self.__offset)
                 else:
                     #use old logic if extent unavailable
                     res = self.__manifest.select(part_name=part_name)
 
-                if not self.__ignoreEtag:
+                if res:
                     # Check, if segment with same local part_name exsists in storage, and
                     # etag in manifest and storage are the same
                     head = connection.head_object(self.__uploadChannel.getContainerName(), res["part_name"]) 
-                    if res["etag"] == head["etag"]:
+                    if res["etag"] == head["etag"] or self.__ignoreEtag:
                         if not extent:
                             local_md5 = res["local_hash"]
                         else:
@@ -170,6 +170,7 @@ class SwiftUploadThread(threading.Thread):
                 # Passing exception here, it"s means that when we unable to check
                 # uploaded segment (it"s missing or etag mismatch) we reuploading that segment
                 logging.warning("Segment {0} verification failed: {1}".format(part_name, e))
+                logging.warning(traceback.format_exc())
                 pass
 
             if upload:
@@ -187,7 +188,7 @@ class SwiftUploadThread(threading.Thread):
                      str(extent.getData()))
 
                 # getMD5() updates only when data in file proxy (used by put_object()) read.
-                if not extent:
+                if extent:
                     segment_md5 = md5_hexdigest
                 else:
                     segment_md5 = self.__fileProxy.getMD5()
@@ -196,9 +197,10 @@ class SwiftUploadThread(threading.Thread):
                     etag, segment_md5, self.__offset, self.__fileProxy.getSize(), "uploaded")
                 self.__uploadChannel.notifyOverallDataTransfered(self.__fileProxy.getSize())
         except (ClientException, Exception) as e:
-            self.__fileProxy.cancel()
+            if self.__fileProxy:
+                self.__fileProxy.cancel()
             logging.warn("!Unable to upload segment {0}. Reason: {1}".format(self.__offset, e))
-            logging.debug(logging.error(traceback.format_exc()))
+            logging.warning(traceback.format_exc())
         finally:
             # We should compete every file proxy to avoid deadlocks
             # Notify that upload complete
