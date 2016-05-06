@@ -286,6 +286,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         logging.info("Segment size: " + str(self.__segmentSize) + " chunk size: " + str(self.__chunkSize))
         logging.info("SSL compression is " + str(self.__compression))
         logging.info("Static large objects is " + str(self.__swift_use_slo))
+        logging.info("Desired ACL is " + str(self.__acl) )
+        logging.info("clear ACL is " + str(self.__clearAcl))
 
         if swift_use_slo is False and self.__manifest.get_increment_depth() != 1:
             logging.warn("!Wrong increment depth for DLO, should be 1")

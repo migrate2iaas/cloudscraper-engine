@@ -68,7 +68,6 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
             # NOTE: if they do not share the same host we should ask keystone for glance and nova hosts and set them to acl
             container_acl = urlparse.urlparse(server_url).hostname
 
-
         if use_new_channel:
             swift = SwiftUploadChannel_new.SwiftUploadChannel_new(
                 result_disk_size_bytes, swift_server_url, swift_username,
