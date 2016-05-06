@@ -162,11 +162,11 @@ class SwiftUploadThread(threading.Thread):
                             local_md5 = md5_hexdigest
                         # We should insert new record if this part found in another manifest
                         self.__manifest.insert(
-                            res["etag"], local_md5, self.__offset, self.__fileProxy.getSize(),
+                            res["etag"], local_md5, self.__offset, size,
                             "skipped")
                         upload = False
                         logging.info("Data upload skipped for {0}".format(res["part_name"]))
-                        self.__uploadChannel.notifyOverallDataSkipped(self.__fileProxy.getSize())
+                        self.__uploadChannel.notifyOverallDataSkipped(size)
 
             except (ClientException, Exception) as e:
                 # Passing exception here, it"s means that when we unable to check
