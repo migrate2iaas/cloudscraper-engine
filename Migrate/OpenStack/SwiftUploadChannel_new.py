@@ -144,10 +144,12 @@ class SwiftUploadThread(threading.Thread):
             try:
                 # Select returns list of records matches part_name from manifest database
                 if extent:
+                    size = extent.getSize()
                     res = self.__manifest.select(md5_hexdigest, offset=self.__offset)
                 else:
                     #use old logic if extent unavailable
                     res = self.__manifest.select(part_name=part_name)
+                    size = self.__fileProxy.getSize()
 
                 if res:
                     # Check, if segment with same local part_name exsists in storage, and
@@ -190,10 +192,8 @@ class SwiftUploadThread(threading.Thread):
                 # getMD5() updates only when data in file proxy (used by put_object()) read.
                 if extent:
                     segment_md5 = md5_hexdigest
-                    size = extent.getSize()
                 else:
                     segment_md5 = self.__fileProxy.getMD5()
-                    size = self.__fileProxy.getSize()
                 # TODO: make status ("uploaded") as enumeration
                 self.__manifest.insert(
                     etag, segment_md5, self.__offset, size, "uploaded")
