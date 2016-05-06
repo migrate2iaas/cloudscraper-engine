@@ -38,7 +38,8 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             ignore_ssl_cert = False,
             private_container = False,
             use_dr=False ,  
-            db_write_cache_size=20):
+            db_write_cache_size=20,
+            availability_zone = ""):
         """
         Constructor
         """
@@ -68,6 +69,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         self.__ignoreSslCert = ignore_ssl_cert
         self.__db_write_cache_size = db_write_cache_size
         self.__privateContainer = private_container
+        self.__availabilityZone = availability_zone
         
         if compression: # in case compression is int 
             self.__compression = True
@@ -129,7 +131,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
 
     def generateInstanceFactory(self):
         return OpenStackInstanceGenerator.OpenStackInstanceGenerator(
-            self.__server, self.__tennant, self.__username, self.__password)
+            self.__server, self.__tennant, self.__username, self.__password , ip_pool = self.__publicIpPool , ignore_ssl_cert = self.__ignoreSslCert)
 
 
     def getCloudStorage(self):
@@ -149,9 +151,8 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
 
     def getZone(self):
         """returns """
-        # pool is very alike availability zone. Not sure whether they are the same or just interrelated in the sys architectures on hand
-        return self.__publicIpPool
-
+        return self.__availabilityZone
+        
     def getRegion(self):
         return self.__server
 

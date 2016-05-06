@@ -361,6 +361,10 @@ class MigratorConfigurer(object):
         if config.has_option('OpenStack', 'private_container'):
             private_container = config.getboolean('OpenStack', 'private_container')
 
+        availability_zone = ""
+        if config.has_option('OpenStack', 'availability_zone'):
+            availability_zone = config.get('OpenStack', 'availability_zone')
+
         adjust_override = self.getOverrides(config, configfile)
         use_dr, manifest_path, increment_depth = self.loadDRconfig(config)
 
@@ -371,7 +375,7 @@ class MigratorConfigurer(object):
             swift_password=swift_password, swift_container=swift_container, compression=swift_compression,
             swift_max_segments=swift_max_segments, swift_use_slo=swift_use_slo, use_new_channel=use_new_channel,
             manifest_path=manifest_path, increment_depth=increment_depth, use_dr=use_dr,
-            ignore_etag=ignore_etag, glance_only=glance_only, ignore_ssl_cert = ignore_ssl_cert, private_container=private_container)
+            ignore_etag=ignore_etag, glance_only=glance_only, ignore_ssl_cert = ignore_ssl_cert, private_container=private_container , availability_zone = availability_zone)
         return (image, adjust_override, cloud)
 
     def configOnApp(self, configfile, config, password):

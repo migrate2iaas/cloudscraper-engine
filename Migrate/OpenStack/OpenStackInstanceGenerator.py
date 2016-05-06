@@ -125,12 +125,13 @@ class OpenStackCinderVolume(VmVolume.VmVolume):
 class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
     """Generator of vm instances for OpenStack based clouds."""
 
-    def __init__(self , server_url , tennant_name , username , password , vmbuild_timeout_sec = 1200 , version="2" , ignore_ssl_cert = True):
+    def __init__(self , server_url , tennant_name , username , password , vmbuild_timeout_sec = 1200 , version="2" , ignore_ssl_cert = True , ip_pool = ""):
         self.__server_url = server_url
         self.__tennant = tennant_name
         self.__username = username
         self.__password = password
         self.__ignoreSslCert = ignore_ssl_cert
+        self.__ipPool = ip_pool
         #keystone = ksclient.Client(auth_url=server_url,   username=username, password=password, tenant_name= tennant_name)
         #self.__auth = keystone.auth_token
         self.__nova = client.Client(version,username,password,tennant_name,server_url,insecure=self.__ignoreSslCert)
@@ -227,9 +228,15 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
         if not nics:
             logging.warning("!Network with label \'" + network_name +  "\' has not been found")
 
+        # get availability zone
+        az = None
+        if initialconfig:
+           if initialconfig.getZone():
+               az = initialconfig.getZone()
+
         # create server
         logging.info(">>> Creating new server from image " + imageid)
-        server = self.__nova.servers.create(instancename , image , flavor=flavor, nics = nics)
+        server = self.__nova.servers.create(instancename , image , flavor=flavor, nics = nics , availability_zone = az )
 
         #wait for server to be created
         waited = 0
@@ -263,16 +270,15 @@ class OpenStackInstanceGenerator(InstanceGenerator.InstanceGenerator):
             pools = self.__nova.floating_ip_pools.list()
             ip_pool = pools[0]
             
-            if initialconfig:
-                if initialconfig.getZone():
-                    zone_name = initialconfig.getZone()
-                    # we treat zone name as pool name. Maybe there is a way to interrelate them. Not sure for now
-                    logging.debug("IP pools found:")
-                    for pool in pools:
-                        logging.debug(str(pool.__dict__))
-                        if pool.name == zone_name:
-                            ip_pool = pool
-                            logging.info("Found ip pool by name " + pool.name)
+            if self.__ipPool:
+                pool_name = self.__ipPool
+                # we treat zone name as pool name. Maybe there is a way to interrelate them. Not sure for now
+                logging.debug("IP pools found:")
+                for pool in pools:
+                    logging.debug(str(pool.__dict__))
+                    if pool.name == pool_name:
+                        ip_pool = pool
+                        logging.info("Found ip pool by name " + pool.name)
 
             logging.info("Allocating new external IP from pool " + ip_pool.name)
             new_ip = self.__nova.floating_ips.create(ip_pool.name)
