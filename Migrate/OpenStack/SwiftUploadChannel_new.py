@@ -171,8 +171,8 @@ class SwiftUploadThread(threading.Thread):
             except (ClientException, Exception) as e:
                 # Passing exception here, it"s means that when we unable to check
                 # uploaded segment (it"s missing or etag mismatch) we reuploading that segment
-                logging.warning("Segment {0} verification failed: {1}".format(part_name, e))
-                logging.warning(traceback.format_exc())
+                logging.warning("!Segment {0} verification failed: {1}".format(part_name, e))
+                logging.debug(traceback.format_exc())
                 pass
 
             if upload:
@@ -261,6 +261,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__chunkSize = chunksize
         self.__diskSize = resulting_size_bytes
         self.__uploadThreads = threading.BoundedSemaphore(upload_threads)
+        self.__uploadThreadsList = list() # a list of all threads spawned, live or dead. TODO: make pool of threads
         self.__segmentQueueSize = queue_size
         self.__swift_use_slo = swift_use_slo
         self.__ignoreSslCert = ignore_ssl_cert
@@ -325,22 +326,26 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             if self.__segmentSize == self.__chunkSize:
                 #if segment matches chunk size thus we have all data ready in memory
                 #TODO: implement upload thread queue (inherit from MulttihreadedUpload class)
-                SwiftUploadThread(
+                thread = SwiftUploadThread(
                     self,
                     None,
                     extent.getStart(),
                     self.__manifest,
                     self.__ignoreEtag, 
-                    extent).start()
+                    extent)
+                thread.start()
+                self.__uploadThreadsList.append(thread)
             else:
                 # if segment size (object size available in swift) is larger than file, we use old data implementation
                 self.__fileProxies.insert(index, DefferedUploadFileProxy(self.__segmentQueueSize, segment_size))
-                SwiftUploadThread(
+                thread = SwiftUploadThread(
                     self,
                     self.__fileProxies[index],
                     extent.getStart(),
                     self.__manifest,
-                    self.__ignoreEtag).start()
+                    self.__ignoreEtag)
+                thread.start()
+                self.__uploadThreadsList.append(thread)
                 self.__fileProxies[index].write(extent)
 
         return True
@@ -439,8 +444,12 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         """Waits till upload completes"""
         logging.info("Upload complete, waiting for threads to complete...")
         # Waiting till upload queues in all proxy files becomes empty
-        for item in self.__fileProxies:
-            item.waitTillComplete()
+        if self.__segmentSize == self.__chunkSize:
+            for thread in self.__uploadThreadsList:
+                thread.join()
+        else:
+            for item in self.__fileProxies:
+                item.waitTillComplete()
 
         return
 
