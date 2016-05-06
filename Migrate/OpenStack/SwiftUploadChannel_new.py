@@ -217,7 +217,7 @@ class SwiftUploadThread(threading.Thread):
             # uploadThreads semaphore overflowing.
             if connection:
                 connection.close()
-            self.__uploadChannel.completeUploadThread()
+            self.__uploadChannel.completeUploadThread(thread=self)
 
         logging.debug("Upload thread for {0} done".format(self.__offset))
 
@@ -334,7 +334,6 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                     self.__ignoreEtag, 
                     extent)
                 thread.start()
-                self.__uploadThreadsList.append(thread)
             else:
                 # if segment size (object size available in swift) is larger than file, we use old data implementation
                 self.__fileProxies.insert(index, DefferedUploadFileProxy(self.__segmentQueueSize, segment_size))
@@ -345,13 +344,17 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                     self.__manifest,
                     self.__ignoreEtag)
                 thread.start()
-                self.__uploadThreadsList.append(thread)
                 self.__fileProxies[index].write(extent)
+
+            #remove old threads from the list
+            self.__uploadThreadsList = filter(lambda thr: thr.isAlive() , self.__uploadThreadsList)
+            self.__uploadThreadsList.append(thread)
+            
 
         return True
 
 
-    def completeUploadThread(self):
+    def completeUploadThread(self, thread=None):
         # Releasing semaphore. This call must be for every created upload thread
         # to avoid thread endless waiting.
         self.__uploadThreads.release()
