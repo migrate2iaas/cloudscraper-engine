@@ -204,10 +204,10 @@ class WindowsVolume(object):
         while extent_count < retrieval_pointers_buffer_header.ExtentCount:
             
             extent = extenttuple._make(struct.unpack_from("@qq", outbuffer[buffer_offset:buffer_offset+struct.calcsize("@qq")]))
-            
-            #MS Docs: On the NTFS file system, the value (LONGLONG) –1 indicates either a compression unit that is partially allocated, or an unallocated region of a sparse file
+           
             if extent.Lcn == -1:
-                logging.debug("Found empty/compressed extent (its LCN == -1), skipping")
+                #see RETRIEVAL_POINTERS_BUFFER structure docs on MSDN
+                logging.debug("Found empty or compressed extent (LCN == -1) , skipping..")
                 continue 
 
             volextent = DataExtent(extent.Lcn * self.__bytesPerCluster, (extent.NextVcn - current_file_vcn) * self.__bytesPerCluster )
