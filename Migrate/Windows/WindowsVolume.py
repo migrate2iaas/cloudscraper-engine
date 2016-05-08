@@ -208,12 +208,11 @@ class WindowsVolume(object):
             if extent.Lcn == -1:
                 #see RETRIEVAL_POINTERS_BUFFER structure docs on MSDN
                 logging.debug("Found empty or compressed extent (LCN == -1) , skipping..")
-                continue 
-
-            volextent = DataExtent(extent.Lcn * self.__bytesPerCluster, (extent.NextVcn - current_file_vcn) * self.__bytesPerCluster )
-            volextent.setData(DeferedReader(volextent, self) )
-            volextents.append(volextent)
-            logging.debug("Found extent # " + str(extent_count) + " " + str(volextent))
+            else: 
+                volextent = DataExtent(extent.Lcn * self.__bytesPerCluster, (extent.NextVcn - current_file_vcn) * self.__bytesPerCluster )
+                volextent.setData(DeferedReader(volextent, self) )
+                volextents.append(volextent)
+                logging.debug("Found extent # " + str(extent_count) + " " + str(volextent))
 
             current_file_vcn = extent.NextVcn
             buffer_offset = buffer_offset + struct.calcsize("@qq")
