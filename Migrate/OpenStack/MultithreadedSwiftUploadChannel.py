@@ -100,3 +100,7 @@ class MultithreadedSwiftUploadChannel(MultithreadUpoadChannel.MultithreadUpoadCh
     def getOverallDataTransfered(self):
         """ gets the overall size of data actually uploaded in bytes """
         return self.__swift.getOverallDataTransfered()
+
+    def close(self):
+        """ gets the overall size of data actually uploaded in bytes """
+        return self.__swift.close()

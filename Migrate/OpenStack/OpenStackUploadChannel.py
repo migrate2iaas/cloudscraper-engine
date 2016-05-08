@@ -26,6 +26,9 @@ from OpenStack import MultithreadedSwiftUploadChannel
 
 import ChainUploadChannel
 
+import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
 
 
 class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
@@ -47,8 +50,7 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
         """constructor
 
         we form the chain to a) upload data to swift b) run glance to create image based on swift data
-        if private_container is false, it makes the swift container public until data is read from it
-        if private_container is true, it sets specific acls for container allowing only private access by openstack host for live-long 
+        
         if multtihread queue is on, then swift channel is wrapped up in multithreaded queue. Works only if result_disk_size_bytes / swift_max_segments <= chunksize
         """
         super(OpenStackUploadChannel, self).__init__()
@@ -63,6 +65,9 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
            swift_password = password 
         if not disk_name:
             disk_name = image_name + "." + disk_format
+
+        if ignore_ssl_cert:
+            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
         container_acl = "*"
         if private_container:
