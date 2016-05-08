@@ -91,3 +91,12 @@ class MultithreadedSwiftUploadChannel(MultithreadUpoadChannel.MultithreadUpoadCh
         Could throw any non-recoverable errors
         """
         return self.__swift.uploadData(uploadtask.getExtent())
+
+    def getOverallDataSkipped(self):
+        """ Gets overall data skipped  """
+        return self.__swift.getOverallDataSkipped()
+   
+
+    def getOverallDataTransfered(self):
+        """ gets the overall size of data actually uploaded in bytes """
+        return self.__swift.getOverallDataTransfered()
