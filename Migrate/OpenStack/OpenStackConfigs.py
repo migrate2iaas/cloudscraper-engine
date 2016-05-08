@@ -39,7 +39,8 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             private_container = False,
             use_dr=False ,  
             db_write_cache_size=20,
-            availability_zone = ""):
+            availability_zone = "",
+            multithread_queue = False):
         """
         Constructor
         """
@@ -70,6 +71,7 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
         self.__db_write_cache_size = db_write_cache_size
         self.__privateContainer = private_container
         self.__availabilityZone = availability_zone
+        self.__multiThreadedQueue = multithread_queue
         
         if compression: # in case compression is int 
             self.__compression = True
@@ -128,7 +130,8 @@ class OpenStackCloudOptions(CloudConfig.CloudConfig):
             swift_use_slo=self.__swiftUseSlo,
             ignore_ssl_cert = self.__ignoreSslCert,
             private_container = self.__privateContainer,
-            manifest=manifest)
+            manifest=manifest, 
+            multithread_queue = self.__multiThreadedQueue)
 
     def generateInstanceFactory(self):
         return OpenStackInstanceGenerator.OpenStackInstanceGenerator(

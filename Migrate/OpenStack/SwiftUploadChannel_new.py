@@ -187,7 +187,7 @@ class SwiftUploadThread(threading.Thread):
                     etag = connection.put_object(
                      self.__uploadChannel.getContainerName(),
                      part_name,
-                     str(extent.getData()))
+                     str(data))
 
                 # getMD5() updates only when data in file proxy (used by put_object()) read.
                 if extent:
@@ -249,7 +249,8 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             ignore_ssl_cert = True,
             acl="*",
             clear_acl_on_close=True,
-            manifest=None):
+            manifest=None,
+            single_threaded=False):
         """constructor"""
         self.__serverURL = server_url
         self.__userName = username
@@ -269,6 +270,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         self.__manifest = manifest
         self.__acl = acl
         self.__clearAcl = clear_acl_on_close
+        self.__singleThreaded = single_threaded # meaning all data is uploaded in the same thread
 
         self.__fileProxies = []
         self.__ignoreEtag = ignore_etag
@@ -312,6 +314,9 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
         index = extent.getStart() / self.__segmentSize
         offset = extent.getStart() % self.__segmentSize
 
+        # if we upload by chunk or by larger segments (due to swift limitations)
+        chunk_mode = self.__segmentSize == self.__chunkSize
+
         # If needed to upload new segment
         if offset == 0:
             # Checking if we can create more upload threads, they releases when calls completeUploadThread() routine
@@ -323,7 +328,7 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
             else:
                 segment_size = self.__segmentSize
 
-            if self.__segmentSize == self.__chunkSize:
+            if chunk_mode:
                 #if segment matches chunk size thus we have all data ready in memory
                 #TODO: implement upload thread queue (inherit from MulttihreadedUpload class)
                 thread = SwiftUploadThread(
@@ -333,7 +338,11 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                     self.__manifest,
                     self.__ignoreEtag, 
                     extent)
-                thread.start()
+
+                if self.__singleThreaded:
+                    thread.run()
+                else:
+                    thread.start()
             else:
                 # if segment size (object size available in swift) is larger than file, we use old data implementation
                 self.__fileProxies.insert(index, DefferedUploadFileProxy(self.__segmentQueueSize, segment_size))
@@ -343,13 +352,18 @@ class SwiftUploadChannel_new(UploadChannel.UploadChannel):
                     extent.getStart(),
                     self.__manifest,
                     self.__ignoreEtag)
-                thread.start()
-                self.__fileProxies[index].write(extent)
+                
+                if self.__singleThreaded:
+                    raise NotImplementedError # cannot work in single thread
+                else:
+                    thread.start()
 
             #remove old threads from the list
             self.__uploadThreadsList = filter(lambda thr: thr.isAlive() , self.__uploadThreadsList)
             self.__uploadThreadsList.append(thread)
             
+        if not chunk_mode:
+            self.__fileProxies[index].write(extent)
 
         return True
 

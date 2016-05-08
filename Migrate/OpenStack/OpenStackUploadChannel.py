@@ -22,8 +22,10 @@ import urlparse
 from OpenStack import GlanceUploadChannel
 from OpenStack import SwiftUploadChannel
 from OpenStack import SwiftUploadChannel_new
+from OpenStack import MultithreadedSwiftUploadChannel
 
 import ChainUploadChannel
+
 
 
 class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
@@ -40,12 +42,14 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
                  swift_use_slo=True, 
                  ignore_ssl_cert = False,
                  private_container = False,
-                 manifest=None):
+                 manifest=None, 
+                 multithread_queue=False):
         """constructor
 
         we form the chain to a) upload data to swift b) run glance to create image based on swift data
         if private_container is false, it makes the swift container public until data is read from it
         if private_container is true, it sets specific acls for container allowing only private access by openstack host for live-long 
+        if multtihread queue is on, then swift channel is wrapped up in multithreaded queue. Works only if result_disk_size_bytes / swift_max_segments <= chunksize
         """
         super(OpenStackUploadChannel, self).__init__()
 
@@ -74,16 +78,21 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
                 chunksize=chunksize, upload_threads=upload_threads,
                 ignore_etag=ignore_etag , swift_max_segments=swift_max_segments, swift_use_slo=swift_use_slo,
                 ignore_ssl_cert=ignore_ssl_cert,manifest=manifest, 
-                acl=container_acl, clear_acl_on_close=not private_container)
+                acl=container_acl, clear_acl_on_close=not private_container , single_threaded = multithread_queue   )
 
         else:
             swift = SwiftUploadChannel.SwiftUploadChannel(
                 result_disk_size_bytes, swift_server_url, swift_username, swift_tennant_name, swift_password,
                 disk_name, container_name, compression, resume_upload=resume_upload, chunksize=chunksize,
                 upload_threads=upload_threads , swift_max_segments = swift_max_segments, swift_use_static_object_manifest = swift_use_slo , ignore_ssl_cert = ignore_ssl_cert)
+        
+        if multithread_queue:
+            swift = MultithreadedSwiftUploadChannel.MultithreadedSwiftUploadChannel(swift , result_disk_size_bytes, upload_threads = upload_threads)
+
         glance = GlanceUploadChannel.GlanceUploadChannel(
             result_disk_size_bytes, server_url, tennant_name, username, password, disk_format=disk_format,
             image_name=image_name, container_format=container_format , ignore_ssl_cert = ignore_ssl_cert)
+        
         self.appendChannel(swift)
         self.appendChannel(glance)
 
