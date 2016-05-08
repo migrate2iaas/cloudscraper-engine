@@ -28,7 +28,7 @@ import ChainUploadChannel
 
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
+import logging
 
 
 class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
@@ -68,6 +68,11 @@ class OpenStackUploadChannel(ChainUploadChannel.ChainUploadChannel):
 
         if ignore_ssl_cert:
             requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
+        # try to surpress additional info messages
+        logger = logging.getLogger('requests.packages.urllib3.connectionpool')
+        if logger:
+            logger.setLevel(logging.ERROR)
 
         container_acl = "*"
         if private_container:

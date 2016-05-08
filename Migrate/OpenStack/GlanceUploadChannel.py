@@ -80,10 +80,15 @@ class GlanceUploadChannel(UploadChannel.UploadChannel):
 
     def __init__(self, result_disk_size_bytes, server_url , tennant_name , username , password, disk_format = "vhd", image_name=None, resume_upload = False , chunksize=64*1024 , upload_threads=1 , queue_size=1 , container_format="bare" , version="1", ignore_ssl_cert = True):
         """constructor"""
-        keystone = ksclient.Client(auth_url=server_url,   username=username, password=password, tenant_name= tennant_name , insecure = ignore_ssl_cert)
-        glance_endpoint = keystone.service_catalog.url_for(service_type='image')
-        self.__auth = keystone.auth_token
-        self.__glance = glclient.Client(version,glance_endpoint,token=self.__auth , insecure = ignore_ssl_cert)
+        self.__glanceVersion = version
+        self.__ignoreSslCert = ignore_ssl_cert
+        self.__username = username
+        self.__password = password
+        self.__tennant = tennant_name
+        self.__serverUrl = server_url
+
+        self.__renewConnection()
+
         if image_name:
             self.__name = image_name
         else:
@@ -108,7 +113,13 @@ class GlanceUploadChannel(UploadChannel.UploadChannel):
 
         self.__chunkSize = chunksize # 64KB as requested by glance api
         
-
+    def __renewConnection(self):
+        """internal function to reauth at OpenStack"""
+        self.__keystone = ksclient.Client(auth_url=self.__serverUrl,   username=self.__username, password=self.__password, tenant_name= self.__tennant , insecure = self.__ignoreSslCert)
+        glance_endpoint = self.__keystone.service_catalog.url_for(service_type='image')
+        self.__auth = self.__keystone.auth_token
+        self.__glance = glclient.Client(self.__glanceVersion,glance_endpoint,token=self.__auth , insecure = self.__ignoreSslCert)
+        
  
     def initStorage(self, init_data_link=""):
         """
@@ -116,6 +127,8 @@ class GlanceUploadChannel(UploadChannel.UploadChannel):
         Throws in case of unrecoverable errors
         """
         # here we should create an image
+        self.__renewConnection()
+
         self.__imageUrl = init_data_link
         size_gb = int((int(self.__diskSize)-1) / (1024*1024*1024)) + 1
         if self.__imageUrl:
