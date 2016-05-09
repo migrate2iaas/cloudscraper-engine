@@ -230,7 +230,7 @@ class AzureUploadChannel(MultithreadUpoadChannel.MultithreadUpoadChannel):
         blobs = self.__blobService.list_blobs(self.__containerName , self.__diskName) 
         for blob in blobs:
             if blob.name == self.__diskName:
-                return blob.url
+                return self.__blobService.make_blob_url(self.__containerName , blob.name)
         # 
         logging.error("!!!ERROR: no blob matching the disk name found!")
         return None
