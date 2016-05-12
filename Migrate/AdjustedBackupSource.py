@@ -123,7 +123,7 @@ class AdjustedFileEnum(object):
 
         file = self.__fileIterator.next()
         while self.__adjustOption.isFileRemoved(file.getName()):
-            logging.debug("Skipping file " + str(file.getName())) 
+            logging.debug("Skipping file " + unicode(file.getName())) 
             file = self.__fileIterator.next()
         
         return file
@@ -183,6 +183,7 @@ class AdjustedBackupSource(BackupSource.BackupSource):
 
         Return the iterable of DataExtent objects
         """
+
         if self.__backupSource == None:
             raise PropertyNotInitialized("__backupSource", " Use setBackupSource() to init it")
         if self.__adjustOption == None:
@@ -204,8 +205,8 @@ class AdjustedBackupSource(BackupSource.BackupSource):
             try:
                 removedrange = self.__backupSource.getFileBlockRange(removedfile)
             except Exception as ex:
-                logging.warning("Cannot get blocks for removed file " + removedfile)
-                logging.debug("Reason: " + str(ex))
+                logging.warning("Cannot get blocks for removed file " + unicode(removedfile))
+                logging.debug("Reason: " + unicode(ex))
                 continue
             #NOTE: it may work faster if it's sorted, ugly code by the way
             for removedextent in removedrange:

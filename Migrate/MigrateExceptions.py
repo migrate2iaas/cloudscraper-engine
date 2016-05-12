@@ -24,7 +24,7 @@ class FileException(Exception):
        self.errorno = exception[0]
 
     def __str__(self):
-         return "Exception on file \'" + str(self.__filename) + "\' : " + str(self.__exception)
+         return "Exception on file \'" + unicode(self.__filename) + "\' : " + str(self.__exception)
 
 
 class AccessDeniedException(FileException):

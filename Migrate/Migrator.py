@@ -318,12 +318,12 @@ class Migrator(object):
         # remove excluded files and dirs
         excludeddirs = self.__migrateOptions.getSystemVolumeConfig().getExcludedDirs()
         for excluded in excludeddirs:
-            logging.info("Removing the file contents from directory " + str(excluded))
+            logging.info("Removing the file contents from directory " + unicode(excluded))
             try:
                 fileenum = self.__systemBackupSource.getFileEnum(excluded)
                 for file in fileenum:
-                    logging.debug("Contents of file " + str(file) + " is set to removal")
-                    self.__adjustOption.removeFile(str(file))
+                    logging.debug("Contents of file " + unicode(file) + " is set to removal")
+                    self.__adjustOption.removeFile(unicode(file))
             except AccessDeniedException as e:
                 logging.warning("{0}".format(e))
             except FileException:
@@ -759,12 +759,12 @@ class Migrator(object):
                         excluded = str(excluded)[2:]
                     else:
                         continue
-                logging.info("Removing the file contents from directory " + str(excluded))
+                logging.info("Removing the file contents from directory " + unicode(excluded))
                 try:
                     fileenum = self.__dataBackupSourceList[vol_path].getFileEnum(excluded)
                     for file in fileenum:
-                        logging.debug("Contents of file " + str(file) + " is set to removal")
-                        self.__dataBackupSourceList[vol_path].getAdjustOption().removeFile(str(file))
+                        logging.debug("Contents of file " + unicode(file) + " is set to removal")
+                        self.__dataBackupSourceList[vol_path].getAdjustOption().removeFile(unicode(file))
                 except AccessDeniedException as e:
                     # Just logging access denied exception
                     logging.warning("{0}".format(e))

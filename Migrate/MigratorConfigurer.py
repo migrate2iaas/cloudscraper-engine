@@ -157,9 +157,10 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
                         if str(self.__volumeName).endswith(image_dir[:2]):
                             dirstr += ";" + image_dir[2:]
 
-            logging.info("excludedirs " + str(dirstr) + " for volume " + str(self.__volumeName))
+            logging.info("excludedirs " + unicode(dirstr) + " for volume " + unicode(self.__volumeName))
             if dirstr:
                 self.__excludedDirs = dirstr.split(";")
+                self.__excludedDirs = filter(None, self.__excludedDirs) #just filter out empty strings if they happen in dirstr
         else:
             logging.warn("! Section for drive letter cannot be found") 
             return
