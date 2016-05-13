@@ -340,7 +340,7 @@ class ImageDictionaryManifest(ImageManifest):
 
         res = {}
         for item in self.all():
-            if etag and offset:
+            if etag and str(offset):
                 if item["etag"] == str(etag) and item["offset"] == str(offset):
                     return item
             elif part_name:

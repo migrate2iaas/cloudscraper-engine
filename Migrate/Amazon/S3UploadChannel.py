@@ -185,6 +185,8 @@ class S3UploadThread(threading.Thread):
 
                     # If data chunk IS NOT well known, trying to find in manifest database if it's exists
                     if res_well_known is None:
+                        if offset == 0:
+                            a = 0
                         res = self.__manifest.select(md5_hexdigest, offset=offset)
 
                     # Trying to find block in cloud
@@ -193,7 +195,6 @@ class S3UploadThread(threading.Thread):
                             s3key = bucket.get_key(res["part_name"])
 
                         if s3key:
-                            self.__manifest.insert(res["etag"], md5_hexdigest, offset, size, "skipped")
                             logging.debug("key with same md5 found, skip uploading")
                             upload = False
                     except Exception as e:
@@ -202,8 +203,8 @@ class S3UploadThread(threading.Thread):
                             "from not fully s3 compatible sources " + repr(e))
 
                     # If key is not found, creating
+                    part_name = res["part_name"] if "part_name" in res else self.__manifest.get_part_name(offset)
                     if s3key is None:
-                        part_name = res["part_name"] if "part_name" in res else self.__manifest.get_part_name(offset)
                         s3key = Key(bucket, part_name)
 
                     if upload:
@@ -211,9 +212,11 @@ class S3UploadThread(threading.Thread):
                         s3key.set_contents_from_string(
                             str(data), replace=True, policy=None, md5=(md5digest, base64md5), reduced_redundancy=False,
                             encrypt_key=False)
-                        self.__manifest.insert(md5digest, md5_hexdigest, offset, size, "uploaded")
+                        self.__manifest.insert(md5digest, md5_hexdigest, offset, size, "uploaded", part_name=part_name)
                         uploadtask.notifyDataTransfered()
                     else:
+                        self.__manifest.insert(
+                            res["etag"], md5_hexdigest, offset, size, "skipped", part_name=part_name)
                         logging.debug("Skipped the data upload: %s/%s ", str(bucket), res["part_name"])
                         uploadtask.notifyDataSkipped()
 
