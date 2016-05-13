@@ -271,6 +271,10 @@ if __name__ == '__main__':
                 logging.info("\n>>>>>>>>>>>>>>>>> Backup done\n")
             if skipupload and error == False:
                 logging.info("\n>>>>>>>>>>>>>>>>> Restore done\n")
+            
+            #dumping statistics
+            uploaded = __migrator.getOverallUploaded()
+            logging.info("$$ Uploaded {0:.2f} GB".format(float(uploaded)/1024/1024/1024))
         except Exception as e:
             error = True
             logging.error("\n!!!ERROR: Severe error while making the migration")

@@ -94,7 +94,7 @@ class Migrator(object):
         self.__insertXen = insert_xen or migrate_options.insertXen()
 
         self.__error = False
-
+        self.__overallUploaded = 0
 
         #TODO: pass this parm somehow. Thru migrate\adjust overrides?
         self.__linuxGC = True
@@ -118,6 +118,9 @@ class Migrator(object):
             self.__systemAdjustOptions = self.__linux.createSystemAdjustOptions()
             self.__os = self.__linux
 
+    def getOverallUploaded(self):
+        """gets overall upload statistics to display"""
+        return self.__overallUploaded
 
     # runs full scenario from the start to the upload
     def runFullScenario(self):
@@ -577,6 +580,8 @@ class Migrator(object):
         #if channel.getOverallDataSkipped():
         #    logmsg = logmsg + str(int(channel.getOverallDataSkipped()/1024/1024)) + " MB are already in the cloud. "
         logging.info( logmsg + str(int(channel.getOverallDataTransfered()/1024/1024)) + " MB transfered."  )
+        self.__overallUploaded = self.__overallUploaded + channel.getOverallDataTransfered()
+        
 
         logging.info("\n>>>>>>>>>>>>>>>>> Preparing the image uploaded for cloud use")
         imageid = channel.confirm()
