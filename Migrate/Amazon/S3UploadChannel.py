@@ -203,7 +203,8 @@ class S3UploadThread(threading.Thread):
 
                     # If key is not found, creating
                     if s3key is None:
-                        s3key = Key(bucket, self.__manifest.get_part_name(offset))
+                        part_name = res["part_name"] if "part_name" in res else self.__manifest.get_part_name(offset)
+                        s3key = Key(bucket, part_name)
 
                     if upload:
                         md5digest, base64md5 = s3key.get_md5_from_hexdigest(md5_hexdigest)
@@ -307,6 +308,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         self.__manifest = manifest
         self.__well_known_blocks = None
         self.__workThreads = list()
+        self.__bucket = None
 
     def initStorage(self, init_data_link = ''):
         """initializes the storage by connecting to existing s3 bucket or creating new one"""
