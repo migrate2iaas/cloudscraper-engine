@@ -274,7 +274,7 @@ if __name__ == '__main__':
             
             #dumping statistics
             uploaded = __migrator.getOverallUploaded()
-            logging.info("$$ Uploaded {0:.2f} GB".format(float(uploaded)/1024/1024/1024))
+            logging.info("$$ Uploaded ${0:.2f} GB$".format(float(uploaded)/1024/1024/1024))
         except Exception as e:
             error = True
             logging.error("\n!!!ERROR: Severe error while making the migration")
