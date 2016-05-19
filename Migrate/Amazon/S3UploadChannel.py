@@ -602,11 +602,6 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             warnings.simplefilter("ignore")
             xmltempfile = os.tempnam("s3manifest") + ".xml"
 
-        # keyprefix = "result"
-        # NOTE: really we may not build XML, it'd be built by ec2-import-script
-        # but the parts should be named in a right way
-        xmlkey = self.__manifest.get_key_base() + "/manifest.xml"
-
         builder = CloudManifestBuilder.AmazonS3ManifestBuilder(self.__S3, self.__manifest, self.__bucketName)
         s3key = Key(self.__bucket, builder.get_xml_key())
         s3key.set_contents_from_string(builder.get(60*60*24*5, self.__diskType))

@@ -17,7 +17,7 @@ class AmazonS3ManifestBuilder(object):
         self.__connection = connection
         self.__manifest = manifest
         self.__bucket = bucket
-        self.__xml_key = "{0}/{1}".format(self.__manifest.get_key_base(), ".manifest.xml")
+        self.__xml_key = "{0}/{1}".format(self.__manifest.get_key_base(), "!manifest.xml")
 
     def get(self, linktimeexp_seconds, file_format='VHD'):
         try:
