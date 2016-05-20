@@ -29,7 +29,10 @@ class OnAppBase:
         def connectOnApp(self, username, password, hostname, port):
                 self.basicAuth = base64.encodestring('%s:%s' % (username, password)).replace('\n', '');
                 if int(port)==443:
-                    self.conn = httplib.HTTPSConnection(hostname, port);
+                    if sys.version_info >= (2,7,9):
+                    	self.conn = httplib.HTTPSConnection(hostname, port , context=ssl._create_unverified_context());
+                    else:
+                                self.conn = httplib.HTTPSConnection(hostname, port );
                 else:
                     self.conn = httplib.HTTPConnection(hostname, port);
                 try:
