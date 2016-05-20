@@ -48,6 +48,7 @@ class OnAppBase:
                 else:
                         self.conn.request(type, page, requestData, headers);
                 response = self.conn.getresponse()
+                logging.debug("Got response code " + str(response.status) )
                 if response.status >= 400:
                     errortext = "HTTP request " + str(type) + " " + str(page) + " to onApp cloud failed!"
                     try:
@@ -74,8 +75,10 @@ class OnAppBase:
             except ssl.SSLError as sslerror:
                 logging.error("!!!ERROR: failed to have SSL connection. Please check your openssl version is >= 1.0.1. Update your openssl by downloading and compiling openssl 1.0.1+ latest source.")
                 raise sslerror
+            ret_data = response.read()
+            logging.debug(ret_data)
 
-            array = json.loads(response.read());
+            array = json.loads(ret_data);
             if 'version' in array:
                     return array['version'];
             return False;
