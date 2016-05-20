@@ -40,6 +40,7 @@ class OnAppBase:
                         self.conn.connect();
                 except:
                         logging.error('!!!ERROR: Unable to connect to ' + hostname  + '  HTTPConnection Connect, unable to continue!');
+                        raise
 
         def sendRequest(self, type, page, requestData=False):
                 headers = {"Authorization": "Basic %s" % self.basicAuth, 'Accept': 'application/json', 'Content-type': 'application/json'};
