@@ -375,7 +375,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         if vm.checkAlive(port = probe_port) == False:
             logging.warn("!Cloudscraper target VM is not repsonding (to RDP/SSH port). Misconfiguration is highly possible!")
         
-        logging.info("Waiting till service is on")
+        logging.info("Waiting till service is on for " + str(self.__serviceStartTimeout) + " sec")
         #extra wait for service availability
         time.sleep(self.__serviceStartTimeout)
 
