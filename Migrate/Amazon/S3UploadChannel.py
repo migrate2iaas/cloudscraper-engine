@@ -591,7 +591,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         for rec in res_list:
             if rec["offset"] != str(offset):
                 raise Exception("Offset {0} missing in manifest database".format(offset))
-            offset += self.__chunkSize
+            offset += int(rec['size'])
 
         #TODO: profile
         fragment_index = 0
