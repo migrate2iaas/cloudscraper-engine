@@ -440,6 +440,10 @@ class MigratorConfigurer(object):
         if config.has_option('onApp', 's3custom'):
             s3customhost = config.getboolean('onApp', 's3custom')
 
+        chunksize = 10*1024*1024
+        if config.has_option('EC2', 'chunksize'):
+           chunksize = int(config.get('EC2', 'chunksize'))
+
         adjust_override = self.getOverrides(config, configfile)
 
         use_dr, manifest_path, increment_depth = self.loadDRconfig(config)
@@ -449,6 +453,7 @@ class MigratorConfigurer(object):
             password, onapp_datastore_id, onapp_target_account, onapp_port=onapp_port, preset_ip=minipad_ip,
             minipad_image_name=minipad_template, minipad_vm_id=minipad_vm_id, vmbuild_timeout_sec=int(vm_build_timeout),
             wintemplate_size=wintemplate_size, s3custom=s3customhost, vm_boot_timeout=vm_boot_timeout,
+            chunksize = chunksize,
             use_dr=use_dr, manifest_path=manifest_path, increment_depth=increment_depth)
         factory = self.createImageFactory(config, image_placement, imagetype , cloud)
         image = onAppConfigs.onAppMigrateConfig(volumes, factory, 'x86_64', imagetype)

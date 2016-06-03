@@ -33,7 +33,13 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
     def __init__(self, s3bucket, s3user, s3password, s3region, onapp_endpoint, onapp_login, onapp_password,
                  onapp_datastore_id, onapp_target_account=None, onapp_port=80, preset_ip=None,
                  minipad_image_name="", minipad_vm_id=None, vmbuild_timeout_sec=120*60, wintemplate_size=20,
-                 s3custom=False, vm_boot_timeout=120, manifest_path=None, increment_depth=1, use_dr=False, db_write_cache_size=20):
+                 s3custom=False, vm_boot_timeout=120, 
+                 manifest_path=None, 
+                 increment_depth=1, 
+                 use_dr=False, 
+                 db_write_cache_size=20,
+                 chunksize = 10*1024*1024):
+
         """
         Constructor
         """
@@ -53,7 +59,7 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
         self.__custom_host = s3custom
         self.__keynamePrefix = "{0}/".format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M"))
         self.__diskType = "RAW"
-        self.__chunkSize = 10*1024*1024
+        self.__chunkSize = chunksize
         self.__instanceFactory = None
         self.__vmBuildTimeout = vmbuild_timeout_sec 
         self.__winTemplateDiskSize = wintemplate_size
