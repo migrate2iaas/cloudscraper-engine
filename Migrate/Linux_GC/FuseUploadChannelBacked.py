@@ -23,7 +23,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
     """ FUSE operation class callbacks """
 
 
-    def __init__(self , cloud_options):
+    def __init__(self , cloud_options , cache_image_factory = None , cache_path="/tmp"):
         """
         Params:
             cloud_options: CloudConfig.CloudConfig - cloud config that can create upload channels via generateUploadChannel() method
@@ -38,6 +38,9 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         self.files['/'] = dict(st_mode=(S_IFDIR | 0o755), st_ctime=now,
                                st_mtime=now, st_atime=now, st_nlink=2)
         self.cache = defaultdict(bytes)
+        # cache stored on the local disk
+        # self.cache_image_factory = cache_image_factory
+        # self.cache_path = cache_path
 
    
     #STANDARD FROM EXAMPLE
@@ -147,6 +150,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
                                 st_size=0, st_ctime=time(), st_mtime=time(),
                                 st_atime=time() ,
                                 upload_channel = upload_channel,
+                                cache = None,
                                 fds = [self.fd] );
         
         return self.fd
@@ -163,6 +167,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         size = self.files[path]['st_size']
         if self.files[path]['upload_channel'] == None:
             self.files[path]['upload_channel'] = self.createChannel(path, size)
+         #   self.files[path]['cache'] = cache_image_factory.createMedia(path, size)
         return self.files[path]['upload_channel']
 
 

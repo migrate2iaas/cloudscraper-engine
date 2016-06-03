@@ -389,7 +389,6 @@ class MigratorConfigurer(object):
          # generic for other clouds
         (imagedir, image_placement, imagetype) = self.getImageOptions(config)
         volumes = self.createVolumesList(config , configfile, imagedir, imagetype)        
-        factory = self.createImageFactory(config , image_placement , imagetype)
 
         onapp_login = config.get('onApp', 'user')
         onapp_endpoint = config.get('onApp', 'endpoint')
@@ -445,13 +444,14 @@ class MigratorConfigurer(object):
 
         use_dr, manifest_path, increment_depth = self.loadDRconfig(config)
 
-        image = onAppConfigs.onAppMigrateConfig(volumes, factory, 'x86_64', imagetype)
         cloud = onAppConfigs.onAppCloudOptions(
             s3bucket, s3user, s3secret, s3region, onapp_endpoint, onapp_login,
             password, onapp_datastore_id, onapp_target_account, onapp_port=onapp_port, preset_ip=minipad_ip,
             minipad_image_name=minipad_template, minipad_vm_id=minipad_vm_id, vmbuild_timeout_sec=int(vm_build_timeout),
             wintemplate_size=wintemplate_size, s3custom=s3customhost, vm_boot_timeout=vm_boot_timeout,
             use_dr=use_dr, manifest_path=manifest_path, increment_depth=increment_depth)
+        factory = self.createImageFactory(config, image_placement, imagetype , cloud)
+        image = onAppConfigs.onAppMigrateConfig(volumes, factory, 'x86_64', imagetype)
 
         return (image, adjust_override, cloud)
 
