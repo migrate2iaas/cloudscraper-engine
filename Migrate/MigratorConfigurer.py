@@ -868,11 +868,15 @@ class MigratorConfigurer(object):
         if config.has_option('Image', 'mount'):
             mount = config.get('Image', 'mount')
 
+        cache_blocks = 128
+        if config.has_option('Image', 'cache_blocks'):
+            mount = config.getint('Image', 'cache_blocks')
+
         mounter = RemoteMounter.NoRemoteMounter()
 
         if mount == "FUSE":
             import Linux_GC
-            mounter = Linux_GC.Linux().getFuseMounter(cloudconfig)
+            mounter = Linux_GC.Linux().getFuseMounter(cloudconfig, cache_blocks)
             #import Linux_GC.FuseMount
             #import Linux_GC.FuseUploadChannelBacked
             #return Linux_GC.FuseMount.FuseMount()

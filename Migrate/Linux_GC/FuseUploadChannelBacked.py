@@ -43,12 +43,19 @@ class BlockCache(LRUCache):
         logging.info("UPLOAD DATA TO CLOUD at OFFSET" + str(offset) + " size " + str(len(data)))
         self.__channel.uploadData(dataext)
 
+    def __repr__(self):
+        return '%s(maxsize=%d, currsize=%d)' % (
+            self.__class__.__name__,
+            self.__maxsize,
+            self.__currsize,
+        )
+
 
 class FuseUploadChannelBacked(LoggingMixIn, Operations):
     """ FUSE operation class callbacks """
 
 
-    def __init__(self , cloud_options):
+    def __init__(self , cloud_options , chunks_to_cache = 128):
         """
         Params:
             cloud_options: CloudConfig.CloudConfig - cloud config that can create upload channels via generateUploadChannel() method
@@ -60,6 +67,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         self.cached_data = {}
         self.fd = 0
         now = time()
+        self.chunks_to_cache = chunks_to_cache
        
         self.files['/'] = dict(st_mode=(S_IFDIR | 0o755), st_ctime=now,
                                st_mtime=now, st_atime=now, st_nlink=2)
@@ -196,7 +204,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         size = self.files[path]['st_size']
         if self.files[path]['upload_channel'] == None:
             self.files[path]['upload_channel'] = self.createChannel(path, size)
-            self.files[path]['caches'] = BlockCache(128, self.files[path]['upload_channel'])
+            self.files[path]['caches'] = BlockCache(self.chunks_to_cache, self.files[path]['upload_channel'])
 
          #   self.files[path]['cache'] = cache_image_factory.createMedia(path, size)
         return self.files[path]['upload_channel']
