@@ -17,6 +17,7 @@ from time import time
 
 from fuse import FUSE, FuseOSError, Operations, LoggingMixIn
 
+
 from cachetools import LRUCache
 
 import DataExtent
@@ -31,14 +32,15 @@ class BlockCache(LRUCache):
 
     def missing(self , offset):
         logging.info("DOWNLOAD DATA BACK FROM CLOUD at OFFSET " + str(offset))
-        data = channel.download(offset , size = None)
-        logging.info("Download complete at offset " + str(offset) + " size = " + len(data))
+        data = self.__channel.download(offset , size = None)
+        logging.info("Download complete at offset " + str(offset) + " size = " + str(len(data)))
         return data
         
     def popitem(self):
         (offset, data) = super(BlockCache,self).popitem()
         dataext = DataExtent.DataExtent(offset , len(data))
         dataext.setData(data)
+        logging.info("UPLOAD DATA TO CLOUD at OFFSET" + str(offset) + " size " + str(len(data)))
         self.__channel.uploadData(dataext)
 
 
@@ -209,8 +211,12 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         cacheline_offset = offset - cacheline_start
 
         channel = self.getChannel(path)
-        cached = self.files[path]['caches'][self.cacheline_start]
-        cached[cacheline_offset:cacheline_offset + len(data)] = data
+        cached = self.files[path]['caches'][cacheline_start]
+        if not cached:
+            cached = str(bytearray(self.cacheline))
+        
+        cached = cached[0:cacheline_offset] + data + cached[cacheline_offset + len(data):] 
+        self.files[path]['caches'][cacheline_start] = cached
         
         return len(data)
 
@@ -220,13 +226,13 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         cacheline_offset = offset - cacheline_start
 
         channel = self.getChannel(path)
-        cached = self.files[path]['caches'][self.cacheline_start]
+        cached = self.files[path]['caches'][cacheline_start]
 
         if not cached:
             return str(bytearray(size))
 
-        if cacheline_offset + len(data) < self.cacheline:   
-            return cached[cacheline_offset:cacheline_offset + len(data)]
+        if cacheline_offset + size < self.cacheline:   
+            return cached[cacheline_offset:cacheline_offset + size]
         
         #TODO: merge several cacheline if needed
         logging.warn("!Reading one cacheline while more data is requested")

@@ -25,9 +25,28 @@ import logging
 import traceback
 import sys
 import FuseUploadChannelBacked
-import AmazonConfigs
 
 
+class DummyChannel(object):
+    
+    def __init__(self , parm):
+        self._p = parm
+        pass
+
+    def initStorage(self):
+        return ""
+
+    def download(self, offset , size = None):
+        return ""
+
+class DummyChannelGenerator(object):
+
+    def __init__(self , parm):
+        self._p = parm
+        pass
+
+    def generateUploadChannel(self , size, targetid):
+        return DummyChannel(1)
 
 
 
@@ -39,11 +58,16 @@ class FuseUploadChannelBacked_test(unittest.TestCase):
     
 
     def test_create(self):
-        """creates new VM"""
+        """create class object"""
 
-        key = 'AKIAIY2X62QVIHOPEFEQ'
-        secret = 'fD2ZMGUPTkCdIb8BusZsSp5saB9kNQxuG0ITA8YB'
-    
+        channel = DummyChannelGenerator(1)
+        fuse = FuseUploadChannelBacked.FuseUploadChannelBacked(cloud_options=channel)
+        fuse.create("filename" , 0)
+        data = "233213"
+        fuse.write("filename", data, 5, 0)
+        newdata = fuse.read("filename" , len(data) , 5 , 0)
+        self.assertEqual(data , newdata)
+
         return
 
     
