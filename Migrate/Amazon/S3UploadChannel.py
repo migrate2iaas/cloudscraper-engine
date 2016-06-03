@@ -700,6 +700,8 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             # for the first chunk
             int_offset = int(offset/self.__chunkSize)*self.__chunkSize
             res = self.__manifest.select(offset=int_offset)
+            if not res:
+                break
             s3key = self.__bucket.get_key(res["part_name"])
             if s3key == None:
                 break
