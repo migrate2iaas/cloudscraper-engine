@@ -698,8 +698,16 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         self.__uploadQueue.join()
         while read < size:
             # for the first chunk
+            #TODO: we can implement the simplest conflict resolution here
+            # for cases like 
+            # block offset 0, size 10000
+            # coexists with block offset 100, size 200
+            # by taking the nearest of them
+            # (still got no clue how to merge them after all)
             int_offset = int(offset/self.__chunkSize)*self.__chunkSize
-            res = self.__manifest.select(offset=int_offset)
+            res = self.__manifest.select(offset=offset) #try to get data from the offset if it was already read
+            if not res:
+                res = self.__manifest.select(offset=int_offset)
             if not res:
                 break
             s3key = self.__bucket.get_key(res["part_name"])

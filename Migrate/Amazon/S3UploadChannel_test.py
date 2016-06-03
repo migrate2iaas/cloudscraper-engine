@@ -73,7 +73,7 @@ class S3UploadChannel_test(unittest.TestCase):
         channel.waitTillUploadComplete()
         channel.confirm()
 
-    def notused_test_bad_bucketname1(self):
+    def a_notused_test_bad_bucketname1(self):
         size = 1024*1024*1024
         bucket = 'test'
         channel = S3UploadChannel.S3UploadChannel(bucket , self.__key , self.__secret ,  size , 'eu-west-1', manifest_path=self.__backup_db)
@@ -84,6 +84,7 @@ class S3UploadChannel_test(unittest.TestCase):
         dataext.setData(data)
         file.close()
         channel.uploadData(dataext)
+        channel.download(0, 4096)
         channel.waitTillUploadComplete()
         channel.confirm()
 
