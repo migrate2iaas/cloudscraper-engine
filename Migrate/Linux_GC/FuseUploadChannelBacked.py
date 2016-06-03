@@ -48,7 +48,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
     """ FUSE operation class callbacks """
 
 
-    def __init__(self , cloud_options , cacheline_size = 1024*1024):
+    def __init__(self , cloud_options):
         """
         Params:
             cloud_options: CloudConfig.CloudConfig - cloud config that can create upload channels via generateUploadChannel() method
@@ -60,7 +60,7 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         self.cached_data = {}
         self.fd = 0
         now = time()
-        self.cacheline = cacheline_size
+       
         self.files['/'] = dict(st_mode=(S_IFDIR | 0o755), st_ctime=now,
                                st_mtime=now, st_atime=now, st_nlink=2)
         # cache stored on the local disk
@@ -206,14 +206,16 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         if self.files[path]['st_mode'] & S_IFDIR != 0:
             logging.info("Skipping write to dir")
             return len(data)
-        
-        cacheline_start = int(offset/self.cacheline)*self.cacheline
-        cacheline_offset = offset - cacheline_start
 
         channel = self.getChannel(path)
+        
+        cacheline = channel.getTransferChunkSize()
+        cacheline_start = int(offset/cacheline)*cacheline
+        cacheline_offset = offset - cacheline_start
+
         cached = self.files[path]['caches'][cacheline_start]
         if not cached:
-            cached = str(bytearray(self.cacheline))
+            cached = str(bytearray(cacheline))
         
         cached = cached[0:cacheline_offset] + data + cached[cacheline_offset + len(data):] 
         self.files[path]['caches'][cacheline_start] = cached
@@ -221,17 +223,22 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         return len(data)
 
     def read(self, path, size, offset, fh):
-        
-        cacheline_start = int(offset/self.cacheline)*self.cacheline
-        cacheline_offset = offset - cacheline_start
+        if self.files[path]['st_mode'] & S_IFDIR != 0:
+            logging.info("Skipping read dir")
+            return ""
 
         channel = self.getChannel(path)
+        
+        cacheline = channel.getTransferChunkSize()
+        cacheline_start = int(offset/cacheline)*cacheline
+        cacheline_offset = offset - cacheline_start
+
         cached = self.files[path]['caches'][cacheline_start]
 
         if not cached:
             return str(bytearray(size))
 
-        if cacheline_offset + size < self.cacheline:   
+        if cacheline_offset + size < cacheline:   
             return cached[cacheline_offset:cacheline_offset + size]
         
         #TODO: merge several cacheline if needed
