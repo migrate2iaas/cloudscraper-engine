@@ -44,10 +44,8 @@ class BlockCache(LRUCache):
         self.__channel.uploadData(dataext)
 
     def __repr__(self):
-        return '%s(maxsize=%d, currsize=%d)' % (
+        return '%s' % (
             self.__class__.__name__,
-            self.__maxsize,
-            self.__currsize,
         )
 
 
