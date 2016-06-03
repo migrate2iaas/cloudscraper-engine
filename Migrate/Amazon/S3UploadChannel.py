@@ -284,6 +284,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
                 path=walrus_path,
                 calling_format=OrdinaryCallingFormat())
             self.__hostName = location
+            self.__awsRegionConstraint = ""
         else:
             hostname = 's3.amazonaws.com'
             self.__awsRegionConstraint = location
