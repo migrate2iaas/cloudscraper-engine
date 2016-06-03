@@ -698,11 +698,12 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         self.__uploadQueue.join()
         while read < size:
             # for the first chunk
-            local_offset= offset - int(offset/self.__chunkSize)*self.__chunkSize
-            keyname = self.__keyBase+".part"+str(int(offset/self.__chunkSize))
-            s3key = self.__bucket.get_key(keyname)
+            int_offset = int(offset/self.__chunkSize)*self.__chunkSize
+            res = self.__manifest.select(offset=int_offset)
+            s3key = self.__bucket.get_key(res["part_name"])
             if s3key == None:
                 break
+            local_offset = offset - int(offset/self.__chunkSize)*self.__chunkSize
             data = s3key.get_contents_as_string()
             result = result + data[local_offset:]
             offset = offset + len(data) - local_offset

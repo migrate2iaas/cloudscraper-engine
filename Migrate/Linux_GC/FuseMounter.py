@@ -32,9 +32,19 @@ class FuseMounter(RemoteMounter.RemoteMounter):
         except Exception as e:
             logging.error("!!! Failed to load FUSE driver for remote storage connection. " + repr(e))
 
+    def __checkInstalled(self):
+        logging.info("Probing FUSE...")
+        p1 = Popen(["modprobe" , "fuse"], stdout=PIPE , stderr=PIPE)
+        cmd_output = p1.communicate()
+        if p1.returncode:
+            logging.warning('Error while running %s return_code = %s\n'
+                    'stdout=%s\nstderr=%s',
+                    command, p1.returncode, cmd_output[0],
+                    cmd_output[1])
+
     def mount(self, directory):
         self.__mountDir = directory 
-        # TODO:	modprobe fuse
+        self.__checkInstalled()
         os.mkdir(directory , 0700)
         thread = threading.Thread(target = self.__mount_thread , args = ())
         thread.start()
