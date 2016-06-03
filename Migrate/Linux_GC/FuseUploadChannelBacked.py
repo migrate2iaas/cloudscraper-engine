@@ -17,13 +17,36 @@ from time import time
 
 from fuse import FUSE, FuseOSError, Operations, LoggingMixIn
 
+from cachetools import LRUCache
+
 import DataExtent
+
+
+class BlockCache(LRUCache):
+
+    def __init__(self, maxsize, channel, getsizeof=None):
+        missing = self.missing
+        super(BlockCache,self).__init__(maxsize, missing, getsizeof)
+        self.__channel = channel
+
+    def missing(self , offset):
+        logging.info("DOWNLOAD DATA BACK FROM CLOUD at OFFSET " + str(offset))
+        data = channel.download(offset , size = None)
+        logging.info("Download complete at offset " + str(offset) + " size = " + len(data))
+        return data
+        
+    def popitem(self):
+        (offset, data) = super(BlockCache,self).popitem()
+        dataext = DataExtent.DataExtent(offset , len(data))
+        dataext.setData(data)
+        self.__channel.uploadData(dataext)
+
 
 class FuseUploadChannelBacked(LoggingMixIn, Operations):
     """ FUSE operation class callbacks """
 
 
-    def __init__(self , cloud_options , cache_image_factory = None , cache_path="/tmp"):
+    def __init__(self , cloud_options , cacheline_size = 1024*1024):
         """
         Params:
             cloud_options: CloudConfig.CloudConfig - cloud config that can create upload channels via generateUploadChannel() method
@@ -35,12 +58,13 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         self.cached_data = {}
         self.fd = 0
         now = time()
+        self.cacheline = cacheline_size
         self.files['/'] = dict(st_mode=(S_IFDIR | 0o755), st_ctime=now,
                                st_mtime=now, st_atime=now, st_nlink=2)
-        self.cache = defaultdict(bytes)
         # cache stored on the local disk
         # self.cache_image_factory = cache_image_factory
         # self.cache_path = cache_path
+        
 
    
     #STANDARD FROM EXAMPLE
@@ -139,18 +163,21 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
     def create(self, path, mode):
         # TODO: here we seek for existing UploadChannel or create a new one
         if self.channels.has_key(path):
-            upload_channel = self.channels[path]
+            upload_channel = self.channels[path]  
+            cache = self.caches[path]  
         else:
             #upload_channel = self.createChannel(path)
             #self.channels[path] = upload_channel
             upload_channel = None # we delay creation until first write
+            cache = None
+        
 
         self.fd += 1
         self.files[path] = dict(st_mode=(S_IFREG | mode), st_nlink=1,
                                 st_size=0, st_ctime=time(), st_mtime=time(),
                                 st_atime=time() ,
                                 upload_channel = upload_channel,
-                                cache = None,
+                                cache = cache,
                                 fds = [self.fd] );
         
         return self.fd
@@ -167,6 +194,8 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         size = self.files[path]['st_size']
         if self.files[path]['upload_channel'] == None:
             self.files[path]['upload_channel'] = self.createChannel(path, size)
+            self.files[path]['caches'] = BlockCache(128, self.files[path]['upload_channel'])
+
          #   self.files[path]['cache'] = cache_image_factory.createMedia(path, size)
         return self.files[path]['upload_channel']
 
@@ -175,60 +204,30 @@ class FuseUploadChannelBacked(LoggingMixIn, Operations):
         if self.files[path]['st_mode'] & S_IFDIR != 0:
             logging.info("Skipping write to dir")
             return len(data)
-        #if self.files[path]['st_mode'] & S_IFLNK != 0:
-        #    logging.info("Skipping write to link")
-        #    return len(data)
-
-        if self.data.has_key(path) == False:
-            self.data[path] = defaultdict(bytes)
-        if self.cached_data.has_key(path) == False:
-            self.cached_data[path] = defaultdict(bytes)         
-               
-        # cache
-        if self.cached_data[path].has_key(offset):
-            self.cached_data[path][offset] = data
-        else:
-            self.data[path][offset] = data
-            if len(self.data[path]) > 512:
-                for key in sorted(self.data[path].keys()):
-                    self.data[path].pop(key)
-                    break
-        #end cache
-
-        if self.files[path]['st_size'] < offset + len(data):
-            self.files[path]['st_size'] = offset + len(data)
+        
+        cacheline_start = int(offset/self.cacheline)*self.cacheline
+        cacheline_offset = offset - cacheline_start
 
         channel = self.getChannel(path)
-
-        dataext = DataExtent.DataExtent(offset , len(data))
-        dataext.setData(data)
-        channel.uploadData(dataext)
-
+        cached = self.files[path]['caches'][self.cacheline_start]
+        cached[cacheline_offset:cacheline_offset + len(data)] = data
+        
         return len(data)
 
     def read(self, path, size, offset, fh):
-        #logging.info(" FUSE READ " + str(size) + " Bytes OFFSET " + str(offset) )
         
-        if self.cached_data.has_key(path):
-            if self.cached_data[path].has_key(offset):
-                data = self.cached_data[path][offset][:size]
-                return data
-
-        if self.data.has_key(path):
-            if self.data[path].has_key(offset):
-                data = self.data[path][offset][:size]
-                if self.cached_data.has_key(path) == False:
-                    self.cached_data[path] = defaultdict(bytes)
-                self.cached_data[path][offset] = data
-                logging.info(" FUSE READ " + str(size) + " Bytes OFFSET " + str(offset) + " added to cache")
-                return data
+        cacheline_start = int(offset/self.cacheline)*self.cacheline
+        cacheline_offset = offset - cacheline_start
 
         channel = self.getChannel(path)
-        if channel.canDownload():
-            logging.info("DOWNLOAD DATA BACK FROM CLOUD at OFFSET " + str(offset))
-            data = channel.download(offset, size)
-            if data:
-                return data
+        cached = self.files[path]['caches'][self.cacheline_start]
 
-        logging.info("GOT NO DATA TO SERVE at OFFSET " + str(offset))
-        return str(bytearray(size))
+        if not cached:
+            return str(bytearray(size))
+
+        if cacheline_offset + len(data) < self.cacheline:   
+            return cached[cacheline_offset:cacheline_offset + len(data)]
+        
+        #TODO: merge several cacheline if needed
+        logging.warn("!Reading one cacheline while more data is requested")
+        return cached[cacheline_offset:]

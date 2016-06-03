@@ -696,6 +696,8 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         read = 0
         #wait till all current tasks are done
         self.__uploadQueue.join()
+        if not size:
+            size = self.__chunkSize
         while read < size:
             # for the first chunk
             #TODO: we can implement the simplest conflict resolution here
@@ -713,7 +715,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
             s3key = self.__bucket.get_key(res["part_name"])
             if s3key == None:
                 break
-            local_offset = offset - int(offset/self.__chunkSize)*self.__chunkSize
+            local_offset = offset - int_offset
             data = s3key.get_contents_as_string()
             result = result + data[local_offset:]
             offset = offset + len(data) - local_offset
