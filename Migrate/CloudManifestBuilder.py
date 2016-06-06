@@ -40,7 +40,7 @@ class AmazonS3ManifestBuilder(object):
                     force_http=False)
 
             imports = etree.SubElement(res_xml, 'import')
-            vol_size_to_allocate = etree.SubElement(res_xml, 'volume-size')
+            vol_size_to_allocate = etree.SubElement(imports, 'volume-size')
             parts = etree.SubElement(imports, 'parts', count=str(len(res_list)))
 
             size = 0
