@@ -74,6 +74,8 @@ class Linux(object):
         lastline = output.split("\n")[1]
         if lastline.find(" ") > 0:
             voldev = lastline[:lastline.find(" ")]
+        elif lastline.find("\t") > 0:
+            voldev = lastline[:lastline.find("\t")]
         else:
             voldev = lastline
         return voldev
