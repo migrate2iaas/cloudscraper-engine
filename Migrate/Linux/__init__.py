@@ -71,6 +71,7 @@ class Linux(object):
     def findDeviceForPath(self , path):
         p1 = Popen(["df" , path], stdout=PIPE)
         output = p1.communicate()[0]
+        logging.debug("df output: " + str(output))
         lastline = output.split("\n")[1]
         if lastline.find(" ") > 0:
             voldev = lastline[:lastline.find(" ")]
