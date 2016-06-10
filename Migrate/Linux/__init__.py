@@ -72,7 +72,10 @@ class Linux(object):
         p1 = Popen(["df" , path], stdout=PIPE)
         output = p1.communicate()[0]
         lastline = output.split("\n")[1]
-        voldev = lastline[:lastline.find(" ")]
+        if lastline.find(" ") > 0:
+            voldev = lastline[:lastline.find(" ")]
+        else:
+            voldev = lastline
         return voldev
 
     def __findLvmDev(self , volgroup):
