@@ -14,7 +14,7 @@ class CloudConfig(object):
         """
         return
 
-    def generateUploadChannel(self , targetsize , targetname = None, targetid = None, resume_upload = False , imagesize = 0 , preserve_existing_data = False):
+    def generateUploadChannel(self , targetsize , targetname = None, targetid = None, resume_upload = False , imagesize = 0 , preserve_existing_data = False , volname=None):
         """
         Generates new upload channel
 

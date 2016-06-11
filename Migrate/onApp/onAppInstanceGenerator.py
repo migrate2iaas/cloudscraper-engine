@@ -327,7 +327,9 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         return
 
 
-    def __init__(self, onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80, preset_ip = None, minipad_image_id = "" , minipad_vm_id = None , vmbuild_timeout=100*60 , win_template_disk_size=20 , win_license="mak" , vm_boot_timeout=120):
+    def __init__(self, onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80,
+                 preset_ip = None, minipad_image_id = "" , minipad_vm_id = None , vmbuild_timeout=100*60 , win_template_disk_size=20 , win_license="mak" , vm_boot_timeout=120 ,
+                 os_override = None):
         """
         Args:
             onapp_endpoint - cloud endpoint address (ip or dns)
@@ -343,6 +345,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
             win_template_disk_size: int - the size of minipad VM primary disk in GBs
             win_license: str - can be 'kms','mak', or 'own' see onApp API docs for more info
             vm_boot_timeout: int - timeout in seconds to wait till target minipad VM services are ready 
+            os_override: str - specify "Linux" or "Windows" to override target OS behaviour
         """
         self.__onapp = OnAppBase();
         self.__onapp.connectOnApp(onapp_login, onapp_password, onapp_endpoint, str(onapp_port));
@@ -359,7 +362,15 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         self.__minipadId = minipad_vm_id
         self.__datastore = onapp_datastore_id
         self.__winTemplateDiskSize = win_template_disk_size
+
         self.__targetOsName = "Windows"
+        if os.name == 'nt':
+            self.__targetOsName = 'Windows'
+        else:
+            self.__targetOsName = 'Linux'
+        if os_override:
+            self.__targetOsName = os_override
+
         self.__winLicense = win_license
         super(onAppInstanceGenerator, self).__init__(preset_ip)
         #TODO: should find datastore id via the label
@@ -405,10 +416,6 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
 
     def makeInstanceFromImage(self , imageid, initialconfig, instancename):
         """makes instance based on image id - link to public image"""
-        if os.name == 'nt':
-            self.__targetOsName = 'Windows'
-        else:
-            self.__targetOsName = 'Linux'
         self.getDiskSize(imageid)
         return super(onAppInstanceGenerator, self).makeInstanceFromImage(imageid, initialconfig, instancename)
 

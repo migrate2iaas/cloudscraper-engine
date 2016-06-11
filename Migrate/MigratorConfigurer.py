@@ -405,9 +405,7 @@ class MigratorConfigurer(object):
         if config.has_option('onApp', 'minipad_template'):
             minipad_template = config.get('onApp', 'minipad_template') 
 
-        #different template for linux. TODO: should be parametrized
-        if config.has_option('onApp', 'minipad_linux_template') and not ('nt' in os.name):
-            minipad_template = config.get('onApp', 'minipad_linux_template') 
+        
 
         minipad_vm_id = "" 
         if config.has_option('onApp', 'minipad_vm_id'):
@@ -422,12 +420,20 @@ class MigratorConfigurer(object):
         if config.has_option('onApp', 'wintemplate_size'):
             wintemplate_size = int(config.get('onApp', 'wintemplate_size') )
 
-        if config.has_option('onApp', 'template_size_linux') and not ('nt' in os.name):
-            wintemplate_size = int(config.get('onApp', 'template_size_linux') )
-
         vm_boot_timeout = 120
         if config.has_option('onApp', 'vm_boot_timeout'):
             vm_boot_timeout = int(config.get('onApp', 'vm_boot_timeout') )
+
+        os_override = None
+        if config.has_option('onApp', 'os_override'):
+            os_override = config.get('onApp', 'os_override')
+
+        #different template for linux. TODO: should be parametrized
+        if not ('nt' in os.name) and not ("Windows" in os_override) or ("Linux" in os_override):
+            if config.has_option('onApp', 'template_size_linux'):
+                wintemplate_size = int(config.get('onApp', 'template_size_linux') )
+            if config.has_option('onApp', 'minipad_linux_template'):
+                minipad_template = config.get('onApp', 'minipad_linux_template') 
 
         onapp_target_account = None
 
@@ -450,7 +456,7 @@ class MigratorConfigurer(object):
             password, onapp_datastore_id, onapp_target_account, onapp_port=onapp_port, preset_ip=minipad_ip,
             minipad_image_name=minipad_template, minipad_vm_id=minipad_vm_id, vmbuild_timeout_sec=int(vm_build_timeout),
             wintemplate_size=wintemplate_size, s3custom=s3customhost, vm_boot_timeout=vm_boot_timeout,
-            use_dr=use_dr, manifest_path=manifest_path, increment_depth=increment_depth)
+            use_dr=use_dr, manifest_path=manifest_path, increment_depth=increment_depth , os_override=os_override)
 
         return (image, adjust_override, cloud)
 
