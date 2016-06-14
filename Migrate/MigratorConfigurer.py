@@ -424,7 +424,7 @@ class MigratorConfigurer(object):
         if config.has_option('onApp', 'vm_boot_timeout'):
             vm_boot_timeout = int(config.get('onApp', 'vm_boot_timeout') )
 
-        os_override = None
+        os_override = ""
         if config.has_option('onApp', 'os_override'):
             os_override = config.get('onApp', 'os_override')
 
