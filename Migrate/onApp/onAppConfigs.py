@@ -77,8 +77,7 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
         
         
     def generateUploadChannel(
-            self, targetsize, targetname=None, targetid=None, resume=False, imagesize=0, preserve_existing_data=False,
-            volname=None):
+            self, targetsize, targetname=None, targetid=None, resume=False, imagesize=0, volname=None):
         """
         Generates new upload channel
 
@@ -88,7 +87,6 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
             targetid: str - a cloud-defined path describing the upload (blob-name for Azure)
             resume: Boolean - to recreate disk representation (False) or to reupload (True)
             imagesize: long - image file size in bytes
-            preserve_existing_data - if to version existing data
         """
         custom = False
         if self.__custom_host:
