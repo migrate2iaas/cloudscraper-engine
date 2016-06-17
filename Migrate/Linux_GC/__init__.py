@@ -264,7 +264,7 @@ class Linux(object):
         return LinuxSystemInfo.LinuxSystemInfo()
 
     def findDeviceForPath(self , path):
-        p1 = Popen(["df" , path], stdout=PIPE)
+        p1 = Popen(["df" , "-P" , path], stdout=PIPE)
         output = p1.communicate()[0]
         lastline = output.split("\n")[1]
         voldev = lastline[:lastline.find(" ")]
@@ -290,7 +290,7 @@ class Linux(object):
         return volume.strip()
 
     def __findMountPoint(self , path):
-        p1 = Popen(["df" , path], stdout=PIPE)
+        p1 = Popen(["df" , "-P" , path], stdout=PIPE)
         output = p1.communicate()[0]
         lastline = output.split("\n")[1]
         mnt = lastline[lastline.rfind(" "):]

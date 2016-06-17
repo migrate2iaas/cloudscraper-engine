@@ -64,7 +64,6 @@ class AmazonCloudOptions(CloudConfig.CloudConfig):
             targetid: str - a cloud-defined path describing the machine name
             resume: Boolean - to recreate disk representation or to reupload
             imagesize: long - image file size in bytes
-            preserve_existing_data: bool - if preserve (make versioned copy) of existing data (only if resume is true)
             volname - volume letter or descrption, used to generate cloud path
         """
         # check if we use custom (non AWS) S3 
