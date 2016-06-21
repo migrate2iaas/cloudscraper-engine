@@ -60,9 +60,9 @@ class VmInstance(object):
                     logging.info("Server " + str(ip) + ":" + str(port) + " successfully responded")
                     return True
             except Exception as e:
-                logging.error("!: Failed to probe the remote server for a connection!")
-                logging.error("!:" + str(e))
-                logging.error(traceback.format_exc())
+                logging.debug("Failed to probe the remote server for a connection!")
+                logging.debug(str(e))
+                logging.debug(traceback.format_exc())
             timeout = timeout - time_retry
             if timeout > 0:
                 logging.info("--- Waiting more " + str(timeout) + " for it to respond");
