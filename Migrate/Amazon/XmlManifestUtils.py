@@ -53,7 +53,7 @@ def getImageDataFromXml(xmlurl):
     imagetype = ''
     
     urldata = urllib.urlopen(xmlurl) 
-    return getImageDataFromXmlData(urldata.read(4096))
+    return getImageDataFromXmlData(urldata.read())
 
 
 class S3ManfiestBuilder:
