@@ -431,7 +431,7 @@ class Migrator(object):
             uploadpath = channel.getUploadPath()
             upload_ids = channel.findUploadId(".*?"+vol_info.getUploadPath()+".*?")
             if not upload_ids:
-                logging.error("!!!ERROR: Cannot find any matching manifest.xml file")
+                logging.error("!!!ERROR: Cannot find any matching manifest file")
                 return False
             if self.__renewManifest:
                 for id in upload_ids:

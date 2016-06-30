@@ -28,7 +28,7 @@ class SparseRawMedia(ImageMedia):
             Does nothing if already opened
             retuns None, throws and error if any   
         """
-        file = open(self.__filename, 'wb')
+        file = open(self.__filename, 'r+b')
         file.truncate(self.__size)
 
     def getMaxSize(self):
