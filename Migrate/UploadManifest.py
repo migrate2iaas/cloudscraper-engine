@@ -580,7 +580,7 @@ class ImageManifestDatabase(object):
     def get_key_base(self):
         chainid = self.__table_name
         if self.__increment_depth == 1:
-            chainid = self.__table_name + "-full"
+            chainid = self.__table_name + "_full"
 
         return "{0}/{1}/{2}".format(self.__target_id, chainid, self.__volname)
 

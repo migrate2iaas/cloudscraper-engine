@@ -266,7 +266,8 @@ class Migrator(object):
             logging.error("!!!ERROR: The configuration is not supported " + sys_info.getSystemVersionString() + " arch:" + hex(sys_info.getSystemArcheticture())) 
             logging.info("Windows 2003 , 2008R2 and 2012 Server are supported for now") 
         else: 
-            logging.warning("!Warning: Linux is in experimental support mode")
+            #logging.warning("!Warning: Linux is in experimental support mode")
+            #TODO: check for OS versions here
             return True
         return False
 

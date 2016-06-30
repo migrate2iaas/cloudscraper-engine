@@ -162,7 +162,7 @@ class VolumeMigrateIniConfig(VolumeMigrateConfig):
                 self.__excludedDirs = dirstr.split(";")
                 self.__excludedDirs = filter(None, self.__excludedDirs) #just filter out empty strings if they happen in dirstr
         else:
-            logging.warn("! Section for drive letter cannot be found") 
+            logging.warn("Section for drive letter cannot be found") 
             return
 
     def getSection(self):
