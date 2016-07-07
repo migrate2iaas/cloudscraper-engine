@@ -28,6 +28,8 @@ class SparseRawMedia(ImageMedia):
             Does nothing if already opened
             retuns None, throws and error if any   
         """
+        if not os.path.exists(self.__filename):
+            open(self.__filename, "w").close() # just create a new empty file
         file = open(self.__filename, 'r+b')
         file.truncate(self.__size)
 
