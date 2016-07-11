@@ -32,7 +32,7 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
 
     def __init__(self, s3bucket, s3user, s3password, s3region, onapp_endpoint, onapp_login, onapp_password,
                  onapp_datastore_id, onapp_target_account=None, onapp_port=80, preset_ip=None,
-                 minipad_image_name="", minipad_vm_id=None, vmbuild_timeout_sec=120*60, wintemplate_size=20,
+                 minipad_image_name="", minipad_vm_id=None, vmbuild_timeout_sec=120*60, wintemplate_size=20, network=None,
                  s3custom=False, vm_boot_timeout=120, manifest_path=None, increment_depth=1, use_dr=False, db_write_cache_size=20,
                  os_override=None):
         """
@@ -65,11 +65,12 @@ class onAppCloudOptions(CloudConfig.CloudConfig):
         self.__use_dr = use_dr
         self.__db_write_cache_size = db_write_cache_size
         self.__os_override = os_override
+        self.__network = network
 
         #generate instance factory to test the connection
         self.__instanceFactory = onAppInstanceGenerator.onAppInstanceGenerator(self.__onapp_endpoint , self.__onapp_login , self.__onapp_password , self.__onapp_datastore_id, self.__onapp_target_account, \
             self.__onapp_port, self.__preset_ip , self.__minipad_image_name , self.__minipad_vm_id , vmbuild_timeout = self.__vmBuildTimeout , win_template_disk_size = self.__winTemplateDiskSize , 
-                                                                               vm_boot_timeout = self.__vmBootTimeout , os_override = os_override)
+                                                                               vm_boot_timeout = self.__vmBootTimeout , os_override = os_override, network = self.__network)
 
 
         super(onAppCloudOptions, self).__init__()

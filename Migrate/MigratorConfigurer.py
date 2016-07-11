@@ -428,6 +428,10 @@ class MigratorConfigurer(object):
         if config.has_option('onApp', 'os_override'):
             os_override = config.get('onApp', 'os_override')
 
+        network_id = None
+        if config.has_option('onApp', 'network_id'):
+            network_id = config.get('onApp', 'network_id')
+
         #different template for linux. TODO: should be parametrized
         if not ('nt' in os.name) and not ("Windows" in os_override) or ("Linux" in os_override):
             if config.has_option('onApp', 'template_size_linux'):
@@ -456,7 +460,7 @@ class MigratorConfigurer(object):
             password, onapp_datastore_id, onapp_target_account, onapp_port=onapp_port, preset_ip=minipad_ip,
             minipad_image_name=minipad_template, minipad_vm_id=minipad_vm_id, vmbuild_timeout_sec=int(vm_build_timeout),
             wintemplate_size=wintemplate_size, s3custom=s3customhost, vm_boot_timeout=vm_boot_timeout,
-            use_dr=use_dr, manifest_path=manifest_path, increment_depth=increment_depth , os_override=os_override)
+            use_dr=use_dr, manifest_path=manifest_path, increment_depth=increment_depth , os_override=os_override , network=network_id)
 
         return (image, adjust_override, cloud)
 
