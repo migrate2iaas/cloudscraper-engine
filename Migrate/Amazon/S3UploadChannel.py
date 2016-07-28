@@ -22,6 +22,7 @@ import time
 import tempfile
 import warnings
 import logging
+import urllib
 
 import sys
 import os
@@ -639,6 +640,7 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         xmlkey = str(parsed.path)
         if xmlkey[0] == "/":
             xmlkey = xmlkey[1:]
+        xmlkey = urllib.unquote(xmlkey)
         logging.info("Updating manifest " + uploadid + " bucket = " + bucket + " key = " + xmlkey)
 
         # NOTE: we catch the security warning from tempnam (really, there is no unsecure data, not sure however)
