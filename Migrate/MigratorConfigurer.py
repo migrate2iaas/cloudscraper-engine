@@ -876,7 +876,7 @@ class MigratorConfigurer(object):
             imagedir = imagedir[0:-1]
         if os.path.exists(imagedir) == False:
             logging.debug("Directory " + unicode(imagedir) + " not found, creating it");
-            os.mkdir(imagedir)           
+            os.makedirs(imagedir)           
         else:
             dirmode = os.stat(imagedir).st_mode
             if stat.S_ISDIR(dirmode) == False:
