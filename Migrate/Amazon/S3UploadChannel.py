@@ -652,6 +652,8 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         s3key = Key(s3bucket, xmlkey)
         xml = s3key.get_contents_as_string()
 
+        logging.debug("XML: " + xml)
+
         (volume_size_bytes , image_file_size , imagetype, fragment_count) = getImageDataFromXmlData(xml)
 
         manifest = S3ManfiestBuilder(xmltempfile, xmlkey, bucket, self.__S3, imagetype)
