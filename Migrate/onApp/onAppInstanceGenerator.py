@@ -268,6 +268,9 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
                 "rate_limit" : 0 , "swap_disk_size" : 0 , "required_virtual_machine_build" : 1 , "required_ip_address_assignment" : 1 , "licensing_type": win_licensing_type}
             if self.__network:
                vmParams.update({"primary_network_id" : self.__network})
+            if self.__extraVmParms:
+               vmParams.update(self.__extraVmParms)
+       
             vm = self.__onapp.createVM(vmParams)
             ip = vm['ip_addresses'][0]['ip_address']['address']
             self.__minipadId = vm['identifier']
@@ -331,7 +334,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
 
     def __init__(self, onapp_endpoint , onapp_login , onapp_password , onapp_datastore_id, onapp_target_account = None, onapp_port = 80,
                  preset_ip = None, minipad_image_id = "" , minipad_vm_id = None , vmbuild_timeout=100*60 , win_template_disk_size=20 , win_license="mak" , vm_boot_timeout=120 ,
-                 os_override = None, network = None):
+                 os_override = None, network = None , extra_vm_parms_json = None):
         """
         Args:
             onapp_endpoint - cloud endpoint address (ip or dns)
@@ -349,6 +352,7 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
             vm_boot_timeout: int - timeout in seconds to wait till target minipad VM services are ready 
             os_override: str - specify "Linux" or "Windows" to override target OS behaviour
             network: int - network id of the new machine (or None if network is choosen automatically)
+            extra_vm_parms_json: str - josn containing extra parms for onApp VM creation that is passed to onApp API directly 
         """
         self.__onapp = OnAppBase();
         self.__onapp.connectOnApp(onapp_login, onapp_password, onapp_endpoint, str(onapp_port));
@@ -366,6 +370,12 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
         self.__datastore = onapp_datastore_id
         self.__winTemplateDiskSize = win_template_disk_size
         self.__network = network
+        if extra_vm_parms_json:
+            self.__extraVmParms = json.loads(extra_vm_parms_json)
+        else:
+            self.__extraVmParms = None
+
+
 
         self.__targetOsName = "Windows"
         if os.name == 'nt':
