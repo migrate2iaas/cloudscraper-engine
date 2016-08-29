@@ -588,10 +588,16 @@ class S3UploadChannel(UploadChannel.UploadChannel):
 
         # Making additional checks (offset order)
         offset = 0
+        prev_part = None
         res_list.sort(key=lambda di: int(di["offset"]))
         for rec in res_list:
             if rec["offset"] != str(offset):
-                raise Exception("Offset {0} missing in manifest database".format(offset))
+                # Check, if started next volume verification
+                if self.__is_next_volume_part(prev_part['part_name'], rec['part_name']):
+                    offset = rec['offset']
+                else:
+                    raise Exception("Offset {0} missing in manifest database".format(offset))
+            prev_part = rec
             offset += int(rec['size'])
 
         #TODO: profile
@@ -681,3 +687,10 @@ class S3UploadChannel(UploadChannel.UploadChannel):
         logging.info("+++ "+ renewed_upload_id)
 
         return True
+
+    def __is_next_volume_part(self, prev_part, next_part):
+        # NOTE: we get volume name as the second from the end in path
+        prev_volume = str(prev_part).split('/')[-2]
+        next_volume = str(next_part).split('/')[-2]
+
+        return prev_volume != next_volume
