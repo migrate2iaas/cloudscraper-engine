@@ -220,7 +220,8 @@ class onAppInstanceGenerator(MiniPadInstanceGenerator.MiniPadInstanceGenerator):
     """on app generator"""
 
     def createDisk(self , name):
-        parms = {"label":name , "disk_size" : self.__diskSize , "data_store_id" : int(self.__datastore) , "hot_attach" : 1}
+        datastore = int(self.__datastore.split()[0]) #we grab only the first word id numeric value as datastore id can be given in "23 - SSD Store" form
+        parms = {"label":name , "disk_size" : self.__diskSize , "data_store_id" : datastore, "hot_attach" : 1}
         disk_out = self.__onapp.createDisk(self.__minipadId , parms)
         logging.debug(repr(disk_out))
         #self.__diskId = 
