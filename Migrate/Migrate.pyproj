@@ -5,7 +5,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8c294031-103d-41f8-b912-dc836a129725}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Linux_GC\FuseUploadChannelBacked_test.py</StartupFile>
+    <StartupFile>
+    </StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -40,6 +41,7 @@
     <Compile Include="Amazon\EC2VolumeGenerator.py" />
     <Compile Include="Amazon\S3UploadChannel.py" />
     <Compile Include="Amazon\S3UploadChannel_test.py" />
+    <Compile Include="Amazon\XmlManifestUtils.py" />
     <Compile Include="Azure\AzureConfigs.py" />
     <Compile Include="Azure\AzureInstanceGenerator.py" />
     <Compile Include="Azure\AzureUploadChannel.py" />
@@ -51,6 +53,7 @@
     <Compile Include="BackupSource.py" />
     <Compile Include="ChainUploadChannel.py" />
     <Compile Include="CloudConfig.py" />
+    <Compile Include="CloudManifestBuilder.py" />
     <Compile Include="CloudSigma\CloudSigmaConfigs.py" />
     <Compile Include="CloudSigma\CloudSigmaUploadChannel.py" />
     <Compile Include="CloudSigma\CloudSigmaUploadChannel_test.py" />
@@ -88,10 +91,6 @@
     <Compile Include="Linux\LinuxVolumeInfo.py" />
     <Compile Include="Linux\__init__.py" />
     <Compile Include="Linux_GC\FsBundler.py" />
-    <Compile Include="Linux_GC\FuseMounter.py" />
-    <Compile Include="Linux_GC\FuseUploadChannelBacked.py" />
-    <Compile Include="Linux_GC\FuseUploadChannelBacked_test.py" />
-    <Compile Include="Linux_GC\FuseWrapper.py" />
     <Compile Include="Linux_GC\LinuxAdjustOptions.py" />
     <Compile Include="Linux_GC\LinuxBackupAdjust.py" />
     <Compile Include="Linux_GC\LinuxBackupSource.py" />
