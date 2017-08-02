@@ -123,9 +123,9 @@ def chk_ver():
 def chk_limits():
     if chk_ver() == False:
         logging.info(">>> The version is free but limited")
-        logging.info(">>> The limit is 30 GB data transfered")
+        logging.info(">>> The limit is 50 GB data transfered")
         logging.info(">>> Please visit www.migrate2iaas.com to obtain license")
-        return long(30*1024*1024*1024)
+        return long(50*1024*1024*1024)
     return 0
 
 if __name__ == '__main__':

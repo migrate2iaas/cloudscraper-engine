@@ -88,6 +88,7 @@ class EC2InstanceGenerator(InstanceGenerator.InstanceGenerator):
         if walrus:
             connection = EC2ImportConnection.EC2ImportConnection(s3owner, s3key, ec2region , host = eucalyptus_host , port = eucalyptus_port , path = eucalyptus_path , eucalyptus = walrus , is_secure=False)
         else:
+            logging.info(ec2region);
             connection = EC2ImportConnection.EC2ImportConnection(s3owner, s3key, ec2region)
         #if walrus:
         #    connection.APIVersion = "2013-02-01"
